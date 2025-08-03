@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import Airtable, { Record as AirtableRecord } from 'airtable';
+import { base } from "../constants";
 // Si besoin : installer les types avec npm install --save-dev @types/airtable
-
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID || '');
 
 export async function GET() {
 
