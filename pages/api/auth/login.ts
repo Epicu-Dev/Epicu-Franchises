@@ -2,6 +2,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '../constants';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+
+function generateToken(length = 64): string {
+  return crypto.randomBytes(length).toString('hex');
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -35,14 +40,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ message: 'Mot de passe incorrect' });
     }
 
+    const accessToken = generateToken(32);
+    const refreshToken = generateToken(48);
+    const now = Date.now();
+
+    await base('AUTH_ACCESS_TOKEN').create([
+      {
+        fields: {
+          user: [user.id],
+          token: accessToken,
+          created_at: new Date(now).toISOString(),
+          expires_at: new Date(now + 15 * 60 * 1000).toISOString(), // 15 min
+        },
+      },
+    ]);
+
+    await base('AUTH_REFRESH_TOKEN').create([
+      {
+        fields: {
+          user: [user.id],
+          token: refreshToken,
+          created_at: new Date(now).toISOString(),
+          expires_at: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
+        },
+      },
+    ]);
+
     return res.status(200).json({
       message: 'Connexion réussie',
       user: {
         id: user.id,
-        email: user.get('email'),
-        name: user.get('name') || null,
+        email: user.get('Email EPICU'),
       },
-    });
+      accessToken,
+      refreshToken,
+      expiresAtAccess: new Date(now + 15 * 60 * 1000).toISOString(),
+      expiresAtRefresh: new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });    
   } catch (error) {
     console.error('Erreur de login :', error);
     return res.status(500).json({ message: 'Erreur serveur' });

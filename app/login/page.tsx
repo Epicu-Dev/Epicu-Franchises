@@ -1,12 +1,13 @@
-// /app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,14 @@ export default function LoginPage() {
     const data = await res.json();
 
     if (res.ok) {
-      setMessage(`Connexion réussie ! Bienvenue ${data.user.email}`);
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('userEmail', data.user.email);
+
+      localStorage.setItem('expiresAtAccess', data.expiresAtAccess); // ISO string
+      localStorage.setItem('expiresAtRefresh', data.expiresAtRefresh); // ISO string
+
+      router.push('/home');
     } else {
       setMessage(data.message || 'Erreur inconnue');
     }
