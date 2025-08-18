@@ -40,6 +40,7 @@ export function Sidebar({ userEmail, onLogout, onHelpClick }: SidebarProps) {
 
   const menuItems = [
     { key: 'home', label: 'Accueil', icon: HomeIcon, href: '/home' },
+    { key: 'home-admin', label: 'Accueil Admin', icon: HomeIcon, href: '/home-admin' },
     { key: 'data', label: 'Data', icon: ChartBarIcon, href: '/data' },
     { key: 'clients', label: 'Clients', icon: UsersIcon, href: '/clients' },
     { key: 'prospects', label: 'Prospects', icon: BellIcon, href: '/prospects' },

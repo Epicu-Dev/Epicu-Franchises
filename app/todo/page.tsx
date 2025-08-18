@@ -48,10 +48,12 @@ export default function TodoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
 
   const [newTodo, setNewTodo] = useState({
     titre: '',
-    statut: 'a_faire' as const,
+    statut: 'a_faire' as Todo['statut'],
     dateEcheance: ''
   });
 
@@ -59,7 +61,7 @@ export default function TodoPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
         page: pagination.currentPage.toString(),
         limit: pagination.itemsPerPage.toString(),
@@ -70,7 +72,7 @@ export default function TodoPage() {
       });
 
       const response = await fetch(`/api/todos?${params}`);
-      
+
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération des tâches');
       }
@@ -119,7 +121,7 @@ export default function TodoPage() {
         dateEcheance: ''
       });
       setIsAddModalOpen(false);
-      
+
       // Recharger les tâches
       fetchTodos();
     } catch (err) {
@@ -146,8 +148,34 @@ export default function TodoPage() {
     }
   };
 
+  const openDeleteConfirmation = (todo: Todo) => {
+    setTodoToDelete(todo);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!todoToDelete) return;
+    
+    try {
+      await handleDeleteTodo(todoToDelete.id);
+      setIsDeleteModalOpen(false);
+      setTodoToDelete(null);
+    } catch (err) {
+      // L'erreur est déjà gérée dans handleDeleteTodo
+    }
+  };
+
   const handleStatusChange = async (todoId: string, newStatus: Todo['statut']) => {
     try {
+      // Optimistic update - mettre à jour l'état local immédiatement
+      setTodos(prevTodos => 
+        prevTodos.map(todo => 
+          todo.id === todoId 
+            ? { ...todo, statut: newStatus }
+            : todo
+        )
+      );
+
       const response = await fetch(`/api/todos/${todoId}`, {
         method: 'PUT',
         headers: {
@@ -160,9 +188,16 @@ export default function TodoPage() {
         throw new Error('Erreur lors de la modification du statut');
       }
 
-      // Recharger les tâches
-      fetchTodos();
+      // Pas besoin de recharger toutes les tâches, l'état local est déjà à jour
     } catch (err) {
+      // En cas d'erreur, remettre l'état précédent
+      setTodos(prevTodos => 
+        prevTodos.map(todo => 
+          todo.id === todoId 
+            ? { ...todo, statut: todo.statut === 'terminee' ? 'a_faire' : 'terminee' }
+            : todo
+        )
+      );
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     }
   };
@@ -247,30 +282,18 @@ export default function TodoPage() {
                 <SelectItem key="terminee">Validée</SelectItem>
                 <SelectItem key="annulee">Annulée</SelectItem>
               </Select>
-              
+
+
+            </div>
+
+            <div className="relative">
               <Button
-                color="primary"
+                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsAddModalOpen(true)}
               >
                 Ajouter une tâche
-              </Button>
-            </div>
-            
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 pr-4 pl-10"
-                classNames={{
-                  input: "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-                  inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800"
-                }}
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-            </div>
+              </Button></div>
           </div>
 
           {/* Table */}
@@ -327,8 +350,12 @@ export default function TodoPage() {
                     <div className="flex items-center gap-2">
                       <Checkbox
                         isSelected={todo.statut === 'terminee'}
-                        onValueChange={(checked) => handleStatusChange(todo.id, checked ? 'terminee' : 'a_faire')}
+                        onValueChange={(checked) => {
+                          const newStatus = checked ? 'terminee' : 'a_faire';
+                          handleStatusChange(todo.id, newStatus);
+                        }}
                         className="text-black"
+                        isDisabled={todo.statut === 'annulee'}
                       />
                       <span>{todo.titre}</span>
                     </div>
@@ -345,7 +372,7 @@ export default function TodoPage() {
                       variant="light"
                       size="sm"
                       color="danger"
-                      onPress={() => handleDeleteTodo(todo.id)}
+                      onPress={() => openDeleteConfirmation(todo)}
                     >
                       <TrashIcon className="h-4 w-4" />
                     </Button>
@@ -419,6 +446,31 @@ export default function TodoPage() {
         </ModalContent>
       </Modal>
 
+      {/* Modal de confirmation de suppression */}
+      <Modal isOpen={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <ModalContent>
+          <ModalHeader>Confirmer la suppression</ModalHeader>
+          <ModalBody>
+            <p className="text-gray-700 dark:text-gray-300">
+              Êtes-vous sûr de vouloir supprimer la tâche <strong>"{todoToDelete?.titre}"</strong> ?
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Cette action est irréversible.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setIsDeleteModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              color="danger" 
+              onPress={confirmDelete}
+            >
+              Supprimer
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
     </div>
   );

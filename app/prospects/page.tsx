@@ -15,15 +15,18 @@ import { Spinner } from '@heroui/spinner';
 
 interface Prospect {
   id: string;
+  siret: string;
   nomEtablissement: string;
-  categorie1: string;
-  categorie2: string;
-  dateRelance: string;
-  suiviPar: string;
-  commentaire: string;
+  ville: string;
+  telephone: string;
+  categorie: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
   statut: 'a_contacter' | 'en_discussion' | 'glacial';
+  datePremierRendezVous: string;
+  dateRelance: string;
+  vientDeRencontrer: boolean;
+  commentaire: string;
+  suiviPar: string;
   email?: string;
-  telephone?: string;
   adresse?: string;
 }
 
@@ -54,15 +57,19 @@ export default function ProspectsPage() {
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState('a_contacter');
   const [newProspect, setNewProspect] = useState({
+    siret: '',
     nomEtablissement: '',
-    categorie1: '',
-    categorie2: '',
-    email: '',
+    ville: '',
     telephone: '',
-    adresse: '',
+    categorie: 'FOOD' as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
+    statut: 'a_contacter' as 'a_contacter' | 'en_discussion' | 'glacial',
+    datePremierRendezVous: '',
+    dateRelance: '',
+    vientDeRencontrer: false,
     commentaire: '',
     suiviPar: '',
-    statut: 'a_contacter' as 'a_contacter' | 'en_discussion' | 'glacial'
+    email: '',
+    adresse: ''
   });
 
   const fetchProspects = async () => {
@@ -126,15 +133,19 @@ export default function ProspectsPage() {
 
       // Réinitialiser le formulaire et fermer le modal
       setNewProspect({
+        siret: '',
         nomEtablissement: '',
-        categorie1: '',
-        categorie2: '',
-        email: '',
+        ville: '',
         telephone: '',
-        adresse: '',
+        categorie: 'FOOD' as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
+        statut: 'a_contacter' as 'a_contacter' | 'en_discussion' | 'glacial',
+        datePremierRendezVous: '',
+        dateRelance: '',
+        vientDeRencontrer: false,
         commentaire: '',
         suiviPar: '',
-        statut: 'a_contacter' as 'a_contacter' | 'en_discussion' | 'glacial'
+        email: '',
+        adresse: ''
       });
       setIsAddModalOpen(false);
 
@@ -196,15 +207,19 @@ export default function ProspectsPage() {
   };
 
   const getCategoryBadgeColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'food':
-        return 'bg-orange-100 text-orange-800';
-      case 'shop':
-        return 'bg-purple-100 text-purple-800';
-      case 'service':
-        return 'bg-blue-100 text-blue-800';
+    switch (category) {
+      case 'FOOD':
+        return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'SHOP':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'TRAVEL':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'FUN':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'BEAUTY':
+        return 'bg-pink-50 text-pink-700 border-pink-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -265,9 +280,11 @@ export default function ProspectsPage() {
                 onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string)}
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="food">Food</SelectItem>
-                <SelectItem key="shop">Shop</SelectItem>
-                <SelectItem key="service">Service</SelectItem>
+                <SelectItem key="FOOD">FOOD</SelectItem>
+                <SelectItem key="SHOP">SHOP</SelectItem>
+                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                <SelectItem key="FUN">FUN</SelectItem>
+                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
               </Select>
 
               <Select
@@ -314,30 +331,17 @@ export default function ProspectsPage() {
                 <Button
                   variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('categorie1')}
+                  onPress={() => handleSort('categorie')}
                 >
                   Catégorie
-                  {sortField === 'categorie1' && (
+                  {sortField === 'categorie' && (
                     <span className="ml-1">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn>
-                <Button
-                  variant="light"
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('categorie2')}
-                >
-                  Catégorie
-                  {sortField === 'categorie2' && (
-                    <span className="ml-1">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
+              <TableColumn>Ville</TableColumn>
               <TableColumn>
                 <Button
                   variant="light"
@@ -375,15 +379,11 @@ export default function ProspectsPage() {
                 <TableRow key={prospect.id}>
                   <TableCell className="font-medium">{prospect.nomEtablissement}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${getCategoryBadgeColor(prospect.categorie1)}`}>
-                      {prospect.categorie1}
+                    <span className={`px-3 py-1.5 text-xs font-semibold rounded-full border ${getCategoryBadgeColor(prospect.categorie)}`}>
+                      {prospect.categorie}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${getCategoryBadgeColor(prospect.categorie2)}`}>
-                      {prospect.categorie2}
-                    </span>
-                  </TableCell>
+                  <TableCell>{prospect.ville}</TableCell>
                   <TableCell>{prospect.dateRelance}</TableCell>
                   <TableCell>{prospect.suiviPar}</TableCell>
                   <TableCell>{prospect.commentaire}</TableCell>
@@ -436,67 +436,53 @@ export default function ProspectsPage() {
       </Card>
 
       {/* Modal d'ajout de prospect */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen} scrollBehavior="inside" size="2xl">
         <ModalContent>
           <ModalHeader>Ajouter un nouveau prospect</ModalHeader>
-          <ModalBody>
+          <ModalBody className="max-h-[70vh] overflow-y-auto">
             <div className="space-y-4">
               <Input
-                label="Nom établissement"
+                label="N° SIRET*"
+                placeholder="12345678901234"
+                value={newProspect.siret}
+                onChange={(e) => setNewProspect(prev => ({ ...prev, siret: e.target.value }))}
+                isRequired
+              />
+              <Input
+                label="Nom établissement*"
                 placeholder="Nom de l'établissement"
                 value={newProspect.nomEtablissement}
                 onChange={(e) => setNewProspect(prev => ({ ...prev, nomEtablissement: e.target.value }))}
                 isRequired
               />
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label="Catégorie 1"
-                  selectedKeys={[newProspect.categorie1]}
-                  onSelectionChange={(keys) => setNewProspect(prev => ({ ...prev, categorie1: Array.from(keys)[0] as string }))}
-                >
-                  <SelectItem key="food">Food</SelectItem>
-                  <SelectItem key="shop">Shop</SelectItem>
-                  <SelectItem key="service">Service</SelectItem>
-                </Select>
-                <Select
-                  label="Catégorie 2"
-                  selectedKeys={[newProspect.categorie2]}
-                  onSelectionChange={(keys) => setNewProspect(prev => ({ ...prev, categorie2: Array.from(keys)[0] as string }))}
-                >
-                  <SelectItem key="food">Food</SelectItem>
-                  <SelectItem key="shop">Shop</SelectItem>
-                  <SelectItem key="service">Service</SelectItem>
-                </Select>
-              </div>
               <Input
-                label="Email"
-                type="email"
-                placeholder="contact@etablissement.fr"
-                value={newProspect.email}
-                onChange={(e) => setNewProspect(prev => ({ ...prev, email: e.target.value }))}
+                label="Ville*"
+                placeholder="Paris"
+                value={newProspect.ville}
+                onChange={(e) => setNewProspect(prev => ({ ...prev, ville: e.target.value }))}
+                isRequired
               />
               <Input
-                label="Téléphone"
+                label="Téléphone*"
                 placeholder="01 23 45 67 89"
                 value={newProspect.telephone}
                 onChange={(e) => setNewProspect(prev => ({ ...prev, telephone: e.target.value }))}
-              />
-              <Input
-                label="Adresse"
-                placeholder="123 Rue de l'établissement, 75001 Paris"
-                value={newProspect.adresse}
-                onChange={(e) => setNewProspect(prev => ({ ...prev, adresse: e.target.value }))}
+                isRequired
               />
               <Select
-                label="Suivi par"
-                selectedKeys={[newProspect.suiviPar]}
-                onSelectionChange={(keys) => setNewProspect(prev => ({ ...prev, suiviPar: Array.from(keys)[0] as string }))}
+                label="Catégorie*"
+                selectedKeys={[newProspect.categorie]}
+                onSelectionChange={(keys) => setNewProspect(prev => ({ ...prev, categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY' }))}
+                isRequired
               >
-                <SelectItem key="nom">Nom</SelectItem>
-                <SelectItem key="prenom">Prénom</SelectItem>
+                <SelectItem key="FOOD">FOOD</SelectItem>
+                <SelectItem key="SHOP">SHOP</SelectItem>
+                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                <SelectItem key="FUN">FUN</SelectItem>
+                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
               </Select>
               <Select
-                label="Statut"
+                label="Statut*"
                 selectedKeys={[newProspect.statut]}
                 onSelectionChange={(keys) => setNewProspect(prev => ({ ...prev, statut: Array.from(keys)[0] as 'a_contacter' | 'en_discussion' | 'glacial' }))}
               >
@@ -504,9 +490,32 @@ export default function ProspectsPage() {
                 <SelectItem key="en_discussion">En discussion</SelectItem>
                 <SelectItem key="glacial">Glacial</SelectItem>
               </Select>
+              <Input
+                label="Date du premier rendez-vous*"
+                type="date"
+                value={newProspect.datePremierRendezVous}
+                onChange={(e) => setNewProspect(prev => ({ ...prev, datePremierRendezVous: e.target.value }))}
+                isRequired
+              />
+              <Input
+                label="Date de la relance*"
+                type="date"
+                value={newProspect.dateRelance}
+                onChange={(e) => setNewProspect(prev => ({ ...prev, dateRelance: e.target.value }))}
+                isRequired
+              />
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">Je viens de le rencontrer</span>
+                <input
+                  type="checkbox"
+                  checked={newProspect.vientDeRencontrer}
+                  onChange={(e) => setNewProspect(prev => ({ ...prev, vientDeRencontrer: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
               <Textarea
                 label="Commentaire"
-                placeholder="Informations supplémentaires..."
+                placeholder="..."
                 value={newProspect.commentaire}
                 onChange={(e) => setNewProspect(prev => ({ ...prev, commentaire: e.target.value }))}
               />
@@ -547,7 +556,19 @@ export default function ProspectsPage() {
                   </h3>
                   
                   <Input
-                    label="Nom établissement"
+                    label="N° SIRET*"
+                    placeholder="12345678901234"
+                    value={editingProspect.siret || ''}
+                    onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, siret: e.target.value }) : null)}
+                    isRequired
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm"
+                    }}
+                  />
+                  
+                  <Input
+                    label="Nom établissement*"
                     placeholder="Nom de l'établissement"
                     value={editingProspect.nomEtablissement}
                     onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, nomEtablissement: e.target.value }) : null)}
@@ -558,42 +579,12 @@ export default function ProspectsPage() {
                     }}
                   />
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      label="Catégorie 1"
-                      placeholder="Sélectionner une catégorie"
-                      selectedKeys={editingProspect.categorie1 ? [editingProspect.categorie1] : []}
-                      onSelectionChange={(keys) => setEditingProspect(prev => prev ? ({ ...prev, categorie1: Array.from(keys)[0] as string }) : null)}
-                      classNames={{
-                        label: "text-sm font-medium"
-                      }}
-                    >
-                      <SelectItem key="food">Food</SelectItem>
-                      <SelectItem key="shop">Shop</SelectItem>
-                      <SelectItem key="service">Service</SelectItem>
-                    </Select>
-                    
-                    <Select
-                      label="Catégorie 2"
-                      placeholder="Sélectionner une catégorie"
-                      selectedKeys={editingProspect.categorie2 ? [editingProspect.categorie2] : []}
-                      onSelectionChange={(keys) => setEditingProspect(prev => prev ? ({ ...prev, categorie2: Array.from(keys)[0] as string }) : null)}
-                      classNames={{
-                        label: "text-sm font-medium"
-                      }}
-                    >
-                      <SelectItem key="food">Food</SelectItem>
-                      <SelectItem key="shop">Shop</SelectItem>
-                      <SelectItem key="service">Service</SelectItem>
-                    </Select>
-                  </div>
-                  
                   <Input
-                    label="Email"
-                    type="email"
-                    placeholder="contact@etablissement.fr"
-                    value={editingProspect.email || ''}
-                    onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, email: e.target.value }) : null)}
+                    label="Ville*"
+                    placeholder="Paris"
+                    value={editingProspect.ville || ''}
+                    onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, ville: e.target.value }) : null)}
+                    isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm"
@@ -601,10 +592,39 @@ export default function ProspectsPage() {
                   />
                   
                   <Input
-                    label="Téléphone"
+                    label="Téléphone*"
                     placeholder="01 23 45 67 89"
                     value={editingProspect.telephone || ''}
                     onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, telephone: e.target.value }) : null)}
+                    isRequired
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm"
+                    }}
+                  />
+                  
+                  <Select
+                    label="Catégorie*"
+                    placeholder="Sélectionner une catégorie"
+                    selectedKeys={editingProspect.categorie ? [editingProspect.categorie] : []}
+                    onSelectionChange={(keys) => setEditingProspect(prev => prev ? ({ ...prev, categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY' }) : null)}
+                    classNames={{
+                      label: "text-sm font-medium"
+                    }}
+                  >
+                    <SelectItem key="FOOD">FOOD</SelectItem>
+                    <SelectItem key="SHOP">SHOP</SelectItem>
+                    <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                    <SelectItem key="FUN">FUN</SelectItem>
+                    <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                  </Select>
+                  
+                  <Input
+                    label="Email"
+                    type="email"
+                    placeholder="contact@etablissement.fr"
+                    value={editingProspect.email || ''}
+                    onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, email: e.target.value }) : null)}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm"
@@ -630,10 +650,23 @@ export default function ProspectsPage() {
                   </h3>
                   
                   <Input
-                    label="Date de relance"
+                    label="Date du premier rendez-vous*"
+                    type="date"
+                    value={editingProspect.datePremierRendezVous || ''}
+                    onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, datePremierRendezVous: e.target.value }) : null)}
+                    isRequired
+                    classNames={{
+                      label: "text-sm font-medium",
+                      input: "text-sm"
+                    }}
+                  />
+                  
+                  <Input
+                    label="Date de la relance*"
                     type="date"
                     value={editingProspect.dateRelance || ''}
                     onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, dateRelance: e.target.value }) : null)}
+                    isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm"
@@ -654,10 +687,11 @@ export default function ProspectsPage() {
                   </Select>
                   
                   <Select
-                    label="Statut"
+                    label="Statut*"
                     placeholder="Sélectionner un statut"
                     selectedKeys={editingProspect.statut ? [editingProspect.statut] : []}
                     onSelectionChange={(keys) => setEditingProspect(prev => prev ? ({ ...prev, statut: Array.from(keys)[0] as 'a_contacter' | 'en_discussion' | 'glacial' }) : null)}
+                    isRequired
                     classNames={{
                       label: "text-sm font-medium"
                     }}
@@ -666,6 +700,16 @@ export default function ProspectsPage() {
                     <SelectItem key="en_discussion">En discussion</SelectItem>
                     <SelectItem key="glacial">Glacial</SelectItem>
                   </Select>
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">Je viens de le rencontrer</span>
+                    <input
+                      type="checkbox"
+                      checked={editingProspect.vientDeRencontrer || false}
+                      onChange={(e) => setEditingProspect(prev => prev ? ({ ...prev, vientDeRencontrer: e.target.checked }) : null)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
                 </div>
 
                 {/* Commentaire */}

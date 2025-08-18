@@ -251,13 +251,6 @@ export default function ClientsPage() {
                 <SelectItem key="service">Service</SelectItem>
               </Select>
               
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
-              >
-                Ajouter un client
-              </Button>
             </div>
             
             <div className="relative">

@@ -63,4 +63,4 @@ Date: ${new Date().toLocaleString('fr-FR')}
       { status: 500 }
     );
   }
-} 
+}

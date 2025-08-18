@@ -37,24 +37,50 @@ interface CalendarDay {
   events: Event[];
 }
 
+interface WeekDay {
+  date: Date;
+  dayName: string;
+  dayNumber: number;
+  isToday: boolean;
+  events: Event[];
+}
+
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'tout' | 'semaine' | 'mois'>('tout');
   const [selectedCategory, setSelectedCategory] = useState<string>('tout');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedEventType, setSelectedEventType] = useState<string>('');
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    type: 'rendez-vous' as Event['type'],
-    date: '',
-    startTime: '',
-    endTime: '',
-    location: '',
-    description: '',
-    category: 'siege' as Event['category']
+
+  // États pour les différents modals
+  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
+  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
+  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+
+  // États pour les formulaires spécifiques
+  const [newTournage, setNewTournage] = useState({
+    establishmentName: '',
+    shootingDate: '',
+    publicationDate: '',
+    photographers: false,
+    videographers: false
+  });
+
+  const [newPublication, setNewPublication] = useState({
+    categoryName: '',
+    establishmentName: '',
+    publicationDate: '',
+    shootingDate: '',
+    winner: '',
+    drawCompleted: false
+  });
+
+  const [newRdv, setNewRdv] = useState({
+    categoryName: '',
+    establishmentName: '',
+    appointmentType: '',
+    appointmentDate: ''
   });
 
   const fetchEvents = async () => {
@@ -91,7 +117,11 @@ export default function AgendaPage() {
   const handlePreviousMonth = () => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() - 1);
+      if (view === 'semaine') {
+        newDate.setDate(prev.getDate() - 7);
+      } else {
+        newDate.setMonth(prev.getMonth() - 1);
+      }
       return newDate;
     });
   };
@@ -99,36 +129,128 @@ export default function AgendaPage() {
   const handleNextMonth = () => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + 1);
+      if (view === 'semaine') {
+        newDate.setDate(prev.getDate() + 7);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
       return newDate;
     });
   };
 
-  const handleAddEvent = async () => {
+
+
+  const handleAddTournage = async () => {
     try {
+      const tournageEvent = {
+        title: `Tournage - ${newTournage.establishmentName}`,
+        type: 'tournage' as Event['type'],
+        date: newTournage.shootingDate,
+        startTime: '09:00',
+        endTime: '17:00',
+        location: newTournage.establishmentName,
+        description: `Tournage avec ${newTournage.photographers ? 'photographe' : ''}${newTournage.photographers && newTournage.videographers ? ' et ' : ''}${newTournage.videographers ? 'vidéaste' : ''}`,
+        category: 'siege' as Event['category']
+      };
+
       const response = await fetch('/api/agenda', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newEvent),
+        body: JSON.stringify(tournageEvent),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout de l\'événement');
+        throw new Error('Erreur lors de l\'ajout du tournage');
       }
 
-      setNewEvent({
-        title: '',
-        type: 'rendez-vous',
-        date: '',
-        startTime: '',
-        endTime: '',
-        location: '',
-        description: '',
-        category: 'siege'
+      setNewTournage({
+        establishmentName: '',
+        shootingDate: '',
+        publicationDate: '',
+        photographers: false,
+        videographers: false
       });
-      setIsAddModalOpen(false);
+      setIsTournageModalOpen(false);
+      fetchEvents();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  };
+
+  const handleAddPublication = async () => {
+    try {
+      const publicationEvent = {
+        title: `Publication - ${newPublication.establishmentName}`,
+        type: 'publication' as Event['type'],
+        date: newPublication.publicationDate,
+        startTime: '09:00',
+        endTime: '10:00',
+        location: newPublication.establishmentName,
+        description: `Publication ${newPublication.categoryName} - Gagnant: ${newPublication.winner || 'À déterminer'} - Tirage: ${newPublication.drawCompleted ? 'Effectué' : 'En attente'}`,
+        category: 'siege' as Event['category']
+      };
+
+      const response = await fetch('/api/agenda', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(publicationEvent),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'ajout de la publication');
+      }
+
+      setNewPublication({
+        categoryName: '',
+        establishmentName: '',
+        publicationDate: '',
+        shootingDate: '',
+        winner: '',
+        drawCompleted: false
+      });
+      setIsPublicationModalOpen(false);
+      fetchEvents();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  };
+
+  const handleAddRdv = async () => {
+    try {
+      const rdvEvent = {
+        title: `RDV - ${newRdv.establishmentName}`,
+        type: 'rendez-vous' as Event['type'],
+        date: newRdv.appointmentDate,
+        startTime: '09:00',
+        endTime: '10:00',
+        location: newRdv.establishmentName,
+        description: `Rendez-vous ${newRdv.appointmentType} - Catégorie: ${newRdv.categoryName}`,
+        category: 'siege' as Event['category']
+      };
+
+      const response = await fetch('/api/agenda', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(rdvEvent),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'ajout du rendez-vous');
+      }
+
+      setNewRdv({
+        categoryName: '',
+        establishmentName: '',
+        appointmentType: '',
+        appointmentDate: ''
+      });
+      setIsRdvModalOpen(false);
       fetchEvents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -173,6 +295,27 @@ export default function AgendaPage() {
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  const formatWeekRange = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay() + 1);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    
+    if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+      return `${startOfWeek.getDate()} - ${endOfWeek.getDate()} ${months[startOfWeek.getMonth()]} ${startOfWeek.getFullYear()}`;
+    } else if (startOfWeek.getFullYear() === endOfWeek.getFullYear()) {
+      return `${startOfWeek.getDate()} ${months[startOfWeek.getMonth()]} - ${endOfWeek.getDate()} ${months[endOfWeek.getMonth()]} ${startOfWeek.getFullYear()}`;
+    } else {
+      return `${startOfWeek.getDate()} ${months[startOfWeek.getMonth()]} ${startOfWeek.getFullYear()} - ${endOfWeek.getDate()} ${months[endOfWeek.getMonth()]} ${endOfWeek.getFullYear()}`;
+    }
+  };
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -202,6 +345,34 @@ export default function AgendaPage() {
     }
     
     return days;
+  };
+
+  const getWeekDays = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay() + 1);
+    
+    const weekDays: WeekDay[] = [];
+    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(startOfWeek);
+      currentDate.setDate(startOfWeek.getDate() + i);
+      
+      const dayEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.toDateString() === currentDate.toDateString();
+      });
+
+      weekDays.push({
+        date: currentDate,
+        dayName: dayNames[i],
+        dayNumber: currentDate.getDate(),
+        isToday: currentDate.toDateString() === new Date().toDateString(),
+        events: dayEvents
+      });
+    }
+    
+    return weekDays;
   };
 
   const renderCalendarView = () => {
@@ -258,6 +429,76 @@ export default function AgendaPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekView = () => {
+    const weekDays = getWeekDays(currentDate);
+    const timeSlots = Array.from({ length: 13 }, (_, i) => i + 6); // 6h à 18h
+
+    return (
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[800px]">
+          {/* En-têtes des jours */}
+          <div className="grid grid-cols-8 gap-1 mb-2">
+            <div className="p-2 text-center font-medium text-gray-600 text-sm">
+              Heure
+            </div>
+            {weekDays.map(day => (
+              <div key={day.date.toISOString()} className="p-2 text-center font-medium text-gray-600 text-sm">
+                <div className="font-bold">{day.dayName}</div>
+                <div className={`text-lg ${day.isToday ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
+                  {day.dayNumber}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Grille horaire */}
+          <div className="grid grid-cols-8 gap-1">
+            {timeSlots.map(hour => (
+              <div key={hour} className="contents">
+                {/* Heure */}
+                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-200">
+                  {hour}:00
+                </div>
+                
+                {/* Cellules des jours */}
+                {weekDays.map(day => {
+                  const hourEvents = day.events.filter(event => {
+                    const eventStartHour = parseInt(event.startTime.split(':')[0]);
+                    return eventStartHour === hour;
+                  });
+
+                  return (
+                    <div
+                      key={`${day.date.toISOString()}-${hour}`}
+                      className={`min-h-16 p-1 border border-gray-200 relative ${
+                        day.isToday ? 'bg-red-50' : 'bg-white'
+                      }`}
+                    >
+                      {hourEvents.map(event => (
+                        <div
+                          key={event.id}
+                          className={`text-xs p-1 rounded mb-1 truncate ${
+                            event.type === 'rendez-vous' ? 'bg-blue-100 text-blue-800' :
+                            event.type === 'tournage' ? 'bg-pink-100 text-pink-800' :
+                            event.type === 'publication' ? 'bg-purple-100 text-purple-800' :
+                            'bg-orange-100 text-orange-800'
+                          }`}
+                          title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -360,7 +601,7 @@ export default function AgendaPage() {
                   <ChevronLeftIcon className="h-4 w-4" />
                 </Button>
                 <span className="text-lg font-semibold">
-                  {formatMonthYear(currentDate)}
+                  {view === 'semaine' ? formatWeekRange(currentDate) : formatMonthYear(currentDate)}
                 </span>
                 <Button
                   isIconOnly
@@ -376,30 +617,21 @@ export default function AgendaPage() {
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => {
-                  setSelectedEventType('rendez-vous');
-                  setIsAddModalOpen(true);
-                }}
+                onPress={() => setIsRdvModalOpen(true)}
               >
                 Créer un rendez-vous
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => {
-                  setSelectedEventType('tournage');
-                  setIsAddModalOpen(true);
-                }}
+                onPress={() => setIsTournageModalOpen(true)}
               >
                 Ajouter un tournage
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => {
-                  setSelectedEventType('publication');
-                  setIsAddModalOpen(true);
-                }}
+                onPress={() => setIsPublicationModalOpen(true)}
               >
                 Ajouter une publication
               </Button>
@@ -459,92 +691,197 @@ export default function AgendaPage() {
 
           {/* Contenu du calendrier */}
           <div className="mt-6">
-            {view === 'mois' ? renderCalendarView() : renderTimelineView()}
+            {view === 'mois' && renderCalendarView()}
+            {view === 'semaine' && renderWeekView()}
+            {view === 'tout' && renderTimelineView()}
           </div>
         </CardBody>
       </Card>
 
-      {/* Modal d'ajout d'événement */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+
+
+      {/* Modal Ajouter un tournage */}
+      <Modal isOpen={isTournageModalOpen} onOpenChange={setIsTournageModalOpen}>
         <ModalContent>
-          <ModalHeader>Ajouter un événement</ModalHeader>
+          <ModalHeader>Ajouter un tournage</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <Input
-                label="Titre"
-                placeholder="Titre de l'événement"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
+                label="Nom de l'établissement *"
+                placeholder="Nom de l'établissement"
+                value={newTournage.establishmentName}
+                onChange={(e) => setNewTournage(prev => ({ ...prev, establishmentName: e.target.value }))}
                 isRequired
               />
               
-              <Select
-                label="Type d'événement"
-                selectedKeys={[newEvent.type]}
-                onSelectionChange={(keys) => setNewEvent(prev => ({ ...prev, type: Array.from(keys)[0] as Event['type'] }))}
-              >
-                <SelectItem key="rendez-vous">Rendez-vous</SelectItem>
-                <SelectItem key="tournage">Tournage</SelectItem>
-                <SelectItem key="publication">Publication</SelectItem>
-                <SelectItem key="evenement">Événement</SelectItem>
-              </Select>
-              
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Date"
+                  label="Date du tournage *"
                   type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, date: e.target.value }))}
+                  value={newTournage.shootingDate}
+                  onChange={(e) => setNewTournage(prev => ({ ...prev, shootingDate: e.target.value }))}
                   isRequired
                 />
-                <Select
-                  label="Catégorie"
-                  selectedKeys={[newEvent.category]}
-                  onSelectionChange={(keys) => setNewEvent(prev => ({ ...prev, category: Array.from(keys)[0] as Event['category'] }))}
-                >
-                  <SelectItem key="siege">Siège</SelectItem>
-                  <SelectItem key="franchises">Franchisés</SelectItem>
-                  <SelectItem key="prestataires">Prestataires</SelectItem>
-                </Select>
+                <Input
+                  label="Date de la publication *"
+                  type="date"
+                  value={newTournage.publicationDate}
+                  onChange={(e) => setNewTournage(prev => ({ ...prev, publicationDate: e.target.value }))}
+                  isRequired
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Prestataires *</label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newTournage.photographers}
+                      onChange={(e) => setNewTournage(prev => ({ ...prev, photographers: e.target.checked }))}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Photographe</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newTournage.videographers}
+                      onChange={(e) => setNewTournage(prev => ({ ...prev, videographers: e.target.checked }))}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Vidéaste</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setIsTournageModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddTournage}>
+              Ajouter
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal Ajouter une publication */}
+      <Modal isOpen={isPublicationModalOpen} onOpenChange={setIsPublicationModalOpen}>
+        <ModalContent>
+          <ModalHeader>Ajouter une publication</ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Nom catégorie *"
+                  placeholder="FOOD"
+                  value={newPublication.categoryName}
+                  onChange={(e) => setNewPublication(prev => ({ ...prev, categoryName: e.target.value }))}
+                  isRequired
+                />
+                <Input
+                  label="Nom établissement *"
+                  placeholder="Nom de l'établissement"
+                  value={newPublication.establishmentName}
+                  onChange={(e) => setNewPublication(prev => ({ ...prev, establishmentName: e.target.value }))}
+                  isRequired
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Heure de début"
-                  type="time"
-                  value={newEvent.startTime}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, startTime: e.target.value }))}
+                  label="Date de la publication *"
+                  type="date"
+                  value={newPublication.publicationDate}
+                  onChange={(e) => setNewPublication(prev => ({ ...prev, publicationDate: e.target.value }))}
                   isRequired
                 />
                 <Input
-                  label="Heure de fin"
-                  type="time"
-                  value={newEvent.endTime}
-                  onChange={(e) => setNewEvent(prev => ({ ...prev, endTime: e.target.value }))}
+                  label="Date du tournage *"
+                  type="date"
+                  value={newPublication.shootingDate}
+                  onChange={(e) => setNewPublication(prev => ({ ...prev, shootingDate: e.target.value }))}
                   isRequired
                 />
               </div>
               
               <Input
-                label="Lieu"
-                placeholder="Lieu de l'événement"
-                value={newEvent.location}
-                onChange={(e) => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
+                label="Gagnant *"
+                placeholder="Nom Prénom"
+                value={newPublication.winner}
+                onChange={(e) => setNewPublication(prev => ({ ...prev, winner: e.target.value }))}
+                isRequired
+              />
+              
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Tirage au sort effectué</label>
+                <input
+                  type="checkbox"
+                  checked={newPublication.drawCompleted}
+                  onChange={(e) => setNewPublication(prev => ({ ...prev, drawCompleted: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setIsPublicationModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddPublication}>
+              Ajouter
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal Créer un rendez-vous */}
+      <Modal isOpen={isRdvModalOpen} onOpenChange={setIsRdvModalOpen}>
+        <ModalContent>
+          <ModalHeader>Créer un rendez-vous</ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Nom catégorie *"
+                  placeholder="FOOD"
+                  value={newRdv.categoryName}
+                  onChange={(e) => setNewRdv(prev => ({ ...prev, categoryName: e.target.value }))}
+                  isRequired
+                />
+                <Input
+                  label="Nom établissement *"
+                  placeholder="Nom de l'établissement"
+                  value={newRdv.establishmentName}
+                  onChange={(e) => setNewRdv(prev => ({ ...prev, establishmentName: e.target.value }))}
+                  isRequired
+                />
+              </div>
+              
+              <Input
+                label="Type de rendez-vous *"
+                placeholder="Fidélisation"
+                value={newRdv.appointmentType}
+                onChange={(e) => setNewRdv(prev => ({ ...prev, appointmentType: e.target.value }))}
+                isRequired
               />
               
               <Input
-                label="Description"
-                placeholder="Description de l'événement"
-                value={newEvent.description}
-                onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
+                label="Date du rendez-vous *"
+                type="date"
+                value={newRdv.appointmentDate}
+                onChange={(e) => setNewRdv(prev => ({ ...prev, appointmentDate: e.target.value }))}
+                isRequired
               />
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
+            <Button variant="light" onPress={() => setIsRdvModalOpen(false)}>
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddEvent}>
+            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddRdv}>
               Ajouter
             </Button>
           </ModalFooter>

@@ -6,7 +6,11 @@ import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Tabs, Tab } from '@heroui/tabs';
 import { Avatar } from '@heroui/avatar';
-import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
+import { Chip } from '@heroui/chip';
+import { Tooltip } from '@heroui/tooltip';
+import { Pagination } from '@heroui/pagination';
+import { MagnifyingGlassIcon, Bars3Icon, PencilIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 
 interface TeamMember {
@@ -18,31 +22,162 @@ interface TeamMember {
     category: 'siege' | 'franchise' | 'prestataire';
 }
 
+interface AdminTeamMember {
+    id: string;
+    city: string;
+    firstName: string;
+    lastName: string;
+    identifier: string;
+    password: string;
+    birthDate: string;
+    personalEmail: string;
+    franchiseEmail: string;
+}
+
+interface PaginationInfo {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+}
+
 export default function EquipePage() {
     const [members, setMembers] = useState<TeamMember[]>([]);
+    const [adminMembers, setAdminMembers] = useState<AdminTeamMember[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('tout');
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+    const [pagination, setPagination] = useState<PaginationInfo>({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10
+    });
+
+    // Données d'exemple pour la vue tableau (admin)
+    const mockAdminData: AdminTeamMember[] = [
+        {
+            id: '1',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '2',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '3',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '4',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '5',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '6',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        },
+        {
+            id: '7',
+            city: 'Saint-Malo',
+            firstName: 'Sylvain',
+            lastName: 'Binouz',
+            identifier: 's.binouz',
+            password: '75QCmT87U8rfhc',
+            birthDate: '04.04.1998',
+            personalEmail: 'sylvain.binouz@gmail.com',
+            franchiseEmail: 'saint-malo@epicu.fr'
+        }
+    ];
 
     const fetchMembers = async () => {
         try {
             setLoading(true);
 
-            const params = new URLSearchParams({
-                category: selectedCategory,
-                search: searchTerm,
-                page: '1',
-                limit: '35'
-            });
+            if (viewMode === 'grid') {
+                const params = new URLSearchParams({
+                    category: selectedCategory,
+                    search: searchTerm,
+                    page: '1',
+                    limit: '35'
+                });
 
-            const response = await fetch(`/api/equipe?${params}`);
+                const response = await fetch(`/api/equipe?${params}`);
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des membres de l\'équipe');
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la récupération des membres de l\'équipe');
+                }
+
+                const data = await response.json();
+                setMembers(data.members);
+            } else {
+                // Simulation d'un appel API pour la vue tableau
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Filtrer les données selon le terme de recherche
+                const filteredData = mockAdminData.filter(member => 
+                    member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    member.identifier.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                setAdminMembers(filteredData);
+                
+                // Mettre à jour la pagination
+                setPagination(prev => ({
+                    ...prev,
+                    totalItems: filteredData.length,
+                    totalPages: Math.ceil(filteredData.length / prev.itemsPerPage),
+                    currentPage: 1
+                }));
             }
-
-            const data = await response.json();
-            setMembers(data.members);
         } catch (err) {
             console.error('Erreur:', err);
         } finally {
@@ -52,7 +187,7 @@ export default function EquipePage() {
 
     useEffect(() => {
         fetchMembers();
-    }, [selectedCategory, searchTerm]);
+    }, [selectedCategory, searchTerm, viewMode]);
 
 
 
@@ -62,6 +197,15 @@ export default function EquipePage() {
 
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
+    };
+
+    const handleViewModeToggle = () => {
+        setViewMode(viewMode === 'grid' ? 'table' : 'grid');
+    };
+
+    const handleEdit = (memberId: string) => {
+        console.log('Modifier le membre:', memberId);
+        // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
     };
 
     if (loading) {
@@ -84,22 +228,30 @@ export default function EquipePage() {
                 <CardBody className="p-6">
 
 
-                    {/* Onglets de filtrage et recherche sur la même ligne */}
+                    {/* Header avec onglets, recherche et bouton de vue */}
                     <div className="flex justify-between items-center mb-6">
-                        <Tabs
-                            selectedKey={selectedCategory}
-                            onSelectionChange={(key) => handleCategoryChange(key as string)}
-                            className="w-full"
-                            variant='underlined'
-                            classNames={{
-                                cursor: "w-[50px] left-[12px] h-1",
-                            }}
-                        >
-                            <Tab key="tout" title="Tout" />
-                            <Tab key="siege" title="Siège" />
-                            <Tab key="franchise" title="Franchisés" />
-                            <Tab key="prestataire" title="Prestataires" />
-                        </Tabs>
+                        {viewMode === 'grid' ? (
+                            <Tabs
+                                selectedKey={selectedCategory}
+                                onSelectionChange={(key) => handleCategoryChange(key as string)}
+                                className="w-full"
+                                variant='underlined'
+                                classNames={{
+                                    cursor: "w-[50px] left-[12px] h-1",
+                                }}
+                            >
+                                <Tab key="tout" title="Tout" />
+                                <Tab key="siege" title="Siège" />
+                                <Tab key="franchise" title="Franchisés" />
+                                <Tab key="prestataire" title="Prestataires" />
+                            </Tabs>
+                        ) : (
+                            <div className="w-full">
+                                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                    Gestion des membres
+                                </h2>
+                            </div>
+                        )}
 
                         <div className="flex items-center gap-4">
                             <div className="relative">
@@ -121,47 +273,153 @@ export default function EquipePage() {
                                 isIconOnly
                                 variant="light"
                                 className="text-gray-600 hover:text-gray-800"
+                                onClick={handleViewModeToggle}
                             >
                                 <Bars3Icon className="h-5 w-5" />
                             </Button>
                         </div>
                     </div>
 
-                    {/* Grille des membres de l'équipe */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
-                        {members.map((member, index) => (
-                            <div
-                                key={member.id}
-                                className="group relative flex flex-col items-center text-center cursor-pointer"
-                            >
-                                <Avatar
-                                    src={member.avatar}
-                                    name={member.name}
-                                    className="w-16 h-16 mb-3"
+                    {/* Contenu selon le mode de vue */}
+                    {viewMode === 'grid' ? (
+                        // Vue grille (vue originale)
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
+                            {members.map((member, index) => (
+                                <div
+                                    key={member.id}
+                                    className="group relative flex flex-col items-center text-center cursor-pointer"
+                                >
+                                    <Avatar
+                                        src={member.avatar}
+                                        name={member.name}
+                                        className="w-16 h-16 mb-3"
+                                        classNames={{
+                                            base: "ring-2 ring-gray-200 dark:ring-gray-700",
+                                            img: "object-cover"
+                                        }}
+                                    />
+                                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                                        {member.name}
+                                    </h3>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                        {member.role} {member.location}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        // Vue tableau (vue admin)
+                        <>
+                            <div className="overflow-x-auto">
+                                <Table aria-label="Tableau des membres de l'équipe">
+                                    <TableHeader>
+                                        <TableColumn>Modifier</TableColumn>
+                                        <TableColumn>Ville</TableColumn>
+                                        <TableColumn>Prénom</TableColumn>
+                                        <TableColumn>Nom</TableColumn>
+                                        <TableColumn>Identifiant</TableColumn>
+                                        <TableColumn>Mot de passe</TableColumn>
+                                        <TableColumn>Date de naissance</TableColumn>
+                                        <TableColumn>Mail perso</TableColumn>
+                                        <TableColumn>Mail franchisé</TableColumn>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {adminMembers.map((member) => (
+                                            <TableRow key={member.id}>
+                                                <TableCell>
+                                                    <Tooltip content="Modifier">
+                                                        <Button
+                                                            isIconOnly
+                                                            size="sm"
+                                                            variant="light"
+                                                            onClick={() => handleEdit(member.id)}
+                                                            className="text-gray-600 hover:text-gray-800"
+                                                        >
+                                                            <PencilIcon className="h-4 w-4" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip variant="flat" className="bg-gray-100 text-gray-800">
+                                                        {member.city}
+                                                    </Chip>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-gray-900 dark:text-gray-100">
+                                                        {member.firstName}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-gray-900 dark:text-gray-100">
+                                                        {member.lastName}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-gray-900 dark:text-gray-100">
+                                                        {member.identifier}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-gray-900 dark:text-gray-100 font-mono text-sm">
+                                                        {member.password}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-gray-900 dark:text-gray-100">
+                                                        {member.birthDate}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <a 
+                                                        href={`mailto:${member.personalEmail}`}
+                                                        className="text-blue-600 hover:text-blue-800 underline"
+                                                    >
+                                                        {member.personalEmail}
+                                                    </a>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <a 
+                                                        href={`mailto:${member.franchiseEmail}`}
+                                                        className="text-blue-600 hover:text-blue-800 underline"
+                                                    >
+                                                        {member.franchiseEmail}
+                                                    </a>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Pagination pour la vue tableau */}
+                            <div className="flex justify-center mt-6">
+                                <Pagination
+                                    total={pagination.totalPages}
+                                    page={pagination.currentPage}
+                                    onChange={(page) => setPagination(prev => ({ ...prev, currentPage: page }))}
+                                    showControls
                                     classNames={{
-                                        base: "ring-2 ring-gray-200 dark:ring-gray-700",
-                                        img: "object-cover"
+                                        wrapper: "gap-2",
+                                        item: "w-8 h-8 text-sm",
+                                        cursor: "bg-black text-white dark:bg-white dark:text-black font-bold"
                                     }}
                                 />
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
-                                    {member.name}
-                                </h3>
-                                <p className="text-xs text-gray-600 dark:text-gray-400">
-                                    {member.role} {member.location}
-                                </p>
                             </div>
-                        ))}
-                    </div>
+                        </>
+                    )}
 
                     {/* Informations sur le nombre de résultats */}
-                    {members.length > 0 && (
-                        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                            Affichage de {members.length} membre(s)
+                    {((viewMode === 'grid' && members.length > 0) || (viewMode === 'table' && adminMembers.length > 0)) && (
+                        <div className="text-center mt-4 text-sm text-gray-500">
+                            {viewMode === 'grid' 
+                                ? `Affichage de ${members.length} membre(s)`
+                                : `Affichage de ${adminMembers.length} membre(s) sur ${pagination.totalItems} au total`
+                            }
                         </div>
                     )}
 
                     {/* Message si aucun résultat */}
-                    {members.length === 0 && searchTerm && (
+                    {((viewMode === 'grid' && members.length === 0) || (viewMode === 'table' && adminMembers.length === 0)) && searchTerm && (
                         <div className="text-center py-12">
                             <div className="text-gray-500 dark:text-gray-400">
                                 Aucun membre trouvé pour "{searchTerm}"

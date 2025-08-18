@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   ModalContent,
@@ -18,6 +18,17 @@ interface HelpModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface UserProfile {
+  id: string;
+  identifier: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: string;
+  avatar?: string;
+}
+
 export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   const [formData, setFormData] = useState({
     objet: '',
@@ -25,31 +36,58 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // Récupérer le profil utilisateur au chargement
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/profil?section=profile');
+        if (response.ok) {
+          const profile = await response.json();
+          setUserProfile(profile);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du profil:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchProfile();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
-    if (!formData.objet.trim()) {
+    if (!formData.objet.trim() || !userProfile) {
       return;
     }
 
     setIsSubmitting(true);
     
     try {
+      const emailData = {
+        objet: formData.objet,
+        commentaires: formData.commentaires,
+        expediteur: userProfile.email,
+        destinataire: 'webmaster@epicu.fr'
+      };
+
       const response = await fetch('/api/help', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(emailData),
       });
 
       if (response.ok) {
         setIsSubmitted(true);
-        // Reset form after 2 seconds and close modal
+        // Reset form after 3 seconds and close modal
         setTimeout(() => {
           setFormData({ objet: '', commentaires: '' });
           setIsSubmitted(false);
           onOpenChange(false);
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi de la demande d\'aide:', error);
@@ -98,17 +136,16 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         <ModalBody className="py-6">
           {isSubmitted ? (
             <div className="text-center py-8">
-              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-lg">
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-black mb-2">
+                    Merci pour ta demande !
+                  </h3>
+                  <p className="text-base text-black font-normal">
+                    Notre équipe revient vers toi très vite ! 🚀
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Demande envoyée !
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Votre demande d'aide a été transmise. Nous vous répondrons dans les plus brefs délais.
-              </p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -166,7 +203,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               onPress={handleSubmit}
               isLoading={isSubmitting}
-              disabled={!formData.objet.trim() || isSubmitting}
+              disabled={!formData.objet.trim() || isSubmitting || !userProfile}
             >
               {isSubmitting ? 'Envoi...' : 'Envoyer'}
             </Button>
