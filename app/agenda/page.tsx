@@ -1,32 +1,36 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardBody } from '@heroui/card';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Select, SelectItem } from '@heroui/select';
-import { Chip } from '@heroui/chip';
-import { 
-  ChevronLeftIcon, 
-  ChevronRightIcon, 
-  PlusIcon, 
-  MagnifyingGlassIcon,
-  CalendarIcon,
-  Bars3Icon
-} from '@heroicons/react/24/outline';
-import { Spinner } from '@heroui/spinner';
+import { useState, useEffect } from "react";
+import { Card, CardBody } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
+import { Select, SelectItem } from "@heroui/select";
+import { Chip } from "@heroui/chip";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  Bars3Icon,
+} from "@heroicons/react/24/outline";
+import { Spinner } from "@heroui/spinner";
 
 interface Event {
   id: string;
   title: string;
-  type: 'rendez-vous' | 'tournage' | 'publication' | 'evenement';
+  type: "rendez-vous" | "tournage" | "publication" | "evenement";
   date: string;
   startTime: string;
   endTime: string;
   location?: string;
   description?: string;
-  category: 'siege' | 'franchises' | 'prestataires';
+  category: "siege" | "franchises" | "prestataires";
 }
 
 interface CalendarDay {
@@ -47,8 +51,8 @@ interface WeekDay {
 
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'tout' | 'semaine' | 'mois'>('tout');
-  const [selectedCategory, setSelectedCategory] = useState<string>('tout');
+  const [view, setView] = useState<"tout" | "semaine" | "mois">("tout");
+  const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,51 +64,52 @@ export default function AgendaPage() {
 
   // États pour les formulaires spécifiques
   const [newTournage, setNewTournage] = useState({
-    establishmentName: '',
-    shootingDate: '',
-    publicationDate: '',
+    establishmentName: "",
+    shootingDate: "",
+    publicationDate: "",
     photographers: false,
-    videographers: false
+    videographers: false,
   });
 
   const [newPublication, setNewPublication] = useState({
-    categoryName: '',
-    establishmentName: '',
-    publicationDate: '',
-    shootingDate: '',
-    winner: '',
-    drawCompleted: false
+    categoryName: "",
+    establishmentName: "",
+    publicationDate: "",
+    shootingDate: "",
+    winner: "",
+    drawCompleted: false,
   });
 
   const [newRdv, setNewRdv] = useState({
-    categoryName: '',
-    establishmentName: '',
-    appointmentType: '',
-    appointmentDate: ''
+    categoryName: "",
+    establishmentName: "",
+    appointmentType: "",
+    appointmentDate: "",
   });
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
         month: (currentDate.getMonth() + 1).toString(),
         year: currentDate.getFullYear().toString(),
         view,
-        category: selectedCategory
+        category: selectedCategory,
       });
 
       const response = await fetch(`/api/agenda?${params}`);
-      
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des événements');
+        throw new Error("Erreur lors de la récupération des événements");
       }
 
       const data = await response.json();
+
       setEvents(data.events);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
     }
@@ -115,67 +120,69 @@ export default function AgendaPage() {
   }, [currentDate, view, selectedCategory]);
 
   const handlePreviousMonth = () => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
-      if (view === 'semaine') {
+
+      if (view === "semaine") {
         newDate.setDate(prev.getDate() - 7);
       } else {
         newDate.setMonth(prev.getMonth() - 1);
       }
+
       return newDate;
     });
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
-      if (view === 'semaine') {
+
+      if (view === "semaine") {
         newDate.setDate(prev.getDate() + 7);
       } else {
         newDate.setMonth(prev.getMonth() + 1);
       }
+
       return newDate;
     });
   };
-
-
 
   const handleAddTournage = async () => {
     try {
       const tournageEvent = {
         title: `Tournage - ${newTournage.establishmentName}`,
-        type: 'tournage' as Event['type'],
+        type: "tournage" as Event["type"],
         date: newTournage.shootingDate,
-        startTime: '09:00',
-        endTime: '17:00',
+        startTime: "09:00",
+        endTime: "17:00",
         location: newTournage.establishmentName,
-        description: `Tournage avec ${newTournage.photographers ? 'photographe' : ''}${newTournage.photographers && newTournage.videographers ? ' et ' : ''}${newTournage.videographers ? 'vidéaste' : ''}`,
-        category: 'siege' as Event['category']
+        description: `Tournage avec ${newTournage.photographers ? "photographe" : ""}${newTournage.photographers && newTournage.videographers ? " et " : ""}${newTournage.videographers ? "vidéaste" : ""}`,
+        category: "siege" as Event["category"],
       };
 
-      const response = await fetch('/api/agenda', {
-        method: 'POST',
+      const response = await fetch("/api/agenda", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(tournageEvent),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout du tournage');
+        throw new Error("Erreur lors de l'ajout du tournage");
       }
 
       setNewTournage({
-        establishmentName: '',
-        shootingDate: '',
-        publicationDate: '',
+        establishmentName: "",
+        shootingDate: "",
+        publicationDate: "",
         photographers: false,
-        videographers: false
+        videographers: false,
       });
       setIsTournageModalOpen(false);
       fetchEvents();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
@@ -183,39 +190,39 @@ export default function AgendaPage() {
     try {
       const publicationEvent = {
         title: `Publication - ${newPublication.establishmentName}`,
-        type: 'publication' as Event['type'],
+        type: "publication" as Event["type"],
         date: newPublication.publicationDate,
-        startTime: '09:00',
-        endTime: '10:00',
+        startTime: "09:00",
+        endTime: "10:00",
         location: newPublication.establishmentName,
-        description: `Publication ${newPublication.categoryName} - Gagnant: ${newPublication.winner || 'À déterminer'} - Tirage: ${newPublication.drawCompleted ? 'Effectué' : 'En attente'}`,
-        category: 'siege' as Event['category']
+        description: `Publication ${newPublication.categoryName} - Gagnant: ${newPublication.winner || "À déterminer"} - Tirage: ${newPublication.drawCompleted ? "Effectué" : "En attente"}`,
+        category: "siege" as Event["category"],
       };
 
-      const response = await fetch('/api/agenda', {
-        method: 'POST',
+      const response = await fetch("/api/agenda", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(publicationEvent),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout de la publication');
+        throw new Error("Erreur lors de l'ajout de la publication");
       }
 
       setNewPublication({
-        categoryName: '',
-        establishmentName: '',
-        publicationDate: '',
-        shootingDate: '',
-        winner: '',
-        drawCompleted: false
+        categoryName: "",
+        establishmentName: "",
+        publicationDate: "",
+        shootingDate: "",
+        winner: "",
+        drawCompleted: false,
       });
       setIsPublicationModalOpen(false);
       fetchEvents();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
@@ -223,65 +230,65 @@ export default function AgendaPage() {
     try {
       const rdvEvent = {
         title: `RDV - ${newRdv.establishmentName}`,
-        type: 'rendez-vous' as Event['type'],
+        type: "rendez-vous" as Event["type"],
         date: newRdv.appointmentDate,
-        startTime: '09:00',
-        endTime: '10:00',
+        startTime: "09:00",
+        endTime: "10:00",
         location: newRdv.establishmentName,
         description: `Rendez-vous ${newRdv.appointmentType} - Catégorie: ${newRdv.categoryName}`,
-        category: 'siege' as Event['category']
+        category: "siege" as Event["category"],
       };
 
-      const response = await fetch('/api/agenda', {
-        method: 'POST',
+      const response = await fetch("/api/agenda", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(rdvEvent),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout du rendez-vous');
+        throw new Error("Erreur lors de l'ajout du rendez-vous");
       }
 
       setNewRdv({
-        categoryName: '',
-        establishmentName: '',
-        appointmentType: '',
-        appointmentDate: ''
+        categoryName: "",
+        establishmentName: "",
+        appointmentType: "",
+        appointmentDate: "",
       });
       setIsRdvModalOpen(false);
       fetchEvents();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
-  const getEventTypeColor = (type: Event['type']) => {
+  const getEventTypeColor = (type: Event["type"]) => {
     switch (type) {
-      case 'rendez-vous':
-        return 'primary';
-      case 'tournage':
-        return 'secondary';
-      case 'publication':
-        return 'success';
-      case 'evenement':
-        return 'warning';
+      case "rendez-vous":
+        return "primary";
+      case "tournage":
+        return "secondary";
+      case "publication":
+        return "success";
+      case "evenement":
+        return "warning";
       default:
-        return 'default';
+        return "default";
     }
   };
 
-  const getEventTypeLabel = (type: Event['type']) => {
+  const getEventTypeLabel = (type: Event["type"]) => {
     switch (type) {
-      case 'rendez-vous':
-        return 'Rendez-vous';
-      case 'tournage':
-        return 'Tournage';
-      case 'publication':
-        return 'Publication';
-      case 'evenement':
-        return 'Événement';
+      case "rendez-vous":
+        return "Rendez-vous";
+      case "tournage":
+        return "Tournage";
+      case "publication":
+        return "Publication";
+      case "evenement":
+        return "Événement";
       default:
         return type;
     }
@@ -289,24 +296,47 @@ export default function AgendaPage() {
 
   const formatMonthYear = (date: Date) => {
     const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      "Janvier",
+      "Février",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juillet",
+      "Août",
+      "Septembre",
+      "Octobre",
+      "Novembre",
+      "Décembre",
     ];
+
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const formatWeekRange = (date: Date) => {
     const startOfWeek = new Date(date);
+
     startOfWeek.setDate(date.getDate() - date.getDay() + 1);
-    
+
     const endOfWeek = new Date(startOfWeek);
+
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
+
     const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      "Janvier",
+      "Février",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juillet",
+      "Août",
+      "Septembre",
+      "Octobre",
+      "Novembre",
+      "Décembre",
     ];
-    
+
     if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
       return `${startOfWeek.getDate()} - ${endOfWeek.getDate()} ${months[startOfWeek.getMonth()]} ${startOfWeek.getFullYear()}`;
     } else if (startOfWeek.getFullYear() === endOfWeek.getFullYear()) {
@@ -322,44 +352,57 @@ export default function AgendaPage() {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
+
     startDate.setDate(startDate.getDate() - firstDay.getDay() + 1);
-    
+
     const days: CalendarDay[] = [];
     const currentDate = new Date(startDate);
-    
+
     while (currentDate <= lastDay || days.length < 42) {
-      const dayEvents = events.filter(event => {
+      const dayEvents = events.filter((event) => {
         const eventDate = new Date(event.date);
+
         return eventDate.toDateString() === currentDate.toDateString();
       });
 
       days.push({
-        date: currentDate.toISOString().split('T')[0],
+        date: currentDate.toISOString().split("T")[0],
         dayNumber: currentDate.getDate(),
         isCurrentMonth: currentDate.getMonth() === month,
         isToday: currentDate.toDateString() === new Date().toDateString(),
-        events: dayEvents
+        events: dayEvents,
       });
-      
+
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     return days;
   };
 
   const getWeekDays = (date: Date) => {
     const startOfWeek = new Date(date);
+
     startOfWeek.setDate(date.getDate() - date.getDay() + 1);
-    
+
     const weekDays: WeekDay[] = [];
-    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-    
+    const dayNames = [
+      "Lundi",
+      "Mardi",
+      "Mercredi",
+      "Jeudi",
+      "Vendredi",
+      "Samedi",
+      "Dimanche",
+    ];
+
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startOfWeek);
+
       currentDate.setDate(startOfWeek.getDate() + i);
-      
-      const dayEvents = events.filter(event => {
+
+      const dayEvents = events.filter((event) => {
         const eventDate = new Date(event.date);
+
         return eventDate.toDateString() === currentDate.toDateString();
       });
 
@@ -368,53 +411,72 @@ export default function AgendaPage() {
         dayName: dayNames[i],
         dayNumber: currentDate.getDate(),
         isToday: currentDate.toDateString() === new Date().toDateString(),
-        events: dayEvents
+        events: dayEvents,
       });
     }
-    
+
     return weekDays;
   };
 
   const renderCalendarView = () => {
     const days = getDaysInMonth(currentDate);
-    const weekDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const weekDays = [
+      "Lundi",
+      "Mardi",
+      "Mercredi",
+      "Jeudi",
+      "Vendredi",
+      "Samedi",
+      "Dimanche",
+    ];
 
     return (
       <div className="w-full">
         {/* En-têtes des jours */}
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map(day => (
-            <div key={day} className="p-2 text-center font-medium text-gray-600 text-sm">
+          {weekDays.map((day) => (
+            <div
+              key={day}
+              className="p-2 text-center font-medium text-gray-600 text-sm"
+            >
               {day}
             </div>
           ))}
         </div>
-        
+
         {/* Grille du calendrier */}
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => (
             <div
               key={index}
               className={`min-h-24 p-2 border border-gray-200 ${
-                day.isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-              } ${day.isToday ? 'ring-2 ring-red-500' : ''}`}
+                day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+              } ${day.isToday ? "ring-2 ring-red-500" : ""}`}
             >
-              <div className={`text-sm font-medium ${
-                day.isToday ? 'text-red-600' : 
-                day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-              }`}>
+              <div
+                className={`text-sm font-medium ${
+                  day.isToday
+                    ? "text-red-600"
+                    : day.isCurrentMonth
+                      ? "text-gray-900"
+                      : "text-gray-400"
+                }`}
+              >
                 {day.dayNumber}
               </div>
-              
+
               <div className="mt-1 space-y-1">
-                {day.events.slice(0, 3).map(event => (
+                {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
                     className={`text-xs p-1 rounded truncate ${
-                      event.type === 'rendez-vous' ? 'bg-blue-100 text-blue-800' :
-                      event.type === 'tournage' ? 'bg-pink-100 text-pink-800' :
-                      event.type === 'publication' ? 'bg-purple-100 text-purple-800' :
-                      'bg-orange-100 text-orange-800'
+                      event.type === "rendez-vous"
+                        ? "bg-blue-100 text-blue-800"
+                        : event.type === "tournage"
+                          ? "bg-pink-100 text-pink-800"
+                          : event.type === "publication"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-orange-100 text-orange-800"
                     }`}
                     title={event.title}
                   >
@@ -446,29 +508,37 @@ export default function AgendaPage() {
             <div className="p-2 text-center font-medium text-gray-600 text-sm">
               Heure
             </div>
-            {weekDays.map(day => (
-              <div key={day.date.toISOString()} className="p-2 text-center font-medium text-gray-600 text-sm">
+            {weekDays.map((day) => (
+              <div
+                key={day.date.toISOString()}
+                className="p-2 text-center font-medium text-gray-600 text-sm"
+              >
                 <div className="font-bold">{day.dayName}</div>
-                <div className={`text-lg ${day.isToday ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
+                <div
+                  className={`text-lg ${day.isToday ? "text-red-600 font-bold" : "text-gray-900"}`}
+                >
                   {day.dayNumber}
                 </div>
               </div>
             ))}
           </div>
-          
+
           {/* Grille horaire */}
           <div className="grid grid-cols-8 gap-1">
-            {timeSlots.map(hour => (
+            {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
                 <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-200">
                   {hour}:00
                 </div>
-                
+
                 {/* Cellules des jours */}
-                {weekDays.map(day => {
-                  const hourEvents = day.events.filter(event => {
-                    const eventStartHour = parseInt(event.startTime.split(':')[0]);
+                {weekDays.map((day) => {
+                  const hourEvents = day.events.filter((event) => {
+                    const eventStartHour = parseInt(
+                      event.startTime.split(":")[0]
+                    );
+
                     return eventStartHour === hour;
                   });
 
@@ -476,17 +546,20 @@ export default function AgendaPage() {
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
                       className={`min-h-16 p-1 border border-gray-200 relative ${
-                        day.isToday ? 'bg-red-50' : 'bg-white'
+                        day.isToday ? "bg-red-50" : "bg-white"
                       }`}
                     >
-                      {hourEvents.map(event => (
+                      {hourEvents.map((event) => (
                         <div
                           key={event.id}
                           className={`text-xs p-1 rounded mb-1 truncate ${
-                            event.type === 'rendez-vous' ? 'bg-blue-100 text-blue-800' :
-                            event.type === 'tournage' ? 'bg-pink-100 text-pink-800' :
-                            event.type === 'publication' ? 'bg-purple-100 text-purple-800' :
-                            'bg-orange-100 text-orange-800'
+                            event.type === "rendez-vous"
+                              ? "bg-blue-100 text-blue-800"
+                              : event.type === "tournage"
+                                ? "bg-pink-100 text-pink-800"
+                                : event.type === "publication"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-orange-100 text-orange-800"
                           }`}
                           title={`${event.title} (${event.startTime} - ${event.endTime})`}
                         >
@@ -505,33 +578,36 @@ export default function AgendaPage() {
   };
 
   const renderTimelineView = () => {
-    const today = new Date();
-    const currentTime = today.getHours() + today.getMinutes() / 60;
-    
     return (
       <div className="w-full">
         <div className="space-y-4">
           {events
-            .filter(event => {
-              if (selectedCategory !== 'tout') {
+            .filter((event) => {
+              if (selectedCategory !== "tout") {
                 return event.category === selectedCategory;
               }
+
               return true;
             })
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(event => {
+            .sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
+            .map((event) => {
               const eventDate = new Date(event.date);
-              const formattedDate = eventDate.toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long'
+              const formattedDate = eventDate.toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
               });
-              
+
               return (
-                <div key={event.id} className="flex items-center space-x-4 p-3 bg-white rounded-lg border">
+                <div
+                  key={event.id}
+                  className="flex items-center space-x-4 p-3 bg-white rounded-lg border"
+                >
                   <div className="flex-shrink-0 w-20 text-sm text-gray-600">
                     {formattedDate}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <Chip
@@ -543,7 +619,7 @@ export default function AgendaPage() {
                       </Chip>
                       <span className="font-medium">{event.title}</span>
                     </div>
-                    
+
                     <div className="text-sm text-gray-500 mt-1">
                       {event.startTime} - {event.endTime}
                       {event.location && ` • ${event.location}`}
@@ -563,7 +639,7 @@ export default function AgendaPage() {
         <Card className="w-full">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" className="text-black dark:text-white" />
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
           </CardBody>
         </Card>
@@ -601,18 +677,16 @@ export default function AgendaPage() {
                   <ChevronLeftIcon className="h-4 w-4" />
                 </Button>
                 <span className="text-lg font-semibold">
-                  {view === 'semaine' ? formatWeekRange(currentDate) : formatMonthYear(currentDate)}
+                  {view === "semaine"
+                    ? formatWeekRange(currentDate)
+                    : formatMonthYear(currentDate)}
                 </span>
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={handleNextMonth}
-                >
+                <Button isIconOnly variant="light" onPress={handleNextMonth}>
                   <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
@@ -642,10 +716,12 @@ export default function AgendaPage() {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-4">
               <Select
-                placeholder="Catégorie"
                 className="w-48"
+                placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string)}
+                onSelectionChange={(keys) =>
+                  setSelectedCategory(Array.from(keys)[0] as string)
+                }
               >
                 <SelectItem key="tout">Tout</SelectItem>
                 <SelectItem key="siege">Siège</SelectItem>
@@ -653,37 +729,33 @@ export default function AgendaPage() {
                 <SelectItem key="prestataires">Prestataires</SelectItem>
               </Select>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Button
-                variant={view === 'tout' ? 'solid' : 'light'}
-                color={view === 'tout' ? 'primary' : 'default'}
+                color={view === "tout" ? "primary" : "default"}
                 size="sm"
-                onPress={() => setView('tout')}
+                variant={view === "tout" ? "solid" : "light"}
+                onPress={() => setView("tout")}
               >
                 Tout
               </Button>
               <Button
-                variant={view === 'semaine' ? 'solid' : 'light'}
-                color={view === 'semaine' ? 'primary' : 'default'}
+                color={view === "semaine" ? "primary" : "default"}
                 size="sm"
-                onPress={() => setView('semaine')}
+                variant={view === "semaine" ? "solid" : "light"}
+                onPress={() => setView("semaine")}
               >
                 Semaine
               </Button>
               <Button
-                variant={view === 'mois' ? 'solid' : 'light'}
-                color={view === 'mois' ? 'primary' : 'default'}
+                color={view === "mois" ? "primary" : "default"}
                 size="sm"
-                onPress={() => setView('mois')}
+                variant={view === "mois" ? "solid" : "light"}
+                onPress={() => setView("mois")}
               >
                 Mois
               </Button>
-              <Button
-                isIconOnly
-                variant="light"
-                size="sm"
-              >
+              <Button isIconOnly size="sm" variant="light">
                 <Bars3Icon className="h-4 w-4" />
               </Button>
             </div>
@@ -691,14 +763,12 @@ export default function AgendaPage() {
 
           {/* Contenu du calendrier */}
           <div className="mt-6">
-            {view === 'mois' && renderCalendarView()}
-            {view === 'semaine' && renderWeekView()}
-            {view === 'tout' && renderTimelineView()}
+            {view === "mois" && renderCalendarView()}
+            {view === "semaine" && renderWeekView()}
+            {view === "tout" && renderTimelineView()}
           </div>
         </CardBody>
       </Card>
-
-
 
       {/* Modal Ajouter un tournage */}
       <Modal isOpen={isTournageModalOpen} onOpenChange={setIsTournageModalOpen}>
@@ -707,48 +777,73 @@ export default function AgendaPage() {
           <ModalBody>
             <div className="space-y-4">
               <Input
+                isRequired
                 label="Nom de l'établissement *"
                 placeholder="Nom de l'établissement"
                 value={newTournage.establishmentName}
-                onChange={(e) => setNewTournage(prev => ({ ...prev, establishmentName: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    establishmentName: e.target.value,
+                  }))
+                }
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  isRequired
                   label="Date du tournage *"
                   type="date"
                   value={newTournage.shootingDate}
-                  onChange={(e) => setNewTournage(prev => ({ ...prev, shootingDate: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      shootingDate: e.target.value,
+                    }))
+                  }
                 />
                 <Input
+                  isRequired
                   label="Date de la publication *"
                   type="date"
                   value={newTournage.publicationDate}
-                  onChange={(e) => setNewTournage(prev => ({ ...prev, publicationDate: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      publicationDate: e.target.value,
+                    }))
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Prestataires *</label>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
                     <input
-                      type="checkbox"
                       checked={newTournage.photographers}
-                      onChange={(e) => setNewTournage(prev => ({ ...prev, photographers: e.target.checked }))}
                       className="rounded border-gray-300"
+                      type="checkbox"
+                      onChange={(e) =>
+                        setNewTournage((prev) => ({
+                          ...prev,
+                          photographers: e.target.checked,
+                        }))
+                      }
                     />
                     <span className="text-sm">Photographe</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
-                      type="checkbox"
                       checked={newTournage.videographers}
-                      onChange={(e) => setNewTournage(prev => ({ ...prev, videographers: e.target.checked }))}
                       className="rounded border-gray-300"
+                      type="checkbox"
+                      onChange={(e) =>
+                        setNewTournage((prev) => ({
+                          ...prev,
+                          videographers: e.target.checked,
+                        }))
+                      }
                     />
                     <span className="text-sm">Vidéaste</span>
                   </label>
@@ -757,10 +852,16 @@ export default function AgendaPage() {
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsTournageModalOpen(false)}>
+            <Button
+              variant="light"
+              onPress={() => setIsTournageModalOpen(false)}
+            >
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddTournage}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleAddTournage}
+            >
               Ajouter
             </Button>
           </ModalFooter>
@@ -768,69 +869,110 @@ export default function AgendaPage() {
       </Modal>
 
       {/* Modal Ajouter une publication */}
-      <Modal isOpen={isPublicationModalOpen} onOpenChange={setIsPublicationModalOpen}>
+      <Modal
+        isOpen={isPublicationModalOpen}
+        onOpenChange={setIsPublicationModalOpen}
+      >
         <ModalContent>
           <ModalHeader>Ajouter une publication</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  isRequired
                   label="Nom catégorie *"
                   placeholder="FOOD"
                   value={newPublication.categoryName}
-                  onChange={(e) => setNewPublication(prev => ({ ...prev, categoryName: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      categoryName: e.target.value,
+                    }))
+                  }
                 />
                 <Input
+                  isRequired
                   label="Nom établissement *"
                   placeholder="Nom de l'établissement"
                   value={newPublication.establishmentName}
-                  onChange={(e) => setNewPublication(prev => ({ ...prev, establishmentName: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      establishmentName: e.target.value,
+                    }))
+                  }
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  isRequired
                   label="Date de la publication *"
                   type="date"
                   value={newPublication.publicationDate}
-                  onChange={(e) => setNewPublication(prev => ({ ...prev, publicationDate: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      publicationDate: e.target.value,
+                    }))
+                  }
                 />
                 <Input
+                  isRequired
                   label="Date du tournage *"
                   type="date"
                   value={newPublication.shootingDate}
-                  onChange={(e) => setNewPublication(prev => ({ ...prev, shootingDate: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      shootingDate: e.target.value,
+                    }))
+                  }
                 />
               </div>
-              
+
               <Input
+                isRequired
                 label="Gagnant *"
                 placeholder="Nom Prénom"
                 value={newPublication.winner}
-                onChange={(e) => setNewPublication(prev => ({ ...prev, winner: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    winner: e.target.value,
+                  }))
+                }
               />
-              
+
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Tirage au sort effectué</label>
+                <label className="text-sm font-medium">
+                  Tirage au sort effectué
+                </label>
                 <input
-                  type="checkbox"
                   checked={newPublication.drawCompleted}
-                  onChange={(e) => setNewPublication(prev => ({ ...prev, drawCompleted: e.target.checked }))}
                   className="rounded border-gray-300"
+                  type="checkbox"
+                  onChange={(e) =>
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      drawCompleted: e.target.checked,
+                    }))
+                  }
                 />
               </div>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsPublicationModalOpen(false)}>
+            <Button
+              variant="light"
+              onPress={() => setIsPublicationModalOpen(false)}
+            >
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddPublication}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleAddPublication}
+            >
               Ajouter
             </Button>
           </ModalFooter>
@@ -845,35 +987,55 @@ export default function AgendaPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  isRequired
                   label="Nom catégorie *"
                   placeholder="FOOD"
                   value={newRdv.categoryName}
-                  onChange={(e) => setNewRdv(prev => ({ ...prev, categoryName: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewRdv((prev) => ({
+                      ...prev,
+                      categoryName: e.target.value,
+                    }))
+                  }
                 />
                 <Input
+                  isRequired
                   label="Nom établissement *"
                   placeholder="Nom de l'établissement"
                   value={newRdv.establishmentName}
-                  onChange={(e) => setNewRdv(prev => ({ ...prev, establishmentName: e.target.value }))}
-                  isRequired
+                  onChange={(e) =>
+                    setNewRdv((prev) => ({
+                      ...prev,
+                      establishmentName: e.target.value,
+                    }))
+                  }
                 />
               </div>
-              
+
               <Input
+                isRequired
                 label="Type de rendez-vous *"
                 placeholder="Fidélisation"
                 value={newRdv.appointmentType}
-                onChange={(e) => setNewRdv(prev => ({ ...prev, appointmentType: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    appointmentType: e.target.value,
+                  }))
+                }
               />
-              
+
               <Input
+                isRequired
                 label="Date du rendez-vous *"
                 type="date"
                 value={newRdv.appointmentDate}
-                onChange={(e) => setNewRdv(prev => ({ ...prev, appointmentDate: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    appointmentDate: e.target.value,
+                  }))
+                }
               />
             </div>
           </ModalBody>
@@ -881,7 +1043,10 @@ export default function AgendaPage() {
             <Button variant="light" onPress={() => setIsRdvModalOpen(false)}>
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddRdv}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleAddRdv}
+            >
               Ajouter
             </Button>
           </ModalFooter>
@@ -889,4 +1054,4 @@ export default function AgendaPage() {
       </Modal>
     </div>
   );
-} 
+}

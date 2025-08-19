@@ -1,25 +1,36 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardBody } from '@heroui/card';
-import { Input } from '@heroui/input';
-import { Button } from '@heroui/button';
-import { Select, SelectItem } from '@heroui/select';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
-import { Pagination } from '@heroui/pagination';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Textarea } from '@heroui/input';
-import { Checkbox } from '@heroui/checkbox';
-import { Chip } from '@heroui/chip';
-import { MagnifyingGlassIcon, PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Spinner } from '@heroui/spinner';
+import { useState, useEffect } from "react";
+import { Card, CardBody } from "@heroui/card";
+import { Input } from "@heroui/input";
+import { Button } from "@heroui/button";
+import { Select, SelectItem } from "@heroui/select";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@heroui/table";
+import { Pagination } from "@heroui/pagination";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
+import { Checkbox } from "@heroui/checkbox";
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Spinner } from "@heroui/spinner";
 
 interface Todo {
   id: string;
   titre: string;
   description: string;
-  priorite: 'basse' | 'moyenne' | 'haute' | 'urgente';
-  statut: 'a_faire' | 'en_cours' | 'terminee' | 'annulee';
+  priorite: "basse" | "moyenne" | "haute" | "urgente";
+  statut: "a_faire" | "en_cours" | "terminee" | "annulee";
   assigne: string;
   dateEcheance: string;
   dateCreation: string;
@@ -39,12 +50,12 @@ export default function TodoPage() {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 10
+    itemsPerPage: 10,
   });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatut, setSelectedStatut] = useState('');
-  const [sortField, setSortField] = useState<string>('');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatut, setSelectedStatut] = useState("");
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -52,9 +63,9 @@ export default function TodoPage() {
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
 
   const [newTodo, setNewTodo] = useState({
-    titre: '',
-    statut: 'a_faire' as Todo['statut'],
-    dateEcheance: ''
+    titre: "",
+    statut: "a_faire" as Todo["statut"],
+    dateEcheance: "",
   });
 
   const fetchTodos = async () => {
@@ -68,20 +79,21 @@ export default function TodoPage() {
         search: searchTerm,
         statut: selectedStatut,
         sortBy: sortField,
-        sortOrder: sortDirection
+        sortOrder: sortDirection,
       });
 
       const response = await fetch(`/api/todos?${params}`);
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des tâches');
+        throw new Error("Erreur lors de la récupération des tâches");
       }
 
       const data = await response.json();
+
       setTodos(data.todos);
       setPagination(data.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
     }
@@ -89,62 +101,66 @@ export default function TodoPage() {
 
   useEffect(() => {
     fetchTodos();
-  }, [pagination.currentPage, searchTerm, selectedStatut, sortField, sortDirection]);
+  }, [
+    pagination.currentPage,
+    searchTerm,
+    selectedStatut,
+    sortField,
+    sortDirection,
+  ]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleAddTodo = async () => {
     try {
-      const response = await fetch('/api/todos', {
-        method: 'POST',
+      const response = await fetch("/api/todos", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newTodo),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout de la tâche');
+        throw new Error("Erreur lors de l'ajout de la tâche");
       }
 
       // Réinitialiser le formulaire et fermer le modal
       setNewTodo({
-        titre: '',
-        statut: 'a_faire',
-        dateEcheance: ''
+        titre: "",
+        statut: "a_faire",
+        dateEcheance: "",
       });
       setIsAddModalOpen(false);
 
       // Recharger les tâches
       fetchTodos();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
-
-
 
   const handleDeleteTodo = async (todoId: string) => {
     try {
       const response = await fetch(`/api/todos/${todoId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la suppression de la tâche');
+        throw new Error("Erreur lors de la suppression de la tâche");
       }
 
       // Recharger les tâches
       fetchTodos();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
@@ -155,7 +171,7 @@ export default function TodoPage() {
 
   const confirmDelete = async () => {
     if (!todoToDelete) return;
-    
+
     try {
       await handleDeleteTodo(todoToDelete.id);
       setIsDeleteModalOpen(false);
@@ -165,57 +181,57 @@ export default function TodoPage() {
     }
   };
 
-  const handleStatusChange = async (todoId: string, newStatus: Todo['statut']) => {
+  const handleStatusChange = async (
+    todoId: string,
+    newStatus: Todo["statut"]
+  ) => {
     try {
       // Optimistic update - mettre à jour l'état local immédiatement
-      setTodos(prevTodos => 
-        prevTodos.map(todo => 
-          todo.id === todoId 
-            ? { ...todo, statut: newStatus }
-            : todo
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) =>
+          todo.id === todoId ? { ...todo, statut: newStatus } : todo
         )
       );
 
       const response = await fetch(`/api/todos/${todoId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ statut: newStatus }),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la modification du statut');
+        throw new Error("Erreur lors de la modification du statut");
       }
 
       // Pas besoin de recharger toutes les tâches, l'état local est déjà à jour
     } catch (err) {
       // En cas d'erreur, remettre l'état précédent
-      setTodos(prevTodos => 
-        prevTodos.map(todo => 
-          todo.id === todoId 
-            ? { ...todo, statut: todo.statut === 'terminee' ? 'a_faire' : 'terminee' }
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) =>
+          todo.id === todoId
+            ? {
+                ...todo,
+                statut: todo.statut === "terminee" ? "a_faire" : "terminee",
+              }
             : todo
         )
       );
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
-
-
-
-
   const getStatutLabel = (statut: string) => {
     switch (statut) {
-      case 'a_faire':
-        return 'Pas commencé';
-      case 'en_cours':
-        return 'En cours';
-      case 'terminee':
-        return 'Validée';
-      case 'annulee':
-        return 'Annulée';
+      case "a_faire":
+        return "Pas commencé";
+      case "en_cours":
+        return "En cours";
+      case "terminee":
+        return "Validée";
+      case "annulee":
+        return "Annulée";
       default:
         return statut;
     }
@@ -223,15 +239,15 @@ export default function TodoPage() {
 
   const getStatutBadgeClass = (statut: string) => {
     switch (statut) {
-      case 'terminee':
-        return 'bg-green-100 text-green-800';
-      case 'en_cours':
-        return 'bg-blue-100 text-blue-800';
-      case 'annulee':
-        return 'bg-red-100 text-red-800';
-      case 'a_faire':
+      case "terminee":
+        return "bg-green-100 text-green-800";
+      case "en_cours":
+        return "bg-blue-100 text-blue-800";
+      case "annulee":
+        return "bg-red-100 text-red-800";
+      case "a_faire":
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -241,7 +257,7 @@ export default function TodoPage() {
         <Card className="w-full">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" className="text-black dark:text-white" />
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
           </CardBody>
         </Card>
@@ -271,10 +287,12 @@ export default function TodoPage() {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
               <Select
-                placeholder="État"
                 className="w-48"
+                placeholder="État"
                 selectedKeys={selectedStatut ? [selectedStatut] : []}
-                onSelectionChange={(keys) => setSelectedStatut(Array.from(keys)[0] as string)}
+                onSelectionChange={(keys) =>
+                  setSelectedStatut(Array.from(keys)[0] as string)
+                }
               >
                 <SelectItem key="tous">Tous</SelectItem>
                 <SelectItem key="a_faire">Pas commencé</SelectItem>
@@ -282,8 +300,6 @@ export default function TodoPage() {
                 <SelectItem key="terminee">Validée</SelectItem>
                 <SelectItem key="annulee">Annulée</SelectItem>
               </Select>
-
-
             </div>
 
             <div className="relative">
@@ -293,7 +309,8 @@ export default function TodoPage() {
                 onPress={() => setIsAddModalOpen(true)}
               >
                 Ajouter une tâche
-              </Button></div>
+              </Button>
+            </div>
           </div>
 
           {/* Table */}
@@ -301,42 +318,42 @@ export default function TodoPage() {
             <TableHeader>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('titre')}
+                  variant="light"
+                  onPress={() => handleSort("titre")}
                 >
                   Tâches
-                  {sortField === 'titre' && (
+                  {sortField === "titre" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('dateEcheance')}
+                  variant="light"
+                  onPress={() => handleSort("dateEcheance")}
                 >
                   Deadline
-                  {sortField === 'dateEcheance' && (
+                  {sortField === "dateEcheance" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('statut')}
+                  variant="light"
+                  onPress={() => handleSort("statut")}
                 >
                   État
-                  {sortField === 'statut' && (
+                  {sortField === "statut" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
@@ -349,29 +366,32 @@ export default function TodoPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Checkbox
-                        isSelected={todo.statut === 'terminee'}
+                        className="text-black"
+                        isDisabled={todo.statut === "annulee"}
+                        isSelected={todo.statut === "terminee"}
                         onValueChange={(checked) => {
-                          const newStatus = checked ? 'terminee' : 'a_faire';
+                          const newStatus = checked ? "terminee" : "a_faire";
+
                           handleStatusChange(todo.id, newStatus);
                         }}
-                        className="text-black"
-                        isDisabled={todo.statut === 'annulee'}
                       />
                       <span>{todo.titre}</span>
                     </div>
                   </TableCell>
                   <TableCell>{todo.dateEcheance}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutBadgeClass(todo.statut)}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutBadgeClass(todo.statut)}`}
+                    >
                       {getStatutLabel(todo.statut)}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Button
                       isIconOnly
-                      variant="light"
-                      size="sm"
                       color="danger"
+                      size="sm"
+                      variant="light"
                       onPress={() => openDeleteConfirmation(todo)}
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -385,21 +405,25 @@ export default function TodoPage() {
           {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
-              total={pagination.totalPages}
-              page={pagination.currentPage}
-              onChange={(page) => setPagination(prev => ({ ...prev, currentPage: page }))}
               showControls
               classNames={{
                 wrapper: "gap-2",
                 item: "w-8 h-8 text-sm",
-                cursor: "bg-black text-white dark:bg-white dark:text-black font-bold"
+                cursor:
+                  "bg-black text-white dark:bg-white dark:text-black font-bold",
               }}
+              page={pagination.currentPage}
+              total={pagination.totalPages}
+              onChange={(page) =>
+                setPagination((prev) => ({ ...prev, currentPage: page }))
+              }
             />
           </div>
 
           {/* Info sur le nombre total d'éléments */}
           <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {todos.length} tâche(s) sur {pagination.totalItems} au total
+            Affichage de {todos.length} tâche(s) sur {pagination.totalItems} au
+            total
           </div>
         </CardBody>
       </Card>
@@ -411,22 +435,38 @@ export default function TodoPage() {
           <ModalBody>
             <div className="space-y-4">
               <Input
+                isRequired
                 label="Titre"
                 placeholder="Titre de la tâche"
                 value={newTodo.titre}
-                onChange={(e) => setNewTodo(prev => ({ ...prev, titre: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewTodo((prev) => ({ ...prev, titre: e.target.value }))
+                }
               />
               <Input
                 label="Date d'échéance"
                 type="date"
                 value={newTodo.dateEcheance}
-                onChange={(e) => setNewTodo(prev => ({ ...prev, dateEcheance: e.target.value }))}
+                onChange={(e) =>
+                  setNewTodo((prev) => ({
+                    ...prev,
+                    dateEcheance: e.target.value,
+                  }))
+                }
               />
               <Select
                 label="État"
                 selectedKeys={[newTodo.statut]}
-                onSelectionChange={(keys) => setNewTodo(prev => ({ ...prev, statut: Array.from(keys)[0] as 'a_faire' | 'en_cours' | 'terminee' | 'annulee' }))}
+                onSelectionChange={(keys) =>
+                  setNewTodo((prev) => ({
+                    ...prev,
+                    statut: Array.from(keys)[0] as
+                      | "a_faire"
+                      | "en_cours"
+                      | "terminee"
+                      | "annulee",
+                  }))
+                }
               >
                 <SelectItem key="a_faire">Pas commencé</SelectItem>
                 <SelectItem key="en_cours">En cours</SelectItem>
@@ -439,7 +479,10 @@ export default function TodoPage() {
             <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddTodo}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleAddTodo}
+            >
               Ajouter
             </Button>
           </ModalFooter>
@@ -452,7 +495,8 @@ export default function TodoPage() {
           <ModalHeader>Confirmer la suppression</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
-              Êtes-vous sûr de vouloir supprimer la tâche <strong>"{todoToDelete?.titre}"</strong> ?
+              Êtes-vous sûr de vouloir supprimer la tâche{" "}
+              <strong>&quot;{todoToDelete?.titre}&quot;</strong> ?
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Cette action est irréversible.
@@ -462,16 +506,12 @@ export default function TodoPage() {
             <Button variant="light" onPress={() => setIsDeleteModalOpen(false)}>
               Annuler
             </Button>
-            <Button 
-              color="danger" 
-              onPress={confirmDelete}
-            >
+            <Button color="danger" onPress={confirmDelete}>
               Supprimer
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
-
     </div>
   );
-} 
+}

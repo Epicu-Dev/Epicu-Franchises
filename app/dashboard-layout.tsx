@@ -20,11 +20,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const accessToken = localStorage.getItem('accessToken');
     const userEmail = localStorage.getItem('userEmail');
 
-    // if (!accessToken || !isRefreshTokenValid()) {
-    //   router.push('/login');
-    // } else {
-    //   setEmail(userEmail);
-    // }
+    if (!accessToken || !isRefreshTokenValid()) {
+      router.push('/login');
+    } else {
+      setEmail(userEmail);
+    }
   }, [router]);
 
   const handleLogout = async () => {
@@ -49,12 +49,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex h-screen bg-page-bg dark:bg-black">
       {/* Sidebar */}
       <Sidebar userEmail={email} onLogout={handleLogout} onHelpClick={handleHelpClick} />
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <Header />
-        
+
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-6 bg-page-bg dark:bg-black">
           <div className="max-w-7xl mx-auto">
@@ -62,11 +62,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </div>
       </div>
-      
+
       {/* Help Modal */}
-      <HelpModal 
-        isOpen={isHelpModalOpen} 
-        onOpenChange={setIsHelpModalOpen} 
+      <HelpModal
+        isOpen={isHelpModalOpen}
+        onOpenChange={setIsHelpModalOpen}
       />
     </div>
   );

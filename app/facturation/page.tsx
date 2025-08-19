@@ -1,24 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardBody } from '@heroui/card';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Select, SelectItem } from '@heroui/select';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
-import { Pagination } from '@heroui/pagination';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal';
-import { Textarea } from '@heroui/input';
-import { Chip } from '@heroui/chip';
-import { Tabs, Tab } from '@heroui/tabs';
-import { 
-  MagnifyingGlassIcon, 
-  PencilIcon, 
+import { useState, useEffect } from "react";
+import { Card, CardBody } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@heroui/table";
+import { Pagination } from "@heroui/pagination";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
+import { Textarea } from "@heroui/input";
+import { Chip } from "@heroui/chip";
+import { Tabs, Tab } from "@heroui/tabs";
+import {
+  MagnifyingGlassIcon,
+  PencilIcon,
   PlusIcon,
   ChevronUpIcon,
-  ChevronDownIcon
-} from '@heroicons/react/24/outline';
-import { Spinner } from '@heroui/spinner';
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
+import { Spinner } from "@heroui/spinner";
 
 interface Invoice {
   id: string;
@@ -27,7 +40,7 @@ interface Invoice {
   date: string;
   amount: number;
   serviceType: string;
-  status: 'payee' | 'en_attente' | 'retard';
+  status: "payee" | "en_attente" | "retard";
   comment?: string;
 }
 
@@ -44,33 +57,33 @@ export default function FacturationPage() {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 10
+    itemsPerPage: 10,
   });
-  const [selectedStatus, setSelectedStatus] = useState<string>('payee');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortField, setSortField] = useState<string>('establishmentName');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedStatus, setSelectedStatus] = useState<string>("payee");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [sortField, setSortField] = useState<string>("establishmentName");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [newInvoice, setNewInvoice] = useState({
-    category: '',
-    establishmentName: '',
-    date: '',
-    amount: '',
-    serviceType: '',
-    status: 'en_attente' as Invoice['status'],
-    comment: ''
+    category: "",
+    establishmentName: "",
+    date: "",
+    amount: "",
+    serviceType: "",
+    status: "en_attente" as Invoice["status"],
+    comment: "",
   });
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
         page: pagination.currentPage.toString(),
         limit: pagination.itemsPerPage.toString(),
@@ -78,20 +91,21 @@ export default function FacturationPage() {
         search: searchTerm,
         category: selectedCategory,
         sortBy: sortField,
-        sortOrder: sortDirection
+        sortOrder: sortDirection,
       });
 
       const response = await fetch(`/api/facturation?${params}`);
-      
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des factures');
+        throw new Error("Erreur lors de la récupération des factures");
       }
 
       const data = await response.json();
+
       setInvoices(data.invoices);
       setPagination(data.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
     }
@@ -99,129 +113,95 @@ export default function FacturationPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [pagination.currentPage, selectedStatus, searchTerm, selectedCategory, sortField, sortDirection]);
+  }, [
+    pagination.currentPage,
+    selectedStatus,
+    searchTerm,
+    selectedCategory,
+    sortField,
+    sortDirection,
+  ]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleAddInvoice = async () => {
     try {
-      const response = await fetch('/api/facturation', {
-        method: 'POST',
+      const response = await fetch("/api/facturation", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...newInvoice,
-          amount: parseFloat(newInvoice.amount)
+          amount: parseFloat(newInvoice.amount),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout de la facture');
+        throw new Error("Erreur lors de l'ajout de la facture");
       }
 
       setNewInvoice({
-        category: '',
-        establishmentName: '',
-        date: '',
-        amount: '',
-        serviceType: '',
-        status: 'en_attente',
-        comment: ''
+        category: "",
+        establishmentName: "",
+        date: "",
+        amount: "",
+        serviceType: "",
+        status: "en_attente",
+        comment: "",
       });
       setIsAddModalOpen(false);
       fetchInvoices();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
   const handleEditInvoice = async () => {
     if (!selectedInvoice) return;
-    
+
     try {
       const response = await fetch(`/api/facturation/${selectedInvoice.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(selectedInvoice),
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la modification de la facture');
+        throw new Error("Erreur lors de la modification de la facture");
       }
 
       setIsEditModalOpen(false);
       setSelectedInvoice(null);
       fetchInvoices();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    }
-  };
-
-  const handleDeleteInvoice = async (invoiceId: string) => {
-    try {
-      const response = await fetch(`/api/facturation/${invoiceId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression de la facture');
-      }
-
-      fetchInvoices();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'payee':
-        return 'success';
-      case 'en_attente':
-        return 'warning';
-      case 'retard':
-        return 'danger';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'payee':
-        return 'Payée';
-      case 'en_attente':
-        return 'En attente';
-      case 'retard':
-        return 'Retard';
-      default:
-        return status;
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
@@ -231,7 +211,7 @@ export default function FacturationPage() {
         <Card className="w-full">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" className="text-black dark:text-white" />
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
           </CardBody>
         </Card>
@@ -259,20 +239,20 @@ export default function FacturationPage() {
         <CardBody className="p-6">
           {/* En-tête avec onglets et bouton d'ajout */}
           <div className="flex justify-between items-center mb-6">
-            <Tabs 
-              selectedKey={selectedStatus}
-              onSelectionChange={(key) => setSelectedStatus(key as string)}
+            <Tabs
               className="w-full"
-              variant='underlined'
               classNames={{
                 cursor: "w-[50px] left-[12px] h-1",
               }}
+              selectedKey={selectedStatus}
+              variant="underlined"
+              onSelectionChange={(key) => setSelectedStatus(key as string)}
             >
               <Tab key="payee" title="Payée" />
               <Tab key="en_attente" title="En attente" />
               <Tab key="retard" title="Retard" />
             </Tabs>
-            
+
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               startContent={<PlusIcon className="h-4 w-4" />}
@@ -286,10 +266,12 @@ export default function FacturationPage() {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
               <Select
-                placeholder="Catégorie"
                 className="w-48"
+                placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string)}
+                onSelectionChange={(keys) =>
+                  setSelectedCategory(Array.from(keys)[0] as string)
+                }
               >
                 <SelectItem key="tous">Toutes</SelectItem>
                 <SelectItem key="shop">Shop</SelectItem>
@@ -297,18 +279,20 @@ export default function FacturationPage() {
                 <SelectItem key="service">Service</SelectItem>
               </Select>
             </div>
-            
+
             <div className="relative">
               <Input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64 pr-4 pl-10"
                 classNames={{
-                  input: "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-                  inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800"
+                  input:
+                    "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
+                  inputWrapper:
+                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                 }}
+                placeholder="Rechercher..."
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
             </div>
@@ -319,70 +303,90 @@ export default function FacturationPage() {
             <TableHeader>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('category')}
+                  variant="light"
+                  onPress={() => handleSort("category")}
                 >
                   Catégorie
-                  {sortField === 'category' && (
+                  {sortField === "category" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+                      {sortDirection === "asc" ? (
+                        <ChevronUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ChevronDownIcon className="h-3 w-3" />
+                      )}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('establishmentName')}
+                  variant="light"
+                  onPress={() => handleSort("establishmentName")}
                 >
                   Nom établissement
-                  {sortField === 'establishmentName' && (
+                  {sortField === "establishmentName" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+                      {sortDirection === "asc" ? (
+                        <ChevronUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ChevronDownIcon className="h-3 w-3" />
+                      )}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('date')}
+                  variant="light"
+                  onPress={() => handleSort("date")}
                 >
                   Date
-                  {sortField === 'date' && (
+                  {sortField === "date" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+                      {sortDirection === "asc" ? (
+                        <ChevronUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ChevronDownIcon className="h-3 w-3" />
+                      )}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('amount')}
+                  variant="light"
+                  onPress={() => handleSort("amount")}
                 >
                   Montant
-                  {sortField === 'amount' && (
+                  {sortField === "amount" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+                      {sortDirection === "asc" ? (
+                        <ChevronUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ChevronDownIcon className="h-3 w-3" />
+                      )}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  variant="light"
                   className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  onPress={() => handleSort('serviceType')}
+                  variant="light"
+                  onPress={() => handleSort("serviceType")}
                 >
                   Type de prestation
-                  {sortField === 'serviceType' && (
+                  {sortField === "serviceType" && (
                     <span className="ml-1">
-                      {sortDirection === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+                      {sortDirection === "asc" ? (
+                        <ChevronUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ChevronDownIcon className="h-3 w-3" />
+                      )}
                     </span>
                   )}
                 </Button>
@@ -398,16 +402,20 @@ export default function FacturationPage() {
                       {invoice.category}
                     </Chip>
                   </TableCell>
-                  <TableCell className="font-medium">{invoice.establishmentName}</TableCell>
+                  <TableCell className="font-medium">
+                    {invoice.establishmentName}
+                  </TableCell>
                   <TableCell>{formatDate(invoice.date)}</TableCell>
-                  <TableCell className="font-medium">{formatAmount(invoice.amount)}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatAmount(invoice.amount)}
+                  </TableCell>
                   <TableCell>{invoice.serviceType}</TableCell>
                   <TableCell>
                     <Button
                       isIconOnly
-                      variant="light"
-                      size="sm"
                       className="text-gray-600 hover:text-gray-800"
+                      size="sm"
+                      variant="light"
                       onPress={() => {
                         setSelectedInvoice(invoice);
                         setIsEditModalOpen(true);
@@ -418,7 +426,7 @@ export default function FacturationPage() {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-gray-500">
-                      {invoice.comment || 'commentaires'}
+                      {invoice.comment || "commentaires"}
                     </span>
                   </TableCell>
                 </TableRow>
@@ -429,21 +437,25 @@ export default function FacturationPage() {
           {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
-              total={pagination.totalPages}
-              page={pagination.currentPage}
-              onChange={(page) => setPagination(prev => ({ ...prev, currentPage: page }))}
               showControls
               classNames={{
                 wrapper: "gap-2",
                 item: "w-8 h-8 text-sm",
-                cursor: "bg-black text-white dark:bg-white dark:text-black font-bold"
+                cursor:
+                  "bg-black text-white dark:bg-white dark:text-black font-bold",
               }}
+              page={pagination.currentPage}
+              total={pagination.totalPages}
+              onChange={(page) =>
+                setPagination((prev) => ({ ...prev, currentPage: page }))
+              }
             />
           </div>
 
           {/* Info sur le nombre total d'éléments */}
           <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {invoices.length} facture(s) sur {pagination.totalItems} au total
+            Affichage de {invoices.length} facture(s) sur{" "}
+            {pagination.totalItems} au total
           </div>
         </CardBody>
       </Card>
@@ -457,62 +469,91 @@ export default function FacturationPage() {
               <Select
                 label="Catégorie"
                 selectedKeys={newInvoice.category ? [newInvoice.category] : []}
-                onSelectionChange={(keys) => setNewInvoice(prev => ({ ...prev, category: Array.from(keys)[0] as string }))}
+                onSelectionChange={(keys) =>
+                  setNewInvoice((prev) => ({
+                    ...prev,
+                    category: Array.from(keys)[0] as string,
+                  }))
+                }
               >
                 <SelectItem key="shop">Shop</SelectItem>
                 <SelectItem key="restaurant">Restaurant</SelectItem>
                 <SelectItem key="service">Service</SelectItem>
               </Select>
-              
+
               <Input
+                isRequired
                 label="Nom de l'établissement"
                 placeholder="Ex: L'ambiance"
                 value={newInvoice.establishmentName}
-                onChange={(e) => setNewInvoice(prev => ({ ...prev, establishmentName: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewInvoice((prev) => ({
+                    ...prev,
+                    establishmentName: e.target.value,
+                  }))
+                }
               />
-              
+
               <Input
+                isRequired
                 label="Date"
                 type="date"
                 value={newInvoice.date}
-                onChange={(e) => setNewInvoice(prev => ({ ...prev, date: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewInvoice((prev) => ({ ...prev, date: e.target.value }))
+                }
               />
-              
+
               <Input
+                isRequired
                 label="Montant (€)"
-                type="number"
-                step="0.01"
                 placeholder="Ex: 1457.98"
+                step="0.01"
+                type="number"
                 value={newInvoice.amount}
-                onChange={(e) => setNewInvoice(prev => ({ ...prev, amount: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewInvoice((prev) => ({ ...prev, amount: e.target.value }))
+                }
               />
-              
+
               <Input
+                isRequired
                 label="Type de prestation"
                 placeholder="Ex: Tournage"
                 value={newInvoice.serviceType}
-                onChange={(e) => setNewInvoice(prev => ({ ...prev, serviceType: e.target.value }))}
-                isRequired
+                onChange={(e) =>
+                  setNewInvoice((prev) => ({
+                    ...prev,
+                    serviceType: e.target.value,
+                  }))
+                }
               />
-              
+
               <Select
                 label="Statut"
                 selectedKeys={[newInvoice.status]}
-                onSelectionChange={(keys) => setNewInvoice(prev => ({ ...prev, status: Array.from(keys)[0] as Invoice['status'] }))}
+                onSelectionChange={(keys) =>
+                  setNewInvoice((prev) => ({
+                    ...prev,
+                    status: Array.from(keys)[0] as Invoice["status"],
+                  }))
+                }
               >
                 <SelectItem key="payee">Payée</SelectItem>
                 <SelectItem key="en_attente">En attente</SelectItem>
                 <SelectItem key="retard">Retard</SelectItem>
               </Select>
-              
+
               <Textarea
                 label="Commentaire"
                 placeholder="Commentaires sur la facture..."
                 value={newInvoice.comment}
-                onChange={(e) => setNewInvoice(prev => ({ ...prev, comment: e.target.value }))}
+                onChange={(e) =>
+                  setNewInvoice((prev) => ({
+                    ...prev,
+                    comment: e.target.value,
+                  }))
+                }
               />
             </div>
           </ModalBody>
@@ -520,7 +561,10 @@ export default function FacturationPage() {
             <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleAddInvoice}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleAddInvoice}
+            >
               Ajouter
             </Button>
           </ModalFooter>
@@ -537,62 +581,101 @@ export default function FacturationPage() {
                 <Select
                   label="Catégorie"
                   selectedKeys={[selectedInvoice.category]}
-                  onSelectionChange={(keys) => setSelectedInvoice(prev => prev ? { ...prev, category: Array.from(keys)[0] as string } : null)}
+                  onSelectionChange={(keys) =>
+                    setSelectedInvoice((prev) =>
+                      prev
+                        ? { ...prev, category: Array.from(keys)[0] as string }
+                        : null
+                    )
+                  }
                 >
                   <SelectItem key="shop">Shop</SelectItem>
                   <SelectItem key="restaurant">Restaurant</SelectItem>
                   <SelectItem key="service">Service</SelectItem>
                 </Select>
-                
+
                 <Input
+                  isRequired
                   label="Nom de l'établissement"
                   placeholder="Ex: L'ambiance"
                   value={selectedInvoice.establishmentName}
-                  onChange={(e) => setSelectedInvoice(prev => prev ? { ...prev, establishmentName: e.target.value } : null)}
-                  isRequired
+                  onChange={(e) =>
+                    setSelectedInvoice((prev) =>
+                      prev
+                        ? { ...prev, establishmentName: e.target.value }
+                        : null
+                    )
+                  }
                 />
-                
+
                 <Input
+                  isRequired
                   label="Date"
                   type="date"
                   value={selectedInvoice.date}
-                  onChange={(e) => setSelectedInvoice(prev => prev ? { ...prev, date: e.target.value } : null)}
-                  isRequired
+                  onChange={(e) =>
+                    setSelectedInvoice((prev) =>
+                      prev ? { ...prev, date: e.target.value } : null
+                    )
+                  }
                 />
-                
+
                 <Input
+                  isRequired
                   label="Montant (€)"
-                  type="number"
-                  step="0.01"
                   placeholder="Ex: 1457.98"
+                  step="0.01"
+                  type="number"
                   value={selectedInvoice.amount.toString()}
-                  onChange={(e) => setSelectedInvoice(prev => prev ? { ...prev, amount: parseFloat(e.target.value) || 0 } : null)}
-                  isRequired
+                  onChange={(e) =>
+                    setSelectedInvoice((prev) =>
+                      prev
+                        ? { ...prev, amount: parseFloat(e.target.value) || 0 }
+                        : null
+                    )
+                  }
                 />
-                
+
                 <Input
+                  isRequired
                   label="Type de prestation"
                   placeholder="Ex: Tournage"
                   value={selectedInvoice.serviceType}
-                  onChange={(e) => setSelectedInvoice(prev => prev ? { ...prev, serviceType: e.target.value } : null)}
-                  isRequired
+                  onChange={(e) =>
+                    setSelectedInvoice((prev) =>
+                      prev ? { ...prev, serviceType: e.target.value } : null
+                    )
+                  }
                 />
-                
+
                 <Select
                   label="Statut"
                   selectedKeys={[selectedInvoice.status]}
-                  onSelectionChange={(keys) => setSelectedInvoice(prev => prev ? { ...prev, status: Array.from(keys)[0] as Invoice['status'] } : null)}
+                  onSelectionChange={(keys) =>
+                    setSelectedInvoice((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            status: Array.from(keys)[0] as Invoice["status"],
+                          }
+                        : null
+                    )
+                  }
                 >
                   <SelectItem key="payee">Payée</SelectItem>
                   <SelectItem key="en_attente">En attente</SelectItem>
                   <SelectItem key="retard">Retard</SelectItem>
                 </Select>
-                
+
                 <Textarea
                   label="Commentaire"
                   placeholder="Commentaires sur la facture..."
-                  value={selectedInvoice.comment || ''}
-                  onChange={(e) => setSelectedInvoice(prev => prev ? { ...prev, comment: e.target.value } : null)}
+                  value={selectedInvoice.comment || ""}
+                  onChange={(e) =>
+                    setSelectedInvoice((prev) =>
+                      prev ? { ...prev, comment: e.target.value } : null
+                    )
+                  }
                 />
               </div>
             )}
@@ -601,7 +684,10 @@ export default function FacturationPage() {
             <Button variant="light" onPress={() => setIsEditModalOpen(false)}>
               Annuler
             </Button>
-            <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200" onPress={handleEditInvoice}>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              onPress={handleEditInvoice}
+            >
               Modifier
             </Button>
           </ModalFooter>
@@ -609,4 +695,4 @@ export default function FacturationPage() {
       </Modal>
     </div>
   );
-} 
+}

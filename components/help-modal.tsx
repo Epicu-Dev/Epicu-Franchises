@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-} from '@heroui/modal';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Textarea } from '@heroui/input';
-import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+} from "@heroui/modal";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Textarea } from "@heroui/input";
+import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -31,8 +31,8 @@ interface UserProfile {
 
 export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   const [formData, setFormData] = useState({
-    objet: '',
-    commentaires: ''
+    objet: "",
+    commentaires: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -42,13 +42,15 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/profil?section=profile');
+        const response = await fetch("/api/profil?section=profile");
+
         if (response.ok) {
           const profile = await response.json();
+
           setUserProfile(profile);
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération du profil:', error);
+        console.error("Erreur lors de la récupération du profil:", error);
       }
     };
 
@@ -63,19 +65,19 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const emailData = {
         objet: formData.objet,
         commentaires: formData.commentaires,
         expediteur: userProfile.email,
-        destinataire: 'webmaster@epicu.fr'
+        destinataire: "webmaster@epicu.fr",
       };
 
-      const response = await fetch('/api/help', {
-        method: 'POST',
+      const response = await fetch("/api/help", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(emailData),
       });
@@ -84,13 +86,16 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         setIsSubmitted(true);
         // Reset form after 3 seconds and close modal
         setTimeout(() => {
-          setFormData({ objet: '', commentaires: '' });
+          setFormData({ objet: "", commentaires: "" });
           setIsSubmitted(false);
           onOpenChange(false);
         }, 3000);
       }
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de la demande d\'aide:', error);
+      console.error(
+        "Erreur lors de l&apos;envoi de la demande d&apos;aide:",
+        error
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -98,23 +103,23 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setFormData({ objet: '', commentaires: '' });
+      setFormData({ objet: "", commentaires: "" });
       setIsSubmitted(false);
       onOpenChange(false);
     }
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onOpenChange={handleClose}
-      size="lg"
+    <Modal
       classNames={{
         backdrop: "bg-black/50 backdrop-blur-sm",
         base: "border border-gray-200 dark:border-gray-700",
         header: "border-b border-gray-200 dark:border-gray-700",
         footer: "border-t border-gray-200 dark:border-gray-700",
       }}
+      isOpen={isOpen}
+      size="lg"
+      onOpenChange={handleClose}
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
@@ -124,7 +129,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Demande d'aide
+                Demande d&apos;aide
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 font-normal">
                 Décrivez votre problème ou votre question
@@ -132,7 +137,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
             </div>
           </div>
         </ModalHeader>
-        
+
         <ModalBody className="py-6">
           {isSubmitted ? (
             <div className="text-center py-8">
@@ -151,35 +156,42 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
             <div className="space-y-6">
               <div>
                 <Input
-                  label="Objet de la demande"
-                  placeholder="Ex: Accès WordPress, Problème de facturation..."
-                  value={formData.objet}
-                  onChange={(e) => setFormData(prev => ({ ...prev, objet: e.target.value }))}
                   isRequired
-                  variant="bordered"
                   classNames={{
                     input: "text-gray-900 dark:text-gray-100",
                     label: "text-gray-700 dark:text-gray-300",
                   }}
+                  label="Objet de la demande"
+                  placeholder="Ex: Accès WordPress, Problème de facturation..."
+                  value={formData.objet}
+                  variant="bordered"
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, objet: e.target.value }))
+                  }
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   * Champ obligatoire
                 </p>
               </div>
-              
+
               <div>
                 <Textarea
-                  label="Commentaires"
-                  placeholder="Décrivez votre problème en détail..."
-                  value={formData.commentaires}
-                  onChange={(e) => setFormData(prev => ({ ...prev, commentaires: e.target.value }))}
-                  variant="bordered"
-                  minRows={4}
-                  maxRows={8}
                   classNames={{
                     input: "text-gray-900 dark:text-gray-100",
                     label: "text-gray-700 dark:text-gray-300",
                   }}
+                  label="Commentaires"
+                  maxRows={8}
+                  minRows={4}
+                  placeholder="Décrivez votre problème en détail..."
+                  value={formData.commentaires}
+                  variant="bordered"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      commentaires: e.target.value,
+                    }))
+                  }
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Optionnel - Plus de détails nous aident à mieux vous assister
@@ -188,24 +200,24 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
             </div>
           )}
         </ModalBody>
-        
+
         {!isSubmitted && (
           <ModalFooter>
-            <Button 
-              variant="light" 
-              onPress={handleClose}
-              disabled={isSubmitting}
+            <Button
               className="text-gray-600 dark:text-gray-400"
+              disabled={isSubmitting}
+              variant="light"
+              onPress={handleClose}
             >
               Annuler
             </Button>
-            <Button 
+            <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleSubmit}
-              isLoading={isSubmitting}
               disabled={!formData.objet.trim() || isSubmitting || !userProfile}
+              isLoading={isSubmitting}
+              onPress={handleSubmit}
             >
-              {isSubmitting ? 'Envoi...' : 'Envoyer'}
+              {isSubmitting ? "Envoi..." : "Envoyer"}
             </Button>
           </ModalFooter>
         )}
