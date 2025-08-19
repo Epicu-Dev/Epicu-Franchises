@@ -106,10 +106,10 @@ const mockTodos: Todo[] = [
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const todoId = params.id;
+    const { id: todoId } = await params;
     const todo = mockTodos.find(t => t.id === todoId);
 
     if (!todo) {
@@ -131,10 +131,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const todoId = params.id;
+    const { id: todoId } = await params;
     const body = await request.json();
     
     const todoIndex = mockTodos.findIndex(t => t.id === todoId);
@@ -168,10 +168,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const todoId = params.id;
+    const { id: todoId } = await params;
     const todoIndex = mockTodos.findIndex(t => t.id === todoId);
     
     if (todoIndex === -1) {

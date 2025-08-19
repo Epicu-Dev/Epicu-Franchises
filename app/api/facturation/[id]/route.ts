@@ -137,10 +137,10 @@ const mockInvoices: Invoice[] = [
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const invoice = mockInvoices.find(i => i.id === invoiceId);
 
     if (!invoice) {
@@ -162,10 +162,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const body = await request.json();
     
     const invoiceIndex = mockInvoices.findIndex(i => i.id === invoiceId);
@@ -199,10 +199,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const invoiceIndex = mockInvoices.findIndex(i => i.id === invoiceId);
     
     if (invoiceIndex === -1) {

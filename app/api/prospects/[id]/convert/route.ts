@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const prospectId = params.id;
+    const { id: prospectId } = await params;
 
     // Dans un vrai projet, on récupérerait le prospect depuis la base de données
     // et on le convertirait en client
