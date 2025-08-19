@@ -1,10 +1,7 @@
 // pages/api/login.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-
 import crypto from 'crypto';
-
 import bcrypt from 'bcrypt';
-
 import { base } from '../constants';
 
 function generateToken(length = 64): string {
