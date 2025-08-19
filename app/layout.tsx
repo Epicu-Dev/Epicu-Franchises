@@ -3,10 +3,10 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
+import GlobalToastContainer from "@/components/global-toast-container";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
-
 
 export const metadata: Metadata = {
   title: {
@@ -42,6 +42,7 @@ export default function RootLayout({
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
           {children}
+          <GlobalToastContainer />
         </Providers>
       </body>
     </html>

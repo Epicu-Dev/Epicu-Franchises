@@ -214,7 +214,7 @@ export default function EquipePage() {
     setViewMode(viewMode === "grid" ? "table" : "grid");
   };
 
-  const handleEdit = (_memberId: string) => {
+  const handleEdit = () => {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
   };
 
@@ -343,7 +343,7 @@ export default function EquipePage() {
                               className="text-gray-600 hover:text-gray-800"
                               size="sm"
                               variant="light"
-                              onClick={() => handleEdit(member.id)}
+                              onClick={() => handleEdit()}
                             >
                               <PencilIcon className="h-4 w-4" />
                             </Button>

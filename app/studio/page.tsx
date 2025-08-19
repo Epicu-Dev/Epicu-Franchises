@@ -87,13 +87,13 @@ export default function StudioPage() {
           {/* Onglets et bouton d'action sur la même ligne */}
           <div className="flex justify-between items-center mb-6">
             <Tabs
-              selectedKey={selectedTab}
-              onSelectionChange={(key) => handleTabChange(key as string)}
               className="w-full"
-              variant='underlined'
               classNames={{
                 cursor: "w-[50px] left-[12px] h-1",
               }}
+              selectedKey={selectedTab}
+              variant='underlined'
+              onSelectionChange={(key) => handleTabChange(key as string)}
             >
               <Tab key="prestations" title="Liste des prestations" />
               <Tab key="packs" title="Les packs" />
@@ -111,7 +111,7 @@ export default function StudioPage() {
           {/* Contenu selon l'onglet sélectionné */}
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" className="text-black dark:text-white" />
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
           ) : (
             <>
@@ -194,13 +194,13 @@ export default function StudioPage() {
                       </div>
                       {prestation.status === 'en_cours' && (
                         <Progress
-                          value={prestation.progress}
                           className="w-full"
                           classNames={{
                             track: "bg-gray-200 dark:bg-gray-700",
                             indicator: "bg-black dark:bg-white"
                           }}
                           showValueLabel={true}
+                          value={prestation.progress}
                         />
                       )}
                     </div>

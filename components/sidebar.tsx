@@ -30,12 +30,11 @@ import {
 import { ThemeSwitch } from "./theme-switch";
 
 interface SidebarProps {
-  userEmail?: string | null;
   onLogout: () => void;
   onHelpClick?: () => void;
 }
 
-export function Sidebar({ userEmail, onLogout, onHelpClick }: SidebarProps) {
+export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -115,9 +114,9 @@ export function Sidebar({ userEmail, onLogout, onHelpClick }: SidebarProps) {
                 <Image
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  height={40}
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
                   width={40}
-                  height={40}
                 />
               </div>
               <div className="flex flex-col">

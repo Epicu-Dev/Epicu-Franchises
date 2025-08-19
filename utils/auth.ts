@@ -56,3 +56,15 @@ export async function getValidAccessToken(): Promise<string | null> {
   }
 }
   
+export function isUserLoggedIn(): boolean {
+  const accessToken = localStorage.getItem('accessToken');
+  const expiresAtAccess = localStorage.getItem('expiresAtAccess');
+  
+  if (!accessToken || !expiresAtAccess) return false;
+  
+  const now = new Date();
+  const expirationDate = new Date(expiresAtAccess);
+  
+  return expirationDate > now;
+}
+  

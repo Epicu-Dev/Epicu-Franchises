@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Input } from '@heroui/input';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+
 import { ThemeSwitch } from './theme-switch';
 
 export function Header() {
@@ -21,13 +22,13 @@ export function Header() {
         {/* Search Bar */}
         <div className="relative">
           <Input
-            type="text"
-            placeholder="Rechercher..."
             className="w-64 pr-4 pl-10"
             classNames={{
               input: "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
               inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800"
             }}
+            placeholder="Rechercher..."
+            type="text"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
         </div>
@@ -41,11 +42,11 @@ export function Header() {
           onClick={handleProfileClick}
         >
           <Image
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
             alt="Profile"
-            width={40}
-            height={40}
             className="w-full h-full object-cover"
+            height={40}
+            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+            width={40}
           />
         </button>
       </div>

@@ -121,9 +121,8 @@ export async function GET(
 
     return NextResponse.json(todo);
   } catch (error) {
-    console.error('Erreur lors de la récupération de la tâche:', error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
+      { error: 'Erreur interne du serveur' + error },
       { status: 500 }
     );
   }
@@ -136,9 +135,9 @@ export async function PUT(
   try {
     const { id: todoId } = await params;
     const body = await request.json();
-    
+
     const todoIndex = mockTodos.findIndex(t => t.id === todoId);
-    
+
     if (todoIndex === -1) {
       return NextResponse.json(
         { error: 'Tâche non trouvée' },
@@ -159,6 +158,7 @@ export async function PUT(
     return NextResponse.json(updatedTodo);
   } catch (error) {
     console.error('Erreur lors de la modification de la tâche:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -173,7 +173,7 @@ export async function DELETE(
   try {
     const { id: todoId } = await params;
     const todoIndex = mockTodos.findIndex(t => t.id === todoId);
-    
+
     if (todoIndex === -1) {
       return NextResponse.json(
         { error: 'Tâche non trouvée' },
@@ -187,6 +187,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Tâche supprimée avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de la tâche:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

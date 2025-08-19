@@ -143,8 +143,8 @@ export default function DataPage() {
                   <TableHeader>
                     <TableColumn>
                       <button
-                        type="button"
                         className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
+                        type="button"
                         onClick={() => handleSort("month")}
                       >
                         Mois
@@ -158,8 +158,8 @@ export default function DataPage() {
                     <TableColumn>Nouveaux prospects</TableColumn>
                     <TableColumn>
                       <button
-                        type="button"
                         className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
+                        type="button"
                         onClick={() => handleSort("publishedPosts")}
                       >
                         Posts publiés

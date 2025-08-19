@@ -14,17 +14,15 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
-  const [email, setEmail] = useState<string | null>(null);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken');
-    const userEmail = localStorage.getItem('userEmail');
 
     if (!accessToken || !isRefreshTokenValid()) {
       router.push('/login');
     } else {
-      setEmail(userEmail);
+      // setEmail(userEmail); // This line was removed as per the edit hint
     }
   }, [router]);
 
@@ -49,7 +47,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-page-bg dark:bg-black">
       {/* Sidebar */}
-      <Sidebar userEmail={email} onLogout={handleLogout} onHelpClick={handleHelpClick} />
+      <Sidebar onHelpClick={handleHelpClick} onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

@@ -16,7 +16,6 @@ import { Chip } from "@heroui/chip";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  PlusIcon,
   Bars3Icon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
@@ -690,21 +689,18 @@ export default function AgendaPage() {
             <div className="flex items-center space-x-4">
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsRdvModalOpen(true)}
               >
                 Créer un rendez-vous
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsTournageModalOpen(true)}
+                onPress={handleAddTournage}
               >
                 Ajouter un tournage
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsPublicationModalOpen(true)}
               >
                 Ajouter une publication
@@ -821,9 +817,9 @@ export default function AgendaPage() {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2" htmlFor="photographers-checkbox">
                     <input
-                      id="photographers-checkbox"
                       checked={newTournage.photographers}
                       className="rounded border-gray-300"
+                      id="photographers-checkbox"
                       type="checkbox"
                       onChange={(e) =>
                         setNewTournage((prev) => ({
@@ -836,9 +832,9 @@ export default function AgendaPage() {
                   </label>
                   <label className="flex items-center space-x-2" htmlFor="videographers-checkbox">
                     <input
-                      id="videographers-checkbox"
                       checked={newTournage.videographers}
                       className="rounded border-gray-300"
+                      id="videographers-checkbox"
                       type="checkbox"
                       onChange={(e) =>
                         setNewTournage((prev) => ({
@@ -951,9 +947,9 @@ export default function AgendaPage() {
                   Tirage au sort effectué
                 </label>
                 <input
-                  id="draw-completed-checkbox"
                   checked={newPublication.drawCompleted}
                   className="rounded border-gray-300"
+                  id="draw-completed-checkbox"
                   type="checkbox"
                   onChange={(e) =>
                     setNewPublication((prev) => ({

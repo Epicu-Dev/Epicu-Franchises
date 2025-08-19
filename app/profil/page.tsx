@@ -178,24 +178,12 @@ export default function ProfilPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'payee':
-        return 'success';
-      case 'en_attente':
-        return 'warning';
-      case 'retard':
-        return 'danger';
-      default:
-        return 'default';
-    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -217,7 +205,7 @@ export default function ProfilPage() {
         <Card className="w-full bg-white dark:bg-gray-900">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" className="text-black dark:text-white" />
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
           </CardBody>
         </Card>
@@ -245,13 +233,13 @@ export default function ProfilPage() {
         <CardBody className="p-6">
           {/* Onglets */}
           <Tabs
-            selectedKey={activeTab}
-            onSelectionChange={(key) => setActiveTab(key as string)}
             className="w-full mb-6"
-            variant='underlined'
             classNames={{
               cursor: "w-[50px] left-[12px] h-1",
             }}
+            selectedKey={activeTab}
+            variant='underlined'
+            onSelectionChange={(key) => setActiveTab(key as string)}
           >
             <Tab
               key="informations"
@@ -278,10 +266,10 @@ export default function ProfilPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+                    className="w-20 h-20"
                     name={`${profile.firstName} ${profile.lastName}`}
                     size="lg"
-                    className="w-20 h-20"
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
                   />
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
@@ -302,99 +290,99 @@ export default function ProfilPage() {
               {/* Formulaire d'informations */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
+                  classNames={{
+                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                    label: "text-gray-700 dark:text-gray-300 font-medium"
+                  }}
+                  isReadOnly={!isEditing}
                   label="Identifiant"
                   placeholder="Identifiant"
                   value={profile.identifier}
                   onChange={(e) => setProfile(prev => ({ ...prev, identifier: e.target.value }))}
-                  isReadOnly={!isEditing}
+                />
+
+                <Input
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Mot de passe"
-                  type="password"
                   placeholder="••••••••"
-                  isReadOnly={!isEditing}
+                  type="password"
+                />
+
+                <Input
+                  isRequired
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Nom*"
                   placeholder="Nom"
                   value={profile.lastName}
                   onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
-                  isReadOnly={!isEditing}
+                />
+
+                <Input
                   isRequired
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Prénom*"
                   placeholder="Prénom"
                   value={profile.firstName}
                   onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
-                  isReadOnly={!isEditing}
+                />
+
+                <Input
                   isRequired
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Email de la ville*"
-                  type="email"
                   placeholder="email@epicu.fr"
+                  type="email"
                   value={profile.email}
                   onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                  isReadOnly={!isEditing}
+                />
+
+                <Input
                   isRequired
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Tel*"
                   placeholder="06 00 00 00 00"
                   value={profile.phone}
                   onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                  isReadOnly={!isEditing}
+                />
+
+                <Input
                   isRequired
                   classNames={{
                     input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                     inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                     label: "text-gray-700 dark:text-gray-300 font-medium"
                   }}
-                />
-
-                <Input
+                  isReadOnly={!isEditing}
                   label="Rôle*"
                   placeholder="Rôle"
                   value={profile.role}
                   onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))}
-                  isReadOnly={!isEditing}
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
                 />
               </div>
 
@@ -458,9 +446,9 @@ export default function ProfilPage() {
                       </div>
                     </div>
                     <Button
-                      variant="light"
-                      size="sm"
                       className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      size="sm"
+                      variant="light"
                     >
                       Télécharger
                     </Button>

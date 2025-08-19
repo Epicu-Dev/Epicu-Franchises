@@ -1,8 +1,11 @@
 // pages/api/login.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { base } from '../constants';
-import bcrypt from 'bcrypt';
+
 import crypto from 'crypto';
+
+import bcrypt from 'bcrypt';
+
+import { base } from '../constants';
 
 function generateToken(length = 64): string {
   return crypto.randomBytes(length).toString('hex');
@@ -79,6 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });    
   } catch (error) {
     console.error('Erreur de login :', error);
+
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

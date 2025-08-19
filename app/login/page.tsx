@@ -4,17 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import MessageAlert from "@/components/message-alert";
 
 export default function LoginPage() {
   const [identifiant, setIdentifiant] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"error" | "success" | "info">("error");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const showMessageWithType = (msg: string, type: "error" | "success" | "info") => {
+    setMessage(msg);
+    setMessageType(type);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -31,12 +39,31 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("expiresAtAccess", data.expiresAtAccess);
         localStorage.setItem("expiresAtRefresh", data.expiresAtRefresh);
-        router.push("/home");
+        showMessageWithType("Connexion réussie ! Redirection...", "success");
+        setTimeout(() => {
+          router.push("/home");
+        }, 1500);
       } else {
-        setMessage(data.message || "Erreur de connexion");
+        // Gestion des erreurs spécifiques
+        let errorMessage = "Erreur de connexion";
+        if (data.message) {
+          if (data.message.includes("Invalid credentials") || data.message.includes("Invalid email or password")) {
+            errorMessage = "Identifiant ou mot de passe incorrect";
+          } else if (data.message.includes("User not found")) {
+            errorMessage = "Aucun compte trouvé avec cet identifiant";
+          } else if (data.message.includes("Account locked")) {
+            errorMessage = "Compte temporairement verrouillé";
+          } else if (data.message.includes("Too many attempts")) {
+            errorMessage = "Trop de tentatives. Réessayez plus tard";
+          } else {
+            errorMessage = data.message;
+          }
+        }
+        showMessageWithType(errorMessage, "error");
       }
-    } catch (_error) {
-      setMessage("Erreur de connexion au serveur");
+    } catch (error) {
+      console.error("Login error:", error);
+      showMessageWithType("Erreur de connexion au serveur. Vérifiez votre connexion internet.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -122,14 +149,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Message d'erreur/succès amélioré */}
             {message && (
-              <div className="mt-4 p-3 rounded-md text-sm text-center">
-                {message.includes("Erreur") ? (
-                  <p className="text-red-600">{message}</p>
-                ) : (
-                  <p className="text-blue-600">{message}</p>
-                )}
-              </div>
+              <MessageAlert
+                message={message}
+                type={messageType}
+                onClose={() => setMessage("")}
+                autoHide={messageType === "success"}
+                className="mt-6"
+              />
             )}
           </div>
         </div>
