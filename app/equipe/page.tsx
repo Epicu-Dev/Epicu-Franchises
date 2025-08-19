@@ -214,7 +214,7 @@ export default function EquipePage() {
     setViewMode(viewMode === "grid" ? "table" : "grid");
   };
 
-  const handleEdit = (memberId: string) => {
+  const handleEdit = (_memberId: string) => {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
   };
 

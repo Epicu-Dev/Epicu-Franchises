@@ -142,13 +142,14 @@ export default function DataPage() {
                 <Table aria-label="Data table">
                   <TableHeader>
                     <TableColumn>
-                      <div
-                        className="flex items-center gap-1 cursor-pointer"
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
                         onClick={() => handleSort("month")}
                       >
                         Mois
                         {getSortIcon("month")}
-                      </div>
+                      </button>
                     </TableColumn>
                     <TableColumn>Chiffre d&apos;affaires</TableColumn>
                     <TableColumn>Taux de conversion</TableColumn>
@@ -156,13 +157,14 @@ export default function DataPage() {
                     <TableColumn>Prospects rencontrés</TableColumn>
                     <TableColumn>Nouveaux prospects</TableColumn>
                     <TableColumn>
-                      <div
-                        className="flex items-center gap-1 cursor-pointer"
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
                         onClick={() => handleSort("publishedPosts")}
                       >
                         Posts publiés
                         {getSortIcon("publishedPosts")}
-                      </div>
+                      </button>
                     </TableColumn>
                   </TableHeader>
                   <TableBody>

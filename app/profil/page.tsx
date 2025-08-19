@@ -4,15 +4,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Select, SelectItem } from '@heroui/select';
 import { Tabs, Tab } from '@heroui/tabs';
 import { Avatar } from '@heroui/avatar';
 import {
   PencilIcon,
-  UserIcon,
   DocumentTextIcon,
-  ClockIcon,
-  CreditCardIcon
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 

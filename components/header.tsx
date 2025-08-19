@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Input } from '@heroui/input';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { ThemeSwitch } from './theme-switch';
@@ -35,16 +36,18 @@ export function Header() {
         <ThemeSwitch />
         
         {/* User Profile Picture */}
-        <div 
+        <button 
           className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleProfileClick}
         >
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
             alt="Profile"
+            width={40}
+            height={40}
             className="w-full h-full object-cover"
           />
-        </div>
+        </button>
       </div>
     </div>
   );

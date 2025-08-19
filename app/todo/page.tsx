@@ -52,7 +52,7 @@ export default function TodoPage() {
     totalItems: 0,
     itemsPerPage: 10,
   });
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, _setSearchTerm] = useState("");
   const [selectedStatut, setSelectedStatut] = useState("");
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -176,7 +176,7 @@ export default function TodoPage() {
       await handleDeleteTodo(todoToDelete.id);
       setIsDeleteModalOpen(false);
       setTodoToDelete(null);
-    } catch (err) {
+    } catch (_err) {
       // L'erreur est déjà gérée dans handleDeleteTodo
     }
   };

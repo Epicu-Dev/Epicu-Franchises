@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 import { Card } from "@heroui/card";
 import { CardBody } from "@heroui/card";
 import { CardHeader } from "@heroui/card";
@@ -111,10 +112,12 @@ export function Sidebar({ userEmail, onLogout, onHelpClick }: SidebarProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                <img
+                <Image
                   alt="Profile"
                   className="w-full h-full object-cover"
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+                  width={40}
+                  height={40}
                 />
               </div>
               <div className="flex flex-col">

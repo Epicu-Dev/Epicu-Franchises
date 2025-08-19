@@ -817,10 +817,11 @@ export default function AgendaPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Prestataires *</label>
+                <div className="text-sm font-medium">Prestataires *</div>
                 <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2" htmlFor="photographers-checkbox">
                     <input
+                      id="photographers-checkbox"
                       checked={newTournage.photographers}
                       className="rounded border-gray-300"
                       type="checkbox"
@@ -833,8 +834,9 @@ export default function AgendaPage() {
                     />
                     <span className="text-sm">Photographe</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2" htmlFor="videographers-checkbox">
                     <input
+                      id="videographers-checkbox"
                       checked={newTournage.videographers}
                       className="rounded border-gray-300"
                       type="checkbox"
@@ -945,10 +947,11 @@ export default function AgendaPage() {
               />
 
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium" htmlFor="draw-completed-checkbox">
                   Tirage au sort effectué
                 </label>
                 <input
+                  id="draw-completed-checkbox"
                   checked={newPublication.drawCompleted}
                   className="rounded border-gray-300"
                   type="checkbox"
