@@ -248,33 +248,35 @@ export default function HomePage() {
   return (
     <DashboardLayout>
       {/* Greeting */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
           Re, Clémence!
         </h1>
       </div>
 
-      {/* Location Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {cities.map((city) => (
-          <Button
-            key={city.key}
-            className={
-              selectedCity === city.key
-                ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }
-            size="sm"
-            variant={selectedCity === city.key ? "solid" : "bordered"}
-            onPress={() => setSelectedCity(city.key)}
-          >
-            {city.label}
-          </Button>
-        ))}
+      {/* Location Filters - Responsive: scroll horizontally on mobile */}
+      <div className="mb-4 lg:mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {cities.map((city) => (
+            <Button
+              key={city.key}
+              className={
+                selectedCity === city.key
+                  ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50 flex-shrink-0"
+              }
+              size="sm"
+              variant={selectedCity === city.key ? "solid" : "bordered"}
+              onPress={() => setSelectedCity(city.key)}
+            >
+              {city.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Date Navigation */}
-      <div className="flex items-center justify-start gap-4 mb-6">
+      <div className="flex items-center justify-start gap-2 lg:gap-4 mb-4 lg:mb-6">
         <Button
           isIconOnly
           className="text-gray-600"
@@ -312,11 +314,11 @@ export default function HomePage() {
         </Button>
       </div>
 
-      {/* Main Layout - 2x2 grid on left, stacked sections on right */}
-      <div className="flex flex-row gap-6">
-        {/* Left side - 2x2 Metrics Grid */}
+      {/* Main Layout - Responsive: stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* Metrics Grid - Responsive: 1 column on mobile, 2 columns on tablet, 2 columns on desktop */}
         <div className="flex-2">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
             {metrics.map((metric, index) => (
               <MetricCard
                 key={index}
@@ -330,12 +332,12 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Right side - Stacked sections */}
-        <div className="flex-1 space-y-6">
+        {/* Stacked sections - Full width on mobile, sidebar on desktop */}
+        <div className="flex-1 space-y-4 lg:space-y-6">
           {/* Agenda Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Agenda
               </h3>
               <Button
@@ -346,14 +348,14 @@ export default function HomePage() {
                 <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               {agendaEvents.map((event, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {event.clientName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -361,7 +363,7 @@ export default function HomePage() {
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${event.color}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${event.color}`}
                   >
                     {event.type}
                   </span>
@@ -371,9 +373,9 @@ export default function HomePage() {
           </div>
 
           {/* To do Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
                 To do
               </h3>
               <Button
@@ -385,14 +387,14 @@ export default function HomePage() {
                 <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               {todoItems.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {item.mission}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -400,7 +402,7 @@ export default function HomePage() {
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${item.color}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${item.color}`}
                   >
                     {item.status}
                   </span>
