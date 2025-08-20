@@ -29,6 +29,8 @@ import { DashboardLayout } from "../dashboard-layout";
 import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
+import { ProspectModal } from "@/components/prospect-modal";
+import { Card, CardBody } from "@heroui/card";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -69,6 +71,7 @@ export default function HomePage() {
   const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
 
   // Fonction pour récupérer les données
   const fetchData = async () => {
@@ -110,7 +113,7 @@ export default function HomePage() {
   // Fonction pour filtrer les données par ville
   const filterDataByCity = (data: any[], cityKey: string) => {
     if (cityKey === "tout") return data;
-    
+
     // Mapping des clés vers les noms de villes
     const cityMapping: { [key: string]: string[] } = {
       "vannes": ["Vannes"],
@@ -121,26 +124,26 @@ export default function HomePage() {
 
     const targetCities = cityMapping[cityKey] || [];
 
-    return data.filter(item => 
-      item.ville && targetCities.some(city => 
+    return data.filter(item =>
+      item.ville && targetCities.some(city =>
         item.ville.toLowerCase().includes(city.toLowerCase())
       )
     );
   };
 
   // Calcul des métriques filtrées
-  const filteredProspects = useMemo(() => 
-    filterDataByCity(prospects, selectedCity), 
+  const filteredProspects = useMemo(() =>
+    filterDataByCity(prospects, selectedCity),
     [prospects, selectedCity]
   );
 
-  const filteredClients = useMemo(() => 
-    filterDataByCity(clients, selectedCity), 
+  const filteredClients = useMemo(() =>
+    filterDataByCity(clients, selectedCity),
     [clients, selectedCity]
   );
 
-  const filteredEvents = useMemo(() => 
-    filterDataByCity(events, selectedCity), 
+  const filteredEvents = useMemo(() =>
+    filterDataByCity(events, selectedCity),
     [events, selectedCity]
   );
 
@@ -197,9 +200,9 @@ export default function HomePage() {
     return filteredEvents.slice(0, 3).map(event => ({
       clientName: event.title || "Nom client",
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
-      type: event.type === "rendez-vous" ? "Rendez-vous" : 
-            event.type === "tournage" ? "Tournage" :
-            event.type === "publication" ? "Publication" : "Evènement",
+      type: event.type === "rendez-vous" ? "Rendez-vous" :
+        event.type === "tournage" ? "Tournage" :
+          event.type === "publication" ? "Publication" : "Evènement",
       color: typeColorMap[event.type as keyof typeof typeColorMap] || "bg-gray-100 text-gray-800",
     }));
   }, [filteredEvents]);
@@ -260,163 +263,212 @@ export default function HomePage() {
           Re, Clémence!
         </h1>
       </div>
-
-      {/* Location Filters - Responsive: scroll horizontally on mobile */}
-      <div className="mb-4 lg:mb-6">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {cities.map((city) => (
-            <Button
-              key={city.key}
-              className={
-                selectedCity === city.key
-                  ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50 flex-shrink-0"
-              }
-              size="sm"
-              variant={selectedCity === city.key ? "solid" : "bordered"}
-              onPress={() => setSelectedCity(city.key)}
-            >
-              {city.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Date Navigation */}
-      <div className="flex items-center justify-start gap-2 lg:gap-4 mb-4 lg:mb-6">
-        <Button
-          isIconOnly
-          className="text-gray-600"
-          size="sm"
-          variant="light"
-          onPress={() => {
-            const newDate = selectedDate.subtract({ months: 1 });
-
-            setSelectedDate(newDate);
-          }}
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1 rounded-md"
-          variant="light"
-          onPress={onOpen}
-        >
-          {selectedDate
-            .toDate(getLocalTimeZone())
-            .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-        </Button>
-        <Button
-          isIconOnly
-          className="text-gray-600"
-          size="sm"
-          variant="light"
-          onPress={() => {
-            const newDate = selectedDate.add({ months: 1 });
-
-            setSelectedDate(newDate);
-          }}
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Main Layout - Responsive: stacked on mobile, side-by-side on desktop */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        {/* Metrics Grid - Responsive: 1 column on mobile, 2 columns on tablet, 2 columns on desktop */}
-        <div className="flex-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-            {metrics.map((metric, index) => (
-              <MetricCard
-                key={index}
-                icon={metric.icon}
-                iconBgColor={metric.iconBgColor}
-                iconColor={metric.iconColor}
-                label={metric.label}
-                value={metric.value}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Stacked sections - Full width on mobile, sidebar on desktop */}
-        <div className="flex-1 space-y-4 lg:space-y-6">
-          {/* Agenda Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
-            <div className="flex items-center justify-between mb-3 lg:mb-4">
-              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Agenda
-              </h3>
-              <AgendaDropdown
-                onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                onTournageSelect={() => setIsTournageModalOpen(true)}
-              />
-            </div>
-            <div className="space-y-2 lg:space-y-3">
-              {agendaEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+      <Card className="w-full">
+        <CardBody className="p-6">
+          {/* Location Filters and Add Prospect Button */}
+          <div className="mb-4 lg:mb-6">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between">
+              {/* Location Filters - Design avec "Tout" séparé et villes groupées */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {/* Bouton "Tout" séparé */}
+                <Button
+                  className={
+                    selectedCity === "tout"
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0 rounded"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded"
+                  }
+                  size="sm"
+                  variant="solid"
+                  onPress={() => setSelectedCity("tout")}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {event.clientName}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {event.date}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${event.color}`}
-                  >
-                    {event.type}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                  Tout
+                </Button>
 
-          {/* To do Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
-            <div className="flex items-center justify-between mb-3 lg:mb-4">
-              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                To do
-              </h3>
+                {/* Groupe des villes locales */}
+                <div className="flex rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                  {["vannes", "nantes", "saint-brieuc"].map((cityKey) => {
+                    const city = cities.find(c => c.key === cityKey);
+                    return (
+                      <Button
+                        key={cityKey}
+                        className={
+                          selectedCity === cityKey
+                            ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 rounded-none"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                        }
+                        size="sm"
+                        variant="solid"
+                        onPress={() => setSelectedCity(cityKey)}
+                      >
+                        {city?.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {/* Bouton "National" séparé */}
+                <Button
+                  className={
+                    selectedCity === "national"
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0 rounded"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded"
+                  }
+                  size="sm"
+                  variant="solid"
+                  onPress={() => setSelectedCity("national")}
+                >
+                  National
+                </Button>
+              </div>
+
+              {/* Add Prospect Button */}
               <Button
-                isIconOnly
-                className="bg-black dark:bg-white text-white dark:text-black"
-                size="sm"
-                onPress={onAddTodoModalOpen}
+                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 flex-shrink-0"
+                startContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsProspectModalOpen(true)}
               >
-                <PlusIcon className="h-4 w-4" />
+                Ajouter un prospect
               </Button>
             </div>
-            <div className="space-y-2 lg:space-y-3">
-              {todoItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {item.mission}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {item.deadline}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${item.color}`}
-                  >
-                    {item.status}
-                  </span>
+          </div>
+
+          {/* Date Navigation */}
+          <div className="flex items-center justify-start gap-2 lg:gap-4 mb-4 lg:mb-6">
+            <Button
+              isIconOnly
+              className="text-gray-600"
+              size="sm"
+              variant="light"
+              onPress={() => {
+                const newDate = selectedDate.subtract({ months: 1 });
+
+                setSelectedDate(newDate);
+              }}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1 rounded-md"
+              variant="light"
+              onPress={onOpen}
+            >
+              {selectedDate
+                .toDate(getLocalTimeZone())
+                .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </Button>
+            <Button
+              isIconOnly
+              className="text-gray-600"
+              size="sm"
+              variant="light"
+              onPress={() => {
+                const newDate = selectedDate.add({ months: 1 });
+
+                setSelectedDate(newDate);
+              }}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Main Layout - Responsive: stacked on mobile, side-by-side on desktop */}
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            {/* Metrics Grid - Responsive: 1 column on mobile, 2 columns on tablet, 2 columns on desktop */}
+            <div className="flex-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+                {metrics.map((metric, index) => (
+                  <MetricCard
+                    key={index}
+                    icon={metric.icon}
+                    iconBgColor={metric.iconBgColor}
+                    iconColor={metric.iconColor}
+                    label={metric.label}
+                    value={metric.value}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Stacked sections - Full width on mobile, sidebar on desktop */}
+            <div className="flex-1 space-y-4 lg:space-y-6">
+              {/* Agenda Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Agenda
+                  </h3>
+                  <AgendaDropdown
+                    onPublicationSelect={() => setIsPublicationModalOpen(true)}
+                    onRendezVousSelect={() => setIsRdvModalOpen(true)}
+                    onTournageSelect={() => setIsTournageModalOpen(true)}
+                  />
                 </div>
-              ))}
+                <div className="space-y-2 lg:space-y-3">
+                  {agendaEvents.map((event, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {event.clientName}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {event.date}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${event.color}`}
+                      >
+                        {event.type}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* To do Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    To do
+                  </h3>
+                  <Button
+                    isIconOnly
+                    className="bg-black dark:bg-white text-white dark:text-black"
+                    size="sm"
+                    onPress={onAddTodoModalOpen}
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2 lg:space-y-3">
+                  {todoItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {item.mission}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.deadline}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${item.color}`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* Calendar Modal */}
       <Modal isOpen={isOpen} placement="center" onClose={onClose}>
@@ -509,6 +561,13 @@ export default function HomePage() {
         setIsRdvModalOpen={setIsRdvModalOpen}
         setIsTournageModalOpen={setIsTournageModalOpen}
         onEventAdded={fetchData}
+      />
+
+      {/* Modal d'ajout de prospect */}
+      <ProspectModal
+        isOpen={isProspectModalOpen}
+        onClose={() => setIsProspectModalOpen(false)}
+        onProspectAdded={fetchData}
       />
     </DashboardLayout>
   );
