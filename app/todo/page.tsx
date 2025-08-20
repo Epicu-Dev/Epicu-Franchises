@@ -490,7 +490,7 @@ export default function TodoPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
                 </svg>
                 {error}
               </div>
@@ -498,26 +498,28 @@ export default function TodoPage() {
             <div className="space-y-4">
               <Input
                 isRequired
+                errorMessage={fieldErrors.titre}
+                isInvalid={!!fieldErrors.titre}
                 label="Titre"
                 placeholder="Titre de la tâche"
                 value={newTodo.titre}
-                isInvalid={!!fieldErrors.titre}
-                errorMessage={fieldErrors.titre}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewTodo((prev) => ({ ...prev, titre: value }));
                   validateField('titre', value);
                 }}
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors.dateEcheance}
+                isInvalid={!!fieldErrors.dateEcheance}
                 label="Date d'échéance"
                 type="date"
                 value={newTodo.dateEcheance}
-                isInvalid={!!fieldErrors.dateEcheance}
-                errorMessage={fieldErrors.dateEcheance}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewTodo((prev) => ({
                     ...prev,
                     dateEcheance: value,

@@ -162,6 +162,7 @@ export default function AgendaPage() {
   const calculateEndTime = (startTime: string): string => {
     const [hours, minutes] = startTime.split(':').map(Number);
     const startDate = new Date();
+
     startDate.setHours(hours, minutes, 0, 0);
     
     // Ajouter 1 heure
@@ -225,6 +226,7 @@ export default function AgendaPage() {
     }
 
     setFieldErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
@@ -233,20 +235,26 @@ export default function AgendaPage() {
 
     if (modalType === 'tournage') {
       const fields = ['establishmentName', 'shootingDate', 'publicationDate'];
+
       fields.forEach(field => {
         const fieldValid = validateField(field, data[field], modalType);
+
         if (!fieldValid) isValid = false;
       });
     } else if (modalType === 'publication') {
       const fields = ['categoryName', 'establishmentName', 'publicationDate', 'shootingDate'];
+
       fields.forEach(field => {
         const fieldValid = validateField(field, data[field], modalType);
+
         if (!fieldValid) isValid = false;
       });
     } else if (modalType === 'rdv') {
       const fields = ['categoryName', 'establishmentName', 'appointmentType', 'appointmentDate'];
+
       fields.forEach(field => {
         const fieldValid = validateField(field, data[field], modalType);
+
         if (!fieldValid) isValid = false;
       });
     }
@@ -259,6 +267,7 @@ export default function AgendaPage() {
       // Validation complète avant soumission
       if (!validateAllFields(newTournage, 'tournage')) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
       // Créer l'événement de tournage
@@ -336,6 +345,7 @@ export default function AgendaPage() {
       // Validation complète avant soumission
       if (!validateAllFields(newPublication, 'publication')) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
       // Créer l'événement de tournage si une date est spécifiée
@@ -414,6 +424,7 @@ export default function AgendaPage() {
       // Validation complète avant soumission
       if (!validateAllFields(newRdv, 'rdv')) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
       const rdvEvent = {
@@ -972,13 +983,14 @@ export default function AgendaPage() {
             <div className="space-y-4">
               <Input
                 isRequired
+                errorMessage={fieldErrors['tournage.establishmentName']}
+                isInvalid={!!fieldErrors['tournage.establishmentName']}
                 label="Nom de l'établissement "
                 placeholder="Nom de l'établissement"
                 value={newTournage.establishmentName}
-                isInvalid={!!fieldErrors['tournage.establishmentName']}
-                errorMessage={fieldErrors['tournage.establishmentName']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewTournage((prev) => ({
                     ...prev,
                     establishmentName: value,
@@ -990,13 +1002,14 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
+                  errorMessage={fieldErrors['tournage.shootingDate']}
+                  isInvalid={!!fieldErrors['tournage.shootingDate']}
                   label="Date du tournage "
                   type="date"
                   value={newTournage.shootingDate}
-                  isInvalid={!!fieldErrors['tournage.shootingDate']}
-                  errorMessage={fieldErrors['tournage.shootingDate']}
                   onChange={(e) => {
                     const value = e.target.value;
+
                     setNewTournage((prev) => ({
                       ...prev,
                       shootingDate: value,
@@ -1006,13 +1019,14 @@ export default function AgendaPage() {
                 />
                 <Input
                   isRequired
+                  errorMessage={fieldErrors['tournage.publicationDate']}
+                  isInvalid={!!fieldErrors['tournage.publicationDate']}
                   label="Date de la publication "
                   type="date"
                   value={newTournage.publicationDate}
-                  isInvalid={!!fieldErrors['tournage.publicationDate']}
-                  errorMessage={fieldErrors['tournage.publicationDate']}
                   onChange={(e) => {
                     const value = e.target.value;
+
                     setNewTournage((prev) => ({
                       ...prev,
                       publicationDate: value,
@@ -1031,6 +1045,7 @@ export default function AgendaPage() {
                   onChange={(e) => {
                     const startTime = e.target.value;
                     const endTime = calculateEndTime(startTime);
+
                     setNewTournage((prev) => ({
                       ...prev,
                       shootingStartTime: startTime,
@@ -1061,6 +1076,7 @@ export default function AgendaPage() {
                     onChange={(e) => {
                       const startTime = e.target.value;
                       const endTime = calculateEndTime(startTime);
+
                       setNewTournage((prev) => ({
                         ...prev,
                         publicationStartTime: startTime,
@@ -1148,13 +1164,14 @@ export default function AgendaPage() {
             <div className="space-y-4">
               <Input
                 isRequired
+                errorMessage={fieldErrors['publication.categoryName']}
+                isInvalid={!!fieldErrors['publication.categoryName']}
                 label="Nom catégorie "
                 placeholder="FOOD"
                 value={newPublication.categoryName}
-                isInvalid={!!fieldErrors['publication.categoryName']}
-                errorMessage={fieldErrors['publication.categoryName']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewPublication((prev) => ({
                     ...prev,
                     categoryName: value,
@@ -1164,13 +1181,14 @@ export default function AgendaPage() {
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors['publication.establishmentName']}
+                isInvalid={!!fieldErrors['publication.establishmentName']}
                 label="Nom établissement "
                 placeholder="Nom de l'établissement"
                 value={newPublication.establishmentName}
-                isInvalid={!!fieldErrors['publication.establishmentName']}
-                errorMessage={fieldErrors['publication.establishmentName']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewPublication((prev) => ({
                     ...prev,
                     establishmentName: value,
@@ -1182,13 +1200,14 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
+                  errorMessage={fieldErrors['publication.publicationDate']}
+                  isInvalid={!!fieldErrors['publication.publicationDate']}
                   label="Date de la publication "
                   type="date"
                   value={newPublication.publicationDate}
-                  isInvalid={!!fieldErrors['publication.publicationDate']}
-                  errorMessage={fieldErrors['publication.publicationDate']}
                   onChange={(e) => {
                     const value = e.target.value;
+
                     setNewPublication((prev) => ({
                       ...prev,
                       publicationDate: value,
@@ -1198,13 +1217,14 @@ export default function AgendaPage() {
                 />
                 <Input
                   isRequired
+                  errorMessage={fieldErrors['publication.shootingDate']}
+                  isInvalid={!!fieldErrors['publication.shootingDate']}
                   label="Date du tournage "
                   type="date"
                   value={newPublication.shootingDate}
-                  isInvalid={!!fieldErrors['publication.shootingDate']}
-                  errorMessage={fieldErrors['publication.shootingDate']}
                   onChange={(e) => {
                     const value = e.target.value;
+
                     setNewPublication((prev) => ({
                       ...prev,
                       shootingDate: value,
@@ -1223,6 +1243,7 @@ export default function AgendaPage() {
                   onChange={(e) => {
                     const startTime = e.target.value;
                     const endTime = calculateEndTime(startTime);
+
                     setNewPublication((prev) => ({
                       ...prev,
                       publicationStartTime: startTime,
@@ -1253,6 +1274,7 @@ export default function AgendaPage() {
                     onChange={(e) => {
                       const startTime = e.target.value;
                       const endTime = calculateEndTime(startTime);
+
                       setNewPublication((prev) => ({
                         ...prev,
                         shootingStartTime: startTime,
@@ -1332,13 +1354,14 @@ export default function AgendaPage() {
             <div className="space-y-4">
               <Input
                 isRequired
+                errorMessage={fieldErrors['rdv.categoryName']}
+                isInvalid={!!fieldErrors['rdv.categoryName']}
                 label="Nom catégorie "
                 placeholder="FOOD"
                 value={newRdv.categoryName}
-                isInvalid={!!fieldErrors['rdv.categoryName']}
-                errorMessage={fieldErrors['rdv.categoryName']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewRdv((prev) => ({
                     ...prev,
                     categoryName: value,
@@ -1348,13 +1371,14 @@ export default function AgendaPage() {
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors['rdv.establishmentName']}
+                isInvalid={!!fieldErrors['rdv.establishmentName']}
                 label="Nom établissement "
                 placeholder="Nom de l'établissement"
                 value={newRdv.establishmentName}
-                isInvalid={!!fieldErrors['rdv.establishmentName']}
-                errorMessage={fieldErrors['rdv.establishmentName']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewRdv((prev) => ({
                     ...prev,
                     establishmentName: value,
@@ -1365,13 +1389,14 @@ export default function AgendaPage() {
 
               <Input
                 isRequired
+                errorMessage={fieldErrors['rdv.appointmentType']}
+                isInvalid={!!fieldErrors['rdv.appointmentType']}
                 label="Type de rendez-vous "
                 placeholder="Fidélisation"
                 value={newRdv.appointmentType}
-                isInvalid={!!fieldErrors['rdv.appointmentType']}
-                errorMessage={fieldErrors['rdv.appointmentType']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewRdv((prev) => ({
                     ...prev,
                     appointmentType: value,
@@ -1382,13 +1407,14 @@ export default function AgendaPage() {
 
               <Input
                 isRequired
+                errorMessage={fieldErrors['rdv.appointmentDate']}
+                isInvalid={!!fieldErrors['rdv.appointmentDate']}
                 label="Date du rendez-vous "
                 type="date"
                 value={newRdv.appointmentDate}
-                isInvalid={!!fieldErrors['rdv.appointmentDate']}
-                errorMessage={fieldErrors['rdv.appointmentDate']}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewRdv((prev) => ({
                     ...prev,
                     appointmentDate: value,
@@ -1406,6 +1432,7 @@ export default function AgendaPage() {
                   onChange={(e) => {
                     const startTime = e.target.value;
                     const endTime = calculateEndTime(startTime);
+
                     setNewRdv((prev) => ({
                       ...prev,
                       startTime: startTime,

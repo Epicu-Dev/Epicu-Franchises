@@ -268,26 +268,31 @@ export default function ProspectsPage() {
       // Validation côté client
       if (!editingProspect.nomEtablissement.trim()) {
         setError("Le nom de l'établissement est requis");
+
         return;
       }
 
       if (!editingProspect.ville.trim()) {
         setError("La ville est requise");
+
         return;
       }
 
       if (!editingProspect.telephone.trim()) {
         setError("Le téléphone est requis");
+
         return;
       }
 
       if (!editingProspect.datePremierRendezVous) {
         setError("La date du premier rendez-vous est requise");
+
         return;
       }
 
       if (!editingProspect.dateRelance) {
         setError("La date de relance est requise");
+
         return;
       }
 
@@ -606,7 +611,7 @@ export default function ProspectsPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
                 </svg>
                 {error}
               </div>
@@ -623,13 +628,14 @@ export default function ProspectsPage() {
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors.nomEtablissement}
+                isInvalid={!!fieldErrors.nomEtablissement}
                 label="Nom établissement"
                 placeholder="Nom de l'établissement"
                 value={newProspect.nomEtablissement}
-                isInvalid={!!fieldErrors.nomEtablissement}
-                errorMessage={fieldErrors.nomEtablissement}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewProspect((prev) => ({
                     ...prev,
                     nomEtablissement: value,
@@ -639,26 +645,28 @@ export default function ProspectsPage() {
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors.ville}
+                isInvalid={!!fieldErrors.ville}
                 label="Ville"
                 placeholder="Paris"
                 value={newProspect.ville}
-                isInvalid={!!fieldErrors.ville}
-                errorMessage={fieldErrors.ville}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewProspect((prev) => ({ ...prev, ville: value }));
                   validateField('ville', value);
                 }}
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors.telephone}
+                isInvalid={!!fieldErrors.telephone}
                 label="Téléphone"
                 placeholder="01 23 45 67 89"
                 value={newProspect.telephone}
-                isInvalid={!!fieldErrors.telephone}
-                errorMessage={fieldErrors.telephone}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewProspect((prev) => ({
                     ...prev,
                     telephone: value,
@@ -689,8 +697,8 @@ export default function ProspectsPage() {
                 <SelectItem key="BEAUTY">BEAUTY</SelectItem>
               </Select>
               <Select
-                label="Statut"
                 isRequired
+                label="Statut"
                 selectedKeys={[newProspect.statut]}
                 onSelectionChange={(keys) =>
                   setNewProspect((prev) => ({
@@ -708,13 +716,14 @@ export default function ProspectsPage() {
               </Select>
               <Input
                 isRequired
+                errorMessage={fieldErrors.datePremierRendezVous}
+                isInvalid={!!fieldErrors.datePremierRendezVous}
                 label="Date du premier rendez-vous"
                 type="date"
                 value={newProspect.datePremierRendezVous}
-                isInvalid={!!fieldErrors.datePremierRendezVous}
-                errorMessage={fieldErrors.datePremierRendezVous}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewProspect((prev) => ({
                     ...prev,
                     datePremierRendezVous: value,
@@ -724,13 +733,14 @@ export default function ProspectsPage() {
               />
               <Input
                 isRequired
+                errorMessage={fieldErrors.dateRelance}
+                isInvalid={!!fieldErrors.dateRelance}
                 label="Date de la relance"
                 type="date"
                 value={newProspect.dateRelance}
-                isInvalid={!!fieldErrors.dateRelance}
-                errorMessage={fieldErrors.dateRelance}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewProspect((prev) => ({
                     ...prev,
                     dateRelance: value,
@@ -800,7 +810,7 @@ export default function ProspectsPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
                 </svg>
                 {error}
               </div>
@@ -1105,8 +1115,8 @@ export default function ProspectsPage() {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
-                  <svg className="h-12 w-12 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  <svg className="h-12 w-12 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <div className="flex-1">

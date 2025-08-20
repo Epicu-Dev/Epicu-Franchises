@@ -42,7 +42,6 @@ export async function POST(
       client: convertedClient
     });
   } catch (error) {
-    console.error('Erreur lors de la conversion du prospect:', error);
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

@@ -15,13 +15,16 @@ interface Event {
 // Fonction pour obtenir la date d'aujourd'hui au format YYYY-MM-DD
 const getTodayDate = () => {
   const today = new Date();
+
   return today.toISOString().split('T')[0];
 };
 
 // Fonction pour obtenir une date relative à aujourd'hui
 const getDateOffset = (daysOffset: number) => {
   const date = new Date();
+
   date.setDate(date.getDate() + daysOffset);
+
   return date.toISOString().split('T')[0];
 };
 
@@ -101,7 +104,7 @@ const mockEvents: Event[] = [
     description: 'Discussion avec nouveau photographe partenaire',
     category: 'prestataires'
   },
-  
+
   // Événements de demain
   {
     id: 'tomorrow-1',
@@ -268,7 +271,7 @@ const mockEvents: Event[] = [
     description: 'Rencontre avec un nouveau prestataire de services',
     category: 'prestataires'
   },
-  
+
   // Événements pour la semaine courante (pour les tests)
   {
     id: 'week-test-1',
@@ -363,7 +366,7 @@ export async function GET(request: Request) {
       const eventDate = new Date(event.date);
       const eventMonth = eventDate.getMonth() + 1;
       const eventYear = eventDate.getFullYear();
-      
+
       // Pour la vue semaine, inclure les événements de la semaine courante
       if (view === 'semaine') {
         // Utiliser la date sélectionnée au lieu du premier jour du mois
@@ -373,25 +376,27 @@ export async function GET(request: Request) {
         // Calculer le début de la semaine (lundi)
         const dayOfWeek = currentDate.getDay();
         const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Dimanche = 0, donc 6 jours en arrière
+
         startOfWeek.setDate(currentDate.getDate() - daysToMonday);
 
         const endOfWeek = new Date(startOfWeek);
+
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
+
         // Réinitialiser les heures pour une comparaison correcte
         startOfWeek.setHours(0, 0, 0, 0);
         endOfWeek.setHours(23, 59, 59, 999);
-        
+
         const matchesWeek = eventDate >= startOfWeek && eventDate <= endOfWeek;
         const matchesCategory = category === 'tout' || event.category === category;
-        
+
         return matchesWeek && matchesCategory;
       }
-      
+
       // Pour la vue mois, inclure tous les événements du mois
       const matchesDate = eventMonth === month && eventYear === year;
       const matchesCategory = category === 'tout' || event.category === category;
-      
+
       return matchesDate && matchesCategory;
     });
 
@@ -399,6 +404,7 @@ export async function GET(request: Request) {
     filteredEvents.sort((a, b) => {
       const dateA = new Date(`${a.date} ${a.startTime}`);
       const dateB = new Date(`${b.date} ${b.startTime}`);
+
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -407,8 +413,6 @@ export async function GET(request: Request) {
       total: filteredEvents.length
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des événements:', error);
-
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -419,7 +423,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validation des données
     if (!body.title || !body.date || !body.startTime || !body.endTime) {
       return NextResponse.json(

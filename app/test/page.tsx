@@ -45,7 +45,7 @@ export default function TestProspects() {
         <section className="mb-8">
             <h2 className="text-xl font-semibold mb-2">{title}</h2>
             {viewCount !== null && (
-                <div className="mb-2 text-gray-700">Nombre total d'éléments dans la vue : <span className="font-semibold">{viewCount}</span></div>
+                <div className="mb-2 text-gray-700">Nombre total d&apos;éléments dans la vue : <span className="font-semibold">{viewCount}</span></div>
             )}
             <table className="min-w-full border">
                 <thead>

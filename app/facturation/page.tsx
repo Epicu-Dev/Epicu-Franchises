@@ -235,21 +235,25 @@ export default function FacturationPage() {
       // Validation côté client
       if (!selectedInvoice.establishmentName.trim()) {
         setError("Le nom de l'établissement est requis");
+
         return;
       }
 
       if (!selectedInvoice.date) {
         setError("La date est requise");
+
         return;
       }
 
       if (!selectedInvoice.amount || selectedInvoice.amount <= 0) {
         setError("Le montant doit être supérieur à 0");
+
         return;
       }
 
       if (!selectedInvoice.serviceType) {
         setError("Le type de prestation est requis");
+
         return;
       }
 
@@ -576,7 +580,7 @@ export default function FacturationPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
                 </svg>
                 {error}
               </div>
@@ -599,13 +603,14 @@ export default function FacturationPage() {
 
               <Input
                 isRequired
+                errorMessage={fieldErrors.establishmentName}
+                isInvalid={!!fieldErrors.establishmentName}
                 label="Nom de l'établissement"
                 placeholder="Ex: L'ambiance"
                 value={newInvoice.establishmentName}
-                isInvalid={!!fieldErrors.establishmentName}
-                errorMessage={fieldErrors.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({
                     ...prev,
                     establishmentName: value,
@@ -616,13 +621,14 @@ export default function FacturationPage() {
 
               <Input
                 isRequired
+                errorMessage={fieldErrors.date}
+                isInvalid={!!fieldErrors.date}
                 label="Date"
                 type="date"
                 value={newInvoice.date}
-                isInvalid={!!fieldErrors.date}
-                errorMessage={fieldErrors.date}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, date: value }));
                   validateField('date', value);
                 }}
@@ -630,15 +636,16 @@ export default function FacturationPage() {
 
               <Input
                 isRequired
+                errorMessage={fieldErrors.amount}
+                isInvalid={!!fieldErrors.amount}
                 label="Montant (€)"
                 placeholder="Ex: 1457.98"
                 step="0.01"
                 type="number"
                 value={newInvoice.amount}
-                isInvalid={!!fieldErrors.amount}
-                errorMessage={fieldErrors.amount}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, amount: value }));
                   validateField('amount', value);
                 }}
@@ -646,13 +653,14 @@ export default function FacturationPage() {
 
               <Select
                 isRequired
+                errorMessage={fieldErrors.serviceType}
+                isInvalid={!!fieldErrors.serviceType}
                 label="Type de prestation"
                 placeholder="Sélectionnez une prestation"
                 selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
-                isInvalid={!!fieldErrors.serviceType}
-                errorMessage={fieldErrors.serviceType}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
+
                   setNewInvoice((prev) => ({
                     ...prev,
                     serviceType: value,
@@ -716,7 +724,7 @@ export default function FacturationPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
                 </svg>
                 {error}
               </div>

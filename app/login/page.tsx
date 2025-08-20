@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+
 import MessageAlert from "@/components/message-alert";
 
 export default function LoginPage() {
@@ -46,6 +47,7 @@ export default function LoginPage() {
       } else {
         // Gestion des erreurs spécifiques
         let errorMessage = "Erreur de connexion";
+
         if (data.message) {
           if (data.message.includes("Invalid credentials") || data.message.includes("Invalid email or password")) {
             errorMessage = "Identifiant ou mot de passe incorrect";
@@ -62,7 +64,6 @@ export default function LoginPage() {
         showMessageWithType(errorMessage, "error");
       }
     } catch (error) {
-      console.error("Login error:", error);
       showMessageWithType("Erreur de connexion au serveur. Vérifiez votre connexion internet.", "error");
     } finally {
       setIsLoading(false);
@@ -152,11 +153,11 @@ export default function LoginPage() {
             {/* Message d'erreur/succès amélioré */}
             {message && (
               <MessageAlert
+                autoHide={messageType === "success"}
+                className="mt-6"
                 message={message}
                 type={messageType}
                 onClose={() => setMessage("")}
-                autoHide={messageType === "success"}
-                className="mt-6"
               />
             )}
           </div>

@@ -316,7 +316,6 @@ export default function HomeAdminPage() {
               className="bg-black text-white hover:bg-gray-800"
               onPress={() => {
                 // TODO: Implémenter la logique d'ajout de prospect
-                console.log("Nouveau prospect:", newProspect);
                 setIsAddProspectModalOpen(false);
                 // Réinitialiser le formulaire
                 setNewProspect({

@@ -18,6 +18,7 @@ export function UserTypeProvider({ children }: { children: ReactNode }) {
   // Charger le type d'utilisateur depuis localStorage au montage
   useEffect(() => {
     const savedUserType = localStorage.getItem("userType") as UserType;
+
     if (savedUserType && (savedUserType === "admin" || savedUserType === "franchise")) {
       setUserTypeState(savedUserType);
     }
@@ -43,8 +44,10 @@ export function UserTypeProvider({ children }: { children: ReactNode }) {
 
 export function useUserType() {
   const context = useContext(UserTypeContext);
+
   if (context === undefined) {
     throw new Error('useUserType must be used within a UserTypeProvider');
   }
+
   return context;
 }

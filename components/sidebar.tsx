@@ -19,7 +19,6 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
   BuildingStorefrontIcon,
-  DocumentDuplicateIcon,
   CubeIcon,
   Cog6ToothIcon,
   QuestionMarkCircleIcon,
@@ -27,8 +26,9 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
-import { ThemeSwitch } from "./theme-switch";
 import { useUserType } from "../contexts/user-type-context";
+
+import { ThemeSwitch } from "./theme-switch";
 
 interface SidebarProps {
   onLogout: () => void;
