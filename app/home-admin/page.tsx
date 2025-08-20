@@ -12,6 +12,7 @@ import {
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
+import { Tabs, Tab } from "@heroui/tabs";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -25,9 +26,13 @@ import {
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
+import { AgendaModals } from "@/components/agenda-modals";
+import { AgendaDropdown } from "@/components/agenda-dropdown";
 
 export default function HomeAdminPage() {
   const [isAddProspectModalOpen, setIsAddProspectModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [newProspect, setNewProspect] = useState({
     nomEtablissement: "",
     categorie1: "",
@@ -40,13 +45,20 @@ export default function HomeAdminPage() {
     statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
   });
 
-  const metrics = [
+  // États pour les modals d'agenda
+  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
+  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
+  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+
+  const allMetrics = [
     {
       value: "759k€",
       label: "Chiffres d'affaires global",
       icon: <ChartBarIcon className="h-6 w-6" />,
       iconBgColor: "bg-green-100",
       iconColor: "text-green-600",
+      city: "overview",
+      categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
     },
     {
       value: "760",
@@ -54,6 +66,8 @@ export default function HomeAdminPage() {
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-pink-100",
       iconColor: "text-pink-600",
+      city: "nantes",
+      categories: ["FOOD", "SHOP"],
     },
     {
       value: "1243",
@@ -61,6 +75,8 @@ export default function HomeAdminPage() {
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
       iconColor: "text-yellow-600",
+      city: "saint-brieuc",
+      categories: ["TRAVEL", "FUN"],
     },
     {
       value: "31",
@@ -68,6 +84,8 @@ export default function HomeAdminPage() {
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       iconBgColor: "bg-orange-100",
       iconColor: "text-orange-600",
+      city: "overview",
+      categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
     },
     {
       value: "75",
@@ -75,6 +93,8 @@ export default function HomeAdminPage() {
       icon: <DocumentTextIcon className="h-6 w-6" />,
       iconBgColor: "bg-blue-100",
       iconColor: "text-blue-600",
+      city: "nantes",
+      categories: ["BEAUTY", "FOOD"],
     },
     {
       value: "35",
@@ -82,6 +102,8 @@ export default function HomeAdminPage() {
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       iconBgColor: "bg-purple-100",
       iconColor: "text-purple-600",
+      city: "saint-brieuc",
+      categories: ["SHOP", "TRAVEL"],
     },
     {
       value: "190k",
@@ -89,6 +111,8 @@ export default function HomeAdminPage() {
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-orange-100",
       iconColor: "text-orange-600",
+      city: "nantes",
+      categories: ["FUN", "BEAUTY"],
     },
     {
       value: "175k",
@@ -96,8 +120,25 @@ export default function HomeAdminPage() {
       icon: <EyeIcon className="h-6 w-6" />,
       iconBgColor: "bg-green-100",
       iconColor: "text-green-600",
+      city: "saint-brieuc",
+      categories: ["FOOD", "SHOP"],
     },
   ];
+
+  // Filtrer les métriques selon l'onglet actif et la catégorie sélectionnée
+  const metrics = allMetrics.filter((metric) => {
+    // Filtre par ville (onglet)
+    if (activeTab !== "overview" && metric.city !== activeTab && metric.city !== "overview") {
+      return false;
+    }
+    
+    // Filtre par catégorie
+    if (selectedCategory && selectedCategory !== "all" && !metric.categories.includes(selectedCategory)) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const agendaEvents = [
     {
@@ -151,6 +192,44 @@ export default function HomeAdminPage() {
         </Button>
       </div>
 
+      {/* Filtres */}
+      <div className="mb-6 space-y-4">
+        {/* Onglets pour les villes */}
+        <Tabs
+          className="w-full"
+          classNames={{
+            cursor: "w-[50px] left-[12px] h-1",
+          }}
+          selectedKey={activeTab}
+          variant="underlined"
+          onSelectionChange={(key) => setActiveTab(key as string)}
+        >
+          <Tab key="overview" title="Vue d'ensemble" />
+          <Tab key="nantes" title="Nantes" />
+          <Tab key="saint-brieuc" title="Saint-Brieuc" />
+        </Tabs>
+
+        {/* Filtre par catégorie */}
+        <div className="w-48">
+          <Select
+            className="w-full"
+            label="Catégorie"
+            placeholder="Sélectionner une catégorie"
+            selectedKeys={selectedCategory ? [selectedCategory] : []}
+            onSelectionChange={(keys) =>
+              setSelectedCategory(Array.from(keys)[0] as string)
+            }
+          >
+            <SelectItem key="all">Toutes les catégories</SelectItem>
+            <SelectItem key="FOOD">Food</SelectItem>
+            <SelectItem key="SHOP">Shop</SelectItem>
+            <SelectItem key="TRAVEL">Travel</SelectItem>
+            <SelectItem key="FUN">Fun</SelectItem>
+            <SelectItem key="BEAUTY">Beauty</SelectItem>
+          </Select>
+        </div>
+      </div>
+
       {/* Main Layout - Metrics Grid on left, Agenda on right */}
       <div className="flex flex-row gap-6">
         {/* Left side - 4x2 Metrics Grid */}
@@ -176,13 +255,11 @@ export default function HomeAdminPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Agenda
               </h3>
-              <Button
-                isIconOnly
-                className="bg-black dark:bg-white text-white dark:text-black"
-                size="sm"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
+              <AgendaDropdown
+                onPublicationSelect={() => setIsPublicationModalOpen(true)}
+                onRendezVousSelect={() => setIsRdvModalOpen(true)}
+                onTournageSelect={() => setIsTournageModalOpen(true)}
+              />
             </div>
             <div className="space-y-3">
               {agendaEvents.map((event, index) => (
@@ -336,6 +413,16 @@ export default function HomeAdminPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modals d'agenda */}
+      <AgendaModals
+        isPublicationModalOpen={isPublicationModalOpen}
+        isRdvModalOpen={isRdvModalOpen}
+        isTournageModalOpen={isTournageModalOpen}
+        setIsPublicationModalOpen={setIsPublicationModalOpen}
+        setIsRdvModalOpen={setIsRdvModalOpen}
+        setIsTournageModalOpen={setIsTournageModalOpen}
+      />
     </DashboardLayout>
   );
 }

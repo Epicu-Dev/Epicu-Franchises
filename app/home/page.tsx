@@ -27,6 +27,8 @@ import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
+import { AgendaModals } from "@/components/agenda-modals";
+import { AgendaDropdown } from "@/components/agenda-dropdown";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -62,6 +64,11 @@ export default function HomePage() {
   const [clients, setClients] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // États pour les modals d'agenda
+  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
+  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
+  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
 
   // Fonction pour récupérer les données
   const fetchData = async () => {
@@ -340,13 +347,11 @@ export default function HomePage() {
               <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Agenda
               </h3>
-              <Button
-                isIconOnly
-                className="bg-black dark:bg-white text-white dark:text-black"
-                size="sm"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
+              <AgendaDropdown
+                onPublicationSelect={() => setIsPublicationModalOpen(true)}
+                onRendezVousSelect={() => setIsRdvModalOpen(true)}
+                onTournageSelect={() => setIsTournageModalOpen(true)}
+              />
             </div>
             <div className="space-y-2 lg:space-y-3">
               {agendaEvents.map((event, index) => (
@@ -494,6 +499,17 @@ export default function HomePage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modals d'agenda */}
+      <AgendaModals
+        isPublicationModalOpen={isPublicationModalOpen}
+        isRdvModalOpen={isRdvModalOpen}
+        isTournageModalOpen={isTournageModalOpen}
+        setIsPublicationModalOpen={setIsPublicationModalOpen}
+        setIsRdvModalOpen={setIsRdvModalOpen}
+        setIsTournageModalOpen={setIsTournageModalOpen}
+        onEventAdded={fetchData}
+      />
     </DashboardLayout>
   );
 }

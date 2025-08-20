@@ -272,62 +272,7 @@ const mockEvents: Event[] = [
     category: 'prestataires'
   },
 
-  // Événements pour la semaine courante (pour les tests)
-  {
-    id: 'week-test-1',
-    title: 'Test Lundi - Réunion équipe',
-    type: 'rendez-vous',
-    date: getDateOffset(-6), // Lundi dernier ou cette semaine
-    startTime: '09:00',
-    endTime: '10:00',
-    location: 'Bureau',
-    description: 'Réunion hebdomadaire équipe',
-    category: 'siege'
-  },
-  {
-    id: 'week-test-2',
-    title: 'Test Mardi - Tournage client',
-    type: 'tournage',
-    date: getDateOffset(-5), // Mardi
-    startTime: '14:00',
-    endTime: '16:00',
-    location: 'Studio',
-    description: 'Tournage pour nouveau client',
-    category: 'siege'
-  },
-  {
-    id: 'week-test-3',
-    title: 'Test Mercredi - Publication',
-    type: 'publication',
-    date: getDateOffset(-4), // Mercredi
-    startTime: '11:00',
-    endTime: '12:00',
-    location: 'Bureau marketing',
-    description: 'Publication réseaux sociaux',
-    category: 'siege'
-  },
-  {
-    id: 'week-test-4',
-    title: 'Test Jeudi - RDV Franchise',
-    type: 'rendez-vous',
-    date: getDateOffset(-3), // Jeudi
-    startTime: '15:00',
-    endTime: '16:30',
-    location: 'Siège',
-    description: 'Rendez-vous avec franchisé',
-    category: 'franchises'
-  },
-  {
-    id: 'week-test-5',
-    title: 'Test Vendredi - Formation',
-    type: 'evenement',
-    date: getDateOffset(-2), // Vendredi
-    startTime: '10:00',
-    endTime: '12:00',
-    location: 'Salle formation',
-    description: 'Formation équipe commerciale',
-    category: 'siege'
-  },
+
   {
     id: 'week-current-1',
     title: 'Événement Semaine Courante - RDV Client',
