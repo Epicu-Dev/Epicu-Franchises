@@ -20,8 +20,9 @@ export default function DataPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-  const tableData = [
+  const allTableData = [
     {
       month: "Janvier",
       revenue: "12.600€",
@@ -30,53 +31,80 @@ export default function DataPage() {
       prospectsMet: "2",
       newProspects: "32",
       publishedPosts: "6",
+      city: "nantes",
+      categories: ["FOOD", "SHOP"],
     },
     {
       month: "Février",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
-      prospectsMet: "2",
-      newProspects: "32",
-      publishedPosts: "6",
+      revenue: "15.200€",
+      conversionRate: "85%",
+      signedClients: "8",
+      prospectsMet: "3",
+      newProspects: "28",
+      publishedPosts: "8",
+      city: "saint-brieuc",
+      categories: ["TRAVEL", "FUN"],
     },
     {
       month: "Mars",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
-      prospectsMet: "2",
-      newProspects: "32",
-      publishedPosts: "6",
+      revenue: "18.400€",
+      conversionRate: "95%",
+      signedClients: "15",
+      prospectsMet: "1",
+      newProspects: "35",
+      publishedPosts: "7",
+      city: "nantes",
+      categories: ["BEAUTY", "FOOD"],
     },
     {
       month: "Avril",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
-      prospectsMet: "2",
-      newProspects: "32",
-      publishedPosts: "6",
+      revenue: "14.800€",
+      conversionRate: "88%",
+      signedClients: "10",
+      prospectsMet: "4",
+      newProspects: "30",
+      publishedPosts: "5",
+      city: "saint-brieuc",
+      categories: ["SHOP", "TRAVEL"],
     },
     {
       month: "Mai",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
+      revenue: "16.900€",
+      conversionRate: "91%",
+      signedClients: "13",
       prospectsMet: "2",
-      newProspects: "32",
-      publishedPosts: "6",
+      newProspects: "38",
+      publishedPosts: "9",
+      city: "nantes",
+      categories: ["FUN", "BEAUTY"],
     },
     {
       month: "Juin",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
-      prospectsMet: "2",
-      newProspects: "32",
+      revenue: "13.300€",
+      conversionRate: "89%",
+      signedClients: "11",
+      prospectsMet: "3",
+      newProspects: "29",
       publishedPosts: "6",
+      city: "saint-brieuc",
+      categories: ["FOOD", "SHOP"],
     },
   ];
+
+  // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
+  const tableData = allTableData.filter((row) => {
+    // Filtre par ville (onglet)
+    if (activeTab !== "overview" && row.city !== activeTab) {
+      return false;
+    }
+    
+    // Filtre par catégorie
+    if (selectedCategory && selectedCategory !== "all" && !row.categories.includes(selectedCategory)) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -128,10 +156,17 @@ export default function DataPage() {
                   className="w-full"
                   label="Catégorie"
                   placeholder="Sélectionner une catégorie"
+                  selectedKeys={selectedCategory ? [selectedCategory] : []}
+                  onSelectionChange={(keys) =>
+                    setSelectedCategory(Array.from(keys)[0] as string)
+                  }
                 >
                   <SelectItem key="all">Toutes les catégories</SelectItem>
-                  <SelectItem key="category1">Catégorie 1</SelectItem>
-                  <SelectItem key="category2">Catégorie 2</SelectItem>
+                  <SelectItem key="FOOD">Food</SelectItem>
+                  <SelectItem key="SHOP">Shop</SelectItem>
+                  <SelectItem key="TRAVEL">Travel</SelectItem>
+                  <SelectItem key="FUN">Fun</SelectItem>
+                  <SelectItem key="BEAUTY">Beauty</SelectItem>
                 </Select>
               </div>
             </div>
