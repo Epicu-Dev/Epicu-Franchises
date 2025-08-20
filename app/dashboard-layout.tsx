@@ -50,12 +50,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar onHelpClick={handleHelpClick} onLogout={handleLogout} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
         {/* Header */}
         <Header />
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-page-bg dark:bg-black">
+        <div className="flex-1 overflow-auto p-6 pt-20 md:pt-6 bg-page-bg dark:bg-black">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
