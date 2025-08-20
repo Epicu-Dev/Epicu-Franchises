@@ -12,7 +12,7 @@ interface UserTypeContextType {
 const UserTypeContext = createContext<UserTypeContextType | undefined>(undefined);
 
 export function UserTypeProvider({ children }: { children: ReactNode }) {
-  const [userType, setUserTypeState] = useState<UserType>("admin");
+  const [userType, setUserTypeState] = useState<UserType>("franchise");
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Charger le type d'utilisateur depuis localStorage au montage

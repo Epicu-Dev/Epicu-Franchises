@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -14,6 +14,24 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"error" | "success" | "info">("error");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Appel de préchauffage Airtable en arrière-plan dès l'arrivée sur la page
+  useEffect(() => {
+    const warmupAirtable = async () => {
+      try {
+        // Appel en arrière-plan sans attendre ni afficher d'erreur à l'utilisateur
+        fetch("/api/warmup", { method: "GET" })
+          .catch(() => {
+            // On ignore silencieusement les erreurs de préchauffage
+            // L'important est que le premier appel "réel" soit plus rapide
+          });
+      } catch (error) {
+        // Ignore silencieusement les erreurs de préchauffage
+      }
+    };
+
+    warmupAirtable();
+  }, []);
 
   const showMessageWithType = (msg: string, type: "error" | "success" | "info") => {
     setMessage(msg);
