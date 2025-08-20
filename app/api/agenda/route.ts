@@ -12,8 +12,154 @@ interface Event {
   category: 'siege' | 'franchises' | 'prestataires';
 }
 
+// Fonction pour obtenir la date d'aujourd'hui au format YYYY-MM-DD
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+// Fonction pour obtenir une date relative à aujourd'hui
+const getDateOffset = (daysOffset: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  return date.toISOString().split('T')[0];
+};
+
+// Fonction pour obtenir la date de demain
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  return tomorrow.toISOString().split('T')[0];
+};
+
+// Fonction pour obtenir la date d'après-demain
+const getDayAfterTomorrowDate = () => {
+  const dayAfter = new Date();
+
+  dayAfter.setDate(dayAfter.getDate() + 2);
+
+  return dayAfter.toISOString().split('T')[0];
+};
+
 // Données mock pour les événements
 const mockEvents: Event[] = [
+  // Événements d'aujourd'hui
+  {
+    id: 'today-1',
+    title: 'Réunion équipe - Point matinal',
+    type: 'rendez-vous',
+    date: getTodayDate(),
+    startTime: '09:00',
+    endTime: '10:00',
+    location: 'Salle de conférence',
+    description: 'Point quotidien avec l\'équipe de développement',
+    category: 'siege'
+  },
+  {
+    id: 'today-2',
+    title: 'Tournage - Restaurant Le Bistrot',
+    type: 'tournage',
+    date: getTodayDate(),
+    startTime: '11:30',
+    endTime: '14:30',
+    location: 'Le Bistrot, Paris 11e',
+    description: 'Tournage photo et vidéo pour la catégorie FOOD',
+    category: 'siege'
+  },
+  {
+    id: 'today-3',
+    title: 'RDV Prospect - Café des Arts',
+    type: 'rendez-vous',
+    date: getTodayDate(),
+    startTime: '15:00',
+    endTime: '16:00',
+    location: 'Café des Arts',
+    description: 'Rendez-vous de prospection pour nouveau franchisé',
+    category: 'franchises'
+  },
+  {
+    id: 'today-4',
+    title: 'Publication - Gagnant du mois',
+    type: 'publication',
+    date: getTodayDate(),
+    startTime: '17:00',
+    endTime: '17:30',
+    location: 'Bureau marketing',
+    description: 'Publication du gagnant du concours mensuel sur les réseaux sociaux',
+    category: 'siege'
+  },
+  {
+    id: 'today-5',
+    title: 'Appel prestataire photo',
+    type: 'rendez-vous',
+    date: getTodayDate(),
+    startTime: '18:00',
+    endTime: '18:30',
+    location: 'Téléconférence',
+    description: 'Discussion avec nouveau photographe partenaire',
+    category: 'prestataires'
+  },
+  
+  // Événements de demain
+  {
+    id: 'tomorrow-1',
+    title: 'Tournage - Spa Wellness',
+    type: 'tournage',
+    date: getTomorrowDate(),
+    startTime: '10:00',
+    endTime: '13:00',
+    location: 'Spa Wellness, Paris 16e',
+    description: 'Séance photo pour la catégorie BEAUTY & WELLNESS',
+    category: 'siege'
+  },
+  {
+    id: 'tomorrow-2',
+    title: 'RDV Client - Suivi contrat',
+    type: 'rendez-vous',
+    date: getTomorrowDate(),
+    startTime: '14:30',
+    endTime: '15:30',
+    location: 'Siège Epicu',
+    description: 'Point sur l\'avancement du contrat avec client existant',
+    category: 'franchises'
+  },
+  {
+    id: 'tomorrow-3',
+    title: 'Publication - Story Instagram',
+    type: 'publication',
+    date: getTomorrowDate(),
+    startTime: '16:00',
+    endTime: '16:15',
+    location: 'Bureau marketing',
+    description: 'Publication des stories quotidiennes sur Instagram',
+    category: 'siege'
+  },
+
+  // Événements d'après-demain
+  {
+    id: 'dayafter-1',
+    title: 'Formation équipe commerciale',
+    type: 'evenement',
+    date: getDayAfterTomorrowDate(),
+    startTime: '09:00',
+    endTime: '12:00',
+    location: 'Salle de formation',
+    description: 'Formation sur les nouvelles techniques de vente',
+    category: 'siege'
+  },
+  {
+    id: 'dayafter-2',
+    title: 'Tournage - Boutique Mode',
+    type: 'tournage',
+    date: getDayAfterTomorrowDate(),
+    startTime: '14:00',
+    endTime: '17:00',
+    location: 'Boutique Élégance, Paris 1er',
+    description: 'Shooting photo pour collection automne-hiver',
+    category: 'siege'
+  },
   {
     id: '1',
     title: 'Réunion équipe marketing',
@@ -121,6 +267,85 @@ const mockEvents: Event[] = [
     location: 'Café du centre',
     description: 'Rencontre avec un nouveau prestataire de services',
     category: 'prestataires'
+  },
+  
+  // Événements pour la semaine courante (pour les tests)
+  {
+    id: 'week-test-1',
+    title: 'Test Lundi - Réunion équipe',
+    type: 'rendez-vous',
+    date: getDateOffset(-6), // Lundi dernier ou cette semaine
+    startTime: '09:00',
+    endTime: '10:00',
+    location: 'Bureau',
+    description: 'Réunion hebdomadaire équipe',
+    category: 'siege'
+  },
+  {
+    id: 'week-test-2',
+    title: 'Test Mardi - Tournage client',
+    type: 'tournage',
+    date: getDateOffset(-5), // Mardi
+    startTime: '14:00',
+    endTime: '16:00',
+    location: 'Studio',
+    description: 'Tournage pour nouveau client',
+    category: 'siege'
+  },
+  {
+    id: 'week-test-3',
+    title: 'Test Mercredi - Publication',
+    type: 'publication',
+    date: getDateOffset(-4), // Mercredi
+    startTime: '11:00',
+    endTime: '12:00',
+    location: 'Bureau marketing',
+    description: 'Publication réseaux sociaux',
+    category: 'siege'
+  },
+  {
+    id: 'week-test-4',
+    title: 'Test Jeudi - RDV Franchise',
+    type: 'rendez-vous',
+    date: getDateOffset(-3), // Jeudi
+    startTime: '15:00',
+    endTime: '16:30',
+    location: 'Siège',
+    description: 'Rendez-vous avec franchisé',
+    category: 'franchises'
+  },
+  {
+    id: 'week-test-5',
+    title: 'Test Vendredi - Formation',
+    type: 'evenement',
+    date: getDateOffset(-2), // Vendredi
+    startTime: '10:00',
+    endTime: '12:00',
+    location: 'Salle formation',
+    description: 'Formation équipe commerciale',
+    category: 'siege'
+  },
+  {
+    id: 'week-current-1',
+    title: 'Événement Semaine Courante - RDV Client',
+    type: 'rendez-vous',
+    date: getDateOffset(1), // Demain
+    startTime: '09:30',
+    endTime: '10:30',
+    location: 'Bureau commercial',
+    description: 'Rendez-vous avec prospect important',
+    category: 'franchises'
+  },
+  {
+    id: 'week-current-2',
+    title: 'Événement Semaine Courante - Tournage',
+    type: 'tournage',
+    date: getDateOffset(2), // Après-demain
+    startTime: '13:00',
+    endTime: '15:00',
+    location: 'Restaurant partenaire',
+    description: 'Tournage pour campagne marketing',
+    category: 'siege'
   }
 ];
 
@@ -129,6 +354,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = parseInt(searchParams.get('month') || '6');
     const year = parseInt(searchParams.get('year') || '2025');
+    const day = parseInt(searchParams.get('day') || '1');
     const view = searchParams.get('view') || 'tout';
     const category = searchParams.get('category') || 'tout';
 
@@ -138,6 +364,31 @@ export async function GET(request: Request) {
       const eventMonth = eventDate.getMonth() + 1;
       const eventYear = eventDate.getFullYear();
       
+      // Pour la vue semaine, inclure les événements de la semaine courante
+      if (view === 'semaine') {
+        // Utiliser la date sélectionnée au lieu du premier jour du mois
+        const currentDate = new Date(year, month - 1, day);
+        const startOfWeek = new Date(currentDate);
+
+        // Calculer le début de la semaine (lundi)
+        const dayOfWeek = currentDate.getDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Dimanche = 0, donc 6 jours en arrière
+        startOfWeek.setDate(currentDate.getDate() - daysToMonday);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        // Réinitialiser les heures pour une comparaison correcte
+        startOfWeek.setHours(0, 0, 0, 0);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        const matchesWeek = eventDate >= startOfWeek && eventDate <= endOfWeek;
+        const matchesCategory = category === 'tout' || event.category === category;
+        
+        return matchesWeek && matchesCategory;
+      }
+      
+      // Pour la vue mois, inclure tous les événements du mois
       const matchesDate = eventMonth === month && eventYear === year;
       const matchesCategory = category === 'tout' || event.category === category;
       
@@ -157,6 +408,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des événements:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -190,11 +442,12 @@ export async function POST(request: Request) {
     };
 
     // Dans un vrai projet, on sauvegarderait en base de données
-    // mockEvents.push(newEvent);
+    mockEvents.push(newEvent);
 
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création de l\'événement:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

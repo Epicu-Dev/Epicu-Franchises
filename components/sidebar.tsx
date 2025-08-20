@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Card } from "@heroui/card";
@@ -9,6 +8,7 @@ import { CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Listbox } from "@heroui/listbox";
 import { ListboxItem } from "@heroui/listbox";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import {
   HomeIcon,
   ChartBarIcon,
@@ -28,6 +28,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { ThemeSwitch } from "./theme-switch";
+import { useUserType } from "../contexts/user-type-context";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -37,47 +38,48 @@ interface SidebarProps {
 export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { userType, setUserType } = useUserType();
 
   const menuItems = [
-    { key: "home", label: "Accueil", icon: HomeIcon, href: "/home" },
+    { key: "home", label: "Accueil", icon: HomeIcon, href: "/home", showFor: ["franchise"] },
     {
       key: "home-admin",
-      label: "Accueil Admin",
+      label: "Accueil ",
       icon: HomeIcon,
       href: "/home-admin",
+      showFor: ["admin"]
     },
-    { key: "data", label: "Data", icon: ChartBarIcon, href: "/data" },
-    { key: "clients", label: "Clients", icon: UsersIcon, href: "/clients" },
+    { key: "data", label: "Data", icon: ChartBarIcon, href: "/data", showFor: ["franchise"] },
+    { key: "clients", label: "Clients", icon: UsersIcon, href: "/clients", showFor: ["franchise"] },
     {
       key: "prospects",
       label: "Prospects",
       icon: BellIcon,
       href: "/prospects",
+      showFor: ["franchise"]
     },
-    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda" },
-    { key: "todo", label: "To do", icon: CheckCircleIcon, href: "/todo" },
+    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise"] },
+    { key: "todo", label: "To do", icon: CheckCircleIcon, href: "/todo", showFor: ["franchise"] },
     {
       key: "facturation",
       label: "Facturation",
       icon: DocumentTextIcon,
       href: "/facturation",
+      showFor: ["franchise"]
     },
-    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe" },
+    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["admin"] },
     {
       key: "studio",
       label: "Le studio",
       icon: BuildingStorefrontIcon,
       href: "/studio",
+      showFor: ["admin", "franchise"]
     },
-    {
-      key: "ressources",
-      label: "Ressources",
-      icon: DocumentDuplicateIcon,
-      href: "/ressources",
-    },
-    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage" },
+    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise"] },
   ];
+
+  // Filtrer les éléments du menu selon le type d'utilisateur
+  const filteredMenuItems = menuItems.filter(item => item.showFor.includes(userType));
 
   const settingsItems = [
     { key: "compte", label: "Compte", icon: Cog6ToothIcon, href: "/profil" },
@@ -103,6 +105,16 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     }
   };
 
+  const handleUserTypeChange = (type: "admin" | "franchise") => {
+    setUserType(type);
+    // Rediriger vers la page d'accueil appropriée
+    if (type === "admin") {
+      router.push("/home-admin");
+    } else {
+      router.push("/home");
+    }
+  };
+
   return (
     <Card className="h-full w-64 bg-page-bg dark:bg-gray-900 rounded-none border-r border-gray-200 dark:border-gray-700">
       <CardBody className="p-0 h-full flex flex-col">
@@ -124,19 +136,33 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                   Dominique Durand
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Admin
+                  {userType === "admin" ? "Admin" : "Franchisé"}
                 </p>
               </div>
             </div>
-            <Button
-              isIconOnly
-              className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              size="sm"
-              variant="light"
-              onPress={() => setIsProfileOpen(!isProfileOpen)}
-            >
-              <ChevronDownIcon className="h-4 w-4" />
-            </Button>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  isIconOnly
+                  className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  size="sm"
+                  variant="light"
+                >
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                aria-label="Sélection du type d'utilisateur"
+                onAction={(key) => handleUserTypeChange(key as "admin" | "franchise")}
+              >
+                <DropdownItem key="admin" className="text-gray-700 dark:text-gray-300">
+                  Admin
+                </DropdownItem>
+                <DropdownItem key="franchise" className="text-gray-700 dark:text-gray-300">
+                  Franchisé
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </CardHeader>
 
@@ -149,22 +175,21 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             aria-label="Menu navigation"
             className="gap-1"
             onAction={(key) => {
-              const item = menuItems.find((item) => item.key === key);
+              const item = filteredMenuItems.find((item) => item.key === key);
 
               if (item) handleItemClick(item);
             }}
           >
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const isActive = pathname === item.href;
 
               return (
                 <ListboxItem
                   key={item.key}
-                  className={`rounded-lg px-3 py-2 transition-colors ${
-                    isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
+                  className={`rounded-lg px-3 py-2 transition-colors ${isActive
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
                   startContent={<item.icon className="h-5 w-5" />}
                 >
                   {item.label}
@@ -196,13 +221,12 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
               return (
                 <ListboxItem
                   key={item.key}
-                  className={`rounded-lg px-3 py-2 transition-colors ${
-                    isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : item.key === "logout"
-                        ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
+                  className={`rounded-lg px-3 py-2 transition-colors ${isActive
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : item.key === "logout"
+                      ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
                   startContent={<item.icon className="h-5 w-5" />}
                 >
                   {item.label}

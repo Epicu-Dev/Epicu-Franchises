@@ -21,6 +21,7 @@ import {
   MagnifyingGlassIcon,
   Bars3Icon,
   PencilIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
@@ -285,7 +286,8 @@ export default function EquipePage() {
                 variant="light"
                 onClick={handleViewModeToggle}
               >
-                <Bars3Icon className="h-5 w-5" />
+                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" />: <Squares2X2Icon className="h-5 w-5" />}
+
               </Button>
             </div>
           </div>
@@ -427,12 +429,12 @@ export default function EquipePage() {
           {/* Informations sur le nombre de résultats */}
           {((viewMode === "grid" && members.length > 0) ||
             (viewMode === "table" && adminMembers.length > 0)) && (
-            <div className="text-center mt-4 text-sm text-gray-500">
-              {viewMode === "grid"
-                ? `Affichage de ${members.length} membre(s)`
-                : `Affichage de ${adminMembers.length} membre(s) sur ${pagination.totalItems} au total`}
-            </div>
-          )}
+              <div className="text-center mt-4 text-sm text-gray-500">
+                {viewMode === "grid"
+                  ? `Affichage de ${members.length} membre(s)`
+                  : `Affichage de ${adminMembers.length} membre(s) sur ${pagination.totalItems} au total`}
+              </div>
+            )}
 
           {/* Message si aucun résultat */}
           {((viewMode === "grid" && members.length === 0) ||

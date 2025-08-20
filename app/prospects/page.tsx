@@ -69,9 +69,12 @@ export default function ProspectsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
+  const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [newProspect, setNewProspect] = useState({
     siret: "",
@@ -143,8 +146,74 @@ export default function ProspectsPage() {
     }
   };
 
+  const validateField = (fieldName: string, value: any) => {
+    const errors = { ...fieldErrors };
+
+    switch (fieldName) {
+      case 'nomEtablissement':
+        if (!value || !value.trim()) {
+          errors.nomEtablissement = 'Le nom de l\'établissement est requis';
+        } else {
+          delete errors.nomEtablissement;
+        }
+        break;
+      case 'ville':
+        if (!value || !value.trim()) {
+          errors.ville = 'La ville est requise';
+        } else {
+          delete errors.ville;
+        }
+        break;
+      case 'telephone':
+        if (!value || !value.trim()) {
+          errors.telephone = 'Le téléphone est requis';
+        } else {
+          delete errors.telephone;
+        }
+        break;
+      case 'datePremierRendezVous':
+        if (!value) {
+          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
+        } else {
+          delete errors.datePremierRendezVous;
+        }
+        break;
+      case 'dateRelance':
+        if (!value) {
+          errors.dateRelance = 'La date de relance est requise';
+        } else {
+          delete errors.dateRelance;
+        }
+        break;
+    }
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllFields = (prospect: any) => {
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateField(field, prospect[field]);
+
+      if (!fieldValid) isValid = false;
+    });
+
+    return isValid;
+  };
+
   const handleAddProspect = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newProspect)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+
+        return;
+      }
+
       const response = await fetch("/api/prospects", {
         method: "POST",
         headers: {
@@ -154,7 +223,9 @@ export default function ProspectsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du prospect");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de l'ajout du prospect");
       }
 
       // Réinitialiser le formulaire et fermer le modal
@@ -174,6 +245,8 @@ export default function ProspectsPage() {
         adresse: "",
       });
       setIsAddModalOpen(false);
+      setError(null);
+      setFieldErrors({});
 
       // Recharger les prospects
       fetchProspects();
@@ -183,6 +256,7 @@ export default function ProspectsPage() {
   };
 
   const handleEditProspect = (prospect: Prospect) => {
+    setError(null);
     setEditingProspect(prospect);
     setIsEditModalOpen(true);
   };
@@ -191,6 +265,32 @@ export default function ProspectsPage() {
     if (!editingProspect) return;
 
     try {
+      // Validation côté client
+      if (!editingProspect.nomEtablissement.trim()) {
+        setError("Le nom de l'établissement est requis");
+        return;
+      }
+
+      if (!editingProspect.ville.trim()) {
+        setError("La ville est requise");
+        return;
+      }
+
+      if (!editingProspect.telephone.trim()) {
+        setError("Le téléphone est requis");
+        return;
+      }
+
+      if (!editingProspect.datePremierRendezVous) {
+        setError("La date du premier rendez-vous est requise");
+        return;
+      }
+
+      if (!editingProspect.dateRelance) {
+        setError("La date de relance est requise");
+        return;
+      }
+
       const response = await fetch(`/api/prospects/${editingProspect.id}`, {
         method: "PUT",
         headers: {
@@ -200,21 +300,26 @@ export default function ProspectsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la modification du prospect");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de la modification du prospect");
       }
 
       // Fermer le modal et recharger les prospects
       setIsEditModalOpen(false);
       setEditingProspect(null);
+      setError(null);
       fetchProspects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
-  const handleConvertToClient = async (prospectId: string) => {
+  const handleConvertToClient = async () => {
+    if (!prospectToConvert) return;
+
     try {
-      const response = await fetch(`/api/prospects/${prospectId}/convert`, {
+      const response = await fetch(`/api/prospects/${prospectToConvert.id}/convert`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -225,11 +330,20 @@ export default function ProspectsPage() {
         throw new Error("Erreur lors de la conversion en client");
       }
 
+      // Fermer le modal et réinitialiser
+      setIsConvertModalOpen(false);
+      setProspectToConvert(null);
+
       // Recharger les prospects
       fetchProspects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
+  };
+
+  const openConvertModal = (prospect: Prospect) => {
+    setProspectToConvert(prospect);
+    setIsConvertModalOpen(true);
   };
 
   const getCategoryBadgeColor = (category: string) => {
@@ -331,7 +445,11 @@ export default function ProspectsPage() {
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsAddModalOpen(true);
+                }}
               >
                 Ajouter un prospect
               </Button>
@@ -414,7 +532,7 @@ export default function ProspectsPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-full border ${getCategoryBadgeColor(prospect.categorie)}`}
+                      className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(prospect.categorie)}`}
                     >
                       {prospect.categorie}
                     </span>
@@ -439,7 +557,7 @@ export default function ProspectsPage() {
                       color="secondary"
                       size="sm"
                       variant="flat"
-                      onPress={() => handleConvertToClient(prospect.id)}
+                      onPress={() => openConvertModal(prospect)}
                     >
                       Convertir
                     </Button>
@@ -485,10 +603,18 @@ export default function ProspectsPage() {
         <ModalContent>
           <ModalHeader>Ajouter un nouveau prospect</ModalHeader>
           <ModalBody className="max-h-[70vh] overflow-y-auto">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             <div className="space-y-4">
               <Input
                 isRequired
-                label="N° SIRET*"
+                label="N° SIRET"
                 placeholder="12345678901234"
                 value={newProspect.siret}
                 onChange={(e) =>
@@ -497,40 +623,52 @@ export default function ProspectsPage() {
               />
               <Input
                 isRequired
-                label="Nom établissement*"
+                label="Nom établissement"
                 placeholder="Nom de l'établissement"
                 value={newProspect.nomEtablissement}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.nomEtablissement}
+                errorMessage={fieldErrors.nomEtablissement}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewProspect((prev) => ({
                     ...prev,
-                    nomEtablissement: e.target.value,
-                  }))
-                }
+                    nomEtablissement: value,
+                  }));
+                  validateField('nomEtablissement', value);
+                }}
               />
               <Input
                 isRequired
-                label="Ville*"
+                label="Ville"
                 placeholder="Paris"
                 value={newProspect.ville}
-                onChange={(e) =>
-                  setNewProspect((prev) => ({ ...prev, ville: e.target.value }))
-                }
+                isInvalid={!!fieldErrors.ville}
+                errorMessage={fieldErrors.ville}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewProspect((prev) => ({ ...prev, ville: value }));
+                  validateField('ville', value);
+                }}
               />
               <Input
                 isRequired
-                label="Téléphone*"
+                label="Téléphone"
                 placeholder="01 23 45 67 89"
                 value={newProspect.telephone}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.telephone}
+                errorMessage={fieldErrors.telephone}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewProspect((prev) => ({
                     ...prev,
-                    telephone: e.target.value,
-                  }))
-                }
+                    telephone: value,
+                  }));
+                  validateField('telephone', value);
+                }}
               />
               <Select
                 isRequired
-                label="Catégorie*"
+                label="Catégorie"
                 selectedKeys={[newProspect.categorie]}
                 onSelectionChange={(keys) =>
                   setNewProspect((prev) => ({
@@ -551,7 +689,8 @@ export default function ProspectsPage() {
                 <SelectItem key="BEAUTY">BEAUTY</SelectItem>
               </Select>
               <Select
-                label="Statut*"
+                label="Statut"
+                isRequired
                 selectedKeys={[newProspect.statut]}
                 onSelectionChange={(keys) =>
                   setNewProspect((prev) => ({
@@ -569,27 +708,35 @@ export default function ProspectsPage() {
               </Select>
               <Input
                 isRequired
-                label="Date du premier rendez-vous*"
+                label="Date du premier rendez-vous"
                 type="date"
                 value={newProspect.datePremierRendezVous}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.datePremierRendezVous}
+                errorMessage={fieldErrors.datePremierRendezVous}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewProspect((prev) => ({
                     ...prev,
-                    datePremierRendezVous: e.target.value,
-                  }))
-                }
+                    datePremierRendezVous: value,
+                  }));
+                  validateField('datePremierRendezVous', value);
+                }}
               />
               <Input
                 isRequired
-                label="Date de la relance*"
+                label="Date de la relance"
                 type="date"
                 value={newProspect.dateRelance}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.dateRelance}
+                errorMessage={fieldErrors.dateRelance}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewProspect((prev) => ({
                     ...prev,
-                    dateRelance: e.target.value,
-                  }))
-                }
+                    dateRelance: value,
+                  }));
+                  validateField('dateRelance', value);
+                }}
               />
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
@@ -626,6 +773,7 @@ export default function ProspectsPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
               onPress={handleAddProspect}
             >
               Ajouter
@@ -649,6 +797,14 @@ export default function ProspectsPage() {
             </p>
           </ModalHeader>
           <ModalBody className="max-h-[70vh] overflow-y-auto">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             {editingProspect && (
               <div className="space-y-6">
                 {/* Informations générales */}
@@ -663,7 +819,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="N° SIRET*"
+                    label="N° SIRET"
                     placeholder="12345678901234"
                     value={editingProspect.siret || ""}
                     onChange={(e) =>
@@ -679,7 +835,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Nom établissement*"
+                    label="Nom établissement"
                     placeholder="Nom de l'établissement"
                     value={editingProspect.nomEtablissement}
                     onChange={(e) =>
@@ -697,7 +853,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Ville*"
+                    label="Ville"
                     placeholder="Paris"
                     value={editingProspect.ville || ""}
                     onChange={(e) =>
@@ -713,7 +869,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Téléphone*"
+                    label="Téléphone"
                     placeholder="01 23 45 67 89"
                     value={editingProspect.telephone || ""}
                     onChange={(e) =>
@@ -727,7 +883,7 @@ export default function ProspectsPage() {
                     classNames={{
                       label: "text-sm font-medium",
                     }}
-                    label="Catégorie*"
+                    label="Catégorie"
                     placeholder="Sélectionner une catégorie"
                     selectedKeys={
                       editingProspect.categorie
@@ -738,14 +894,14 @@ export default function ProspectsPage() {
                       setEditingProspect((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              categorie: Array.from(keys)[0] as
-                                | "FOOD"
-                                | "SHOP"
-                                | "TRAVEL"
-                                | "FUN"
-                                | "BEAUTY",
-                            }
+                            ...prev,
+                            categorie: Array.from(keys)[0] as
+                              | "FOOD"
+                              | "SHOP"
+                              | "TRAVEL"
+                              | "FUN"
+                              | "BEAUTY",
+                          }
                           : null
                       )
                     }
@@ -801,7 +957,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date du premier rendez-vous*"
+                    label="Date du premier rendez-vous"
                     type="date"
                     value={editingProspect.datePremierRendezVous || ""}
                     onChange={(e) =>
@@ -819,7 +975,7 @@ export default function ProspectsPage() {
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date de la relance*"
+                    label="Date de la relance"
                     type="date"
                     value={editingProspect.dateRelance || ""}
                     onChange={(e) =>
@@ -855,7 +1011,7 @@ export default function ProspectsPage() {
                     classNames={{
                       label: "text-sm font-medium",
                     }}
-                    label="Statut*"
+                    label="Statut"
                     placeholder="Sélectionner un statut"
                     selectedKeys={
                       editingProspect.statut ? [editingProspect.statut] : []
@@ -864,12 +1020,12 @@ export default function ProspectsPage() {
                       setEditingProspect((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              statut: Array.from(keys)[0] as
-                                | "a_contacter"
-                                | "en_discussion"
-                                | "glacial",
-                            }
+                            ...prev,
+                            statut: Array.from(keys)[0] as
+                              | "a_contacter"
+                              | "en_discussion"
+                              | "glacial",
+                          }
                           : null
                       )
                     }
@@ -936,6 +1092,65 @@ export default function ProspectsPage() {
               onPress={handleUpdateProspect}
             >
               Modifier
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmation de conversion */}
+      <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
+        <ModalContent>
+          <ModalHeader>Confirmer la conversion</ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-12 w-12 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Convertir ce prospect en client ?
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Cette action va convertir <strong>{prospectToConvert?.nomEtablissement}</strong> en client.
+                    Le prospect sera supprimé de la liste des prospects.
+                  </p>
+                </div>
+              </div>
+
+              {prospectToConvert && (
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Informations du prospect :
+                  </h4>
+                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                    <p><strong>Établissement :</strong> {prospectToConvert.nomEtablissement}</p>
+                    <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
+                    <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
+                    <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => {
+                setIsConvertModalOpen(false);
+                setProspectToConvert(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+
+              onPress={handleConvertToClient}
+            >
+              Confirmer la conversion
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -50,11 +50,12 @@ interface WeekDay {
 
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"tout" | "semaine" | "mois">("tout");
+  const [view, setView] = useState<"semaine" | "mois">("mois");
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   // États pour les différents modals
   const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
@@ -65,7 +66,11 @@ export default function AgendaPage() {
   const [newTournage, setNewTournage] = useState({
     establishmentName: "",
     shootingDate: "",
+    shootingStartTime: "09:00",
+    shootingEndTime: "17:00",
     publicationDate: "",
+    publicationStartTime: "09:00",
+    publicationEndTime: "10:00",
     photographers: false,
     videographers: false,
   });
@@ -74,7 +79,11 @@ export default function AgendaPage() {
     categoryName: "",
     establishmentName: "",
     publicationDate: "",
+    publicationStartTime: "09:00",
+    publicationEndTime: "10:00",
     shootingDate: "",
+    shootingStartTime: "09:00",
+    shootingEndTime: "17:00",
     winner: "",
     drawCompleted: false,
   });
@@ -84,6 +93,8 @@ export default function AgendaPage() {
     establishmentName: "",
     appointmentType: "",
     appointmentDate: "",
+    startTime: "09:00",
+    endTime: "10:00",
   });
 
   const fetchEvents = async () => {
@@ -94,6 +105,7 @@ export default function AgendaPage() {
       const params = new URLSearchParams({
         month: (currentDate.getMonth() + 1).toString(),
         year: currentDate.getFullYear().toString(),
+        day: currentDate.getDate().toString(),
         view,
         category: selectedCategory,
       });
@@ -146,20 +158,122 @@ export default function AgendaPage() {
     });
   };
 
+  // Fonction utilitaire pour calculer l'heure de fin (+1h)
+  const calculateEndTime = (startTime: string): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hours, minutes, 0, 0);
+    
+    // Ajouter 1 heure
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    
+    // Formatter en HH:MM
+    const endHours = endDate.getHours().toString().padStart(2, '0');
+    const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+    
+    return `${endHours}:${endMinutes}`;
+  };
+
+  // Fonctions de validation
+  const validateField = (fieldName: string, value: any, modalType?: string) => {
+    const errors = { ...fieldErrors };
+    const key = modalType ? `${modalType}.${fieldName}` : fieldName;
+
+    switch (fieldName) {
+      case 'establishmentName':
+        if (!value || !value.trim()) {
+          errors[key] = 'Le nom de l\'établissement est requis';
+        } else {
+          delete errors[key];
+        }
+        break;
+      case 'categoryName':
+        if (!value || !value.trim()) {
+          errors[key] = 'Le nom de la catégorie est requis';
+        } else {
+          delete errors[key];
+        }
+        break;
+      case 'shootingDate':
+        if (!value) {
+          errors[key] = 'La date de tournage est requise';
+        } else {
+          delete errors[key];
+        }
+        break;
+      case 'publicationDate':
+        if (!value) {
+          errors[key] = 'La date de publication est requise';
+        } else {
+          delete errors[key];
+        }
+        break;
+      case 'appointmentDate':
+        if (!value) {
+          errors[key] = 'La date de rendez-vous est requise';
+        } else {
+          delete errors[key];
+        }
+        break;
+      case 'appointmentType':
+        if (!value || !value.trim()) {
+          errors[key] = 'Le type de rendez-vous est requis';
+        } else {
+          delete errors[key];
+        }
+        break;
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllFields = (data: any, modalType: string) => {
+    let isValid = true;
+
+    if (modalType === 'tournage') {
+      const fields = ['establishmentName', 'shootingDate', 'publicationDate'];
+      fields.forEach(field => {
+        const fieldValid = validateField(field, data[field], modalType);
+        if (!fieldValid) isValid = false;
+      });
+    } else if (modalType === 'publication') {
+      const fields = ['categoryName', 'establishmentName', 'publicationDate', 'shootingDate'];
+      fields.forEach(field => {
+        const fieldValid = validateField(field, data[field], modalType);
+        if (!fieldValid) isValid = false;
+      });
+    } else if (modalType === 'rdv') {
+      const fields = ['categoryName', 'establishmentName', 'appointmentType', 'appointmentDate'];
+      fields.forEach(field => {
+        const fieldValid = validateField(field, data[field], modalType);
+        if (!fieldValid) isValid = false;
+      });
+    }
+
+    return isValid;
+  };
+
   const handleAddTournage = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newTournage, 'tournage')) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+        return;
+      }
+      // Créer l'événement de tournage
       const tournageEvent = {
         title: `Tournage - ${newTournage.establishmentName}`,
         type: "tournage" as Event["type"],
         date: newTournage.shootingDate,
-        startTime: "09:00",
-        endTime: "17:00",
+        startTime: newTournage.shootingStartTime,
+        endTime: newTournage.shootingEndTime,
         location: newTournage.establishmentName,
         description: `Tournage avec ${newTournage.photographers ? "photographe" : ""}${newTournage.photographers && newTournage.videographers ? " et " : ""}${newTournage.videographers ? "vidéaste" : ""}`,
         category: "siege" as Event["category"],
       };
 
-      const response = await fetch("/api/agenda", {
+      const tournageResponse = await fetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,18 +281,50 @@ export default function AgendaPage() {
         body: JSON.stringify(tournageEvent),
       });
 
-      if (!response.ok) {
+      if (!tournageResponse.ok) {
         throw new Error("Erreur lors de l'ajout du tournage");
+      }
+
+      // Créer l'événement de publication si une date est spécifiée
+      if (newTournage.publicationDate) {
+        const publicationEvent = {
+          title: `Publication - ${newTournage.establishmentName}`,
+          type: "publication" as Event["type"],
+          date: newTournage.publicationDate,
+          startTime: newTournage.publicationStartTime,
+          endTime: newTournage.publicationEndTime,
+          location: newTournage.establishmentName,
+          description: `Publication suite au tournage du ${new Date(newTournage.shootingDate).toLocaleDateString('fr-FR')}`,
+          category: "siege" as Event["category"],
+        };
+
+        const publicationResponse = await fetch("/api/agenda", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(publicationEvent),
+        });
+
+        if (!publicationResponse.ok) {
+          throw new Error("Erreur lors de l'ajout de la publication");
+        }
       }
 
       setNewTournage({
         establishmentName: "",
         shootingDate: "",
+        shootingStartTime: "09:00",
+        shootingEndTime: "17:00",
         publicationDate: "",
+        publicationStartTime: "09:00",
+        publicationEndTime: "10:00",
         photographers: false,
         videographers: false,
       });
       setIsTournageModalOpen(false);
+      setError(null);
+      setFieldErrors({});
       fetchEvents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -187,18 +333,50 @@ export default function AgendaPage() {
 
   const handleAddPublication = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newPublication, 'publication')) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+        return;
+      }
+      // Créer l'événement de tournage si une date est spécifiée
+      if (newPublication.shootingDate) {
+        const tournageEvent = {
+          title: `Tournage - ${newPublication.establishmentName}`,
+          type: "tournage" as Event["type"],
+          date: newPublication.shootingDate,
+          startTime: newPublication.shootingStartTime,
+          endTime: newPublication.shootingEndTime,
+          location: newPublication.establishmentName,
+          description: `Tournage pour publication ${newPublication.categoryName} prévue le ${new Date(newPublication.publicationDate).toLocaleDateString('fr-FR')}`,
+          category: "siege" as Event["category"],
+        };
+
+        const tournageResponse = await fetch("/api/agenda", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(tournageEvent),
+        });
+
+        if (!tournageResponse.ok) {
+          throw new Error("Erreur lors de l'ajout du tournage");
+        }
+      }
+
+      // Créer l'événement de publication
       const publicationEvent = {
         title: `Publication - ${newPublication.establishmentName}`,
         type: "publication" as Event["type"],
         date: newPublication.publicationDate,
-        startTime: "09:00",
-        endTime: "10:00",
+        startTime: newPublication.publicationStartTime,
+        endTime: newPublication.publicationEndTime,
         location: newPublication.establishmentName,
         description: `Publication ${newPublication.categoryName} - Gagnant: ${newPublication.winner || "À déterminer"} - Tirage: ${newPublication.drawCompleted ? "Effectué" : "En attente"}`,
         category: "siege" as Event["category"],
       };
 
-      const response = await fetch("/api/agenda", {
+      const publicationResponse = await fetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -206,7 +384,7 @@ export default function AgendaPage() {
         body: JSON.stringify(publicationEvent),
       });
 
-      if (!response.ok) {
+      if (!publicationResponse.ok) {
         throw new Error("Erreur lors de l'ajout de la publication");
       }
 
@@ -214,11 +392,17 @@ export default function AgendaPage() {
         categoryName: "",
         establishmentName: "",
         publicationDate: "",
+        publicationStartTime: "09:00",
+        publicationEndTime: "10:00",
         shootingDate: "",
+        shootingStartTime: "09:00",
+        shootingEndTime: "17:00",
         winner: "",
         drawCompleted: false,
       });
       setIsPublicationModalOpen(false);
+      setError(null);
+      setFieldErrors({});
       fetchEvents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -227,12 +411,17 @@ export default function AgendaPage() {
 
   const handleAddRdv = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newRdv, 'rdv')) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+        return;
+      }
       const rdvEvent = {
         title: `RDV - ${newRdv.establishmentName}`,
         type: "rendez-vous" as Event["type"],
         date: newRdv.appointmentDate,
-        startTime: "09:00",
-        endTime: "10:00",
+        startTime: newRdv.startTime,
+        endTime: newRdv.endTime,
         location: newRdv.establishmentName,
         description: `Rendez-vous ${newRdv.appointmentType} - Catégorie: ${newRdv.categoryName}`,
         category: "siege" as Event["category"],
@@ -255,8 +444,12 @@ export default function AgendaPage() {
         establishmentName: "",
         appointmentType: "",
         appointmentDate: "",
+        startTime: "09:00",
+        endTime: "10:00",
       });
       setIsRdvModalOpen(false);
+      setError(null);
+      setFieldErrors({});
       fetchEvents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -448,18 +641,16 @@ export default function AgendaPage() {
           {days.map((day, index) => (
             <div
               key={index}
-              className={`min-h-24 p-2 border border-gray-200 ${
-                day.isCurrentMonth ? "bg-white" : "bg-gray-50"
-              } ${day.isToday ? "ring-2 ring-red-500" : ""}`}
+              className={`min-h-32 p-2 border border-gray-200 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+                } ${day.isToday ? "ring-2 ring-red-500" : ""}`}
             >
               <div
-                className={`text-sm font-medium ${
-                  day.isToday
-                    ? "text-red-600"
-                    : day.isCurrentMonth
-                      ? "text-gray-900"
-                      : "text-gray-400"
-                }`}
+                className={`text-sm font-medium ${day.isToday
+                  ? "text-red-600"
+                  : day.isCurrentMonth
+                    ? "text-gray-900"
+                    : "text-gray-400"
+                  }`}
               >
                 {day.dayNumber}
               </div>
@@ -468,18 +659,20 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded truncate ${
-                      event.type === "rendez-vous"
-                        ? "bg-blue-100 text-blue-800"
-                        : event.type === "tournage"
-                          ? "bg-pink-100 text-pink-800"
-                          : event.type === "publication"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-orange-100 text-orange-800"
-                    }`}
-                    title={event.title}
+                    className={`text-xs p-1 rounded ${event.type === "rendez-vous"
+                      ? "bg-blue-100 text-blue-800"
+                      : event.type === "tournage"
+                        ? "bg-pink-100 text-pink-800"
+                        : event.type === "publication"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-orange-100 text-orange-800"
+                      }`}
+                    title={`${event.title} (${event.startTime} - ${event.endTime})`}
                   >
-                    {event.title}
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-xs opacity-75">
+                      {event.startTime}
+                    </div>
                   </div>
                 ))}
                 {day.events.length > 3 && (
@@ -544,25 +737,26 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`min-h-16 p-1 border border-gray-200 relative ${
-                        day.isToday ? "bg-red-50" : "bg-white"
-                      }`}
+                      className={`min-h-20 p-1 border border-gray-200 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                        }`}
                     >
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 truncate ${
-                            event.type === "rendez-vous"
-                              ? "bg-blue-100 text-blue-800"
-                              : event.type === "tournage"
-                                ? "bg-pink-100 text-pink-800"
-                                : event.type === "publication"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-orange-100 text-orange-800"
-                          }`}
+                          className={`text-xs p-1 rounded mb-1 ${event.type === "rendez-vous"
+                            ? "bg-blue-100 text-blue-800"
+                            : event.type === "tournage"
+                              ? "bg-pink-100 text-pink-800"
+                              : event.type === "publication"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-orange-100 text-orange-800"
+                            }`}
                           title={`${event.title} (${event.startTime} - ${event.endTime})`}
                         >
-                          {event.title}
+                          <div className="font-medium truncate">{event.title}</div>
+                          <div className="text-xs opacity-75 mt-0.5">
+                            {event.startTime} - {event.endTime}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -689,19 +883,31 @@ export default function AgendaPage() {
             <div className="flex items-center space-x-4">
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={() => setIsRdvModalOpen(true)}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsRdvModalOpen(true);
+                }}
               >
                 Créer un rendez-vous
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={handleAddTournage}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsTournageModalOpen(true);
+                }}
               >
                 Ajouter un tournage
               </Button>
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={() => setIsPublicationModalOpen(true)}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsPublicationModalOpen(true);
+                }}
               >
                 Ajouter une publication
               </Button>
@@ -727,14 +933,7 @@ export default function AgendaPage() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Button
-                color={view === "tout" ? "primary" : "default"}
-                size="sm"
-                variant={view === "tout" ? "solid" : "light"}
-                onPress={() => setView("tout")}
-              >
-                Tout
-              </Button>
+
               <Button
                 color={view === "semaine" ? "primary" : "default"}
                 size="sm"
@@ -761,7 +960,6 @@ export default function AgendaPage() {
           <div className="mt-6">
             {view === "mois" && renderCalendarView()}
             {view === "semaine" && renderWeekView()}
-            {view === "tout" && renderTimelineView()}
           </div>
         </CardBody>
       </Card>
@@ -774,46 +972,118 @@ export default function AgendaPage() {
             <div className="space-y-4">
               <Input
                 isRequired
-                label="Nom de l'établissement *"
+                label="Nom de l'établissement "
                 placeholder="Nom de l'établissement"
                 value={newTournage.establishmentName}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors['tournage.establishmentName']}
+                errorMessage={fieldErrors['tournage.establishmentName']}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewTournage((prev) => ({
                     ...prev,
-                    establishmentName: e.target.value,
-                  }))
-                }
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value, 'tournage');
+                }}
               />
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  label="Date du tournage *"
+                  label="Date du tournage "
                   type="date"
                   value={newTournage.shootingDate}
-                  onChange={(e) =>
+                  isInvalid={!!fieldErrors['tournage.shootingDate']}
+                  errorMessage={fieldErrors['tournage.shootingDate']}
+                  onChange={(e) => {
+                    const value = e.target.value;
                     setNewTournage((prev) => ({
                       ...prev,
-                      shootingDate: e.target.value,
-                    }))
-                  }
+                      shootingDate: value,
+                    }));
+                    validateField('shootingDate', value, 'tournage');
+                  }}
                 />
                 <Input
                   isRequired
-                  label="Date de la publication *"
+                  label="Date de la publication "
                   type="date"
                   value={newTournage.publicationDate}
+                  isInvalid={!!fieldErrors['tournage.publicationDate']}
+                  errorMessage={fieldErrors['tournage.publicationDate']}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      publicationDate: value,
+                    }));
+                    validateField('publicationDate', value, 'tournage');
+                  }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  isRequired
+                  label="Début tournage "
+                  type="time"
+                  value={newTournage.shootingStartTime}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    const endTime = calculateEndTime(startTime);
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      shootingStartTime: startTime,
+                      shootingEndTime: endTime,
+                    }));
+                  }}
+                />
+                <Input
+                  isRequired
+                  label="Fin tournage "
+                  type="time"
+                  value={newTournage.shootingEndTime}
                   onChange={(e) =>
                     setNewTournage((prev) => ({
                       ...prev,
-                      publicationDate: e.target.value,
+                      shootingEndTime: e.target.value,
                     }))
                   }
                 />
               </div>
 
+              {newTournage.publicationDate && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Début publication "
+                    type="time"
+                    value={newTournage.publicationStartTime}
+                    onChange={(e) => {
+                      const startTime = e.target.value;
+                      const endTime = calculateEndTime(startTime);
+                      setNewTournage((prev) => ({
+                        ...prev,
+                        publicationStartTime: startTime,
+                        publicationEndTime: endTime,
+                      }));
+                    }}
+                  />
+                  <Input
+                    label="Fin publication "
+                    type="time"
+                    value={newTournage.publicationEndTime}
+                    onChange={(e) =>
+                      setNewTournage((prev) => ({
+                        ...prev,
+                        publicationEndTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
-                <div className="text-sm font-medium">Prestataires *</div>
+                <div className="text-sm font-medium">Prestataires </div>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2" htmlFor="photographers-checkbox">
                     <input
@@ -858,6 +1128,7 @@ export default function AgendaPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('tournage.')) || !newTournage.establishmentName || !newTournage.shootingDate || !newTournage.publicationDate}
               onPress={handleAddTournage}
             >
               Ajouter
@@ -875,63 +1146,137 @@ export default function AgendaPage() {
           <ModalHeader>Ajouter une publication</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <Input
+                isRequired
+                label="Nom catégorie "
+                placeholder="FOOD"
+                value={newPublication.categoryName}
+                isInvalid={!!fieldErrors['publication.categoryName']}
+                errorMessage={fieldErrors['publication.categoryName']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    categoryName: value,
+                  }));
+                  validateField('categoryName', value, 'publication');
+                }}
+              />
+              <Input
+                isRequired
+                label="Nom établissement "
+                placeholder="Nom de l'établissement"
+                value={newPublication.establishmentName}
+                isInvalid={!!fieldErrors['publication.establishmentName']}
+                errorMessage={fieldErrors['publication.establishmentName']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value, 'publication');
+                }}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  label="Nom catégorie *"
-                  placeholder="FOOD"
-                  value={newPublication.categoryName}
-                  onChange={(e) =>
+                  label="Date de la publication "
+                  type="date"
+                  value={newPublication.publicationDate}
+                  isInvalid={!!fieldErrors['publication.publicationDate']}
+                  errorMessage={fieldErrors['publication.publicationDate']}
+                  onChange={(e) => {
+                    const value = e.target.value;
                     setNewPublication((prev) => ({
                       ...prev,
-                      categoryName: e.target.value,
-                    }))
-                  }
+                      publicationDate: value,
+                    }));
+                    validateField('publicationDate', value, 'publication');
+                  }}
                 />
                 <Input
                   isRequired
-                  label="Nom établissement *"
-                  placeholder="Nom de l'établissement"
-                  value={newPublication.establishmentName}
-                  onChange={(e) =>
+                  label="Date du tournage "
+                  type="date"
+                  value={newPublication.shootingDate}
+                  isInvalid={!!fieldErrors['publication.shootingDate']}
+                  errorMessage={fieldErrors['publication.shootingDate']}
+                  onChange={(e) => {
+                    const value = e.target.value;
                     setNewPublication((prev) => ({
                       ...prev,
-                      establishmentName: e.target.value,
-                    }))
-                  }
+                      shootingDate: value,
+                    }));
+                    validateField('shootingDate', value, 'publication');
+                  }}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  label="Date de la publication *"
-                  type="date"
-                  value={newPublication.publicationDate}
-                  onChange={(e) =>
+                  label="Début publication "
+                  type="time"
+                  value={newPublication.publicationStartTime}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    const endTime = calculateEndTime(startTime);
                     setNewPublication((prev) => ({
                       ...prev,
-                      publicationDate: e.target.value,
-                    }))
-                  }
+                      publicationStartTime: startTime,
+                      publicationEndTime: endTime,
+                    }));
+                  }}
                 />
                 <Input
                   isRequired
-                  label="Date du tournage *"
-                  type="date"
-                  value={newPublication.shootingDate}
+                  label="Fin publication "
+                  type="time"
+                  value={newPublication.publicationEndTime}
                   onChange={(e) =>
                     setNewPublication((prev) => ({
                       ...prev,
-                      shootingDate: e.target.value,
+                      publicationEndTime: e.target.value,
                     }))
                   }
                 />
               </div>
+
+              {newPublication.shootingDate && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Début tournage "
+                    type="time"
+                    value={newPublication.shootingStartTime}
+                    onChange={(e) => {
+                      const startTime = e.target.value;
+                      const endTime = calculateEndTime(startTime);
+                      setNewPublication((prev) => ({
+                        ...prev,
+                        shootingStartTime: startTime,
+                        shootingEndTime: endTime,
+                      }));
+                    }}
+                  />
+                  <Input
+                    label="Fin tournage "
+                    type="time"
+                    value={newPublication.shootingEndTime}
+                    onChange={(e) =>
+                      setNewPublication((prev) => ({
+                        ...prev,
+                        shootingEndTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              )}
 
               <Input
                 isRequired
-                label="Gagnant *"
+                label="Gagnant "
                 placeholder="Nom Prénom"
                 value={newPublication.winner}
                 onChange={(e) =>
@@ -970,6 +1315,7 @@ export default function AgendaPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('publication.')) || !newPublication.categoryName || !newPublication.establishmentName || !newPublication.publicationDate || !newPublication.shootingDate}
               onPress={handleAddPublication}
             >
               Ajouter
@@ -984,58 +1330,102 @@ export default function AgendaPage() {
           <ModalHeader>Créer un rendez-vous</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <Input
+                isRequired
+                label="Nom catégorie "
+                placeholder="FOOD"
+                value={newRdv.categoryName}
+                isInvalid={!!fieldErrors['rdv.categoryName']}
+                errorMessage={fieldErrors['rdv.categoryName']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    categoryName: value,
+                  }));
+                  validateField('categoryName', value, 'rdv');
+                }}
+              />
+              <Input
+                isRequired
+                label="Nom établissement "
+                placeholder="Nom de l'établissement"
+                value={newRdv.establishmentName}
+                isInvalid={!!fieldErrors['rdv.establishmentName']}
+                errorMessage={fieldErrors['rdv.establishmentName']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value, 'rdv');
+                }}
+              />
+
+              <Input
+                isRequired
+                label="Type de rendez-vous "
+                placeholder="Fidélisation"
+                value={newRdv.appointmentType}
+                isInvalid={!!fieldErrors['rdv.appointmentType']}
+                errorMessage={fieldErrors['rdv.appointmentType']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    appointmentType: value,
+                  }));
+                  validateField('appointmentType', value, 'rdv');
+                }}
+              />
+
+              <Input
+                isRequired
+                label="Date du rendez-vous "
+                type="date"
+                value={newRdv.appointmentDate}
+                isInvalid={!!fieldErrors['rdv.appointmentDate']}
+                errorMessage={fieldErrors['rdv.appointmentDate']}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewRdv((prev) => ({
+                    ...prev,
+                    appointmentDate: value,
+                  }));
+                  validateField('appointmentDate', value, 'rdv');
+                }}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  label="Nom catégorie *"
-                  placeholder="FOOD"
-                  value={newRdv.categoryName}
-                  onChange={(e) =>
+                  label="Début "
+                  type="time"
+                  value={newRdv.startTime}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    const endTime = calculateEndTime(startTime);
                     setNewRdv((prev) => ({
                       ...prev,
-                      categoryName: e.target.value,
-                    }))
-                  }
+                      startTime: startTime,
+                      endTime: endTime,
+                    }));
+                  }}
                 />
                 <Input
                   isRequired
-                  label="Nom établissement *"
-                  placeholder="Nom de l'établissement"
-                  value={newRdv.establishmentName}
+                  label="Fin "
+                  type="time"
+                  value={newRdv.endTime}
                   onChange={(e) =>
                     setNewRdv((prev) => ({
                       ...prev,
-                      establishmentName: e.target.value,
+                      endTime: e.target.value,
                     }))
                   }
                 />
               </div>
-
-              <Input
-                isRequired
-                label="Type de rendez-vous *"
-                placeholder="Fidélisation"
-                value={newRdv.appointmentType}
-                onChange={(e) =>
-                  setNewRdv((prev) => ({
-                    ...prev,
-                    appointmentType: e.target.value,
-                  }))
-                }
-              />
-
-              <Input
-                isRequired
-                label="Date du rendez-vous *"
-                type="date"
-                value={newRdv.appointmentDate}
-                onChange={(e) =>
-                  setNewRdv((prev) => ({
-                    ...prev,
-                    appointmentDate: e.target.value,
-                  }))
-                }
-              />
             </div>
           </ModalBody>
           <ModalFooter>
@@ -1044,6 +1434,7 @@ export default function AgendaPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('rdv.')) || !newRdv.categoryName || !newRdv.establishmentName || !newRdv.appointmentType || !newRdv.appointmentDate}
               onPress={handleAddRdv}
             >
               Ajouter

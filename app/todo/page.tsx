@@ -58,6 +58,7 @@ export default function TodoPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
@@ -118,8 +119,53 @@ export default function TodoPage() {
     }
   };
 
+  const validateField = (fieldName: string, value: any) => {
+    const errors = { ...fieldErrors };
+
+    switch (fieldName) {
+      case 'titre':
+        if (!value || !value.trim()) {
+          errors.titre = 'Le titre est requis';
+        } else {
+          delete errors.titre;
+        }
+        break;
+      case 'dateEcheance':
+        if (!value) {
+          errors.dateEcheance = 'La date d\'échéance est requise';
+        } else {
+          delete errors.dateEcheance;
+        }
+        break;
+    }
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllFields = (todo: any) => {
+    const fields = ['titre', 'dateEcheance'];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateField(field, todo[field]);
+
+      if (!fieldValid) isValid = false;
+    });
+
+    return isValid;
+  };
+
   const handleAddTodo = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newTodo)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+
+        return;
+      }
+
       const response = await fetch("/api/todos", {
         method: "POST",
         headers: {
@@ -129,7 +175,9 @@ export default function TodoPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de la tâche");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de l'ajout de la tâche");
       }
 
       // Réinitialiser le formulaire et fermer le modal
@@ -139,6 +187,8 @@ export default function TodoPage() {
         dateEcheance: "",
       });
       setIsAddModalOpen(false);
+      setError(null);
+      setFieldErrors({});
 
       // Recharger les tâches
       fetchTodos();
@@ -306,7 +356,11 @@ export default function TodoPage() {
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                 startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsAddModalOpen(true);
+                }}
               >
                 Ajouter une tâche
               </Button>
@@ -433,26 +487,43 @@ export default function TodoPage() {
         <ModalContent>
           <ModalHeader>Ajouter une nouvelle tâche</ModalHeader>
           <ModalBody>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             <div className="space-y-4">
               <Input
                 isRequired
                 label="Titre"
                 placeholder="Titre de la tâche"
                 value={newTodo.titre}
-                onChange={(e) =>
-                  setNewTodo((prev) => ({ ...prev, titre: e.target.value }))
-                }
+                isInvalid={!!fieldErrors.titre}
+                errorMessage={fieldErrors.titre}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewTodo((prev) => ({ ...prev, titre: value }));
+                  validateField('titre', value);
+                }}
               />
               <Input
+                isRequired
                 label="Date d'échéance"
                 type="date"
                 value={newTodo.dateEcheance}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.dateEcheance}
+                errorMessage={fieldErrors.dateEcheance}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewTodo((prev) => ({
                     ...prev,
-                    dateEcheance: e.target.value,
-                  }))
-                }
+                    dateEcheance: value,
+                  }));
+                  validateField('dateEcheance', value);
+                }}
               />
               <Select
                 label="État"
@@ -481,6 +552,7 @@ export default function TodoPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.titre || !newTodo.dateEcheance}
               onPress={handleAddTodo}
             >
               Ajouter

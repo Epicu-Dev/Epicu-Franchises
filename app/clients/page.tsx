@@ -29,7 +29,7 @@ interface Client {
   id: string;
   raisonSociale: string;
   ville: string;
-  categorie: string;
+  categorie: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
   telephone: string;
   email: string;
   numeroSiret: string;
@@ -74,6 +74,7 @@ export default function ClientsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -212,15 +213,19 @@ export default function ClientsPage() {
   };
 
   const getCategoryBadgeColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "food":
-        return "bg-orange-100 text-orange-800";
-      case "shop":
-        return "bg-purple-100 text-purple-800";
-      case "service":
-        return "bg-blue-100 text-blue-800";
+    switch (category) {
+      case "FOOD":
+        return "bg-orange-50 text-orange-700 border-orange-200";
+      case "SHOP":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "TRAVEL":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "FUN":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "BEAUTY":
+        return "bg-pink-50 text-pink-700 border-pink-200";
       default:
-        return "bg-purple-100 text-purple-800";
+        return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
@@ -268,9 +273,11 @@ export default function ClientsPage() {
                 }
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="shop">Shop</SelectItem>
-                <SelectItem key="food">Food</SelectItem>
-                <SelectItem key="service">Service</SelectItem>
+                <SelectItem key="FOOD">Food</SelectItem>
+                <SelectItem key="SHOP">Shop</SelectItem>
+                <SelectItem key="TRAVEL">Travel</SelectItem>
+                <SelectItem key="FUN">Fun</SelectItem>
+                <SelectItem key="BEAUTY">Beauty</SelectItem>
               </Select>
             </div>
 
@@ -337,9 +344,9 @@ export default function ClientsPage() {
                   <TableCell>{client.id}</TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${getCategoryBadgeColor(client.categorie || "Shop")}`}
+                      className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(client.categorie || "FOOD")}`}
                     >
-                      {client.categorie || "Shop"}
+                      {client.categorie || "FOOD"}
                     </span>
                   </TableCell>
                   <TableCell className="font-medium">L&apos;ambiance</TableCell>
@@ -403,18 +410,39 @@ export default function ClientsPage() {
         <ModalContent>
           <ModalHeader>Ajouter un nouveau client</ModalHeader>
           <ModalBody>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             <div className="space-y-4">
               <Input
                 isRequired
                 label="Raison sociale"
                 placeholder="Nom de l'entreprise"
                 value={newClient.raisonSociale}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.raisonSociale}
+                errorMessage={fieldErrors.raisonSociale}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewClient((prev) => ({
                     ...prev,
-                    raisonSociale: e.target.value,
-                  }))
-                }
+                    raisonSociale: value,
+                  }));
+                  // Validation simple
+                  if (!value.trim()) {
+                    setFieldErrors(prev => ({...prev, raisonSociale: 'La raison sociale est requise'}));
+                  } else {
+                    setFieldErrors(prev => {
+                      const newErrors = {...prev};
+                      delete newErrors.raisonSociale;
+                      return newErrors;
+                    });
+                  }
+                }}
               />
               <Input
                 label="Email"
@@ -558,15 +586,17 @@ export default function ClientsPage() {
                         prev
                           ? {
                               ...prev,
-                              categorie: Array.from(keys)[0] as string,
+                              categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
                             }
                           : null
                       )
                     }
                   >
-                    <SelectItem key="shop">Shop</SelectItem>
-                    <SelectItem key="food">Food</SelectItem>
-                    <SelectItem key="service">Service</SelectItem>
+                    <SelectItem key="FOOD">Food</SelectItem>
+                    <SelectItem key="SHOP">Shop</SelectItem>
+                    <SelectItem key="TRAVEL">Travel</SelectItem>
+                    <SelectItem key="FUN">Fun</SelectItem>
+                    <SelectItem key="BEAUTY">Beauty</SelectItem>
                   </Select>
 
                   <Input

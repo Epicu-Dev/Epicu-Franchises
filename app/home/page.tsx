@@ -21,7 +21,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 
 import { DashboardLayout } from "../dashboard-layout";
@@ -45,30 +45,132 @@ export default function HomePage() {
     color: "bg-blue-100 text-blue-800",
   });
 
+  // État pour le filtre de ville
+  const [selectedCity, setSelectedCity] = useState<string>("tout");
+
+  // Données des villes disponibles
+  const cities = [
+    { key: "tout", label: "Tout" },
+    { key: "vannes", label: "Vannes" },
+    { key: "nantes", label: "Nantes" },
+    { key: "saint-brieuc", label: "Saint-Brieuc" },
+    { key: "national", label: "National" },
+  ];
+
+  // États pour les données dynamiques
+  const [prospects, setProspects] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fonction pour récupérer les données
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Récupération des prospects
+      const prospectsResponse = await fetch('/api/prospects');
+      const prospectsData = await prospectsResponse.json();
+
+      setProspects(prospectsData.prospects || []);
+
+      // Récupération des clients
+      const clientsResponse = await fetch('/api/clients');
+      const clientsData = await clientsResponse.json();
+
+      setClients(clientsData.clients || []);
+
+      // Récupération des événements d'agenda
+      const eventsResponse = await fetch('/api/agenda');
+      const eventsData = await eventsResponse.json();
+
+      setEvents(eventsData.events || []);
+    } catch {
+      // Gestion des erreurs de récupération des données
+      setProspects([]);
+      setClients([]);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Effet pour charger les données au montage du composant
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Fonction pour filtrer les données par ville
+  const filterDataByCity = (data: any[], cityKey: string) => {
+    if (cityKey === "tout") return data;
+    
+    // Mapping des clés vers les noms de villes
+    const cityMapping: { [key: string]: string[] } = {
+      "vannes": ["Vannes"],
+      "nantes": ["Nantes"],
+      "saint-brieuc": ["Saint-Brieuc"],
+      "national": ["Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Lille", "Nice", "Strasbourg", "Montpellier", "Rennes"]
+    };
+
+    const targetCities = cityMapping[cityKey] || [];
+
+    return data.filter(item => 
+      item.ville && targetCities.some(city => 
+        item.ville.toLowerCase().includes(city.toLowerCase())
+      )
+    );
+  };
+
+  // Calcul des métriques filtrées
+  const filteredProspects = useMemo(() => 
+    filterDataByCity(prospects, selectedCity), 
+    [prospects, selectedCity]
+  );
+
+  const filteredClients = useMemo(() => 
+    filterDataByCity(clients, selectedCity), 
+    [clients, selectedCity]
+  );
+
+  const filteredEvents = useMemo(() => 
+    filterDataByCity(events, selectedCity), 
+    [events, selectedCity]
+  );
+
+  // Calcul du taux de conversion
+  const conversionRate = useMemo(() => {
+    const totalProspects = filteredProspects.length;
+    const convertedClients = filteredClients.length;
+
+    if (totalProspects === 0) return "0%";
+
+    return `${Math.round((convertedClients / totalProspects) * 100)}%`;
+  }, [filteredProspects, filteredClients]);
+
   const metrics = [
     {
-      value: "+59k",
+      value: loading ? "..." : `+${Math.floor(filteredClients.length * 4.2)}k`,
       label: "Nombre d'abonnés",
       icon: <ChartBarIcon className="h-6 w-6" />,
       iconBgColor: "bg-green-100",
       iconColor: "text-green-600",
     },
     {
-      value: "+10M",
+      value: loading ? "..." : `+${Math.floor(filteredClients.length * 0.8)}M`,
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
       iconBgColor: "bg-pink-100",
       iconColor: "text-pink-600",
     },
     {
-      value: "143",
+      value: loading ? "..." : filteredProspects.length.toString(),
       label: "Prospects",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
       iconColor: "text-yellow-600",
     },
     {
-      value: "14.70%",
+      value: loading ? "..." : conversionRate,
       label: "Taux de conversion",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       iconBgColor: "bg-orange-100",
@@ -76,26 +178,24 @@ export default function HomePage() {
     },
   ];
 
-  const agendaEvents = [
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Tournage",
-      color: "bg-pink-100 text-pink-800",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Rendez-vous",
-      color: "bg-purple-100 text-purple-800",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Evènement",
-      color: "bg-orange-100 text-orange-800",
-    },
-  ];
+  // Transformation des événements filtrés pour l'affichage
+  const agendaEvents = useMemo(() => {
+    const typeColorMap = {
+      "tournage": "bg-pink-100 text-pink-800",
+      "rendez-vous": "bg-purple-100 text-purple-800",
+      "publication": "bg-blue-100 text-blue-800",
+      "evenement": "bg-orange-100 text-orange-800",
+    };
+
+    return filteredEvents.slice(0, 3).map(event => ({
+      clientName: event.title || "Nom client",
+      date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
+      type: event.type === "rendez-vous" ? "Rendez-vous" : 
+            event.type === "tournage" ? "Tournage" :
+            event.type === "publication" ? "Publication" : "Evènement",
+      color: typeColorMap[event.type as keyof typeof typeColorMap] || "bg-gray-100 text-gray-800",
+    }));
+  }, [filteredEvents]);
 
   const [todoItems, setTodoItems] = useState([
     {
@@ -156,40 +256,21 @@ export default function HomePage() {
 
       {/* Location Filters */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <Button
-          className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-0"
-          size="sm"
-        >
-          Tout
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Vannes
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Nantes
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Saint-Brieuc
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          National
-        </Button>
+        {cities.map((city) => (
+          <Button
+            key={city.key}
+            className={
+              selectedCity === city.key
+                ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }
+            size="sm"
+            variant={selectedCity === city.key ? "solid" : "bordered"}
+            onPress={() => setSelectedCity(city.key)}
+          >
+            {city.label}
+          </Button>
+        ))}
       </div>
 
       {/* Date Navigation */}

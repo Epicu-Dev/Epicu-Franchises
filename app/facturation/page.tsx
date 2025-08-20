@@ -66,13 +66,14 @@ export default function FacturationPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [newInvoice, setNewInvoice] = useState({
-    category: "",
+    category: "shop",
     establishmentName: "",
-    date: "",
+    date: new Date().toISOString().split('T')[0], // Date d'aujourd'hui par défaut
     amount: "",
     serviceType: "",
     status: "en_attente" as Invoice["status"],
@@ -131,8 +132,67 @@ export default function FacturationPage() {
     }
   };
 
+  const validateField = (fieldName: string, value: any) => {
+    const errors = { ...fieldErrors };
+
+    switch (fieldName) {
+      case 'establishmentName':
+        if (!value || !value.trim()) {
+          errors.establishmentName = 'Le nom de l\'établissement est requis';
+        } else {
+          delete errors.establishmentName;
+        }
+        break;
+      case 'date':
+        if (!value) {
+          errors.date = 'La date est requise';
+        } else {
+          delete errors.date;
+        }
+        break;
+      case 'amount':
+        if (!value || parseFloat(value) <= 0) {
+          errors.amount = 'Le montant doit être supérieur à 0';
+        } else {
+          delete errors.amount;
+        }
+        break;
+      case 'serviceType':
+        if (!value) {
+          errors.serviceType = 'Le type de prestation est requis';
+        } else {
+          delete errors.serviceType;
+        }
+        break;
+    }
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllFields = (invoice: any) => {
+    const fields = ['establishmentName', 'date', 'amount', 'serviceType'];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateField(field, invoice[field]);
+
+      if (!fieldValid) isValid = false;
+    });
+
+    return isValid;
+  };
+
   const handleAddInvoice = async () => {
     try {
+      // Validation complète avant soumission
+      if (!validateAllFields(newInvoice)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+
+        return;
+      }
+
       const response = await fetch("/api/facturation", {
         method: "POST",
         headers: {
@@ -145,19 +205,23 @@ export default function FacturationPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de la facture");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de l'ajout de la facture");
       }
 
       setNewInvoice({
-        category: "",
+        category: "shop",
         establishmentName: "",
-        date: "",
+        date: new Date().toISOString().split('T')[0], // Date d'aujourd'hui par défaut
         amount: "",
         serviceType: "",
         status: "en_attente",
         comment: "",
       });
       setIsAddModalOpen(false);
+      setError(null); // Réinitialiser l'erreur
+      setFieldErrors({});
       fetchInvoices();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -168,6 +232,27 @@ export default function FacturationPage() {
     if (!selectedInvoice) return;
 
     try {
+      // Validation côté client
+      if (!selectedInvoice.establishmentName.trim()) {
+        setError("Le nom de l'établissement est requis");
+        return;
+      }
+
+      if (!selectedInvoice.date) {
+        setError("La date est requise");
+        return;
+      }
+
+      if (!selectedInvoice.amount || selectedInvoice.amount <= 0) {
+        setError("Le montant doit être supérieur à 0");
+        return;
+      }
+
+      if (!selectedInvoice.serviceType) {
+        setError("Le type de prestation est requis");
+        return;
+      }
+
       const response = await fetch(`/api/facturation/${selectedInvoice.id}`, {
         method: "PUT",
         headers: {
@@ -177,11 +262,14 @@ export default function FacturationPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la modification de la facture");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de la modification de la facture");
       }
 
       setIsEditModalOpen(false);
       setSelectedInvoice(null);
+      setError(null);
       fetchInvoices();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -203,6 +291,19 @@ export default function FacturationPage() {
       month: "2-digit",
       year: "numeric",
     });
+  };
+
+  const getServiceTypeLabel = (serviceType: string) => {
+    switch (serviceType) {
+      case "creation_contenu":
+        return "Création de contenu";
+      case "publication":
+        return "Publication";
+      case "studio":
+        return "Studio";
+      default:
+        return serviceType;
+    }
   };
 
   if (loading && invoices.length === 0) {
@@ -253,13 +354,19 @@ export default function FacturationPage() {
               <Tab key="retard" title="Retard" />
             </Tabs>
 
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              startContent={<PlusIcon className="h-4 w-4" />}
-              onPress={() => setIsAddModalOpen(true)}
-            >
-              Ajouter une facture
-            </Button>
+            <div>
+              <Button
+                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                startContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => {
+                  setError(null);
+                  setFieldErrors({});
+                  setIsAddModalOpen(true);
+                }}
+              >
+                Ajouter une facture
+              </Button>
+            </div>
           </div>
 
           {/* Filtres */}
@@ -409,7 +516,7 @@ export default function FacturationPage() {
                   <TableCell className="font-medium">
                     {formatAmount(invoice.amount)}
                   </TableCell>
-                  <TableCell>{invoice.serviceType}</TableCell>
+                  <TableCell>{getServiceTypeLabel(invoice.serviceType)}</TableCell>
                   <TableCell>
                     <Button
                       isIconOnly
@@ -417,6 +524,7 @@ export default function FacturationPage() {
                       size="sm"
                       variant="light"
                       onPress={() => {
+                        setError(null);
                         setSelectedInvoice(invoice);
                         setIsEditModalOpen(true);
                       }}
@@ -465,6 +573,14 @@ export default function FacturationPage() {
         <ModalContent>
           <ModalHeader>Ajouter une nouvelle facture</ModalHeader>
           <ModalBody>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             <div className="space-y-4">
               <Select
                 label="Catégorie"
@@ -486,12 +602,16 @@ export default function FacturationPage() {
                 label="Nom de l'établissement"
                 placeholder="Ex: L'ambiance"
                 value={newInvoice.establishmentName}
-                onChange={(e) =>
+                isInvalid={!!fieldErrors.establishmentName}
+                errorMessage={fieldErrors.establishmentName}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setNewInvoice((prev) => ({
                     ...prev,
-                    establishmentName: e.target.value,
-                  }))
-                }
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value);
+                }}
               />
 
               <Input
@@ -499,9 +619,13 @@ export default function FacturationPage() {
                 label="Date"
                 type="date"
                 value={newInvoice.date}
-                onChange={(e) =>
-                  setNewInvoice((prev) => ({ ...prev, date: e.target.value }))
-                }
+                isInvalid={!!fieldErrors.date}
+                errorMessage={fieldErrors.date}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, date: value }));
+                  validateField('date', value);
+                }}
               />
 
               <Input
@@ -511,23 +635,35 @@ export default function FacturationPage() {
                 step="0.01"
                 type="number"
                 value={newInvoice.amount}
-                onChange={(e) =>
-                  setNewInvoice((prev) => ({ ...prev, amount: e.target.value }))
-                }
+                isInvalid={!!fieldErrors.amount}
+                errorMessage={fieldErrors.amount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, amount: value }));
+                  validateField('amount', value);
+                }}
               />
 
-              <Input
+              <Select
                 isRequired
                 label="Type de prestation"
-                placeholder="Ex: Tournage"
-                value={newInvoice.serviceType}
-                onChange={(e) =>
+                placeholder="Sélectionnez une prestation"
+                selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
+                isInvalid={!!fieldErrors.serviceType}
+                errorMessage={fieldErrors.serviceType}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
                   setNewInvoice((prev) => ({
                     ...prev,
-                    serviceType: e.target.value,
-                  }))
-                }
-              />
+                    serviceType: value,
+                  }));
+                  validateField('serviceType', value);
+                }}
+              >
+                <SelectItem key="creation_contenu">Création de contenu</SelectItem>
+                <SelectItem key="publication">Publication</SelectItem>
+                <SelectItem key="studio">Studio</SelectItem>
+              </Select>
 
               <Select
                 label="Statut"
@@ -563,6 +699,7 @@ export default function FacturationPage() {
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
               onPress={handleAddInvoice}
             >
               Ajouter
@@ -576,6 +713,14 @@ export default function FacturationPage() {
         <ModalContent>
           <ModalHeader>Modifier la facture</ModalHeader>
           <ModalBody>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             {selectedInvoice && (
               <div className="space-y-4">
                 <Select
@@ -636,17 +781,21 @@ export default function FacturationPage() {
                   }
                 />
 
-                <Input
+                <Select
                   isRequired
                   label="Type de prestation"
-                  placeholder="Ex: Tournage"
-                  value={selectedInvoice.serviceType}
-                  onChange={(e) =>
+                  placeholder="Sélectionnez une prestation"
+                  selectedKeys={selectedInvoice.serviceType ? [selectedInvoice.serviceType] : []}
+                  onSelectionChange={(keys) =>
                     setSelectedInvoice((prev) =>
-                      prev ? { ...prev, serviceType: e.target.value } : null
+                      prev ? { ...prev, serviceType: Array.from(keys)[0] as string } : null
                     )
                   }
-                />
+                >
+                  <SelectItem key="creation_contenu">Création de contenu</SelectItem>
+                  <SelectItem key="publication">Publication</SelectItem>
+                  <SelectItem key="studio">Studio</SelectItem>
+                </Select>
 
                 <Select
                   label="Statut"
@@ -655,9 +804,9 @@ export default function FacturationPage() {
                     setSelectedInvoice((prev) =>
                       prev
                         ? {
-                            ...prev,
-                            status: Array.from(keys)[0] as Invoice["status"],
-                          }
+                          ...prev,
+                          status: Array.from(keys)[0] as Invoice["status"],
+                        }
                         : null
                     )
                   }
