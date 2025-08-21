@@ -34,6 +34,8 @@ export default function TestProspects() {
 
     const [clients, setClients] = useState<Client[]>([]);
     const [clientsViewCount, setClientsViewCount] = useState<number | null>(null);
+    const [villes, setVilles] = useState<{ id: string; ville: string }[]>([]);
+    const [villesCount, setVillesCount] = useState<number | null>(null);
 
     const [selected, setSelected] = useState<string | null>(null);
 
@@ -83,6 +85,15 @@ export default function TestProspects() {
 
                         setClients(data.clients || []);
                         setClientsViewCount(data.viewCount ?? null);
+                    }
+                    break;
+                case 'villes':
+                    url = `/api/villes${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        setVilles(data.results || []);
+                        setVillesCount(data.count ?? null);
                     }
                     break;
                 default:
@@ -182,6 +193,11 @@ export default function TestProspects() {
                             </button>
                         </li>
                         <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'villes' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('villes')}>
+                                Villes Epicu
+                            </button>
+                        </li>
+                        <li>
                             <button className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('clients')}>
                                 Clients
                             </button>
@@ -212,6 +228,21 @@ export default function TestProspects() {
                     {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, prospectsViewCount, 'Prospects')}
                     {!loading && !error && selected === 'discussion' && renderProspectTable(discussions, discussionsViewCount, 'En Discussion')}
                     {!loading && !error && selected === 'clients' && renderClientsTable(clients, clientsViewCount)}
+                    {!loading && !error && selected === 'villes' && (
+                        <div>
+                            <h2 className="text-xl font-semibold mb-2">Villes Epicu</h2>
+                            {villesCount !== null && (
+                                <div className="mb-2 text-gray-700">Nombre de résultats: <span className="font-semibold">{villesCount}</span></div>
+                            )}
+                            <ul className="list-disc pl-6">
+                                {villes.map(v => (
+                                    <li key={v.id}>
+                                        <strong>{v.ville}</strong> — id: <code>{v.id}</code>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </section>
             </div>
         </main>
