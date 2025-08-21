@@ -180,6 +180,7 @@ export async function GET(request: Request) {
     }
   } catch (error) {
     console.error('Erreur lors de la récupération des données du profil:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -211,6 +212,7 @@ export async function PUT(request: Request) {
     return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Erreur lors de la mise à jour du profil:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

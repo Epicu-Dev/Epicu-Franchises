@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     // Filtrage par recherche
     if (search) {
       const searchLower = search.toLowerCase();
+
       filteredMembers = filteredMembers.filter(member =>
         member.name.toLowerCase().includes(searchLower) ||
         member.role.toLowerCase().includes(searchLower) ||
@@ -103,6 +104,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des membres de l\'équipe:', error);
+
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des membres de l\'équipe' },
       { status: 500 }
@@ -145,6 +147,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Erreur lors de l\'ajout du membre:', error);
+
     return NextResponse.json(
       { error: 'Erreur lors de l\'ajout du membre' },
       { status: 500 }

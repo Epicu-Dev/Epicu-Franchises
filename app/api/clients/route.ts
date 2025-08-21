@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { Client, getAllClients, addClient } from './data';
 
 export async function GET(request: Request) {
@@ -53,6 +54,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des clients:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -91,6 +93,7 @@ export async function POST(request: Request) {
     return NextResponse.json(newClient, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création du client:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

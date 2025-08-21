@@ -10,7 +10,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const offset = parseInt(req.query.offset as string || '0', 10);
     const order = req.query.order === 'desc' ? 'desc' : 'asc';
     const orderBy = (req.query.orderBy as string) || "Nom de l'établissement";
-  const q = (req.query.q as string) || (req.query.search as string) || '';
+    const q = (req.query.q as string) || (req.query.search as string) || '';
 
     // Construire les options de select, avec filtre de recherche si présent
     const fields = [

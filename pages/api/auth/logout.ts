@@ -1,5 +1,6 @@
 // /pages/api/auth/logout.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -33,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ message: 'Déconnexion réussie' });
   } catch (error) {
     console.error('Erreur de déconnexion :', error);
+
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

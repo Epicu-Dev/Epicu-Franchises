@@ -30,9 +30,11 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     };
 
     const selectOptions: any = { view: VIEW_NAME, fields };
+
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
       const filterFormula = `OR(REGEX_MATCH(LOWER({Nom de l'établissement}), \"${pattern}\"),REGEX_MATCH(LOWER({Ville}), \"${pattern}\"),REGEX_MATCH(LOWER({Commentaires}), \"${pattern}\"))`;
+
       selectOptions.filterByFormula = filterFormula;
     }
 

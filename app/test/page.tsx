@@ -1,97 +1,102 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type Prospect = {
     nomEtablissement: string;
     categorie: string;
-    ville: string;
+    ville?: string;
     suiviPar?: string;
     commentaires?: string;
     dateRelance?: string;
 };
 
+type Client = {
+    categorie: string;
+    nomEtablissement: string;
+    raisonSociale?: string;
+    dateSignature?: string;
+    commentaire?: string;
+};
+
 export default function TestProspects() {
-    const [lostProspects, setLostProspects] = useState<Prospect[]>([]);
-    const [lostViewCount, setLostViewCount] = useState<number | null>(null);
-    const [prospects, setProspects] = useState<Prospect[]>([]);
-    const [prospectsViewCount, setProspectsViewCount] = useState<number | null>(null);
-    const [discussions, setDiscussions] = useState<Prospect[]>([]);
-    const [discussionsViewCount, setDiscussionsViewCount] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState<string>('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        Promise.all([
-            fetch('/api/prospects/lost').then(res => res.json()),
-            fetch('/api/prospects/prospects').then(res => res.json()),
-            fetch('/api/prospects/discussion').then(res => res.json()),
-        ])
-        .then(([lostData, prospectsData, discussionData]) => {
-            setLostProspects(lostData.prospects || []);
-            setLostViewCount(lostData.viewCount ?? null);
-            setProspects(prospectsData.prospects || []);
-            setProspectsViewCount(prospectsData.viewCount ?? null);
-            setDiscussions(discussionData.discussions || []);
-            setDiscussionsViewCount(discussionData.viewCount ?? null);
-            setLoading(false);
-        })
-        .catch(() => {
+    const [lostProspects, setLostProspects] = useState<Prospect[]>([]);
+    const [lostViewCount, setLostViewCount] = useState<number | null>(null);
+
+    const [prospects, setProspects] = useState<Prospect[]>([]);
+    const [prospectsViewCount, setProspectsViewCount] = useState<number | null>(null);
+
+    const [discussions, setDiscussions] = useState<Prospect[]>([]);
+    const [discussionsViewCount, setDiscussionsViewCount] = useState<number | null>(null);
+
+    const [clients, setClients] = useState<Client[]>([]);
+    const [clientsViewCount, setClientsViewCount] = useState<number | null>(null);
+
+    const [selected, setSelected] = useState<string | null>(null);
+
+    const loadCollection = async (col: string, q = '') => {
+        setLoading(true);
+        setError(null);
+        setSelected(col);
+        try {
+            let url = '';
+
+            switch (col) {
+                case 'lost':
+                    url = `/api/prospects/lost${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+
+                        setLostProspects(data.prospects || []);
+                        setLostViewCount(data.viewCount ?? null);
+                    }
+                    break;
+                case 'prospects':
+                    url = `/api/prospects/prospects${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+
+                        setProspects(data.prospects || []);
+                        setProspectsViewCount(data.viewCount ?? null);
+                    }
+                    break;
+                case 'discussion':
+                    url = `/api/prospects/discussion${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+
+                        setDiscussions(data.discussions || []);
+                        setDiscussionsViewCount(data.viewCount ?? null);
+                    }
+                    break;
+                case 'clients':
+                    url = `/api/clients/clients${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+
+                        setClients(data.clients || []);
+                        setClientsViewCount(data.viewCount ?? null);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } catch (e) {
             setError('Erreur lors du chargement');
-            setLoading(false);
-        });
-    }, []);
-
-    const runSearch = async (q: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch(`/api/prospects/discussion?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-
-            setDiscussions(data.discussions || []);
-            setDiscussionsViewCount(data.viewCount ?? null);
-        } catch (e) {
-            setError('Erreur lors de la recherche');
         } finally {
             setLoading(false);
         }
     };
 
-    const runLostSearch = async (q: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch(`/api/prospects/lost?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-
-            setLostProspects(data.prospects || []);
-            setLostViewCount(data.viewCount ?? null);
-        } catch (e) {
-            setError('Erreur lors de la recherche');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const runProspectsSearch = async (q: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch(`/api/prospects/prospects?q=${encodeURIComponent(q)}`);
-            const data = await res.json();
-
-            setProspects(data.prospects || []);
-            setProspectsViewCount(data.viewCount ?? null);
-        } catch (e) {
-            setError('Erreur lors de la recherche');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const renderTable = (data: Prospect[], viewCount: number | null, title: string) => (
-        <section className="mb-8">
+    const renderProspectTable = (data: Prospect[], viewCount: number | null, title: string) => (
+        <div>
             <h2 className="text-xl font-semibold mb-2">{title}</h2>
             {viewCount !== null && (
                 <div className="mb-2 text-gray-700">Nombre total d&apos;éléments dans la vue : <span className="font-semibold">{viewCount}</span></div>
@@ -112,7 +117,7 @@ export default function TestProspects() {
                         <tr key={idx}>
                             <td className="border px-2 py-1">{p.nomEtablissement}</td>
                             <td className="border px-2 py-1">{p.categorie}</td>
-                            <td className="border px-2 py-1">{p.ville}</td>
+                            <td className="border px-2 py-1">{p.ville || '-'}</td>
                             <td className="border px-2 py-1">{p.suiviPar || '-'}</td>
                             <td className="border px-2 py-1">{p.commentaires || '-'}</td>
                             <td className="border px-2 py-1">{p.dateRelance || '-'}</td>
@@ -120,90 +125,95 @@ export default function TestProspects() {
                     ))}
                 </tbody>
             </table>
-        </section>
+        </div>
+    );
+
+    const renderClientsTable = (data: Client[], viewCount: number | null) => (
+        <div>
+            <h2 className="text-xl font-semibold mb-2">Clients</h2>
+            {viewCount !== null && (
+                <div className="mb-2 text-gray-700">Nombre total de clients: <span className="font-semibold">{viewCount}</span></div>
+            )}
+            <table className="min-w-full border">
+                <thead>
+                    <tr>
+                        <th className="border px-2 py-1">Nom établissement</th>
+                        <th className="border px-2 py-1">Catégorie</th>
+                        <th className="border px-2 py-1">Raison sociale</th>
+                        <th className="border px-2 py-1">Date signature</th>
+                        <th className="border px-2 py-1">Commentaire</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((c, idx) => (
+                        <tr key={idx}>
+                            <td className="border px-2 py-1">{c.nomEtablissement}</td>
+                            <td className="border px-2 py-1">{c.categorie}</td>
+                            <td className="border px-2 py-1">{c.raisonSociale || '-'}</td>
+                            <td className="border px-2 py-1">{c.dateSignature || '-'}</td>
+                            <td className="border px-2 py-1">{c.commentaire || '-'}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 
     return (
         <main className="p-8">
             <h1 className="text-2xl font-bold mb-4">Test Prospects</h1>
-            {loading && <div>Chargement...</div>}
-            {error && <div className="text-red-500">{error}</div>}
-            {!loading && !error && (
-                <>
-                    <section className="mb-8">
-                        <div className="mb-2 flex items-center gap-2">
+            <div className="flex gap-6">
+                <aside className="w-1/4 border p-4">
+                    <h3 className="font-semibold mb-2">Collections</h3>
+                    <ul className="flex flex-col gap-2">
+                        <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'lost' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('lost')}>
+                                Prospects Perdus
+                            </button>
+                        </li>
+                        <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'prospects' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('prospects')}>
+                                Prospects
+                            </button>
+                        </li>
+                        <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'discussion' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('discussion')}>
+                                En Discussion
+                            </button>
+                        </li>
+                        <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('clients')}>
+                                Clients
+                            </button>
+                        </li>
+                    </ul>
+                    <div className="mt-4">
                             <input
-                                className="border px-2 py-1 rounded"
-                                placeholder="Rechercher Perdus: nom, ville ou commentaire"
+                                className="w-full border px-2 py-1 rounded"
+                                placeholder="Rechercher..."
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' && selected) loadCollection(selected, searchQuery); }}
                             />
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded"
-                                onClick={() => runLostSearch(searchQuery)}
-                            >
-                                Rechercher
-                            </button>
-                            <button
-                                className="bg-gray-200 px-3 py-1 rounded"
-                                onClick={() => { setSearchQuery(''); runLostSearch(''); }}
-                            >
-                                Réinitialiser
-                            </button>
+                        <div className="mt-2 flex gap-2">
+                            <button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={() => selected && loadCollection(selected, searchQuery)}>Rechercher</button>
+                            <button className="bg-gray-200 px-3 py-1 rounded" onClick={() => { setSearchQuery(''); }}>Réinitialiser</button>
                         </div>
-                        {renderTable(lostProspects, lostViewCount, 'Prospects Perdus')}
-                    </section>
-                    <section className="mb-8">
-                        <div className="mb-2 flex items-center gap-2">
-                            <input
-                                className="border px-2 py-1 rounded"
-                                placeholder="Rechercher Prospects: nom, ville ou commentaire"
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded"
-                                onClick={() => runProspectsSearch(searchQuery)}
-                            >
-                                Rechercher
-                            </button>
-                            <button
-                                className="bg-gray-200 px-3 py-1 rounded"
-                                onClick={() => { setSearchQuery(''); runProspectsSearch(''); }}
-                            >
-                                Réinitialiser
-                            </button>
-                        </div>
-                        {renderTable(prospects, prospectsViewCount, 'Prospects')}
-                    </section>
-                    <section className="mb-8">
-                        <div className="mb-2 flex items-center gap-2">
-                            <input
-                                className="border px-2 py-1 rounded"
-                                placeholder="Rechercher nom, ville ou commentaire"
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded"
-                                onClick={() => runSearch(searchQuery)}
-                            >
-                                Rechercher
-                            </button>
-                            <button
-                                className="bg-gray-200 px-3 py-1 rounded"
-                                onClick={() => { setSearchQuery(''); runSearch(''); }}
-                            >
-                                Réinitialiser
-                            </button>
-                        </div>
-                        {renderTable(discussions, discussionsViewCount, 'En Discussion')}
-                    </section>
-                </>
-            )}
+                    </div>
+                </aside>
+                <section className="flex-1 border p-4">
+                    {loading && <div>Chargement...</div>}
+                    {error && <div className="text-red-500">{error}</div>}
+                    {!loading && !error && selected === null && (
+                        <div>Sélectionnez une collection à gauche pour afficher les résultats.</div>
+                    )}
+                    {!loading && !error && selected === 'lost' && renderProspectTable(lostProspects, lostViewCount, 'Prospects Perdus')}
+                    {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, prospectsViewCount, 'Prospects')}
+                    {!loading && !error && selected === 'discussion' && renderProspectTable(discussions, discussionsViewCount, 'En Discussion')}
+                    {!loading && !error && selected === 'clients' && renderClientsTable(clients, clientsViewCount)}
+                </section>
+            </div>
         </main>
     );
 }

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
-import { Chip } from "@heroui/chip";
 import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,

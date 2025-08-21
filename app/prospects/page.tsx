@@ -29,6 +29,7 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+
 import { ProspectModal } from "@/components/prospect-modal";
 
 interface Prospect {

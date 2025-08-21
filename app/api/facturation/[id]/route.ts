@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { mockInvoices, type Invoice } from '../data';
+
+import { mockInvoices } from '../data';
 
 export async function GET(
   request: Request,
@@ -19,6 +20,7 @@ export async function GET(
     return NextResponse.json(invoice);
   } catch (error) {
     console.error('Erreur lors de la récupération de la facture:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -56,6 +58,7 @@ export async function PUT(
     return NextResponse.json(updatedInvoice);
   } catch (error) {
     console.error('Erreur lors de la modification de la facture:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -84,6 +87,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Facture supprimée avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de la facture:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

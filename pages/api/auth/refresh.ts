@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import crypto from 'crypto';
+
 import { base } from '../constants';
 
 
@@ -90,6 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error('Erreur lors du refresh :', error);
+
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

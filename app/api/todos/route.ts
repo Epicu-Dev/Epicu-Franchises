@@ -160,6 +160,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des tâches:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -198,6 +199,7 @@ export async function POST(request: Request) {
     return NextResponse.json(newTodo, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

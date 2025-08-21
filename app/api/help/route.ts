@@ -58,6 +58,7 @@ Date: ${new Date().toLocaleString('fr-FR')}
 
   } catch (error) {
     console.error('Erreur lors de l\'envoi de la demande d\'aide:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
