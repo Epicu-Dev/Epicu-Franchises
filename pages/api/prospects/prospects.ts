@@ -10,20 +10,34 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const offset = parseInt(req.query.offset as string || '0', 10);
     const order = req.query.order === 'desc' ? 'desc' : 'asc';
     const orderBy = (req.query.orderBy as string) || "Nom de l'établissement";
+  const q = (req.query.q as string) || (req.query.search as string) || '';
 
-    // Récupérer tous les prospects pour le total
+    const fields = [
+      "Nom de l'établissement",
+      'Catégorie',
+      'Ville',
+      'Suivi par...',
+      'Commentaires',
+      'Date de relance',
+    ];
+
+    const escapeForAirtableRegex = (s: string) => {
+      return s
+        .replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&')
+        .replace(/"/g, '\\\"')
+        .toLowerCase();
+    };
+
+    const selectOptions: any = { view: VIEW_NAME, fields };
+    if (q && q.trim().length > 0) {
+      const pattern = escapeForAirtableRegex(q.trim());
+      const filterFormula = `OR(REGEX_MATCH(LOWER({Nom de l'établissement}), \"${pattern}\"),REGEX_MATCH(LOWER({Ville}), \"${pattern}\"),REGEX_MATCH(LOWER({Commentaires}), \"${pattern}\"))`;
+      selectOptions.filterByFormula = filterFormula;
+    }
+
+    // Récupérer tous les prospects (éventuellement filtrés) pour le total
     const allRecords = await base('ÉTABLISSEMENTS')
-      .select({
-        view: VIEW_NAME,
-        fields: [
-          "Nom de l'établissement",
-          'Catégorie',
-          'Ville',
-          'Suivi par...',
-          'Commentaires',
-          'Date de relance',
-        ],
-      })
+      .select(selectOptions)
       .all();
     const totalCount = allRecords.length;
 

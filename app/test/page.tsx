@@ -17,6 +17,7 @@ export default function TestProspects() {
     const [prospectsViewCount, setProspectsViewCount] = useState<number | null>(null);
     const [discussions, setDiscussions] = useState<Prospect[]>([]);
     const [discussionsViewCount, setDiscussionsViewCount] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +41,54 @@ export default function TestProspects() {
             setLoading(false);
         });
     }, []);
+
+    const runSearch = async (q: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/prospects/discussion?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            setDiscussions(data.discussions || []);
+            setDiscussionsViewCount(data.viewCount ?? null);
+        } catch (e) {
+            setError('Erreur lors de la recherche');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const runLostSearch = async (q: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/prospects/lost?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            setLostProspects(data.prospects || []);
+            setLostViewCount(data.viewCount ?? null);
+        } catch (e) {
+            setError('Erreur lors de la recherche');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const runProspectsSearch = async (q: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/prospects/prospects?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            setProspects(data.prospects || []);
+            setProspectsViewCount(data.viewCount ?? null);
+        } catch (e) {
+            setError('Erreur lors de la recherche');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const renderTable = (data: Prospect[], viewCount: number | null, title: string) => (
         <section className="mb-8">
@@ -81,9 +130,78 @@ export default function TestProspects() {
             {error && <div className="text-red-500">{error}</div>}
             {!loading && !error && (
                 <>
-                    {renderTable(lostProspects, lostViewCount, 'Prospects Perdus')}
-                    {renderTable(prospects, prospectsViewCount, 'Prospects')}
-                    {renderTable(discussions, discussionsViewCount, 'En Discussion')}
+                    <section className="mb-8">
+                        <div className="mb-2 flex items-center gap-2">
+                            <input
+                                className="border px-2 py-1 rounded"
+                                placeholder="Rechercher Perdus: nom, ville ou commentaire"
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button
+                                className="bg-blue-600 text-white px-3 py-1 rounded"
+                                onClick={() => runLostSearch(searchQuery)}
+                            >
+                                Rechercher
+                            </button>
+                            <button
+                                className="bg-gray-200 px-3 py-1 rounded"
+                                onClick={() => { setSearchQuery(''); runLostSearch(''); }}
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                        {renderTable(lostProspects, lostViewCount, 'Prospects Perdus')}
+                    </section>
+                    <section className="mb-8">
+                        <div className="mb-2 flex items-center gap-2">
+                            <input
+                                className="border px-2 py-1 rounded"
+                                placeholder="Rechercher Prospects: nom, ville ou commentaire"
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button
+                                className="bg-blue-600 text-white px-3 py-1 rounded"
+                                onClick={() => runProspectsSearch(searchQuery)}
+                            >
+                                Rechercher
+                            </button>
+                            <button
+                                className="bg-gray-200 px-3 py-1 rounded"
+                                onClick={() => { setSearchQuery(''); runProspectsSearch(''); }}
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                        {renderTable(prospects, prospectsViewCount, 'Prospects')}
+                    </section>
+                    <section className="mb-8">
+                        <div className="mb-2 flex items-center gap-2">
+                            <input
+                                className="border px-2 py-1 rounded"
+                                placeholder="Rechercher nom, ville ou commentaire"
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button
+                                className="bg-blue-600 text-white px-3 py-1 rounded"
+                                onClick={() => runSearch(searchQuery)}
+                            >
+                                Rechercher
+                            </button>
+                            <button
+                                className="bg-gray-200 px-3 py-1 rounded"
+                                onClick={() => { setSearchQuery(''); runSearch(''); }}
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                        {renderTable(discussions, discussionsViewCount, 'En Discussion')}
+                    </section>
                 </>
             )}
         </main>

@@ -1,5 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
+
+const VIEW_NAME = '🔴 Perdu';
 
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -7,31 +10,49 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const offset = parseInt(req.query.offset as string || '0', 10);
     const order = req.query.order === 'desc' ? 'desc' : 'asc';
     const orderBy = (req.query.orderBy as string) || "Nom de l'établissement";
+  const q = (req.query.q as string) || (req.query.search as string) || '';
 
-    // Récupérer tous les prospects perdus pour le total
+    // Construire options de select (avec filtre de recherche si fourni)
+    const fields = [
+      "Nom de l'établissement",
+      'Catégorie',
+      'Ville',
+      'Suivi par...',
+      'Commentaires',
+      'Date de relance',
+    ];
+
+    const escapeForAirtableRegex = (s: string) => {
+      return s
+        .replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&')
+        .replace(/"/g, '\\\"')
+        .toLowerCase();
+    };
+
+    const selectOptions: any = { view: VIEW_NAME, fields };
+    if (q && q.trim().length > 0) {
+      const pattern = escapeForAirtableRegex(q.trim());
+      const filterFormula = `OR(REGEX_MATCH(LOWER({Nom de l'établissement}), \"${pattern}\"),REGEX_MATCH(LOWER({Ville}), \"${pattern}\"),REGEX_MATCH(LOWER({Commentaires}), \"${pattern}\"))`;
+      selectOptions.filterByFormula = filterFormula;
+    }
+
+    // Récupérer tous les prospects perdus (éventuellement filtrés) pour le total
     const allRecords = await base('ÉTABLISSEMENTS')
-      .select({
-        view: '🔴 Perdu',
-          fields: [
-            "Nom de l'établissement",
-            'Catégorie',
-            'Ville',
-            'Suivi par...',
-            'Commentaires',
-            'Date de relance',
-          ],
-      })
+      .select(selectOptions)
       .all();
     const totalCount = allRecords.length;
 
     // Pagination et tri
     let records = Array.from(allRecords);
+
     // Tri
     records = records.sort((a: any, b: any) => {
       const aValue = a.get(orderBy) || '';
       const bValue = b.get(orderBy) || '';
+
       if (aValue < bValue) return order === 'asc' ? -1 : 1;
       if (aValue > bValue) return order === 'asc' ? 1 : -1;
+
       return 0;
     });
     // Pagination
@@ -40,6 +61,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     // Récupérer les noms de catégorie (relation)
     const categoryIds = Array.from(new Set(records.flatMap((r: any) => r.get('Catégorie') || [])));
     let categoryNames: Record<string, string> = {};
+
     if (categoryIds.length > 0) {
       const catRecords = await base('Catégories')
         .select({
@@ -47,6 +69,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           fields: ['Name'],
         })
         .all();
+
       catRecords.forEach((cat: any) => {
         categoryNames[cat.id] = cat.get('Name');
       });
@@ -55,6 +78,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     // Récupérer les noms des collaborateurs (relation Suivi par...)
     const suiviIds = Array.from(new Set(records.flatMap((r: any) => r.get('Suivi par...') || [])));
     let suiviNames: Record<string, string> = {};
+
     if (suiviIds.length > 0) {
       const suiviRecords = await base('Collaborateurs')
         .select({
@@ -62,9 +86,11 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           fields: ['Prénom', 'Nom'],
         })
         .all();
+
       suiviRecords.forEach((collab: any) => {
         const prenom = collab.get('Prénom') || '';
         const nom = collab.get('Nom') || '';
+
         suiviNames[collab.id] = `${prenom} ${nom}`.trim();
       });
     }
@@ -72,14 +98,17 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const prospects = records.map((record: any) => {
       const catIds = record.get('Catégorie') || [];
       let catName = '';
+
       if (Array.isArray(catIds) && catIds.length > 0) {
         catName = categoryNames[catIds[0]] || catIds[0];
       }
       const suiviIds = record.get('Suivi par...') || [];
       let suiviPar = '';
+
       if (Array.isArray(suiviIds) && suiviIds.length > 0) {
         suiviPar = suiviNames[suiviIds[0]] || suiviIds[0];
       }
+
       return {
         nomEtablissement: record.get("Nom de l'établissement"),
         categorie: catName,
