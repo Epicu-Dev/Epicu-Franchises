@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Prospect = {
     nomEtablissement: string;
@@ -36,8 +36,16 @@ export default function TestProspects() {
     const [clientsViewCount, setClientsViewCount] = useState<number | null>(null);
     const [villes, setVilles] = useState<{ id: string; ville: string }[]>([]);
     const [villesCount, setVillesCount] = useState<number | null>(null);
+    const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+    const [categoriesCount, setCategoriesCount] = useState<number | null>(null);
 
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string | null>('categories');
+
+    useEffect(() => {
+        // show categories by default
+        loadCollection('categories');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const loadCollection = async (col: string, q = '') => {
         setLoading(true);
@@ -48,6 +56,7 @@ export default function TestProspects() {
 
             switch (col) {
                 case 'lost':
+                case 'glacial':
                     url = `/api/prospects/glacial${q ? `?q=${encodeURIComponent(q)}` : ''}`;
                     {
                         const res = await fetch(url);
@@ -87,6 +96,16 @@ export default function TestProspects() {
                         setClientsViewCount(data.viewCount ?? null);
                     }
                     break;
+                case 'categories':
+                    url = `/api/categories${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    {
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        setCategories(data.results || []);
+                        setCategoriesCount(data.count ?? null);
+                    }
+                    break;
+
                 case 'villes':
                     url = `/api/villes${q ? `?q=${encodeURIComponent(q)}` : ''}`;
                     {
@@ -198,6 +217,11 @@ export default function TestProspects() {
                             </button>
                         </li>
                         <li>
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'categories' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('categories')}>
+                                Catégories
+                            </button>
+                        </li>
+                        <li>
                             <button className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('clients')}>
                                 Clients
                             </button>
@@ -238,6 +262,21 @@ export default function TestProspects() {
                                 {villes.map(v => (
                                     <li key={v.id}>
                                         <strong>{v.ville}</strong> — id: <code>{v.id}</code>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    {!loading && !error && selected === 'categories' && (
+                        <div>
+                            <h2 className="text-xl font-semibold mb-2">Catégories</h2>
+                            {categoriesCount !== null && (
+                                <div className="mb-2 text-gray-700">Nombre de résultats: <span className="font-semibold">{categoriesCount}</span></div>
+                            )}
+                            <ul className="list-disc pl-6">
+                                {categories.map(c => (
+                                    <li key={c.id}>
+                                        <strong>{c.name}</strong> — id: <code>{c.id}</code>
                                     </li>
                                 ))}
                             </ul>
