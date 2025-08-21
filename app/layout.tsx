@@ -3,8 +3,8 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
-import GlobalToastContainer from "@/components/global-toast-container";
 
+import GlobalToastContainer from "@/components/global-toast-container";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 

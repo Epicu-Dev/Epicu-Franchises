@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { Client, getClientById, updateClient, deleteClient } from '../data';
+
+import { getClientById, updateClient, deleteClient } from '../data';
 
 // GET - Récupérer un client spécifique
 export async function GET(
@@ -20,6 +21,7 @@ export async function GET(
     return NextResponse.json(client);
   } catch (error) {
     console.error('Erreur lors de la récupération du client:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -57,6 +59,7 @@ export async function PUT(
     return NextResponse.json(updatedClient);
   } catch (error) {
     console.error('Erreur lors de la modification du client:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -88,6 +91,7 @@ export async function DELETE(
     });
   } catch (error) {
     console.error('Erreur lors de la suppression du client:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

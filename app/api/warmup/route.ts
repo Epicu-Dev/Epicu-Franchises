@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { base } from '../../../pages/api/constants';
 
 export async function GET() {
@@ -19,6 +20,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Erreur lors du préchauffage Airtable:', error);
+
     return NextResponse.json(
       { 
         success: false, 

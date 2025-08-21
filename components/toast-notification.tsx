@@ -120,7 +120,7 @@ export default function ToastNotification({
             </div>
             <div className="flex-shrink-0 ml-auto">
               <button
-                onClick={handleClose}
+                aria-label="Fermer la notification"
                 className={`inline-flex rounded-md p-1.5 transition-colors duration-200 hover:bg-gray-100 ${
                   type === "error"
                     ? "text-red-400 hover:text-red-600"
@@ -130,7 +130,7 @@ export default function ToastNotification({
                     ? "text-blue-400 hover:text-blue-600"
                     : "text-yellow-400 hover:text-yellow-600"
                 }`}
-                aria-label="Fermer la notification"
+                onClick={handleClose}
               >
                 <XMarkIcon className="w-4 h-4" />
               </button>

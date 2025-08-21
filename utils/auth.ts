@@ -38,6 +38,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 
     if (!res.ok) {
       localStorage.clear();
+
       return null;
     }
 
@@ -52,6 +53,7 @@ export async function getValidAccessToken(): Promise<string | null> {
   } catch (err) {
     console.error('Erreur lors du refresh token :', err);
     localStorage.clear();
+
     return null;
   }
 }

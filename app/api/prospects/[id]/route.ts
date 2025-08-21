@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { mockProspects, type Prospect } from '../data';
 
 export async function GET(
@@ -20,6 +21,7 @@ export async function GET(
     return NextResponse.json(prospect);
   } catch (error) {
     console.error('Erreur lors de la récupération du prospect:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -65,6 +67,7 @@ export async function PUT(
     return NextResponse.json(updatedProspect);
   } catch (error) {
     console.error('Erreur lors de la modification du prospect:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -94,6 +97,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Prospect supprimé avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression du prospect:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

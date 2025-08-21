@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { mockProspects } from '../../data';
 
 export async function POST(

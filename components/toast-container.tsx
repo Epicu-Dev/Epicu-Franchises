@@ -1,7 +1,8 @@
 "use client";
 
-import { useToast } from "@/hooks/use-toast";
 import ToastNotification from "./toast-notification";
+
+import { useToast } from "@/hooks/use-toast";
 
 export default function ToastContainer() {
   const { toasts, removeToast } = useToast();
@@ -13,10 +14,10 @@ export default function ToastContainer() {
       {toasts.map((toast) => (
         <ToastNotification
           key={toast.id}
+          duration={toast.duration}
           id={toast.id}
           message={toast.message}
           type={toast.type}
-          duration={toast.duration}
           onClose={removeToast}
         />
       ))}

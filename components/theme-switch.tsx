@@ -20,9 +20,9 @@ export function ThemeSwitch() {
   return (
     <Button
       isIconOnly
+      className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
       size="sm"
       variant="light"
-      className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
       onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
       {theme === 'dark' ? (

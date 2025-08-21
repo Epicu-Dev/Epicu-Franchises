@@ -23,6 +23,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
+import { Card, CardBody } from "@heroui/card";
 
 import { DashboardLayout } from "../dashboard-layout";
 
@@ -30,7 +31,6 @@ import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
-import { Card, CardBody } from "@heroui/card";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -288,6 +288,7 @@ export default function HomePage() {
                 <div className="flex rounded bg-gray-100 overflow-hidden flex-shrink-0">
                   {["vannes", "nantes", "saint-brieuc"].map((cityKey) => {
                     const city = cities.find(c => c.key === cityKey);
+
                     return (
                       <Button
                         key={cityKey}

@@ -1,4 +1,5 @@
 import { Collaborator } from "airtable";
+
 import { Establishment } from "./establishment";
 
 export type Prospects = {

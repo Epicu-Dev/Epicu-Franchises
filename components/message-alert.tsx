@@ -29,6 +29,7 @@ export default function MessageAlert({
       const timer = setTimeout(() => {
         handleClose();
       }, autoHideDelay);
+
       return () => clearTimeout(timer);
     }
   }, [autoHide, autoHideDelay, type]);
@@ -105,9 +106,9 @@ export default function MessageAlert({
         {showCloseButton && (
           <div className="flex-shrink-0 ml-auto">
             <button
-              onClick={handleClose}
-              className={`inline-flex rounded-md p-1.5 transition-colors duration-200 ${getCloseButtonStyles()}`}
               aria-label="Fermer le message"
+              className={`inline-flex rounded-md p-1.5 transition-colors duration-200 ${getCloseButtonStyles()}`}
+              onClick={handleClose}
             >
               <XMarkIcon className="w-4 h-4" />
             </button>

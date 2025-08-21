@@ -97,6 +97,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
     }
 
     setFieldErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
@@ -106,6 +107,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
 
     fields.forEach(field => {
       const fieldValid = validateField(field, prospect[field]);
+
       if (!fieldValid) isValid = false;
     });
 
@@ -117,6 +119,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
 
@@ -130,6 +133,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || "Erreur lors de l'ajout du prospect");
       }
 
@@ -216,6 +220,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               value={newProspect.nomEtablissement}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setNewProspect((prev) => ({
                   ...prev,
                   nomEtablissement: value,
@@ -232,6 +237,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               value={newProspect.ville}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setNewProspect((prev) => ({ ...prev, ville: value }));
                 validateField('ville', value);
               }}
@@ -245,6 +251,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               value={newProspect.telephone}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setNewProspect((prev) => ({
                   ...prev,
                   telephone: value,
@@ -301,6 +308,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setNewProspect((prev) => ({
                   ...prev,
                   datePremierRendezVous: value,
@@ -317,6 +325,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               value={newProspect.dateRelance}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setNewProspect((prev) => ({
                   ...prev,
                   dateRelance: value,

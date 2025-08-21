@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { mockInvoices, type Invoice } from './data';
 
 export async function GET(request: Request) {
@@ -31,9 +32,11 @@ export async function GET(request: Request) {
       
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         const comparison = aValue.localeCompare(bValue);
+
         return sortOrder === 'asc' ? comparison : -comparison;
       } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         const comparison = aValue - bValue;
+
         return sortOrder === 'asc' ? comparison : -comparison;
       }
       
@@ -56,6 +59,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des factures:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
@@ -93,6 +97,7 @@ export async function POST(request: Request) {
     return NextResponse.json(newInvoice, { status: 201 });
   } catch (error) {
     console.error('Erreur lors de la création de la facture:', error);
+
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { mockProspects, type Prospect } from './data';
 
 export async function GET(request: Request) {
