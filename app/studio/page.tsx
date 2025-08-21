@@ -175,13 +175,57 @@ const defaultPrestations: Prestation[] = [
   }
 ];
 
+// Données d'exemple pour les packs
+const defaultPacks: Pack[] = [
+  {
+    id: '1',
+    title: 'Pack Starter',
+    description: 'Pack de démarrage idéal pour les petites entreprises. Inclut logo, cartes de visite et supports de base.',
+    services: ['Graphisme', 'Dev web'],
+    price: 1500,
+    duration: '2-3 semaines'
+  },
+  {
+    id: '2',
+    title: 'Pack Business',
+    description: 'Pack complet pour les entreprises en croissance. Identité visuelle complète avec site web responsive.',
+    services: ['Graphisme', 'Dev web', 'SEO'],
+    price: 3500,
+    duration: '4-6 semaines'
+  },
+  {
+    id: '3',
+    title: 'Pack Premium',
+    description: 'Pack haut de gamme pour les grandes entreprises. Stratégie marketing complète avec community management.',
+    services: ['Graphisme', 'Dev web', 'SEO', 'Community management', 'Motion Design'],
+    price: 7500,
+    duration: '8-10 semaines'
+  },
+  {
+    id: '4',
+    title: 'Pack E-commerce',
+    description: 'Pack spécialisé pour les boutiques en ligne. Site e-commerce optimisé avec stratégie marketing.',
+    services: ['Dev web', 'SEO', 'Community management', 'Data analyse'],
+    price: 5500,
+    duration: '6-8 semaines'
+  }
+];
+
 export default function StudioPage() {
   const [selectedTab, setSelectedTab] = useState('prestations');
   const [services, setServices] = useState<Service[]>(defaultServices);
-  const [packs, setPacks] = useState<Pack[]>([]);
+  const [packs, setPacks] = useState<Pack[]>(defaultPacks);
   const [prestations, setPrestations] = useState<Prestation[]>(defaultPrestations);
   const [loading, setLoading] = useState(false);
   const [isPrestationModalOpen, setIsPrestationModalOpen] = useState(false);
+
+  // États pour le filtrage, la recherche et la pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   // Debug: vérifier que les services sont bien chargés
   console.log('Services disponibles:', services);
@@ -268,6 +312,80 @@ export default function StudioPage() {
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
+
+  // Fonction de tri
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Fonction de filtrage et tri des prestations
+  const getFilteredAndSortedPrestations = () => {
+    let filtered = prestations.filter((prestation) => {
+      const matchesSearch = 
+        prestation.establishmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prestation.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prestation.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = selectedStatus === "" || prestation.status === selectedStatus;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // Tri
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortField) {
+          case "category":
+            aValue = a.category;
+            bValue = b.category;
+            break;
+          case "establishmentName":
+            aValue = a.establishmentName;
+            bValue = b.establishmentName;
+            break;
+          case "contractDate":
+            aValue = new Date(a.contractDate.split('.').reverse().join('-'));
+            bValue = new Date(b.contractDate.split('.').reverse().join('-'));
+            break;
+          case "serviceTitle":
+            aValue = a.serviceTitle;
+            bValue = b.serviceTitle;
+            break;
+          case "amount":
+            aValue = a.amount;
+            bValue = b.amount;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Calcul de la pagination
+  const filteredPrestations = getFilteredAndSortedPrestations();
+  const totalPages = Math.ceil(filteredPrestations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedPrestations = filteredPrestations.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset de la pagination quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus]);
 
   return (
     <div className="w-full">
@@ -368,10 +486,10 @@ export default function StudioPage() {
                       <Select
                         className="w-48"
                         placeholder="Statut"
-                        selectedKeys={[]}
-                        onSelectionChange={() => { }}
+                        selectedKeys={selectedStatus ? [selectedStatus] : []}
+                        onSelectionChange={(keys) => setSelectedStatus(Array.from(keys)[0] as string || "")}
                       >
-                        <SelectItem key="tous">Tous les statuts</SelectItem>
+                        <SelectItem key="">Tous les statuts</SelectItem>
                         <SelectItem key="en_cours">En cours</SelectItem>
                         <SelectItem key="terminee">Terminée</SelectItem>
                         <SelectItem key="en_attente">En attente</SelectItem>
@@ -389,6 +507,8 @@ export default function StudioPage() {
                         }}
                         placeholder="Rechercher..."
                         type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                       />
                       <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                     </div>
@@ -401,43 +521,87 @@ export default function StudioPage() {
                         <Button
                           className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
                           variant="light"
+                          onPress={() => handleSort("category")}
                         >
                           Catégorie
+                          {sortField === "category" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
                         </Button>
                       </TableColumn>
-                      <TableColumn>Nom établissement</TableColumn>
                       <TableColumn>
                         <Button
                           className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
                           variant="light"
+                          onPress={() => handleSort("establishmentName")}
+                        >
+                          Nom établissement
+                          {sortField === "establishmentName" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </Button>
+                      </TableColumn>
+                      <TableColumn>
+                        <Button
+                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                          variant="light"
+                          onPress={() => handleSort("contractDate")}
                         >
                           Date signature contrat
+                          {sortField === "contractDate" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
                         </Button>
                       </TableColumn>
                       <TableColumn>
                         <Button
                           className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
                           variant="light"
+                          onPress={() => handleSort("serviceTitle")}
                         >
                           Prestation demandée
+                          {sortField === "serviceTitle" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
                         </Button>
                       </TableColumn>
                       <TableColumn>Facture</TableColumn>
-                      <TableColumn>Montant prestation</TableColumn>
+                      <TableColumn>
+                        <Button
+                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                          variant="light"
+                          onPress={() => handleSort("amount")}
+                        >
+                          Montant prestation
+                          {sortField === "amount" && (
+                            <span className="ml-1">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </Button>
+                      </TableColumn>
                       <TableColumn>Montant commission</TableColumn>
                       <TableColumn>Progression</TableColumn>
                     </TableHeader>
                     <TableBody>
-                      {prestations.map((prestation) => (
+                      {paginatedPrestations.map((prestation) => (
                         <TableRow key={prestation.id}>
                           <TableCell>
                             <span className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(prestation.category)}`}>
                               {prestation.category}
                             </span>
                           </TableCell>
-                          <TableCell >{prestation.establishmentName}</TableCell>
+                          <TableCell>{prestation.establishmentName}</TableCell>
                           <TableCell>{prestation.contractDate}</TableCell>
-                          <TableCell >
+                          <TableCell>
                             {prestation.serviceTitle}
                           </TableCell>
                           <TableCell>
@@ -445,8 +609,8 @@ export default function StudioPage() {
                               {prestation.invoiceStatus}
                             </span>
                           </TableCell>
-                          <TableCell >{prestation.amount}€</TableCell>
-                          <TableCell >{prestation.commission}€</TableCell>
+                          <TableCell>{prestation.amount}€</TableCell>
+                          <TableCell>{prestation.commission}€</TableCell>
                           <TableCell>
                             {prestation.status === 'en_cours' && (
                               <Progress
@@ -476,15 +640,15 @@ export default function StudioPage() {
                         cursor:
                           "bg-black text-white dark:bg-white dark:text-black font-bold",
                       }}
-                      page={1}
-                      total={3}
-                      onChange={() => { }}
+                      page={currentPage}
+                      total={totalPages}
+                      onChange={(page) => setCurrentPage(page)}
                     />
                   </div>
 
                   {/* Info sur le nombre total d'éléments */}
                   <div className="text-center mt-4 text-sm text-gray-500">
-                    Affichage de {prestations.length} prestation(s) au total
+                    Affichage de {paginatedPrestations.length} prestation(s) sur {filteredPrestations.length} au total
                   </div>
                 </div>
               )}
