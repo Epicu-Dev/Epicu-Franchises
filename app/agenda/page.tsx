@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
-import { Chip } from "@heroui/chip";
 import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Bars3Icon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 
 import { AgendaModals } from "@/components/agenda-modals";
@@ -299,16 +299,16 @@ export default function AgendaPage() {
         </div>
 
         {/* Grille du calendrier */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 ">
           {days.map((day, index) => (
             <div
               key={index}
-              className={`min-h-32 p-2 border border-gray-200 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
-                } ${day.isToday ? "ring-2 ring-red-500" : ""}`}
+              className={`min-h-32 p-2 border border-gray-100 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+                } `}
             >
               <div
-                className={`text-sm font-medium ${day.isToday
-                  ? "text-red-600"
+                className={`text-sm w-8 h-8 flex items-center justify-center font-medium ${day.isToday
+                  ? "text-white bg-red-500 rounded-full  flex items-center justify-center "
                   : day.isCurrentMonth
                     ? "text-gray-900"
                     : "text-gray-400"
@@ -358,7 +358,7 @@ export default function AgendaPage() {
       <div className="w-full overflow-x-auto">
         <div className="min-w-[800px]">
           {/* En-têtes des jours */}
-          <div className="grid grid-cols-8 gap-1 mb-2">
+          <div className="grid grid-cols-8  mb-2">
             <div className="p-2 text-center font-medium text-gray-600 text-sm">
               Heure
             </div>
@@ -378,11 +378,11 @@ export default function AgendaPage() {
           </div>
 
           {/* Grille horaire */}
-          <div className="grid grid-cols-8 gap-1">
+          <div className="grid grid-cols-8 ">
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-200">
+                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100">
                   {hour}:00
                 </div>
 
@@ -399,7 +399,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`min-h-20 p-1 border border-gray-200 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                      className={`min-h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
                         }`}
                     >
                       {hourEvents.map((event) => (
@@ -491,18 +491,23 @@ export default function AgendaPage() {
             <div className="flex items-center space-x-4">
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsRdvModalOpen(true)}
               >
                 Créer un rendez-vous
               </Button>
+
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsTournageModalOpen(true)}
               >
                 Ajouter un tournage
               </Button>
+
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                startContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsPublicationModalOpen(true)}
               >
                 Ajouter une publication
