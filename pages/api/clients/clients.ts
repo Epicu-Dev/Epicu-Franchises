@@ -16,7 +16,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
             'Catégorie',
             "Nom de l'établissement",
             'Raison sociale',
-            'Commentaire',
+            // 'Commentaire',
         ];
 
         const escapeForAirtableRegex = (s: string) => {
@@ -83,7 +83,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
                 categorie: catName,
                 raisonSociale: record.get('Raison sociale'),
                 dateSignature: "waiting",
-                commentaire: record.get('Commentaire'),
+                commentaire: "record.get('Commentaire')",
             };
         });
 

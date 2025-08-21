@@ -46,7 +46,7 @@ export default function TestProspects() {
 
             switch (col) {
                 case 'lost':
-                    url = `/api/prospects/lost${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+                    url = `/api/prospects/glacial${q ? `?q=${encodeURIComponent(q)}` : ''}`;
                     {
                         const res = await fetch(url);
                         const data = await res.json();
@@ -167,8 +167,8 @@ export default function TestProspects() {
                     <h3 className="font-semibold mb-2">Collections</h3>
                     <ul className="flex flex-col gap-2">
                         <li>
-                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'lost' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('lost')}>
-                                Prospects Perdus
+                            <button className={`w-full text-left px-2 py-1 rounded ${selected === 'glacial' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('glacial')}>
+                                Prospects Glaciaux
                             </button>
                         </li>
                         <li>
@@ -208,7 +208,7 @@ export default function TestProspects() {
                     {!loading && !error && selected === null && (
                         <div>Sélectionnez une collection à gauche pour afficher les résultats.</div>
                     )}
-                    {!loading && !error && selected === 'lost' && renderProspectTable(lostProspects, lostViewCount, 'Prospects Perdus')}
+                    {!loading && !error && selected === 'glacial' && renderProspectTable(lostProspects, lostViewCount, 'Prospects Glaciaux')}
                     {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, prospectsViewCount, 'Prospects')}
                     {!loading && !error && selected === 'discussion' && renderProspectTable(discussions, discussionsViewCount, 'En Discussion')}
                     {!loading && !error && selected === 'clients' && renderClientsTable(clients, clientsViewCount)}
