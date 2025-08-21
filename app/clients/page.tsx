@@ -74,7 +74,7 @@ export default function ClientsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -232,7 +232,7 @@ export default function ClientsPage() {
   if (loading && clients.length === 0) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -246,7 +246,7 @@ export default function ClientsPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -259,10 +259,10 @@ export default function ClientsPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+      <Card className="w-full" shadow="none">
+        <CardBody className="p-2" >
           {/* Header with filters */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
               <Select
                 className="w-48"
@@ -300,7 +300,7 @@ export default function ClientsPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des clients">
+          <Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
               <TableColumn>Client</TableColumn>
               <TableColumn>
@@ -435,10 +435,10 @@ export default function ClientsPage() {
                   }));
                   // Validation simple
                   if (!value.trim()) {
-                    setFieldErrors(prev => ({...prev, raisonSociale: 'La raison sociale est requise'}));
+                    setFieldErrors(prev => ({ ...prev, raisonSociale: 'La raison sociale est requise' }));
                   } else {
                     setFieldErrors(prev => {
-                      const newErrors = {...prev};
+                      const newErrors = { ...prev };
 
                       delete newErrors.raisonSociale;
 
@@ -588,9 +588,9 @@ export default function ClientsPage() {
                       setEditingClient((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
-                            }
+                            ...prev,
+                            categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
+                          }
                           : null
                       )
                     }
@@ -754,12 +754,12 @@ export default function ClientsPage() {
                       setEditingClient((prev) =>
                         prev
                           ? {
-                              ...prev,
-                              statutPaiementContenu: Array.from(keys)[0] as
-                                | "Payée"
-                                | "En attente"
-                                | "En retard",
-                            }
+                            ...prev,
+                            statutPaiementContenu: Array.from(keys)[0] as
+                              | "Payée"
+                              | "En attente"
+                              | "En retard",
+                          }
                           : null
                       )
                     }

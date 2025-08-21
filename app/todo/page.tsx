@@ -304,7 +304,7 @@ export default function TodoPage() {
   if (loading && todos.length === 0) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -318,7 +318,7 @@ export default function TodoPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -331,10 +331,10 @@ export default function TodoPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+      <Card className="w-full" shadow="none">
+        <CardBody >
           {/* Header with filters */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
               <Select
                 className="w-48"
@@ -368,7 +368,7 @@ export default function TodoPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des tâches">
+          <Table aria-label="Tableau des tâches" shadow="none">
             <TableHeader>
               <TableColumn>
                 <Button

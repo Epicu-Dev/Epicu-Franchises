@@ -222,7 +222,7 @@ export default function EquipePage() {
   if (loading) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -235,7 +235,7 @@ export default function EquipePage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
+      <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
           <div className="flex justify-between items-center mb-6">

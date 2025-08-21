@@ -437,7 +437,7 @@ export default function AgendaPage() {
   if (loading) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -451,7 +451,7 @@ export default function AgendaPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -464,7 +464,7 @@ export default function AgendaPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
+      <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* En-tête avec navigation et boutons */}
           <div className="flex justify-between items-center mb-6">

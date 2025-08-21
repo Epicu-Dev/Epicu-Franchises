@@ -151,7 +151,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
       {/* Overlay pour mobile */}
       {isMobileOpen && (
-        <div 
+        <div
           aria-label="Fermer le menu"
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden cursor-pointer"
           role="button"
@@ -167,11 +167,11 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
       {/* Sidebar */}
       <Card className={`
-        h-full w-64 bg-page-bg dark:bg-gray-900 rounded-none border-r border-gray-200 dark:border-gray-700
+        h-full w-64 bg-white dark:bg-gray-900 rounded-none 
         fixed md:relative z-50 md:z-auto
         transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
+      `} shadow="none">
         <CardBody className="p-0 h-full flex flex-col">
           {/* Header avec bouton fermer sur mobile */}
           <div className="flex items-center justify-between p-4 md:hidden border-b border-gray-100 dark:border-gray-700">

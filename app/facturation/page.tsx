@@ -313,7 +313,7 @@ export default function FacturationPage() {
   if (loading && invoices.length === 0) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -327,7 +327,7 @@ export default function FacturationPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -340,10 +340,10 @@ export default function FacturationPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+      <Card className="w-full" shadow="none">
+        <CardBody>
           {/* En-tête avec onglets et bouton d'ajout */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-2">
             <Tabs
               className="w-full"
               classNames={{
@@ -373,44 +373,10 @@ export default function FacturationPage() {
             </div>
           </div>
 
-          {/* Filtres */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
-              <Select
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Toutes</SelectItem>
-                <SelectItem key="shop">Shop</SelectItem>
-                <SelectItem key="restaurant">Restaurant</SelectItem>
-                <SelectItem key="service">Service</SelectItem>
-              </Select>
-            </div>
-
-            <div className="relative">
-              <Input
-                className="w-64 pr-4 pl-10"
-                classNames={{
-                  input:
-                    "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-                  inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
-                }}
-                placeholder="Rechercher..."
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-            </div>
-          </div>
+          
 
           {/* Tableau des factures */}
-          <Table aria-label="Tableau des factures">
+          <Table aria-label="Tableau des factures" shadow="none">
             <TableHeader>
               <TableColumn>
                 <Button

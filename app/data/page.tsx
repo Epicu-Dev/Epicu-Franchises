@@ -97,12 +97,12 @@ export default function DataPage() {
     if (activeTab !== "overview" && row.city !== activeTab) {
       return false;
     }
-    
+
     // Filtre par catégorie
     if (selectedCategory && selectedCategory !== "all" && !row.categories.includes(selectedCategory)) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -132,8 +132,8 @@ export default function DataPage() {
   return (
     <DashboardLayout>
       <div className="">
-        <Card className="w-full">
-          <CardBody className="p-6 space-y-6">
+        <Card className="w-full" shadow="none">
+          <CardBody className="space-y-6">
             {/* Tabs */}
             <Tabs
               className="w-full"
@@ -150,18 +150,17 @@ export default function DataPage() {
             </Tabs>
 
             {/* Filter */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pl-4">
               <div className="w-48">
                 <Select
-                  className="w-full"
-                  label="Catégorie"
-                  placeholder="Sélectionner une catégorie"
+                  className="w-48"
+                  placeholder="Catégorie"
                   selectedKeys={selectedCategory ? [selectedCategory] : []}
                   onSelectionChange={(keys) =>
                     setSelectedCategory(Array.from(keys)[0] as string)
                   }
                 >
-                  <SelectItem key="all">Toutes les catégories</SelectItem>
+                  <SelectItem key="tous">Tous</SelectItem>
                   <SelectItem key="FOOD">Food</SelectItem>
                   <SelectItem key="SHOP">Shop</SelectItem>
                   <SelectItem key="TRAVEL">Travel</SelectItem>
@@ -172,7 +171,7 @@ export default function DataPage() {
             </div>
 
             {/* Data Table */}
-            <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <Card className=" dark:bg-gray-900" shadow="none">
               <CardBody className="p-0">
                 <Table aria-label="Data table">
                   <TableHeader>

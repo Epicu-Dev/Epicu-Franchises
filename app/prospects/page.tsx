@@ -250,7 +250,7 @@ export default function ProspectsPage() {
   if (loading && prospects.length === 0) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
@@ -264,7 +264,7 @@ export default function ProspectsPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -277,8 +277,8 @@ export default function ProspectsPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+      <Card className="w-full" shadow="none">
+        <CardBody>
           {/* Tabs */}
           <Tabs
             className="mb-6"
@@ -295,7 +295,7 @@ export default function ProspectsPage() {
           </Tabs>
 
           {/* Header with filters */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
             <div className="flex items-center gap-4">
               <Select
                 className="w-48"
@@ -354,7 +354,7 @@ export default function ProspectsPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des prospects">
+          <Table aria-label="Tableau des prospects" shadow="none">
             <TableHeader>
               <TableColumn>Nom établissement</TableColumn>
               <TableColumn>

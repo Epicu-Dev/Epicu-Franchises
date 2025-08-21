@@ -263,7 +263,7 @@ export default function HomePage() {
           Re, Clémence!
         </h1>
       </div>
-      <Card className="w-full">
+      <Card className="w-full" shadow="none" >
         <CardBody className="p-6">
           {/* Location Filters and Add Prospect Button */}
           <div className="mb-4 lg:mb-6">

@@ -18,7 +18,7 @@ export function Header() {
     <div className="w-full">
       
       {/* Main Header Section */}
-      <div className="w-full bg-page-bg dark:bg-gray-900 px-6 py-4 flex justify-end items-center gap-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="w-full bg-page-bg dark:bg-gray-900 px-6 py-4 flex justify-end items-center gap-4 ">
         {/* Search Bar */}
         <div className="relative">
           <Input
