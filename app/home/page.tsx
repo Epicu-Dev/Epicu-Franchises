@@ -394,7 +394,7 @@ export default function HomePage() {
             {/* Stacked sections - Full width on mobile, sidebar on desktop */}
             <div className="flex-1 space-y-4 lg:space-y-6">
               {/* Agenda Section */}
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
                 <div className="flex items-center justify-between mb-3 lg:mb-4">
                   <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Agenda
@@ -430,7 +430,7 @@ export default function HomePage() {
               </div>
 
               {/* To do Section */}
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
                 <div className="flex items-center justify-between mb-3 lg:mb-4">
                   <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
                     To do

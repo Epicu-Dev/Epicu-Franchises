@@ -16,6 +16,10 @@ const config = {
       colors: {
         'page-bg': '#FAFAFA',
       },
+      boxShadow: {
+        'custom': '4px 4px 35px rgba(212,212,212,0.25)',
+        'custom-dark': '4px 4px 35px rgba(0,0,0,0.3)',
+      },
     },
   },
   darkMode: "class",

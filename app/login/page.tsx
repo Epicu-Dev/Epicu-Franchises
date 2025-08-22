@@ -95,21 +95,29 @@ export default function LoginPage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23f59e0b;stop-opacity:1" /><stop offset="100%" style="stop-color:%23d97706;stop-opacity:1" /></linearGradient></defs><rect width="100%" height="100%" fill="url(%23a)"/><rect x="100" y="200" width="400" height="300" fill="%23ffffff" opacity="0.1" rx="8"/><circle cx="300" cy="350" r="50" fill="%23ffffff" opacity="0.2"/><rect x="150" y="250" width="300" height="20" fill="%23ffffff" opacity="0.3" rx="4"/><rect x="150" y="280" width="250" height="20" fill="%23ffffff" opacity="0.3" rx="4"/><rect x="150" y="310" width="200" height="20" fill="%23ffffff" opacity="0.3" rx="4"/></svg>')`,
+            backgroundImage: `url('/images/login.png')`,
           }}
         />
+        {/* Logo Epicu en bas à gauche */}
+        <div className="absolute bottom-8 left-8">
+          <img
+            src="/images/logo.png"
+            alt="Logo Epicu"
+            className="h-30 w-auto "
+          />
+        </div>
       </div>
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-6">
         <div className="w-full max-w-md">
           {/* Login Card */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="bg-white rounded-3xl shadow-lg shadow-gray-100 p-8">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 Bienvenue !
               </h1>
-              <p className="text-gray-600 text-sm pl-8 pr-8">
+              <p className="text-gray-600 text-sm pl-8 pr-8 font-light">
                 Votre réseau réuni ici pour vous aider à prendre les meilleures
                 décisions
               </p>
@@ -123,9 +131,9 @@ export default function LoginPage() {
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black text-xs ",
+                    input: "bg-white text-black text-sm ",
                     inputWrapper:
-                      "bg-page-bg text-xs hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="identifiant"
                   placeholder="Saisis ton identifiant"
@@ -142,9 +150,9 @@ export default function LoginPage() {
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black text-xs ",
+                    input: "bg-white text-black text-sm ",
                     inputWrapper:
-                      "bg-page-bg text-xs hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="password"
                   placeholder="Saisis ton mot de passe"
