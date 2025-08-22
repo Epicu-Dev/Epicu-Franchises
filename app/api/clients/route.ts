@@ -93,6 +93,7 @@ export async function POST(request: Request) {
 
     // Créer un nouveau client
     const clientData = {
+      nomEtablissement: body.nomEtablissement || body.raisonSociale,
       raisonSociale: body.raisonSociale,
       dateSignatureContrat: body.dateSignatureContrat || new Date().toLocaleDateString('fr-FR'),
       factureContenu: body.factureContenu || '',
