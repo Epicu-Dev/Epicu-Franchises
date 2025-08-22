@@ -1,15 +1,15 @@
 // Composants de base
-export { default as Header } from './header';
-export { default as Navbar } from './navbar';
-export { default as Sidebar } from './sidebar';
-export { default as Counter } from './counter';
-export { default as ThemeSwitch } from './theme-switch';
+export { Header } from './header';
+export { Navbar } from './navbar';
+export { Sidebar } from './sidebar';
+export { Counter } from './counter';
+export { ThemeSwitch } from './theme-switch';
 
 // Composants de modales
-export { default as ProspectModal } from './prospect-modal';
-export { default as PrestationModal } from './prestation-modal';
-export { default as AgendaModals } from './agenda-modals';
-export { default as HelpModal } from './help-modal';
+export { ProspectModal } from './prospect-modal';
+export { PrestationModal } from './prestation-modal';
+export { AgendaModals } from './agenda-modals';
+export { HelpModal } from './help-modal';
 
 // Composants de badges
 export { 
@@ -21,7 +21,7 @@ export {
 } from './badges';
 
 // Composants d'interface
-export { default as MetricCard } from './metric-card';
+export { MetricCard } from './metric-card';
 export { default as MessageAlert } from './message-alert';
 export { default as GlobalToastContainer } from './global-toast-container';
 export { default as ToastContainer } from './toast-container';
@@ -32,7 +32,7 @@ export { default as ToastNotification } from './toast-notification';
 export { StyledSelect } from './styled-select';
 
 // Composants d'agenda
-export { default as AgendaDropdown } from './agenda-dropdown';
+export { AgendaDropdown } from './agenda-dropdown';
 
 // Utilitaires
 export * from './primitives';
