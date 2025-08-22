@@ -31,6 +31,7 @@ import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
+import { StyledSelect } from "@/components/styled-select";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -520,7 +521,7 @@ export default function HomePage() {
                   setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))
                 }
               />
-              <Select
+              <StyledSelect
                 label="Statut"
                 selectedKeys={[newTodo.status]}
                 onSelectionChange={(keys: any) =>
@@ -536,7 +537,7 @@ export default function HomePage() {
                 <SelectItem key="En cours">En cours</SelectItem>
                 <SelectItem key="En retard">En retard</SelectItem>
                 <SelectItem key="Terminé">Terminé</SelectItem>
-              </Select>
+              </StyledSelect>
             </div>
           </ModalBody>
           <ModalFooter>

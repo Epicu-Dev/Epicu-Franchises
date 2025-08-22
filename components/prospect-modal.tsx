@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+import { StyledSelect } from "./styled-select";
 
 interface Prospect {
   id: string;
@@ -259,7 +260,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 validateField('telephone', value);
               }}
             />
-            <Select
+            <StyledSelect
               isRequired
               label="Catégorie"
               selectedKeys={[newProspect.categorie]}
@@ -280,8 +281,8 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               <SelectItem key="TRAVEL">TRAVEL</SelectItem>
               <SelectItem key="FUN">FUN</SelectItem>
               <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-            </Select>
-            <Select
+            </StyledSelect>
+            <StyledSelect
               isRequired
               label="Statut"
               selectedKeys={[newProspect.statut]}
@@ -298,7 +299,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               <SelectItem key="a_contacter">À contacter</SelectItem>
               <SelectItem key="en_discussion">En discussion</SelectItem>
               <SelectItem key="glacial">Glacial</SelectItem>
-            </Select>
+            </StyledSelect>
             <Input
               isRequired
               errorMessage={fieldErrors.datePremierRendezVous}

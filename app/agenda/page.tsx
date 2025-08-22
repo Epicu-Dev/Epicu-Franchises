@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { AgendaModals } from "@/components/agenda-modals";
+import { StyledSelect } from "@/components/styled-select";
 
 interface Event {
   id: string;
@@ -482,7 +483,7 @@ export default function AgendaPage() {
                     ? formatWeekRange(currentDate)
                     : formatMonthYear(currentDate)}
                 </span>
-                <Button isIconOnly variant="light" onPress={handleNextMonth}>
+                <Button isIconOnly variant="light" aria-label="Mois suivant" onPress={handleNextMonth}>
                   <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
@@ -518,7 +519,7 @@ export default function AgendaPage() {
           {/* Filtres et vues */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-4">
-              <Select
+              <StyledSelect
                 className="w-48"
                 placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
@@ -530,7 +531,7 @@ export default function AgendaPage() {
                 <SelectItem key="siege">Siège</SelectItem>
                 <SelectItem key="franchises">Franchisés</SelectItem>
                 <SelectItem key="prestataires">Prestataires</SelectItem>
-              </Select>
+              </StyledSelect>
             </div>
 
             <div className="flex items-center space-x-2">

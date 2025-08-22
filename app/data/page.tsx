@@ -15,6 +15,7 @@ import { Tabs, Tab } from "@heroui/tabs";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { DashboardLayout } from "../dashboard-layout";
+import { StyledSelect } from "@/components/styled-select";
 
 export default function DataPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -150,25 +151,21 @@ export default function DataPage() {
             </Tabs>
 
             {/* Filter */}
-            <div className="flex justify-between items-center pl-4">
-              <div className="w-48">
-                <Select
-                  className="w-48"
-                  placeholder="Catégorie"
-                  selectedKeys={selectedCategory ? [selectedCategory] : []}
-                  onSelectionChange={(keys) =>
-                    setSelectedCategory(Array.from(keys)[0] as string)
-                  }
-                >
-                  <SelectItem key="tous">Tous</SelectItem>
-                  <SelectItem key="FOOD">Food</SelectItem>
-                  <SelectItem key="SHOP">Shop</SelectItem>
-                  <SelectItem key="TRAVEL">Travel</SelectItem>
-                  <SelectItem key="FUN">Fun</SelectItem>
-                  <SelectItem key="BEAUTY">Beauty</SelectItem>
-                </Select>
-              </div>
-            </div>
+            <StyledSelect
+              className="w-40"
+              placeholder="Catégorie"
+              selectedKeys={selectedCategory ? [selectedCategory] : []}
+              onSelectionChange={(keys) =>
+                setSelectedCategory(Array.from(keys)[0] as string)
+              }
+            >
+              <SelectItem key="tous">Tous</SelectItem>
+              <SelectItem key="FOOD">Food</SelectItem>
+              <SelectItem key="SHOP">Shop</SelectItem>
+              <SelectItem key="TRAVEL">Travel</SelectItem>
+              <SelectItem key="FUN">Fun</SelectItem>
+              <SelectItem key="BEAUTY">Beauty</SelectItem>
+            </StyledSelect>
 
             {/* Data Table */}
             <Card className=" dark:bg-gray-900" shadow="none">

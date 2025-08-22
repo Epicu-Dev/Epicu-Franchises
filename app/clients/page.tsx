@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+import { StyledSelect } from "@/components/styled-select";
 import {
   Table,
   TableHeader,
@@ -22,8 +23,10 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+
+import { CategoryBadge, StatusBadge } from "@/components/badges";
 
 interface Client {
   id: string;
@@ -78,6 +81,7 @@ export default function ClientsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [viewCount, setViewCount] = useState<number | null>(null);
   const [newClient, setNewClient] = useState({
     raisonSociale: "",
     email: "",
@@ -88,20 +92,26 @@ export default function ClientsPage() {
   });
 
   const fetchClients = async () => {
+    console.log('fetchClients');
+
     try {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
-        search: searchTerm,
-        category: selectedCategory,
-        sortBy: sortField,
-        sortOrder: sortDirection,
-      });
+      // Construire les paramètres de requête
+      const params = new URLSearchParams();
 
-      const response = await fetch(`/api/clients?${params}`);
+      if (searchTerm) params.append('search', searchTerm);
+      if (selectedCategory) params.append('category', selectedCategory);
+      if (sortField) params.append('sortBy', sortField);
+      if (sortDirection) params.append('sortOrder', sortDirection);
+      params.append('page', pagination.currentPage.toString());
+      params.append('limit', pagination.itemsPerPage.toString());
+
+      const queryString = params.toString();
+      const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des clients");
@@ -109,11 +119,17 @@ export default function ClientsPage() {
 
       const data = await response.json();
 
-      setClients(data.clients);
-      setPagination(data.pagination);
+      setClients(data.clients || []);
+      setViewCount(data.viewCount ?? null);
+      setPagination(prev => ({
+        ...prev,
+        totalItems: data.pagination?.totalItems || 0,
+        totalPages: data.pagination?.totalPages || 1
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
+      console.log('finally');
       setLoading(false);
     }
   };
@@ -139,6 +155,13 @@ export default function ClientsPage() {
 
   const handleAddClient = async () => {
     try {
+      // Validation côté client
+      if (!newClient.raisonSociale.trim()) {
+        setError("La raison sociale est requise");
+
+        return;
+      }
+
       const response = await fetch("/api/clients", {
         method: "POST",
         headers: {
@@ -148,7 +171,9 @@ export default function ClientsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du client");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de l'ajout du client");
       }
 
       // Réinitialiser le formulaire et fermer le modal
@@ -161,6 +186,7 @@ export default function ClientsPage() {
         statut: "actif",
       });
       setIsAddModalOpen(false);
+      setError(null);
 
       // Recharger les clients
       fetchClients();
@@ -178,6 +204,13 @@ export default function ClientsPage() {
     if (!editingClient) return;
 
     try {
+      // Validation côté client
+      if (!editingClient.raisonSociale.trim()) {
+        setError("La raison sociale est requise");
+
+        return;
+      }
+
       const response = await fetch(`/api/clients/${editingClient.id}`, {
         method: "PUT",
         headers: {
@@ -187,47 +220,22 @@ export default function ClientsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la modification du client");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
       // Fermer le modal et recharger les clients
       setIsEditModalOpen(false);
       setEditingClient(null);
+      setError(null);
       fetchClients();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "En attente":
-        return "bg-yellow-100 text-yellow-800";
-      case "Payée":
-        return "bg-green-100 text-green-800";
-      case "En retard":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-      case "FOOD":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      case "SHOP":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "TRAVEL":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "FUN":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "BEAUTY":
-        return "bg-pink-50 text-pink-700 border-pink-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
 
   if (loading && clients.length === 0) {
     return (
@@ -264,21 +272,30 @@ export default function ClientsPage() {
           {/* Header with filters */}
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
-              <Select
-                className="w-48"
+              <StyledSelect
+                className="w-40"
+
                 placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
                 onSelectionChange={(keys) =>
                   setSelectedCategory(Array.from(keys)[0] as string)
                 }
               >
-                <SelectItem key="tous">Tous</SelectItem>
+                <SelectItem key="tous">Catégorie</SelectItem>
                 <SelectItem key="FOOD">Food</SelectItem>
                 <SelectItem key="SHOP">Shop</SelectItem>
                 <SelectItem key="TRAVEL">Travel</SelectItem>
                 <SelectItem key="FUN">Fun</SelectItem>
                 <SelectItem key="BEAUTY">Beauty</SelectItem>
-              </Select>
+              </StyledSelect>
+
+              <Button
+                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                startContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsAddModalOpen(true)}
+              >
+                Ajouter un client
+              </Button>
             </div>
 
             <div className="relative">
@@ -299,15 +316,16 @@ export default function ClientsPage() {
             </div>
           </div>
 
+
+
           {/* Table */}
-          <Table aria-label="Tableau des clients" shadow="none" >
+          {<Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
-              <TableColumn>Client</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("categorie")}
+              <TableColumn className="font-normal">Raison sociale</TableColumn>
+              <TableColumn className="font-normal">
+                <button
+                  className=" cursor-pointer"
+                  onClick={() => handleSort("categorie")}
                 >
                   Catégorie
                   {sortField === "categorie" && (
@@ -315,15 +333,13 @@ export default function ClientsPage() {
                       {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
-                </Button>
+                </button>
               </TableColumn>
-              <TableColumn>Nom établissement</TableColumn>
-              <TableColumn>Raison sociale</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("dateSignatureContrat")}
+              <TableColumn className="font-normal">Ville</TableColumn>
+              <TableColumn className="font-normal">
+                <button
+                  className=" cursor-pointer"
+                  onClick={() => handleSort("dateSignatureContrat")}
                 >
                   Date signature contrat
                   {sortField === "dateSignatureContrat" && (
@@ -331,56 +347,68 @@ export default function ClientsPage() {
                       {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
-                </Button>
+                </button>
               </TableColumn>
-              <TableColumn>Facture contenu</TableColumn>
-              <TableColumn>Facture publication</TableColumn>
-              <TableColumn>Modifier</TableColumn>
-              <TableColumn>Commentaire</TableColumn>
+              <TableColumn className="font-normal">
+                <button
+                  className="cursor-pointer text-left w-full"
+                  type="button"
+                  onClick={() => handleSort("statutPaiementContenu")}
+                >
+                  Statut paiement
+                  {sortField === "statutPaiementContenu" && (
+                    <span className="ml-1">
+                      {sortDirection === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </button>
+              </TableColumn>
+              <TableColumn className="font-normal">Montant facturé</TableColumn>
+              <TableColumn className="font-normal">Modifier</TableColumn>
+              <TableColumn className="font-normal">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>{client.id}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(client.categorie || "FOOD")}`}
-                    >
-                      {client.categorie || "FOOD"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-medium">L&apos;ambiance</TableCell>
-                  <TableCell className="font-medium">
-                    {client.raisonSociale}
-                  </TableCell>
-                  <TableCell>{client.dateSignatureContrat}</TableCell>
-                  <TableCell>{client.factureContenu}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(client.facturePublication)}`}
-                    >
-                      {client.facturePublication}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      className="text-gray-600 hover:text-gray-800"
-                      size="sm"
-                      variant="light"
-                      onPress={() => handleEditClient(client)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>{client.commentaire}</TableCell>
-                </TableRow>
-              ))}
+              {
+                loading ? (
+                  <TableRow>
+                    <TableCell className="text-center" colSpan={8}>
+                      <Spinner className="text-black dark:text-white p-20" size="lg" />
+                    </TableCell>
+                  </TableRow>
+                ) : clients.map((client, index) => (
+                  <TableRow key={client.id || index}>
+                    <TableCell className="font-light">
+                      {client.raisonSociale}
+                    </TableCell>
+                    <TableCell className="font-light">
+                      <CategoryBadge category={client.categorie || "FOOD"} />
+                    </TableCell>
+                    <TableCell className="font-light">{client.ville || "-"}</TableCell>
+                    <TableCell className="font-light">{client.dateSignatureContrat || "-"}</TableCell>
+                    <TableCell className="font-light">
+                      <StatusBadge status={client.statutPaiementContenu || "En attente"} />
+                    </TableCell>
+                    <TableCell className="font-light">{client.montantFactureContenu ? `${client.montantFactureContenu}€` : "-"}</TableCell>
+                    <TableCell className="font-light">
+                      <Button
+                        isIconOnly
+                        aria-label={`Modifier le client ${client.raisonSociale}`}
+                        className="text-gray-600 hover:text-gray-800"
+                        size="sm"
+                        variant="light"
+                        onPress={() => handleEditClient(client)}
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-light">{client.commentaire || "-"}</TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
-          </Table>
+          </Table>}
 
           {/* Pagination */}
-          <div className="flex justify-center mt-6">
+          {!loading && <div className="flex justify-center mt-6">
             <Pagination
               showControls
               classNames={{
@@ -395,13 +423,13 @@ export default function ClientsPage() {
                 setPagination((prev) => ({ ...prev, currentPage: page }))
               }
             />
-          </div>
+          </div>}
 
           {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
+          {!loading && <div className="text-center mt-4 text-sm text-gray-500">
             Affichage de {clients.length} client(s) sur {pagination.totalItems}{" "}
             au total
-          </div>
+          </div>}
         </CardBody>
       </Card>
 
@@ -475,7 +503,7 @@ export default function ClientsPage() {
                   setNewClient((prev) => ({ ...prev, adresse: e.target.value }))
                 }
               />
-              <Select
+              <StyledSelect
                 label="Statut"
                 selectedKeys={[newClient.statut]}
                 onSelectionChange={(keys) =>
@@ -491,7 +519,7 @@ export default function ClientsPage() {
                 <SelectItem key="actif">Actif</SelectItem>
                 <SelectItem key="inactif">Inactif</SelectItem>
                 <SelectItem key="prospect">Prospect</SelectItem>
-              </Select>
+              </StyledSelect>
               <Textarea
                 label="Commentaire"
                 placeholder="Informations supplémentaires..."
@@ -534,6 +562,14 @@ export default function ClientsPage() {
             </p>
           </ModalHeader>
           <ModalBody className="max-h-[70vh] overflow-y-auto">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
             {editingClient && (
               <div className="space-y-6">
                 {/* Informations générales */}
@@ -574,7 +610,7 @@ export default function ClientsPage() {
                     }
                   />
 
-                  <Select
+                  <StyledSelect
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
@@ -600,7 +636,7 @@ export default function ClientsPage() {
                     <SelectItem key="TRAVEL">Travel</SelectItem>
                     <SelectItem key="FUN">Fun</SelectItem>
                     <SelectItem key="BEAUTY">Beauty</SelectItem>
-                  </Select>
+                  </StyledSelect>
 
                   <Input
                     isRequired
@@ -740,7 +776,7 @@ export default function ClientsPage() {
                     }
                   />
 
-                  <Select
+                  <StyledSelect
                     classNames={{
                       label: "text-sm font-medium",
                     }}
@@ -767,7 +803,7 @@ export default function ClientsPage() {
                     <SelectItem key="Payée">Payée</SelectItem>
                     <SelectItem key="En attente">En attente</SelectItem>
                     <SelectItem key="En retard">En retard</SelectItem>
-                  </Select>
+                  </StyledSelect>
 
                   <Input
                     isRequired

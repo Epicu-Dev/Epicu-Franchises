@@ -32,6 +32,8 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { StyledSelect } from "@/components/styled-select";
+import { CategoryBadge } from "@/components";
 
 interface Invoice {
   id: string;
@@ -373,14 +375,14 @@ export default function FacturationPage() {
             </div>
           </div>
 
-          
+
 
           {/* Tableau des factures */}
           <Table aria-label="Tableau des factures" shadow="none">
             <TableHeader>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto"
                   variant="light"
                   onPress={() => handleSort("category")}
                 >
@@ -398,7 +400,7 @@ export default function FacturationPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto "
                   variant="light"
                   onPress={() => handleSort("establishmentName")}
                 >
@@ -416,7 +418,7 @@ export default function FacturationPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto "
                   variant="light"
                   onPress={() => handleSort("date")}
                 >
@@ -434,7 +436,7 @@ export default function FacturationPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto text-sm font-ligth"
                   variant="light"
                   onPress={() => handleSort("amount")}
                 >
@@ -452,7 +454,7 @@ export default function FacturationPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto text-sm font-normal"
                   variant="light"
                   onPress={() => handleSort("serviceType")}
                 >
@@ -468,25 +470,23 @@ export default function FacturationPage() {
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn>Modifier</TableColumn>
-              <TableColumn>Commentaire</TableColumn>
+              <TableColumn className="text-sm font-normal">Modifier</TableColumn>
+              <TableColumn className="text-sm font-normal">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell>
-                    <Chip color="secondary" size="sm" variant="flat">
-                      {invoice.category}
-                    </Chip>
+                    <CategoryBadge category={invoice.category} />
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-light">
                     {invoice.establishmentName}
                   </TableCell>
-                  <TableCell>{formatDate(invoice.date)}</TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>
+                  <TableCell className="font-light">
                     {formatAmount(invoice.amount)}
                   </TableCell>
-                  <TableCell>{getServiceTypeLabel(invoice.serviceType)}</TableCell>
+                  <TableCell className="font-light">{getServiceTypeLabel(invoice.serviceType)}</TableCell>
                   <TableCell>
                     <Button
                       isIconOnly
@@ -502,7 +502,7 @@ export default function FacturationPage() {
                       <PencilIcon className="h-4 w-4" />
                     </Button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="font-light">
                     <span className="text-sm text-gray-500">
                       {invoice.comment || "commentaires"}
                     </span>
@@ -552,7 +552,7 @@ export default function FacturationPage() {
               </div>
             )}
             <div className="space-y-4">
-              <Select
+              <StyledSelect
                 label="Catégorie"
                 selectedKeys={newInvoice.category ? [newInvoice.category] : []}
                 onSelectionChange={(keys) =>
@@ -565,7 +565,7 @@ export default function FacturationPage() {
                 <SelectItem key="shop">Shop</SelectItem>
                 <SelectItem key="restaurant">Restaurant</SelectItem>
                 <SelectItem key="service">Service</SelectItem>
-              </Select>
+              </StyledSelect>
 
               <Input
                 isRequired
@@ -617,7 +617,7 @@ export default function FacturationPage() {
                 }}
               />
 
-              <Select
+              <StyledSelect
                 isRequired
                 errorMessage={fieldErrors.serviceType}
                 isInvalid={!!fieldErrors.serviceType}
@@ -637,9 +637,9 @@ export default function FacturationPage() {
                 <SelectItem key="creation_contenu">Création de contenu</SelectItem>
                 <SelectItem key="publication">Publication</SelectItem>
                 <SelectItem key="studio">Studio</SelectItem>
-              </Select>
+              </StyledSelect>
 
-              <Select
+              <StyledSelect
                 label="Statut"
                 selectedKeys={[newInvoice.status]}
                 onSelectionChange={(keys) =>
@@ -652,7 +652,7 @@ export default function FacturationPage() {
                 <SelectItem key="payee">Payée</SelectItem>
                 <SelectItem key="en_attente">En attente</SelectItem>
                 <SelectItem key="retard">Retard</SelectItem>
-              </Select>
+              </StyledSelect>
 
               <Textarea
                 label="Commentaire"
@@ -697,7 +697,7 @@ export default function FacturationPage() {
             )}
             {selectedInvoice && (
               <div className="space-y-4">
-                <Select
+                <StyledSelect
                   label="Catégorie"
                   selectedKeys={[selectedInvoice.category]}
                   onSelectionChange={(keys) =>
@@ -711,7 +711,7 @@ export default function FacturationPage() {
                   <SelectItem key="shop">Shop</SelectItem>
                   <SelectItem key="restaurant">Restaurant</SelectItem>
                   <SelectItem key="service">Service</SelectItem>
-                </Select>
+                </StyledSelect>
 
                 <Input
                   isRequired
@@ -755,7 +755,7 @@ export default function FacturationPage() {
                   }
                 />
 
-                <Select
+                <StyledSelect
                   isRequired
                   label="Type de prestation"
                   placeholder="Sélectionnez une prestation"
@@ -769,9 +769,9 @@ export default function FacturationPage() {
                   <SelectItem key="creation_contenu">Création de contenu</SelectItem>
                   <SelectItem key="publication">Publication</SelectItem>
                   <SelectItem key="studio">Studio</SelectItem>
-                </Select>
+                </StyledSelect>
 
-                <Select
+                <StyledSelect
                   label="Statut"
                   selectedKeys={[selectedInvoice.status]}
                   onSelectionChange={(keys) =>
@@ -788,7 +788,7 @@ export default function FacturationPage() {
                   <SelectItem key="payee">Payée</SelectItem>
                   <SelectItem key="en_attente">En attente</SelectItem>
                   <SelectItem key="retard">Retard</SelectItem>
-                </Select>
+                </StyledSelect>
 
                 <Textarea
                   label="Commentaire"

@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+import { StyledSelect } from "./styled-select";
 
 interface Service {
   id: string;
@@ -309,7 +310,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 }))
               }
             />
-            <Select
+            <StyledSelect
               isRequired
               errorMessage={fieldErrors.typePrestation}
               isInvalid={!!fieldErrors.typePrestation}
@@ -332,7 +333,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
               <SelectItem key="CM">CM</SelectItem>
               <SelectItem key="Data analyse">Data analyse</SelectItem>
               <SelectItem key="Sérigraphie et textiles">Sérigraphie et textiles</SelectItem>
-            </Select>
+            </StyledSelect>
             <Input
               isRequired
               errorMessage={fieldErrors.budget}

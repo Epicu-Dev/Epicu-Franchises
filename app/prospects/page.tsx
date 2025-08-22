@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
@@ -29,8 +29,10 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { CategoryBadge } from "@/components/badges";
 
 import { ProspectModal } from "@/components/prospect-modal";
+import { StyledSelect } from "@/components/styled-select";
 
 interface Prospect {
   id: string;
@@ -49,6 +51,15 @@ interface Prospect {
   adresse?: string;
 }
 
+interface ApiProspect {
+  nomEtablissement: string;
+  categorie: string;
+  ville: string;
+  suiviPar: string;
+  commentaires: string;
+  dateRelance: string;
+}
+
 interface PaginationInfo {
   currentPage: number;
   totalPages: number;
@@ -57,7 +68,7 @@ interface PaginationInfo {
 }
 
 export default function ProspectsPage() {
-  const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [prospects, setProspects] = useState<ApiProspect[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     totalPages: 1,
@@ -71,43 +82,99 @@ export default function ProspectsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const previousTabRef = useRef(selectedTab);
 
   const fetchProspects = async () => {
+    console.log('fetchProspects');
+
     try {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
-        search: searchTerm,
-        category: selectedCategory,
-        suiviPar: selectedSuiviPar,
-        statut: selectedTab,
-        sortBy: sortField,
-        sortOrder: sortDirection,
-      });
-
-      const response = await fetch(`/api/prospects?${params}`);
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des prospects");
+      // Vérifier si l'onglet a changé et remettre la pagination à 1
+      if (previousTabRef.current !== selectedTab) {
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        previousTabRef.current = selectedTab;
       }
 
-      const data = await response.json();
+      let url = '';
+      let data: any;
 
-      setProspects(data.prospects);
-      setPagination(data.pagination);
+      // Construire les paramètres de requête
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('q', searchTerm);
+      if (sortField) params.append('orderBy', sortField);
+      if (sortDirection) params.append('order', sortDirection);
+      params.append('limit', pagination.itemsPerPage.toString());
+      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
+
+      const queryString = params.toString();
+
+      // Appeler l'endpoint approprié selon l'onglet sélectionné
+      switch (selectedTab) {
+        case 'a_contacter':
+          url = `/api/prospects/prospects${queryString ? `?${queryString}` : ''}`;
+          const prospectsRes = await fetch(url);
+          if (!prospectsRes.ok) {
+            throw new Error("Erreur lors de la récupération des prospects");
+          }
+          data = await prospectsRes.json();
+          setProspects(data.prospects || []);
+          setViewCount(data.viewCount ?? null);
+          setPagination(prev => ({
+            ...prev,
+            totalItems: data.totalCount || 0,
+            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
+          }));
+          break;
+
+        case 'en_discussion':
+          url = `/api/prospects/discussion${queryString ? `?${queryString}` : ''}`;
+          const discussionRes = await fetch(url);
+          if (!discussionRes.ok) {
+            throw new Error("Erreur lors de la récupération des discussions");
+          }
+          data = await discussionRes.json();
+          setProspects(data.discussions || []);
+          setViewCount(data.viewCount ?? null);
+          setPagination(prev => ({
+            ...prev,
+            totalItems: data.totalCount || 0,
+            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
+          }));
+          break;
+
+        case 'glacial':
+          url = `/api/prospects/glacial${queryString ? `?${queryString}` : ''}`;
+          const glacialRes = await fetch(url);
+          if (!glacialRes.ok) {
+            throw new Error("Erreur lors de la récupération des prospects glaciaux");
+          }
+          data = await glacialRes.json();
+          setProspects(data.prospects || []);
+          setViewCount(data.viewCount ?? null);
+          setPagination(prev => ({
+            ...prev,
+            totalItems: data.totalCount || 0,
+            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
+          }));
+          break;
+
+        default:
+          break;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
+      console.log('finally');
+
       setLoading(false);
     }
   };
@@ -119,9 +186,9 @@ export default function ProspectsPage() {
     searchTerm,
     selectedCategory,
     selectedSuiviPar,
-    selectedTab,
     sortField,
     sortDirection,
+    selectedTab,
   ]);
 
   const handleSort = (field: string) => {
@@ -133,11 +200,24 @@ export default function ProspectsPage() {
     }
   };
 
-
-
-  const handleEditProspect = (prospect: Prospect) => {
+  const handleEditProspect = (prospect: ApiProspect) => {
     setError(null);
-    setEditingProspect(prospect);
+    // Convertir ApiProspect en Prospect pour l'édition
+    const prospectForEdit: Prospect = {
+      id: '', // L'API ne retourne pas d'ID, on devra adapter
+      siret: '',
+      nomEtablissement: prospect.nomEtablissement,
+      ville: prospect.ville,
+      telephone: '',
+      categorie: prospect.categorie as any,
+      statut: selectedTab as any,
+      datePremierRendezVous: '',
+      dateRelance: prospect.dateRelance,
+      vientDeRencontrer: false,
+      commentaire: prospect.commentaires,
+      suiviPar: prospect.suiviPar,
+    };
+    setEditingProspect(prospectForEdit);
     setIsEditModalOpen(true);
   };
 
@@ -148,31 +228,26 @@ export default function ProspectsPage() {
       // Validation côté client
       if (!editingProspect.nomEtablissement.trim()) {
         setError("Le nom de l'établissement est requis");
-
         return;
       }
 
       if (!editingProspect.ville.trim()) {
         setError("La ville est requise");
-
         return;
       }
 
       if (!editingProspect.telephone.trim()) {
         setError("Le téléphone est requis");
-
         return;
       }
 
       if (!editingProspect.datePremierRendezVous) {
         setError("La date du premier rendez-vous est requise");
-
         return;
       }
 
       if (!editingProspect.dateRelance) {
         setError("La date de relance est requise");
-
         return;
       }
 
@@ -186,7 +261,6 @@ export default function ProspectsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-
         throw new Error(errorData.error || "Erreur lors de la modification du prospect");
       }
 
@@ -226,27 +300,27 @@ export default function ProspectsPage() {
     }
   };
 
-  const openConvertModal = (prospect: Prospect) => {
-    setProspectToConvert(prospect);
+  const openConvertModal = (prospect: ApiProspect) => {
+    // Convertir ApiProspect en Prospect pour la conversion
+    const prospectForConvert: Prospect = {
+      id: '', // L'API ne retourne pas d'ID, on devra adapter
+      siret: '',
+      nomEtablissement: prospect.nomEtablissement,
+      ville: prospect.ville,
+      telephone: '',
+      categorie: prospect.categorie as any,
+      statut: selectedTab as any,
+      datePremierRendezVous: '',
+      dateRelance: prospect.dateRelance,
+      vientDeRencontrer: false,
+      commentaire: prospect.commentaires,
+      suiviPar: prospect.suiviPar,
+    };
+    setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
   };
 
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-      case "FOOD":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      case "SHOP":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "TRAVEL":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "FUN":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "BEAUTY":
-        return "bg-pink-50 text-pink-700 border-pink-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
+
 
   if (loading && prospects.length === 0) {
     return (
@@ -298,7 +372,7 @@ export default function ProspectsPage() {
           {/* Header with filters */}
           <div className="flex justify-between items-center pl-4 pr-4 pb-4">
             <div className="flex items-center gap-4">
-              <Select
+              <StyledSelect
                 className="w-48"
                 placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
@@ -312,9 +386,9 @@ export default function ProspectsPage() {
                 <SelectItem key="TRAVEL">TRAVEL</SelectItem>
                 <SelectItem key="FUN">FUN</SelectItem>
                 <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-              </Select>
+              </StyledSelect>
 
-              <Select
+              <StyledSelect
                 className="w-48"
                 placeholder="Suivi par"
                 selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
@@ -325,7 +399,7 @@ export default function ProspectsPage() {
                 <SelectItem key="tous">Tous</SelectItem>
                 <SelectItem key="nom">Nom</SelectItem>
                 <SelectItem key="prenom">Prénom</SelectItem>
-              </Select>
+              </StyledSelect>
 
               <Button
                 className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
@@ -355,7 +429,7 @@ export default function ProspectsPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des prospects" shadow="none">
+          {<Table aria-label="Tableau des prospects" shadow="none">
             <TableHeader>
               <TableColumn>Nom établissement</TableColumn>
               <TableColumn>
@@ -406,50 +480,56 @@ export default function ProspectsPage() {
               <TableColumn>Basculer en client</TableColumn>
             </TableHeader>
             <TableBody>
-              {prospects.map((prospect) => (
-                <TableRow key={prospect.id}>
-                  <TableCell className="font-medium">
-                    {prospect.nomEtablissement}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(prospect.categorie)}`}
-                    >
-                      {prospect.categorie}
-                    </span>
-                  </TableCell>
-                  <TableCell>{prospect.ville}</TableCell>
-                  <TableCell>{prospect.dateRelance}</TableCell>
-                  <TableCell>{prospect.suiviPar}</TableCell>
-                  <TableCell>{prospect.commentaire}</TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      className="text-gray-600 hover:text-gray-800"
-                      size="sm"
-                      variant="light"
-                      onPress={() => handleEditProspect(prospect)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      color="secondary"
-                      size="sm"
-                      variant="flat"
-                      onPress={() => openConvertModal(prospect)}
-                    >
-                      Convertir
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {
+
+                loading ? (
+                  <TableRow>
+                    <TableCell className="text-center" colSpan={8}>
+                      <Spinner className="text-black dark:text-white p-20" size="lg" />
+                    </TableCell>
+                  </TableRow>
+                ) :
+                  prospects.map((prospect, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-light">
+                        {prospect.nomEtablissement}
+                      </TableCell>
+                      <TableCell className="font-light">
+                        <CategoryBadge category={prospect.categorie} />
+                      </TableCell>
+                      <TableCell className="font-light">{prospect.ville}</TableCell>
+                      <TableCell className="font-light">{prospect.dateRelance}</TableCell>
+                      <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                      <TableCell className="font-light">{prospect.commentaires}</TableCell>
+                      <TableCell>
+                        <Button
+                          isIconOnly
+                          className="text-gray-600 hover:text-gray-800"
+                          size="sm"
+                          variant="light"
+                          aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                          onPress={() => handleEditProspect(prospect)}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-light">
+                        <Button
+                          color="secondary"
+                          size="sm"
+                          variant="flat"
+                          onPress={() => openConvertModal(prospect)}
+                        >
+                          Convertir
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
             </TableBody>
-          </Table>
+          </Table>}
 
           {/* Pagination */}
-          <div className="flex justify-center mt-6">
+          {!loading && <div className="flex justify-center mt-6">
             <Pagination
               showControls
               classNames={{
@@ -464,13 +544,13 @@ export default function ProspectsPage() {
                 setPagination((prev) => ({ ...prev, currentPage: page }))
               }
             />
-          </div>
+          </div>}
 
           {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
+          {!loading && <div className="text-center mt-4 text-sm text-gray-500">
             Affichage de {prospects.length} prospect(s) sur{" "}
             {pagination.totalItems} au total
-          </div>
+          </div>}
         </CardBody>
       </Card>
 
@@ -573,10 +653,9 @@ export default function ProspectsPage() {
                     }
                   />
 
-                  <Select
-                    classNames={{
-                      label: "text-sm font-medium",
-                    }}
+                  <StyledSelect
+                    className="w-40"
+
                     label="Catégorie"
                     placeholder="Sélectionner une catégorie"
                     selectedKeys={
@@ -605,7 +684,7 @@ export default function ProspectsPage() {
                     <SelectItem key="TRAVEL">TRAVEL</SelectItem>
                     <SelectItem key="FUN">FUN</SelectItem>
                     <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-                  </Select>
+                  </StyledSelect>
 
                   <Input
                     classNames={{
@@ -679,7 +758,7 @@ export default function ProspectsPage() {
                     }
                   />
 
-                  <Select
+                  <StyledSelect
                     classNames={{
                       label: "text-sm font-medium",
                     }}
@@ -698,9 +777,9 @@ export default function ProspectsPage() {
                   >
                     <SelectItem key="nom">Nom</SelectItem>
                     <SelectItem key="prenom">Prénom</SelectItem>
-                  </Select>
+                  </StyledSelect>
 
-                  <Select
+                  <StyledSelect
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
@@ -727,7 +806,7 @@ export default function ProspectsPage() {
                     <SelectItem key="a_contacter">À contacter</SelectItem>
                     <SelectItem key="en_discussion">En discussion</SelectItem>
                     <SelectItem key="glacial">Glacial</SelectItem>
-                  </Select>
+                  </StyledSelect>
 
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">

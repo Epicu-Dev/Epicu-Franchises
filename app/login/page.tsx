@@ -104,12 +104,12 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-6">
         <div className="w-full max-w-md">
           {/* Login Card */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-xl shadow-lg p-8">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-800 mb-2">
                 Bienvenue !
               </h1>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-sm pl-8 pr-8">
                 Votre réseau réuni ici pour vous aider à prendre les meilleures
                 décisions
               </p>
@@ -118,41 +118,39 @@ export default function LoginPage() {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="identifiant">
-                  Identifiant*
+                  Identifiant<span className="text-red-500">*</span>
                 </label>
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black",
+                    input: "bg-white text-black text-xs ",
                     inputWrapper:
-                      "bg-white border-gray-300 hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg text-xs hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="identifiant"
                   placeholder="Saisis ton identifiant"
                   size="lg"
                   type="text"
                   value={identifiant}
-                  variant="bordered"
                   onChange={(e) => setIdentifiant(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="password">
-                  Mot de passe*
+                  Mot de passe<span className="text-red-500">*</span>
                 </label>
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black",
+                    input: "bg-white text-black text-xs ",
                     inputWrapper:
-                      "bg-white border-gray-300 hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg text-xs hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="password"
                   placeholder="Saisis ton mot de passe"
                   size="lg"
                   type="password"
                   value={password}
-                  variant="bordered"
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>

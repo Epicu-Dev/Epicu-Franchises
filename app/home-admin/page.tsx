@@ -28,6 +28,7 @@ import { DashboardLayout } from "../dashboard-layout";
 import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
+import { StyledSelect } from "@/components/styled-select";
 
 export default function HomeAdminPage() {
   const [isAddProspectModalOpen, setIsAddProspectModalOpen] = useState(false);
@@ -131,12 +132,12 @@ export default function HomeAdminPage() {
     if (activeTab !== "overview" && metric.city !== activeTab && metric.city !== "overview") {
       return false;
     }
-    
+
     // Filtre par catégorie
     if (selectedCategory && selectedCategory !== "all" && !metric.categories.includes(selectedCategory)) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -211,7 +212,7 @@ export default function HomeAdminPage() {
 
         {/* Filtre par catégorie */}
         <div className="w-48">
-          <Select
+          <StyledSelect
             className="w-full"
             label="Catégorie"
             placeholder="Sélectionner une catégorie"
@@ -226,7 +227,7 @@ export default function HomeAdminPage() {
             <SelectItem key="TRAVEL">Travel</SelectItem>
             <SelectItem key="FUN">Fun</SelectItem>
             <SelectItem key="BEAUTY">Beauty</SelectItem>
-          </Select>
+          </StyledSelect>
         </div>
       </div>
 
@@ -334,7 +335,7 @@ export default function HomeAdminPage() {
                   setNewProspect({ ...newProspect, adresse: e.target.value })
                 }
               />
-              <Select
+              <StyledSelect
                 label="Catégorie principale"
                 placeholder="Sélectionnez une catégorie"
                 selectedKeys={
@@ -351,8 +352,8 @@ export default function HomeAdminPage() {
                 <SelectItem key="esthetique">Esthétique</SelectItem>
                 <SelectItem key="fitness">Fitness</SelectItem>
                 <SelectItem key="autre">Autre</SelectItem>
-              </Select>
-              <Select
+              </StyledSelect>
+              <StyledSelect
                 label="Statut"
                 placeholder="Sélectionnez un statut"
                 selectedKeys={newProspect.statut ? [newProspect.statut] : []}
@@ -368,7 +369,7 @@ export default function HomeAdminPage() {
                 <SelectItem key="a_contacter">À contacter</SelectItem>
                 <SelectItem key="en_discussion">En discussion</SelectItem>
                 <SelectItem key="glacial">Glacial</SelectItem>
-              </Select>
+              </StyledSelect>
               <Textarea
                 label="Commentaire"
                 placeholder="Ajoutez un commentaire sur ce prospect..."

@@ -13,6 +13,7 @@ import { Input } from '@heroui/input';
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/table';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Pagination } from '@heroui/pagination';
+import { CategoryBadge, StatusBadge } from '@/components/badges';
 
 interface Service {
   id: string;
@@ -283,35 +284,7 @@ export default function StudioPage() {
     setIsPrestationModalOpen(false);
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "En attente":
-        return "bg-yellow-100 text-yellow-800";
-      case "Payée":
-        return "bg-green-100 text-green-800";
-      case "En retard":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-      case "FOOD":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      case "SHOP":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "TRAVEL":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "FUN":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "BEAUTY":
-        return "bg-pink-50 text-pink-700 border-pink-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
 
   // Fonction de tri
   const handleSort = (field: string) => {
@@ -595,9 +568,7 @@ export default function StudioPage() {
                       {paginatedPrestations.map((prestation) => (
                         <TableRow key={prestation.id}>
                           <TableCell>
-                            <span className={`px-2 py-1 text-xs font-medium rounded border ${getCategoryBadgeColor(prestation.category)}`}>
-                              {prestation.category}
-                            </span>
+                            <CategoryBadge category={prestation.category} />
                           </TableCell>
                           <TableCell>{prestation.establishmentName}</TableCell>
                           <TableCell>{prestation.contractDate}</TableCell>
@@ -605,9 +576,7 @@ export default function StudioPage() {
                             {prestation.serviceTitle}
                           </TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(prestation.invoiceStatus)}`}>
-                              {prestation.invoiceStatus}
-                            </span>
+                            <StatusBadge status={prestation.invoiceStatus} />
                           </TableCell>
                           <TableCell>{prestation.amount}€</TableCell>
                           <TableCell>{prestation.commission}€</TableCell>
