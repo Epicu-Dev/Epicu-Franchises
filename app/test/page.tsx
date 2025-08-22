@@ -54,6 +54,9 @@ export default function TestProspects() {
   const [discussionsNextOffset, setDiscussionsNextOffset] = useState<number | null>(0);
   const [discussionsHasMore, setDiscussionsHasMore] = useState<boolean>(false);
 
+  const [villesNextOffset, setVillesNextOffset] = useState<number | null>(0);
+  const [villesHasMore, setVillesHasMore] = useState<boolean>(false);
+
   const [selected, setSelected] = useState<string | null>('categories');
 
   useEffect(() => {
@@ -80,7 +83,6 @@ export default function TestProspects() {
       switch (col) {
         case 'lost':
         case 'glacial': {
-          // reset pagination + liste
           setLostProspects([]);
           setLostNextOffset(0);
           setLostHasMore(false);
@@ -126,7 +128,6 @@ export default function TestProspects() {
           break;
         }
         case 'clients': {
-          // Pas de pagination côté client (on ignore les counts)
           const url = buildUrl('/api/clients/clients', q, 0, PAGE_SIZE);
           const res = await fetch(url);
           const data = await res.json();
@@ -141,10 +142,19 @@ export default function TestProspects() {
           break;
         }
         case 'villes': {
+          // ✅ Afficher des villes même sans recherche : l’API retourne la première page
+          setVilles([]);
+          setVillesNextOffset(0);
+          setVillesHasMore(false);
+
           const url = buildUrl('/api/villes', q, 0, PAGE_SIZE);
           const res = await fetch(url);
           const data = await res.json();
+
           setVilles(data.results || []);
+          const p: Pagination | undefined = data.pagination;
+          setVillesHasMore(Boolean(p?.hasMore));
+          setVillesNextOffset(p?.nextOffset ?? null);
           break;
         }
         default:
@@ -192,6 +202,15 @@ export default function TestProspects() {
         const p: Pagination | undefined = data.pagination;
         setDiscussionsHasMore(Boolean(p?.hasMore));
         setDiscussionsNextOffset(p?.nextOffset ?? null);
+      } else if (selected === 'villes') {
+        if (villesNextOffset == null) return;
+        const url = buildUrl('/api/villes', searchQuery, villesNextOffset, PAGE_SIZE);
+        const res = await fetch(url);
+        const data = await res.json();
+        setVilles(prev => [...prev, ...(data.results || [])]);
+        const p: Pagination | undefined = data.pagination;
+        setVillesHasMore(Boolean(p?.hasMore));
+        setVillesNextOffset(p?.nextOffset ?? null);
       }
     } catch {
       setError('Erreur lors du chargement supplémentaire');
@@ -270,6 +289,30 @@ export default function TestProspects() {
     </div>
   );
 
+  const renderVillesList = (data: { id: string; ville: string }[], canLoadMore: boolean) => (
+    <div>
+      <h2 className="text-xl font-semibold mb-2">Villes Epicu</h2>
+      <ul className="list-disc pl-6">
+        {data.map(v => (
+          <li key={v.id}>
+            <strong>{v.ville}</strong> — id: <code>{v.id}</code>
+          </li>
+        ))}
+      </ul>
+      {canLoadMore && (
+        <div className="mt-3">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
+            disabled={loadingMore}
+            onClick={loadMore}
+          >
+            {loadingMore ? 'Chargement…' : 'Charger plus'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold mb-4">Test Prospects</h1>
@@ -277,54 +320,12 @@ export default function TestProspects() {
         <aside className="w-1/4 border p-4">
           <h3 className="font-semibold mb-2">Collections</h3>
           <ul className="flex flex-col gap-2">
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'glacial' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('glacial')}
-              >
-                Prospects Glaciaux
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'prospects' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('prospects')}
-              >
-                Prospects
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'discussion' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('discussion')}
-              >
-                En Discussion
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'villes' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('villes')}
-              >
-                Villes Epicu
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'categories' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('categories')}
-              >
-                Catégories
-              </button>
-            </li>
-            <li>
-              <button
-                className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`}
-                onClick={() => loadCollection('clients')}
-              >
-                Clients
-              </button>
-            </li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'glacial' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('glacial')}>Prospects Glaciaux</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'prospects' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('prospects')}>Prospects</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'discussion' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('discussion')}>En Discussion</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'villes' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('villes')}>Villes Epicu</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'categories' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('categories')}>Catégories</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('clients')}>Clients</button></li>
           </ul>
 
           <div className="mt-4">
@@ -334,23 +335,11 @@ export default function TestProspects() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && selected) loadCollection(selected, searchQuery);
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && selected) loadCollection(selected, searchQuery); }}
             />
             <div className="mt-2 flex gap-2">
-              <button
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-                onClick={() => selected && loadCollection(selected, searchQuery)}
-              >
-                Rechercher
-              </button>
-              <button
-                className="bg-gray-200 px-3 py-1 rounded"
-                onClick={() => { setSearchQuery(''); if (selected) loadCollection(selected, ''); }}
-              >
-                Réinitialiser
-              </button>
+              <button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={() => selected && loadCollection(selected, searchQuery)}>Rechercher</button>
+              <button className="bg-gray-200 px-3 py-1 rounded" onClick={() => { setSearchQuery(''); if (selected) loadCollection(selected, ''); }}>Réinitialiser</button>
             </div>
           </div>
         </aside>
@@ -359,34 +348,13 @@ export default function TestProspects() {
           {loading && <div>Chargement...</div>}
           {error && <div className="text-red-500">{error}</div>}
 
-          {!loading && !error && selected === null && (
-            <div>Sélectionnez une collection à gauche pour afficher les résultats.</div>
-          )}
+          {!loading && !error && selected === null && <div>Sélectionnez une collection à gauche pour afficher les résultats.</div>}
 
-          {!loading && !error && selected === 'glacial' &&
-            renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
-
-          {!loading && !error && selected === 'prospects' &&
-            renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
-
-          {!loading && !error && selected === 'discussion' &&
-            renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
-
+          {!loading && !error && selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
+          {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+          {!loading && !error && selected === 'discussion' && renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
           {!loading && !error && selected === 'clients' && renderClientsTable(clients)}
-
-          {!loading && !error && selected === 'villes' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Villes Epicu</h2>
-              <ul className="list-disc pl-6">
-                {villes.map(v => (
-                  <li key={v.id}>
-                    <strong>{v.ville}</strong> — id: <code>{v.id}</code>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
+          {!loading && !error && selected === 'villes' && renderVillesList(villes, villesHasMore)}
           {!loading && !error && selected === 'categories' && (
             <div>
               <h2 className="text-xl font-semibold mb-2">Catégories</h2>
