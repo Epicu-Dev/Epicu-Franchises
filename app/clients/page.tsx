@@ -320,8 +320,8 @@ export default function ClientsPage() {
           {/* Table */}
           {<Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
-              <TableColumn className="font-normal">Raison sociale</TableColumn>
-              <TableColumn className="font-normal">
+              <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
+              <TableColumn className="font-light text-sm">
                 <button
                   className=" cursor-pointer"
                   onClick={() => handleSort("categorie")}
@@ -334,8 +334,8 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
-              <TableColumn className="font-normal">Ville</TableColumn>
-              <TableColumn className="font-normal">
+              <TableColumn className="font-light text-sm">Ville</TableColumn>
+              <TableColumn className="font-light text-sm">
                 <button
                   className=" cursor-pointer"
                   onClick={() => handleSort("dateSignatureContrat")}
@@ -348,7 +348,7 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
-              <TableColumn className="font-normal">
+              <TableColumn className="font-light text-sm">
                 <button
                   className="cursor-pointer text-left w-full"
                   type="button"
@@ -362,9 +362,9 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
-              <TableColumn className="font-normal">Montant facturé</TableColumn>
-              <TableColumn className="font-normal">Modifier</TableColumn>
-              <TableColumn className="font-normal">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Montant facturé</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
               {
@@ -383,7 +383,16 @@ export default function ClientsPage() {
                       <CategoryBadge category={client.categorie || "FOOD"} />
                     </TableCell>
                     <TableCell className="font-light">{client.ville || "-"}</TableCell>
-                    <TableCell className="font-light">{client.dateSignatureContrat || "-"}</TableCell>
+                    <TableCell className="font-light">
+                      {client.dateSignatureContrat 
+                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })
+                        : "-"
+                      }
+                    </TableCell>
                     <TableCell className="font-light">
                       <StatusBadge status={client.statutPaiementContenu || "En attente"} />
                     </TableCell>

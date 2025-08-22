@@ -370,7 +370,7 @@ export default function TodoPage() {
             <TableHeader>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto "
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("titre")}
                 >
@@ -384,7 +384,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto "
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("dateEcheance")}
                 >
@@ -398,7 +398,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("statut")}
                 >
@@ -410,7 +410,7 @@ export default function TodoPage() {
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn>Actions</TableColumn>
+              <TableColumn className="font-light text-sm">Actions</TableColumn>
             </TableHeader>
             <TableBody>
               {todos.map((todo) => (

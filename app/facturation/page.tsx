@@ -382,96 +382,78 @@ export default function FacturationPage() {
             <TableHeader>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("category")}
                 >
                   Catégorie
                   {sortField === "category" && (
                     <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto "
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("establishmentName")}
                 >
                   Nom établissement
                   {sortField === "establishmentName" && (
                     <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto "
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("date")}
                 >
                   Date
                   {sortField === "date" && (
                     <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto text-sm font-ligth"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("amount")}
                 >
                   Montant
                   {sortField === "amount" && (
                     <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </Button>
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto text-sm font-normal"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("serviceType")}
                 >
                   Type de prestation
                   {sortField === "serviceType" && (
                     <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
+                      <span className="ml-1">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
                     </span>
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn className="text-sm font-normal">Modifier</TableColumn>
-              <TableColumn className="text-sm font-normal">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (

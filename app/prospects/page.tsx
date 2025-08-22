@@ -122,14 +122,14 @@ export default function ProspectsPage() {
       }
 
       const data = await response.json();
-      
+
       // Adapter la réponse selon le statut
       if (selectedTab === 'en_discussion') {
         setProspects(data.discussions || []);
       } else {
         setProspects(data.prospects || []);
       }
-      
+
       setViewCount(data.viewCount ?? null);
       setPagination(prev => ({
         ...prev,
@@ -318,7 +318,7 @@ export default function ProspectsPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full" shadow="none">
+      <Card className="w-full shadow-none" shadow="none">
         <CardBody>
           {/* Tabs */}
           <Tabs
@@ -397,10 +397,10 @@ export default function ProspectsPage() {
           {/* Table */}
           {<Table aria-label="Tableau des prospects" shadow="none">
             <TableHeader>
-              <TableColumn>Nom établissement</TableColumn>
+              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("categorie")}
                 >
@@ -412,10 +412,10 @@ export default function ProspectsPage() {
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn>Ville</TableColumn>
+              <TableColumn className="font-light text-sm">Ville</TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("dateRelance")}
                 >
@@ -429,7 +429,7 @@ export default function ProspectsPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto font-light"
                   variant="light"
                   onPress={() => handleSort("suiviPar")}
                 >
@@ -441,9 +441,9 @@ export default function ProspectsPage() {
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn>Commentaire</TableColumn>
-              <TableColumn>Modifier</TableColumn>
-              <TableColumn>Basculer en client</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
             </TableHeader>
             <TableBody>
               {
@@ -464,7 +464,16 @@ export default function ProspectsPage() {
                         <CategoryBadge category={prospect.categorie} />
                       </TableCell>
                       <TableCell className="font-light">{prospect.ville}</TableCell>
-                      <TableCell className="font-light">{prospect.dateRelance}</TableCell>
+                      <TableCell className="font-light">
+                        {prospect.dateRelance
+                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })
+                          : "-"
+                        }
+                      </TableCell>
                       <TableCell className="font-light">{prospect.suiviPar}</TableCell>
                       <TableCell className="font-light">{prospect.commentaires}</TableCell>
                       <TableCell>

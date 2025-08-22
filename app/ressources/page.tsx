@@ -16,7 +16,9 @@ import {
   PlusIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from "@heroicons/react/24/outline";
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
@@ -136,16 +138,7 @@ export default function RessourcesPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Ressources
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Accédez à tous vos documents et ressources EPICU
-        </p>
-      </div>
-
-      <Card className="shadow-sm">
+      <Card className="w-full" shadow="none">
         <CardHeader className="p-6">
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
             <Tabs
@@ -193,20 +186,18 @@ export default function RessourcesPage() {
           </div>
         </CardHeader>
 
-        <CardBody className="p-0">
+        <CardBody >
           <Table aria-label="Table des ressources">
             <TableHeader>
-              <TableColumn>Objet</TableColumn>
-              <TableColumn>Commentaires</TableColumn>
-              <TableColumn>Lien</TableColumn>
+              <TableColumn className="font-light text-sm">Objet</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaires</TableColumn>
+              <TableColumn className="font-light text-sm">Lien</TableColumn>
               <TableColumn>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={handleSort}>
+                <div className="flex items-center gap-2 cursor-pointer font-light text-sm" onClick={handleSort}>
                   Date d'ajout
-                  {sortOrder === "asc" ? (
-                    <ArrowUpIcon className="h-4 w-4" />
-                  ) : (
-                    <ArrowDownIcon className="h-4 w-4" />
-                  )}
+                  <span className="ml-1">
+                    {sortOrder === "asc" ? "↑" : "↓"}
+                  </span>
                 </div>
               </TableColumn>
             </TableHeader>
@@ -243,7 +234,11 @@ export default function RessourcesPage() {
                   </TableCell>
                   <TableCell>
                     <span className="font-light">
-                      {resource.dateAdded}
+                      {new Date(resource.dateAdded).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
                     </span>
                   </TableCell>
                 </TableRow>
