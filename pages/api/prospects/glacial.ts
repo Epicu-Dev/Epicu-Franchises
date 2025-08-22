@@ -1,18 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-
 import { base } from '../constants';
 
 const VIEW_NAME = '🔴 Perdu';
+const TABLE_NAME = 'ÉTABLISSEMENTS';
 
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const limit = parseInt(req.query.limit as string || '10', 10);
-    const offset = parseInt(req.query.offset as string || '0', 10);
-    const order = req.query.order === 'desc' ? 'desc' : 'asc';
-    const orderBy = (req.query.orderBy as string) || "Nom de l'établissement";
-  const q = (req.query.q as string) || (req.query.search as string) || '';
+    const limitRaw = parseInt((req.query.limit as string) || '10', 10);
+    const offsetRaw = parseInt((req.query.offset as string) || '0', 10);
+    const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 10 : limitRaw)); // Airtable pageSize max 100
+    const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
 
-    // Construire options de select (avec filtre de recherche si fourni)
+    const order = req.query.order === 'desc' ? 'desc' : 'asc';
+    const orderByReq = (req.query.orderBy as string) || "Nom de l'établissement";
+    const q = (req.query.q as string) || (req.query.search as string) || '';
+
     const fields = [
       "Nom de l'établissement",
       'Catégorie',
@@ -21,95 +23,84 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Commentaires',
       'Date de relance',
     ];
+    const allowedOrderBy = new Set([...fields]);
+    const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
 
-    const escapeForAirtableRegex = (s: string) => {
-      return s
-        .replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&')
-        .replace(/"/g, '\\\"')
-        .toLowerCase();
+    const escapeForAirtableRegex = (s: string) =>
+      s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '\\"').toLowerCase();
+
+    // Options de sélection
+    const selectOptions: any = {
+      view: VIEW_NAME,
+      fields,
+      pageSize: limit,
+      sort: [{ field: orderBy, direction: order }],
     };
 
-    const selectOptions: any = { view: VIEW_NAME, fields };
-
+    // Filtre plein-texte
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
-      const filterFormula = `OR(REGEX_MATCH(LOWER({Nom de l'établissement}), \"${pattern}\"),REGEX_MATCH(LOWER({Ville}), \"${pattern}\"),REGEX_MATCH(LOWER({Commentaires}), \"${pattern}\"))`;
-
-      selectOptions.filterByFormula = filterFormula;
+      selectOptions.filterByFormula =
+        `OR(` +
+        `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
+        `)`;
     }
 
-    // Récupérer tous les prospects perdus (éventuellement filtrés) pour le total
-    const allRecords = await base('ÉTABLISSEMENTS')
-      .select(selectOptions)
-      .all();
-    const totalCount = allRecords.length;
+    // Ne récupérer qu'au plus offset+limit
+    selectOptions.maxRecords = offset + limit;
 
-    // Pagination et tri
-    let records = Array.from(allRecords);
+    // Récupération et fenêtre demandée
+    const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
+    const pageRecords = upToPageRecords.slice(offset, offset + limit);
 
-    // Tri
-    records = records.sort((a: any, b: any) => {
-      const aValue = a.get(orderBy) || '';
-      const bValue = b.get(orderBy) || '';
+    // Relations (Catégorie / Suivi par...) sur la page courante uniquement
+    const categoryIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Catégorie') || [])));
+    const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par...') || [])));
 
-      if (aValue < bValue) return order === 'asc' ? -1 : 1;
-      if (aValue > bValue) return order === 'asc' ? 1 : -1;
-
-      return 0;
-    });
-    // Pagination
-    records = records.slice(offset, offset + limit);
-
-    // Récupérer les noms de catégorie (relation)
-    const categoryIds = Array.from(new Set(records.flatMap((r: any) => r.get('Catégorie') || [])));
     let categoryNames: Record<string, string> = {};
-
     if (categoryIds.length > 0) {
       const catRecords = await base('Catégories')
         .select({
           filterByFormula: `OR(${categoryIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
           fields: ['Name'],
+          pageSize: Math.min(categoryIds.length, 100),
+          maxRecords: categoryIds.length,
         })
         .all();
-
       catRecords.forEach((cat: any) => {
         categoryNames[cat.id] = cat.get('Name');
       });
     }
 
-    // Récupérer les noms des collaborateurs (relation Suivi par...)
-    const suiviIds = Array.from(new Set(records.flatMap((r: any) => r.get('Suivi par...') || [])));
     let suiviNames: Record<string, string> = {};
-
     if (suiviIds.length > 0) {
-      const suiviRecords = await base('Collaborateurs')
+      const collabRecords = await base('Collaborateurs')
         .select({
           filterByFormula: `OR(${suiviIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
           fields: ['Prénom', 'Nom'],
+          pageSize: Math.min(suiviIds.length, 100),
+          maxRecords: suiviIds.length,
         })
         .all();
-
-      suiviRecords.forEach((collab: any) => {
+      collabRecords.forEach((collab: any) => {
         const prenom = collab.get('Prénom') || '';
         const nom = collab.get('Nom') || '';
-
         suiviNames[collab.id] = `${prenom} ${nom}`.trim();
       });
     }
 
-    const prospects = records.map((record: any) => {
+    const prospects = pageRecords.map((record: any) => {
       const catIds = record.get('Catégorie') || [];
-      let catName = '';
+      const catName = Array.isArray(catIds) && catIds.length > 0
+        ? (categoryNames[catIds[0]] || catIds[0])
+        : '';
 
-      if (Array.isArray(catIds) && catIds.length > 0) {
-        catName = categoryNames[catIds[0]] || catIds[0];
-      }
-      const suiviIds = record.get('Suivi par...') || [];
-      let suiviPar = '';
-
-      if (Array.isArray(suiviIds) && suiviIds.length > 0) {
-        suiviPar = suiviNames[suiviIds[0]] || suiviIds[0];
-      }
+      const spIds = record.get('Suivi par...') || [];
+      const suiviPar = Array.isArray(spIds) && spIds.length > 0
+        ? (suiviNames[spIds[0]] || spIds[0])
+        : '';
 
       return {
         nomEtablissement: record.get("Nom de l'établissement"),
@@ -121,7 +112,20 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       };
     });
 
-  res.status(200).json({ prospects, totalCount, viewCount: allRecords.length });
+    const hasMore = upToPageRecords.length === offset + limit;
+
+    res.status(200).json({
+      prospects,
+      pagination: {
+        limit,
+        offset,
+        orderBy,
+        order,
+        hasMore,
+        nextOffset: hasMore ? offset + limit : null,
+        prevOffset: Math.max(0, offset - limit),
+      },
+    });
   } catch (error: any) {
     console.error('Airtable error:', {
       statusCode: error?.statusCode,
@@ -136,5 +140,3 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 }
-
-
