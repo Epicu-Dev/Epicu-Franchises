@@ -52,12 +52,19 @@ interface Prospect {
 }
 
 interface ApiProspect {
+  id: string;
   nomEtablissement: string;
   categorie: string;
   ville: string;
   suiviPar: string;
   commentaires: string;
   dateRelance: string;
+  telephone?: string;
+  datePremierRendezVous?: string;
+  vientDeRencontrer?: boolean;
+  email?: string;
+  adresse?: string;
+  siret?: string;
 }
 
 interface PaginationInfo {
@@ -89,6 +96,7 @@ export default function ProspectsPage() {
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [editFieldErrors, setEditFieldErrors] = useState<{ [key: string]: string }>({});
   const previousTabRef = useRef(selectedTab);
 
   const fetchProspects = async () => {
@@ -166,22 +174,82 @@ export default function ProspectsPage() {
     }
   };
 
+  const validateEditField = (fieldName: string, value: any) => {
+    const errors = { ...editFieldErrors };
+
+    switch (fieldName) {
+      case 'nomEtablissement':
+        if (!value || !value.trim()) {
+          errors.nomEtablissement = 'Le nom de l\'établissement est requis';
+        } else {
+          delete errors.nomEtablissement;
+        }
+        break;
+      case 'ville':
+        if (!value || !value.trim()) {
+          errors.ville = 'La ville est requise';
+        } else {
+          delete errors.ville;
+        }
+        break;
+      case 'telephone':
+        if (!value || !value.trim()) {
+          errors.telephone = 'Le téléphone est requis';
+        } else {
+          delete errors.telephone;
+        }
+        break;
+      case 'datePremierRendezVous':
+        if (!value) {
+          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
+        } else {
+          delete errors.datePremierRendezVous;
+        }
+        break;
+      case 'dateRelance':
+        if (!value) {
+          errors.dateRelance = 'La date de relance est requise';
+        } else {
+          delete errors.dateRelance;
+        }
+        break;
+    }
+
+    setEditFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllEditFields = (prospect: Prospect) => {
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateEditField(field, prospect[field as keyof Prospect]);
+      if (!fieldValid) isValid = false;
+    });
+
+    return isValid;
+  };
+
   const handleEditProspect = (prospect: ApiProspect) => {
     setError(null);
+    setEditFieldErrors({});
     // Convertir ApiProspect en Prospect pour l'édition
     const prospectForEdit: Prospect = {
-      id: '', // L'API ne retourne pas d'ID, on devra adapter
-      siret: '',
+      id: prospect.id,
+      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
-      telephone: '',
+      telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: '',
+      datePremierRendezVous: prospect.datePremierRendezVous || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: false,
+      vientDeRencontrer: prospect.vientDeRencontrer || false,
       commentaire: prospect.commentaires,
       suiviPar: prospect.suiviPar,
+      email: prospect.email,
+      adresse: prospect.adresse,
     };
     setEditingProspect(prospectForEdit);
     setIsEditModalOpen(true);
@@ -191,29 +259,9 @@ export default function ProspectsPage() {
     if (!editingProspect) return;
 
     try {
-      // Validation côté client
-      if (!editingProspect.nomEtablissement.trim()) {
-        setError("Le nom de l'établissement est requis");
-        return;
-      }
-
-      if (!editingProspect.ville.trim()) {
-        setError("La ville est requise");
-        return;
-      }
-
-      if (!editingProspect.telephone.trim()) {
-        setError("Le téléphone est requis");
-        return;
-      }
-
-      if (!editingProspect.datePremierRendezVous) {
-        setError("La date du premier rendez-vous est requise");
-        return;
-      }
-
-      if (!editingProspect.dateRelance) {
-        setError("La date de relance est requise");
+      // Validation complète avant soumission
+      if (!validateAllEditFields(editingProspect)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
         return;
       }
 
@@ -226,14 +274,22 @@ export default function ProspectsPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la modification du prospect");
+        let errorMessage = "Erreur lors de la modification du prospect";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // Si la réponse n'est pas du JSON valide, utiliser le message par défaut
+          console.error('Erreur de parsing JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       // Fermer le modal et recharger les prospects
       setIsEditModalOpen(false);
       setEditingProspect(null);
       setError(null);
+      setEditFieldErrors({});
       fetchProspects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -269,18 +325,20 @@ export default function ProspectsPage() {
   const openConvertModal = (prospect: ApiProspect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
-      id: '', // L'API ne retourne pas d'ID, on devra adapter
-      siret: '',
+      id: prospect.id,
+      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
-      telephone: '',
+      telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: '',
+      datePremierRendezVous: prospect.datePremierRendezVous || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: false,
+      vientDeRencontrer: prospect.vientDeRencontrer || false,
       commentaire: prospect.commentaires,
       suiviPar: prospect.suiviPar,
+      email: prospect.email,
+      adresse: prospect.adresse,
     };
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
@@ -455,8 +513,8 @@ export default function ProspectsPage() {
                     </TableCell>
                   </TableRow>
                 ) :
-                  prospects.map((prospect, index) => (
-                    <TableRow key={index}>
+                  prospects.map((prospect) => (
+                    <TableRow key={prospect.id}>
                       <TableCell className="font-light">
                         {prospect.nomEtablissement}
                       </TableCell>
@@ -580,6 +638,8 @@ export default function ProspectsPage() {
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.nomEtablissement}
+                    isInvalid={!!editFieldErrors.nomEtablissement}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -587,17 +647,21 @@ export default function ProspectsPage() {
                     label="Nom établissement"
                     placeholder="Nom de l'établissement"
                     value={editingProspect.nomEtablissement}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
                         prev
-                          ? { ...prev, nomEtablissement: e.target.value }
+                          ? { ...prev, nomEtablissement: value }
                           : null
-                      )
-                    }
+                      );
+                      validateEditField('nomEtablissement', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.ville}
+                    isInvalid={!!editFieldErrors.ville}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -605,15 +669,19 @@ export default function ProspectsPage() {
                     label="Ville"
                     placeholder="Paris"
                     value={editingProspect.ville || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, ville: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, ville: value } : null
+                      );
+                      validateEditField('ville', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.telephone}
+                    isInvalid={!!editFieldErrors.telephone}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -621,11 +689,13 @@ export default function ProspectsPage() {
                     label="Téléphone"
                     placeholder="01 23 45 67 89"
                     value={editingProspect.telephone || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, telephone: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, telephone: value } : null
+                      );
+                      validateEditField('telephone', value);
+                    }}
                   />
 
                   <StyledSelect
@@ -701,6 +771,8 @@ export default function ProspectsPage() {
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.datePremierRendezVous}
+                    isInvalid={!!editFieldErrors.datePremierRendezVous}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -708,17 +780,21 @@ export default function ProspectsPage() {
                     label="Date du premier rendez-vous"
                     type="date"
                     value={editingProspect.datePremierRendezVous || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
                         prev
-                          ? { ...prev, datePremierRendezVous: e.target.value }
+                          ? { ...prev, datePremierRendezVous: value }
                           : null
-                      )
-                    }
+                      );
+                      validateEditField('datePremierRendezVous', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.dateRelance}
+                    isInvalid={!!editFieldErrors.dateRelance}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -726,11 +802,13 @@ export default function ProspectsPage() {
                     label="Date de la relance"
                     type="date"
                     value={editingProspect.dateRelance || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, dateRelance: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, dateRelance: value } : null
+                      );
+                      validateEditField('dateRelance', value);
+                    }}
                   />
 
                   <StyledSelect
@@ -831,12 +909,21 @@ export default function ProspectsPage() {
               onPress={() => {
                 setIsEditModalOpen(false);
                 setEditingProspect(null);
+                setEditFieldErrors({});
               }}
             >
               Annuler
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={
+                Object.keys(editFieldErrors).length > 0 || 
+                !editingProspect?.nomEtablissement || 
+                !editingProspect?.ville || 
+                !editingProspect?.telephone || 
+                !editingProspect?.datePremierRendezVous || 
+                !editingProspect?.dateRelance
+              }
               onPress={handleUpdateProspect}
             >
               Modifier

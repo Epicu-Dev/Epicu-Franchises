@@ -78,7 +78,6 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
@@ -152,47 +151,7 @@ export default function ClientsPage() {
     }
   };
 
-  const handleAddClient = async () => {
-    try {
-      // Validation côté client
-      if (!newClient.raisonSociale.trim()) {
-        setError("La raison sociale est requise");
 
-        return;
-      }
-
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newClient),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        throw new Error(errorData.error || "Erreur lors de l'ajout du client");
-      }
-
-      // Réinitialiser le formulaire et fermer le modal
-      setNewClient({
-        raisonSociale: "",
-        email: "",
-        telephone: "",
-        adresse: "",
-        commentaire: "",
-        statut: "actif",
-      });
-      setIsAddModalOpen(false);
-      setError(null);
-
-      // Recharger les clients
-      fetchClients();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client);
@@ -288,13 +247,6 @@ export default function ClientsPage() {
                 <SelectItem key="BEAUTY">Beauty</SelectItem>
               </StyledSelect>
 
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
-              >
-                Ajouter un client
-              </Button>
             </div>
 
             <div className="relative">
@@ -384,12 +336,12 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell className="font-light">{client.ville || "-"}</TableCell>
                     <TableCell className="font-light">
-                      {client.dateSignatureContrat 
+                      {client.dateSignatureContrat
                         ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          })
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })
                         : "-"
                       }
                     </TableCell>
@@ -440,120 +392,6 @@ export default function ClientsPage() {
           </div>}
         </CardBody>
       </Card>
-
-      {/* Modal d'ajout de client */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>Ajouter un nouveau client</ModalHeader>
-          <ModalBody>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
-            <div className="space-y-4">
-              <Input
-                isRequired
-                errorMessage={fieldErrors.raisonSociale}
-                isInvalid={!!fieldErrors.raisonSociale}
-                label="Raison sociale"
-                placeholder="Nom de l'entreprise"
-                value={newClient.raisonSociale}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewClient((prev) => ({
-                    ...prev,
-                    raisonSociale: value,
-                  }));
-                  // Validation simple
-                  if (!value.trim()) {
-                    setFieldErrors(prev => ({ ...prev, raisonSociale: 'La raison sociale est requise' }));
-                  } else {
-                    setFieldErrors(prev => {
-                      const newErrors = { ...prev };
-
-                      delete newErrors.raisonSociale;
-
-                      return newErrors;
-                    });
-                  }
-                }}
-              />
-              <Input
-                label="Email"
-                placeholder="contact@entreprise.fr"
-                type="email"
-                value={newClient.email}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, email: e.target.value }))
-                }
-              />
-              <Input
-                label="Téléphone"
-                placeholder="01 23 45 67 89"
-                value={newClient.telephone}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    telephone: e.target.value,
-                  }))
-                }
-              />
-              <Input
-                label="Adresse"
-                placeholder="123 Rue de l'entreprise, 75001 Paris"
-                value={newClient.adresse}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, adresse: e.target.value }))
-                }
-              />
-              <StyledSelect
-                label="Statut"
-                selectedKeys={[newClient.statut]}
-                onSelectionChange={(keys) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "actif"
-                      | "inactif"
-                      | "prospect",
-                  }))
-                }
-              >
-                <SelectItem key="actif">Actif</SelectItem>
-                <SelectItem key="inactif">Inactif</SelectItem>
-                <SelectItem key="prospect">Prospect</SelectItem>
-              </StyledSelect>
-              <Textarea
-                label="Commentaire"
-                placeholder="Informations supplémentaires..."
-                value={newClient.commentaire}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    commentaire: e.target.value,
-                  }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddClient}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Modal d'édition de client */}
       <Modal
