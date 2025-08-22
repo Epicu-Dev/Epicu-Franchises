@@ -45,7 +45,7 @@ export default function TestProspects() {
         <section className="mb-8">
             <h2 className="text-xl font-semibold mb-2">{title}</h2>
             {viewCount !== null && (
-                <div className="mb-2 text-gray-700">Nombre total d'éléments dans la vue : <span className="font-semibold">{viewCount}</span></div>
+                <div className="mb-2 text-gray-700">Nombre total d&apos;éléments dans la vue : <span className="font-semibold">{viewCount}</span></div>
             )}
             <table className="min-w-full border">
                 <thead>
@@ -53,7 +53,7 @@ export default function TestProspects() {
                         <th className="border px-2 py-1">Nom établissement</th>
                         <th className="border px-2 py-1">Catégorie</th>
                         <th className="border px-2 py-1">Ville</th>
-                        <th className="border px-2 py-1">Suivi par...</th>
+                        <th className="border px-2 py-1">Suivi par&hellip;</th>
                         <th className="border px-2 py-1">Commentaires</th>
                         <th className="border px-2 py-1">Date de relance</th>
                     </tr>
