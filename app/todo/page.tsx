@@ -290,14 +290,14 @@ export default function TodoPage() {
   const getStatutBadgeClass = (statut: string) => {
     switch (statut) {
       case "terminee":
-        return "bg-green-100 text-green-800";
+        return "bg-green-50 text-green-700 border-green-200";
       case "en_cours":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-50 text-blue-700 border-blue-200";
       case "annulee":
-        return "bg-red-100 text-red-800";
+        return "bg-red-50 text-red-700 border-red-200";
       case "a_faire":
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
@@ -346,9 +346,7 @@ export default function TodoPage() {
               >
                 <SelectItem key="tous">Tous</SelectItem>
                 <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
                 <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
               </Select>
             </div>
 
@@ -372,7 +370,7 @@ export default function TodoPage() {
             <TableHeader>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto "
                   variant="light"
                   onPress={() => handleSort("titre")}
                 >
@@ -386,7 +384,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto "
                   variant="light"
                   onPress={() => handleSort("dateEcheance")}
                 >
@@ -400,7 +398,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn>
                 <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
+                  className="p-0 h-auto"
                   variant="light"
                   onPress={() => handleSort("statut")}
                 >
@@ -417,7 +415,7 @@ export default function TodoPage() {
             <TableBody>
               {todos.map((todo) => (
                 <TableRow key={todo.id}>
-                  <TableCell>
+                  <TableCell className="font-light">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         className="text-black"
@@ -432,10 +430,16 @@ export default function TodoPage() {
                       <span>{todo.titre}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{todo.dateEcheance}</TableCell>
+                  <TableCell className="font-light">
+                    {new Date(todo.dateEcheance).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })}
+                  </TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutBadgeClass(todo.statut)}`}
+                      className={`px-6 py-1 rounded text-xs font-medium  ${getStatutBadgeClass(todo.statut)}`}
                     >
                       {getStatutLabel(todo.statut)}
                     </span>
@@ -535,16 +539,12 @@ export default function TodoPage() {
                     ...prev,
                     statut: Array.from(keys)[0] as
                       | "a_faire"
-                      | "en_cours"
                       | "terminee"
-                      | "annulee",
                   }))
                 }
               >
                 <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
                 <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
               </Select>
             </div>
           </ModalBody>

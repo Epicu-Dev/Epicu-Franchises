@@ -192,10 +192,10 @@ export default function HomePage() {
   // Transformation des événements filtrés pour l'affichage
   const agendaEvents = useMemo(() => {
     const typeColorMap = {
-      "tournage": "bg-pink-100 text-pink-800",
-      "rendez-vous": "bg-purple-100 text-purple-800",
-      "publication": "bg-blue-100 text-blue-800",
-      "evenement": "bg-orange-100 text-orange-800",
+      "tournage": "bg-pink-50 text-pink-700 border-pink-200",
+      "rendez-vous": "bg-purple-50 text-purple-700 border-purple-200",
+      "publication": "bg-blue-50 text-blue-700 border-blue-200",
+      "evenement": "bg-orange-50 text-orange-700 border-orange-200",
     };
 
     return filteredEvents.slice(0, 3).map(event => ({
@@ -213,28 +213,28 @@ export default function HomePage() {
       mission: "Mission",
       deadline: "Deadline",
       status: "En cours",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-blue-50 text-blue-700 border-blue-200",
     },
     {
       mission: "Mission",
       deadline: "Deadline",
       status: "En retard",
-      color: "bg-red-100 text-red-800",
+      color: "bg-red-50 text-red-700 border-red-200",
     },
     {
       mission: "Mission",
       deadline: "Deadline",
       status: "En cours",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-blue-50 text-blue-700 border-blue-200",
     },
   ]);
 
   const handleAddTodo = () => {
     if (newTodo.mission.trim()) {
       const colorMap = {
-        "En cours": "bg-blue-100 text-blue-800",
-        "En retard": "bg-red-100 text-red-800",
-        Terminé: "bg-green-100 text-green-800",
+        "En cours": "bg-blue-50 text-blue-700 border-blue-200",
+        "En retard": "bg-red-50 text-red-700 border-red-200",
+        Terminé: "bg-green-50 text-green-700 border-green-200",
       };
 
       const todoToAdd = {
@@ -420,7 +420,7 @@ export default function HomePage() {
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${event.color}`}
+                        className={`px-6 py-1 rounded text-xs font-normal ml-2 flex-shrink-0  ${event.color}`}
                       >
                         {event.type}
                       </span>
@@ -459,7 +459,7 @@ export default function HomePage() {
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${item.color}`}
+                        className={`px-6 py-1 rounded text-xs font-normal ml-2 flex-shrink-0  ${item.color}`}
                       >
                         {item.status}
                       </span>

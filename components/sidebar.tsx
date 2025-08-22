@@ -27,6 +27,7 @@ import {
   ChevronDownIcon,
   Bars3Icon,
   XMarkIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 
 import { useUserType } from "../contexts/user-type-context";
@@ -95,6 +96,13 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       label: "Le studio",
       icon: BuildingStorefrontIcon,
       href: "/studio",
+      showFor: ["admin", "franchise"]
+    },
+    {
+      key: "ressources",
+      label: "Ressources",
+      icon: ArchiveBoxIcon,
+      href: "/ressources",
       showFor: ["admin", "franchise"]
     },
     { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise"] },

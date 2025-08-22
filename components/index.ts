@@ -10,6 +10,7 @@ export { ProspectModal } from './prospect-modal';
 export { PrestationModal } from './prestation-modal';
 export { AgendaModals } from './agenda-modals';
 export { HelpModal } from './help-modal';
+export { default as ResourceModal } from './resource-modal';
 
 // Composants de badges
 export { 
