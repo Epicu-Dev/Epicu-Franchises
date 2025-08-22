@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // tolérance apostrophes côté lecture
         const dueDate =
           r.get("Date d'échéance") ??
-          r.get('Date d’échéance') ?? // typographique
           '';
         const status = r.get('Statut') || '';
         const type = r.get('Type de tâche') || '';
@@ -113,11 +112,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Optionnels
       const duePayload =
-        getField(body, ["Date d’échéance", "Date d’échéance", 'dueDate', 'due_date']);
+        getField(body, ["Date d'échéance"]);
       const descPayload =
         getField(body, ['Description', 'description', 'desc']);
 
-      if (duePayload) fieldsToCreate["Date d’échéance"] = duePayload;
+      if (duePayload) fieldsToCreate["Date d'échéance"] = duePayload;
       if (descPayload) fieldsToCreate['Description'] = descPayload;
 
       // Collaborateur (id ou tableau d’ids)
