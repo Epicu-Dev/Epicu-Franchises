@@ -193,12 +193,17 @@ export default function RessourcesPage() {
               <TableColumn className="font-light text-sm">Commentaires</TableColumn>
               <TableColumn className="font-light text-sm">Lien</TableColumn>
               <TableColumn>
-                <div className="flex items-center gap-2 cursor-pointer font-light text-sm" onClick={handleSort}>
-                  Date d'ajout
+                <button 
+                  className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
+                  onClick={handleSort}
+                  onKeyDown={(e) => e.key === "Enter" && handleSort()}
+                  type="button"
+                >
+                  Date d&apos;ajout
                   <span className="ml-1">
                     {sortOrder === "asc" ? "↑" : "↓"}
                   </span>
-                </div>
+                </button>
               </TableColumn>
             </TableHeader>
             <TableBody>

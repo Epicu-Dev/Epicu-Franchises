@@ -96,7 +96,7 @@ export default function ResourceModal({
                 isRequired
               >
                 {categoryOptions.map((category) => (
-                  <SelectItem key={category.key} value={category.key}>
+                  <SelectItem key={category.key}>
                     {category.label}
                   </SelectItem>
                 ))}
@@ -130,7 +130,7 @@ export default function ResourceModal({
               />
 
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                <label htmlFor="tags-input" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -147,6 +147,7 @@ export default function ResourceModal({
                 </div>
                 <div className="flex gap-2">
                   <Input
+                    id="tags-input"
                     placeholder="Ajouter un tag"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
