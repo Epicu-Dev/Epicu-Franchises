@@ -152,7 +152,7 @@ export default function DataPage() {
 
             {/* Filter */}
             <StyledSelect
-              className="w-40"
+              className="w-40 pl-4"
               placeholder="Catégorie"
               selectedKeys={selectedCategory ? [selectedCategory] : []}
               onSelectionChange={(keys) =>
@@ -172,7 +172,7 @@ export default function DataPage() {
               <CardBody className="p-0">
                 <Table aria-label="Data table">
                   <TableHeader>
-                    <TableColumn>
+                    <TableColumn className="font-light text-sm">
                       <button
                         className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
                         type="button"
@@ -182,12 +182,12 @@ export default function DataPage() {
                         {getSortIcon("month")}
                       </button>
                     </TableColumn>
-                    <TableColumn>Chiffre d&apos;affaires</TableColumn>
-                    <TableColumn>Taux de conversion</TableColumn>
-                    <TableColumn>Clients signés</TableColumn>
-                    <TableColumn>Prospects rencontrés</TableColumn>
-                    <TableColumn>Nouveaux prospects</TableColumn>
-                    <TableColumn>
+                    <TableColumn className="font-light text-sm">Chiffre d&apos;affaires</TableColumn>
+                    <TableColumn className="font-light text-sm">Taux de conversion</TableColumn>
+                    <TableColumn className="font-light text-sm">Clients signés</TableColumn>
+                    <TableColumn className="font-light text-sm">Prospects rencontrés</TableColumn>
+                    <TableColumn className="font-light text-sm">Nouveaux prospects</TableColumn>
+                    <TableColumn className="font-light text-sm">
                       <button
                         className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
                         type="button"
@@ -201,19 +201,19 @@ export default function DataPage() {
                   <TableBody>
                     {tableData.map((row, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-light text-sm">
                           {row.month}
                         </TableCell>
-                        <TableCell>{row.revenue}</TableCell>
+                        <TableCell className="font-light text-sm">{row.revenue}</TableCell>
                         <TableCell>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
                             {row.conversionRate}
                           </span>
                         </TableCell>
-                        <TableCell>{row.signedClients}</TableCell>
-                        <TableCell>{row.prospectsMet}</TableCell>
-                        <TableCell>{row.newProspects}</TableCell>
-                        <TableCell>{row.publishedPosts}</TableCell>
+                        <TableCell className="font-light text-sm">{row.signedClients}</TableCell>
+                        <TableCell className="font-light text-sm">{row.prospectsMet}</TableCell>
+                        <TableCell className="font-light text-sm">{row.newProspects}</TableCell>
+                        <TableCell className="font-light text-sm">{row.publishedPosts}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
