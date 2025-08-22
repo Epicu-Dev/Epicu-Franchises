@@ -5,65 +5,91 @@ import { mockProspects, type Prospect } from './data';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
+    const offset = parseInt(searchParams.get('offset') || '0');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
-    const category = searchParams.get('category') || '';
-    const suiviPar = searchParams.get('suiviPar') || '';
-    const statut = searchParams.get('statut') || '';
-    const sortBy = searchParams.get('sortBy') || '';
-    const sortOrder = searchParams.get('sortOrder') || 'asc';
+    const q = searchParams.get('q') || '';
+    const orderBy = searchParams.get('orderBy') || '';
+    const order = searchParams.get('order') || 'asc';
+    const statut = searchParams.get('statut') || 'a_contacter';
 
-    // Filtrer les prospects
+    // Filtrer les prospects par statut
     let filteredProspects = mockProspects.filter(prospect => {
-      const matchesSearch = !search || 
-        prospect.nomEtablissement.toLowerCase().includes(search.toLowerCase()) ||
-        prospect.email?.toLowerCase().includes(search.toLowerCase());
-      
-             const matchesCategory = !category || category === 'tous' || 
-         prospect.categorie.toLowerCase() === category.toLowerCase();
-      
-      const matchesSuiviPar = !suiviPar || suiviPar === 'tous' || 
-        prospect.suiviPar.toLowerCase() === suiviPar.toLowerCase();
-      
-      const matchesStatut = !statut || prospect.statut === statut;
-      
-      return matchesSearch && matchesCategory && matchesSuiviPar && matchesStatut;
+      return prospect.statut === statut;
     });
 
+    // Filtrer par recherche
+    if (q) {
+      filteredProspects = filteredProspects.filter(prospect => 
+        prospect.nomEtablissement.toLowerCase().includes(q.toLowerCase()) ||
+        prospect.ville.toLowerCase().includes(q.toLowerCase()) ||
+        prospect.commentaire.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+
     // Trier les prospects
-    if (sortBy) {
+    if (orderBy) {
       filteredProspects.sort((a, b) => {
-        const aValue = a[sortBy as keyof Prospect] || '';
-        const bValue = b[sortBy as keyof Prospect] || '';
-        
-        if (sortOrder === 'asc') {
+        let aValue: any;
+        let bValue: any;
+
+        switch (orderBy) {
+          case 'categorie':
+            aValue = a.categorie;
+            bValue = b.categorie;
+            break;
+          case 'dateRelance':
+            aValue = new Date(a.dateRelance);
+            bValue = new Date(b.dateRelance);
+            break;
+          case 'suiviPar':
+            aValue = a.suiviPar;
+            bValue = b.suiviPar;
+            break;
+          default:
+            aValue = a[orderBy as keyof Prospect];
+            bValue = b[orderBy as keyof Prospect];
+        }
+
+        if (order === 'asc') {
+          if (aValue instanceof Date && bValue instanceof Date) {
+            return aValue.getTime() - bValue.getTime();
+          }
           return aValue.toString().localeCompare(bValue.toString());
         } else {
+          if (aValue instanceof Date && bValue instanceof Date) {
+            return bValue.getTime() - aValue.getTime();
+          }
           return bValue.toString().localeCompare(aValue.toString());
         }
       });
     }
 
     // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedProspects = filteredProspects.slice(startIndex, endIndex);
+    const totalCount = filteredProspects.length;
+    const paginatedProspects = filteredProspects.slice(offset, offset + limit);
 
-    return NextResponse.json({
-      prospects: paginatedProspects,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(filteredProspects.length / limit),
-        totalItems: filteredProspects.length,
-        itemsPerPage: limit
-      }
-    });
-     } catch (error) {
-     // eslint-disable-next-line no-console
-     console.error('Erreur lors de la récupération des prospects:', error);
+    // Adapter la réponse selon le statut
+    let responseData: any;
+    if (statut === 'en_discussion') {
+      responseData = {
+        discussions: paginatedProspects,
+        totalCount,
+        viewCount: totalCount
+      };
+    } else {
+      responseData = {
+        prospects: paginatedProspects,
+        totalCount,
+        viewCount: totalCount
+      };
+    }
 
-     return NextResponse.json(
+    return NextResponse.json(responseData);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Erreur lors de la récupération des prospects:', error);
+
+    return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
     );

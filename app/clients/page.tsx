@@ -101,15 +101,14 @@ export default function ClientsPage() {
       // Construire les paramètres de requête
       const params = new URLSearchParams();
 
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (sortField) params.append('sortBy', sortField);
-      if (sortDirection) params.append('sortOrder', sortDirection);
-      params.append('page', pagination.currentPage.toString());
+      if (searchTerm) params.append('q', searchTerm);
+      if (sortField) params.append('orderBy', sortField);
+      if (sortDirection) params.append('order', sortDirection);
       params.append('limit', pagination.itemsPerPage.toString());
+      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
 
       const queryString = params.toString();
-      const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/clients${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url);
 
@@ -123,8 +122,8 @@ export default function ClientsPage() {
       setViewCount(data.viewCount ?? null);
       setPagination(prev => ({
         ...prev,
-        totalItems: data.pagination?.totalItems || 0,
-        totalPages: data.pagination?.totalPages || 1
+        totalItems: data.totalCount || 0,
+        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
       }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");

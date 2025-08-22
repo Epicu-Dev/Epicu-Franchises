@@ -104,11 +104,9 @@ export default function ProspectsPage() {
         previousTabRef.current = selectedTab;
       }
 
-      let url = '';
-      let data: any;
-
       // Construire les paramètres de requête
       const params = new URLSearchParams();
+      params.append('statut', selectedTab);
       if (searchTerm) params.append('q', searchTerm);
       if (sortField) params.append('orderBy', sortField);
       if (sortDirection) params.append('order', sortDirection);
@@ -116,65 +114,33 @@ export default function ProspectsPage() {
       params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
 
       const queryString = params.toString();
+      const url = `/api/prospects${queryString ? `?${queryString}` : ''}`;
 
-      // Appeler l'endpoint approprié selon l'onglet sélectionné
-      switch (selectedTab) {
-        case 'a_contacter':
-          url = `/api/prospects/prospects${queryString ? `?${queryString}` : ''}`;
-          const prospectsRes = await fetch(url);
-          if (!prospectsRes.ok) {
-            throw new Error("Erreur lors de la récupération des prospects");
-          }
-          data = await prospectsRes.json();
-          setProspects(data.prospects || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        case 'en_discussion':
-          url = `/api/prospects/discussion${queryString ? `?${queryString}` : ''}`;
-          const discussionRes = await fetch(url);
-          if (!discussionRes.ok) {
-            throw new Error("Erreur lors de la récupération des discussions");
-          }
-          data = await discussionRes.json();
-          setProspects(data.discussions || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        case 'glacial':
-          url = `/api/prospects/glacial${queryString ? `?${queryString}` : ''}`;
-          const glacialRes = await fetch(url);
-          if (!glacialRes.ok) {
-            throw new Error("Erreur lors de la récupération des prospects glaciaux");
-          }
-          data = await glacialRes.json();
-          setProspects(data.prospects || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        default:
-          break;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des prospects");
       }
+
+      const data = await response.json();
+      
+      // Adapter la réponse selon le statut
+      if (selectedTab === 'en_discussion') {
+        setProspects(data.discussions || []);
+      } else {
+        setProspects(data.prospects || []);
+      }
+      
+      setViewCount(data.viewCount ?? null);
+      setPagination(prev => ({
+        ...prev,
+        totalItems: data.totalCount || 0,
+        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
+      }));
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       console.log('finally');
-
       setLoading(false);
     }
   };
