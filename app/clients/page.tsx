@@ -34,6 +34,7 @@ interface Client {
   ville: string;
   categorie: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
   telephone: string;
+  nomEtablissement: string;
   email: string;
   numeroSiret: string;
   dateSignatureContrat: string;
@@ -272,7 +273,6 @@ export default function ClientsPage() {
           {/* Table */}
           {<Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
-              <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
               <TableColumn className="font-light text-sm">
                 <button
                   className=" cursor-pointer"
@@ -286,7 +286,8 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
-              <TableColumn className="font-light text-sm">Ville</TableColumn>
+              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+              <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
               <TableColumn className="font-light text-sm">
                 <button
                   className=" cursor-pointer"
@@ -300,13 +301,15 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
+              <TableColumn className="font-light text-sm">Facture contenu</TableColumn>
+
               <TableColumn className="font-light text-sm">
                 <button
                   className="cursor-pointer text-left w-full"
                   type="button"
                   onClick={() => handleSort("statutPaiementContenu")}
                 >
-                  Statut paiement
+                  Facture publication
                   {sortField === "statutPaiementContenu" && (
                     <span className="ml-1">
                       {sortDirection === "asc" ? "↑" : "↓"}
@@ -314,7 +317,6 @@ export default function ClientsPage() {
                   )}
                 </button>
               </TableColumn>
-              <TableColumn className="font-light text-sm">Montant facturé</TableColumn>
               <TableColumn className="font-light text-sm">Modifier</TableColumn>
               <TableColumn className="font-light text-sm">Commentaire</TableColumn>
             </TableHeader>
@@ -327,14 +329,26 @@ export default function ClientsPage() {
                     </TableCell>
                   </TableRow>
                 ) : clients.map((client, index) => (
-                  <TableRow key={client.id || index}>
+                  <TableRow key={client.id || index} className="border-t border-gray-100  dark:border-gray-700">
+                    <TableCell className="font-light py-5">
+                      <CategoryBadge category={client.categorie || "FOOD"} />
+                    </TableCell>
+                    <TableCell className="font-light">
+                      {client.nomEtablissement}
+                    </TableCell>
                     <TableCell className="font-light">
                       {client.raisonSociale}
                     </TableCell>
                     <TableCell className="font-light">
-                      <CategoryBadge category={client.categorie || "FOOD"} />
+                      {client.dateSignatureContrat
+                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })
+                        : "-"
+                      }
                     </TableCell>
-                    <TableCell className="font-light">{client.ville || "-"}</TableCell>
                     <TableCell className="font-light">
                       {client.dateSignatureContrat
                         ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
@@ -348,7 +362,6 @@ export default function ClientsPage() {
                     <TableCell className="font-light">
                       <StatusBadge status={client.statutPaiementContenu || "En attente"} />
                     </TableCell>
-                    <TableCell className="font-light">{client.montantFactureContenu ? `${client.montantFactureContenu}€` : "-"}</TableCell>
                     <TableCell className="font-light">
                       <Button
                         isIconOnly

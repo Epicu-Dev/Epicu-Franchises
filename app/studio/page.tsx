@@ -299,13 +299,13 @@ export default function StudioPage() {
   // Fonction de filtrage et tri des prestations
   const getFilteredAndSortedPrestations = () => {
     let filtered = prestations.filter((prestation) => {
-      const matchesSearch = 
+      const matchesSearch =
         prestation.establishmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prestation.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prestation.category.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = selectedStatus === "" || prestation.status === selectedStatus;
-      
+
       return matchesSearch && matchesStatus;
     });
 
@@ -367,9 +367,10 @@ export default function StudioPage() {
           {/* Onglets et bouton d'action sur la même ligne */}
           <div className="flex justify-between items-center mb-6">
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={selectedTab}
               variant='underlined'
@@ -566,11 +567,11 @@ export default function StudioPage() {
                     </TableHeader>
                     <TableBody>
                       {paginatedPrestations.map((prestation) => (
-                        <TableRow key={prestation.id}>
+                        <TableRow key={prestation.id} className="border-t border-gray-100  dark:border-gray-700">
                           <TableCell>
                             <CategoryBadge category={prestation.category} />
                           </TableCell>
-                          <TableCell>{prestation.establishmentName}</TableCell>
+                          <TableCell className="py-5">{prestation.establishmentName}</TableCell>
                           <TableCell>{prestation.contractDate}</TableCell>
                           <TableCell>
                             {prestation.serviceTitle}

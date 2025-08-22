@@ -347,9 +347,10 @@ export default function FacturationPage() {
           {/* En-tête avec onglets et bouton d'ajout */}
           <div className="flex justify-between items-center p-2">
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={selectedStatus}
               variant="underlined"
@@ -457,11 +458,11 @@ export default function FacturationPage() {
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+                <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
                   <TableCell>
                     <CategoryBadge category={invoice.category} />
                   </TableCell>
-                  <TableCell className="font-light">
+                  <TableCell className="font-light py-5">
                     {invoice.establishmentName}
                   </TableCell>
                   <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>

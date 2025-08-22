@@ -137,9 +137,10 @@ export default function DataPage() {
           <CardBody className="space-y-6">
             {/* Tabs */}
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={activeTab}
               variant="underlined"
@@ -200,8 +201,8 @@ export default function DataPage() {
                   </TableHeader>
                   <TableBody>
                     {tableData.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-light text-sm">
+                      <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700">
+                        <TableCell className="font-light text-sm py-5">
                           {row.month}
                         </TableCell>
                         <TableCell className="font-light text-sm">{row.revenue}</TableCell>

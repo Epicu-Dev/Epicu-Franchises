@@ -3,6 +3,7 @@
 
 export interface Client {
   id: string;
+  nomEtablissement: string;
   raisonSociale: string;
   ville?: string;
   categorie?: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
@@ -33,6 +34,7 @@ export interface Client {
 const initialMockClients: Client[] = [
   {
     id: '1',
+    nomEtablissement: 'La petite gourmandise',
     raisonSociale: 'La petite gourmandise',
     ville: 'Paris',
     categorie: 'FOOD',
@@ -60,6 +62,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '2',
+    nomEtablissement: 'Boulangerie du Marché',
     raisonSociale: 'Boulangerie du Marché',
     ville: 'Lyon',
     categorie: 'FOOD',
@@ -87,6 +90,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '3',
+    nomEtablissement: 'Pâtisserie Artisanale',
     raisonSociale: 'Pâtisserie Artisanale',
     ville: 'Marseille',
     categorie: 'FOOD',
@@ -114,6 +118,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '4',
+    nomEtablissement: 'Café Central',
     raisonSociale: 'Café Central',
     ville: 'Nantes',
     categorie: 'FOOD',
@@ -141,6 +146,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '5',
+    nomEtablissement: 'Restaurant Le Gourmet',
     raisonSociale: 'Restaurant Le Gourmet',
     ville: 'Toulouse',
     categorie: 'FOOD',
@@ -168,6 +174,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '6',
+    nomEtablissement: 'Boutique Mode & Style',
     raisonSociale: 'Boutique Mode & Style',
     ville: 'Nice',
     categorie: 'SHOP',
@@ -195,6 +202,7 @@ const initialMockClients: Client[] = [
   },
   {
     id: '7',
+    nomEtablissement: 'Salon de Beauté Élégance',
     raisonSociale: 'Salon de Beauté Élégance',
     ville: 'Cannes',
     categorie: 'BEAUTY',
@@ -243,15 +251,15 @@ export const getClientById = (id: string): Client | undefined => {
 
 export const updateClient = (id: string, updatedData: Partial<Client>): Client | null => {
   if (!globalThis.clientsCache) return null;
-  
+
   const clientIndex = globalThis.clientsCache.findIndex(c => c.id === id);
 
   if (clientIndex === -1) return null;
-  
-  globalThis.clientsCache[clientIndex] = { 
-    ...globalThis.clientsCache[clientIndex], 
-    ...updatedData, 
-    id 
+
+  globalThis.clientsCache[clientIndex] = {
+    ...globalThis.clientsCache[clientIndex],
+    ...updatedData,
+    id
   };
 
   return globalThis.clientsCache[clientIndex];
@@ -261,7 +269,7 @@ export const addClient = (client: Omit<Client, 'id'>): Client => {
   if (!globalThis.clientsCache) {
     globalThis.clientsCache = [];
   }
-  
+
   const newId = (globalThis.clientsCache.length + 1).toString();
   const newClient = { ...client, id: newId };
 
@@ -272,10 +280,10 @@ export const addClient = (client: Omit<Client, 'id'>): Client => {
 
 export const deleteClient = (id: string): Client | null => {
   if (!globalThis.clientsCache) return null;
-  
+
   const clientIndex = globalThis.clientsCache.findIndex(c => c.id === id);
 
   if (clientIndex === -1) return null;
-  
+
   return globalThis.clientsCache.splice(clientIndex, 1)[0];
 };

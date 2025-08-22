@@ -11,6 +11,8 @@ export async function GET(request: Request) {
     const orderBy = searchParams.get('orderBy') || '';
     const order = searchParams.get('order') || 'asc';
     const statut = searchParams.get('statut') || 'a_contacter';
+    const categorie = searchParams.get('categorie') || '';
+    const suiviPar = searchParams.get('suiviPar') || '';
 
     // Filtrer les prospects par statut
     let filteredProspects = mockProspects.filter(prospect => {
@@ -23,6 +25,20 @@ export async function GET(request: Request) {
         prospect.nomEtablissement.toLowerCase().includes(q.toLowerCase()) ||
         prospect.ville.toLowerCase().includes(q.toLowerCase()) ||
         prospect.commentaire.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+
+    // Filtrer par catégorie
+    if (categorie) {
+      filteredProspects = filteredProspects.filter(prospect => 
+        prospect.categorie === categorie
+      );
+    }
+
+    // Filtrer par suivi par
+    if (suiviPar) {
+      filteredProspects = filteredProspects.filter(prospect => 
+        prospect.suiviPar === suiviPar
       );
     }
 

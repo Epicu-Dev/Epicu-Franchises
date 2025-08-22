@@ -116,6 +116,8 @@ export default function ProspectsPage() {
       const params = new URLSearchParams();
       params.append('statut', selectedTab);
       if (searchTerm) params.append('q', searchTerm);
+      if (selectedCategory && selectedCategory !== 'tous') params.append('categorie', selectedCategory);
+      if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.append('suiviPar', selectedSuiviPar);
       if (sortField) params.append('orderBy', sortField);
       if (sortDirection) params.append('order', sortDirection);
       params.append('limit', pagination.itemsPerPage.toString());
@@ -379,61 +381,21 @@ export default function ProspectsPage() {
       <Card className="w-full shadow-none" shadow="none">
         <CardBody>
           {/* Tabs */}
-          <Tabs
-            className="mb-6"
-            classNames={{
-              cursor: "w-[50px] left-[12px] h-1",
-            }}
-            selectedKey={selectedTab}
-            variant="underlined"
-            onSelectionChange={(key) => setSelectedTab(key as string)}
-          >
-            <Tab key="a_contacter" title="À contacter" />
-            <Tab key="en_discussion" title="En discussion" />
-            <Tab key="glacial" title="Glacial" />
-          </Tabs>
-
-          {/* Header with filters */}
-          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
-            <div className="flex items-center gap-4">
-              <StyledSelect
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="FOOD">FOOD</SelectItem>
-                <SelectItem key="SHOP">SHOP</SelectItem>
-                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                <SelectItem key="FUN">FUN</SelectItem>
-                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-              </StyledSelect>
-
-              <StyledSelect
-                className="w-48"
-                placeholder="Suivi par"
-                selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedSuiviPar(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="nom">Nom</SelectItem>
-                <SelectItem key="prenom">Prénom</SelectItem>
-              </StyledSelect>
-
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsProspectModalOpen(true)}
-              >
-                Ajouter un prospect
-              </Button>
-            </div>
-
+          <div className="flex justify-between items-center">
+            <Tabs
+              className="mb-6 text-xl"
+              classNames={{
+                cursor: "w-[50px] left-[12px] h-1 rounded",
+                tab: "data-[selected=true]:font-semibold text-base font-light ",
+              }}
+              selectedKey={selectedTab}
+              variant="underlined"
+              onSelectionChange={(key) => setSelectedTab(key as string)}
+            >
+              <Tab key="a_contacter" title="À contacter" />
+              <Tab key="en_discussion" title="En discussion" />
+              <Tab key="glacial" title="Glacial" />
+            </Tabs>
             <div className="relative">
               <Input
                 className="w-64 pr-4 pl-10"
@@ -452,9 +414,47 @@ export default function ProspectsPage() {
             </div>
           </div>
 
+
+          {/* Header with filters */}
+          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
+            <div className="flex items-center gap-4">
+              <StyledSelect
+                className="w-32"
+                placeholder="Catégorie"
+                selectedKeys={selectedCategory ? [selectedCategory] : []}
+                onSelectionChange={(keys) =>
+                  setSelectedCategory(Array.from(keys)[0] as string)
+                }
+              >
+                <SelectItem key="tous">Tous</SelectItem>
+                <SelectItem key="FOOD">FOOD</SelectItem>
+                <SelectItem key="SHOP">SHOP</SelectItem>
+                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                <SelectItem key="FUN">FUN</SelectItem>
+                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+              </StyledSelect>
+
+              <StyledSelect
+                className="w-32"
+                placeholder="Suivi par"
+                selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
+                onSelectionChange={(keys) =>
+                  setSelectedSuiviPar(Array.from(keys)[0] as string)
+                }
+              >
+                <SelectItem key="tous">Tous</SelectItem>
+                <SelectItem key="nom">Nom</SelectItem>
+                <SelectItem key="prenom">Prénom</SelectItem>
+              </StyledSelect>
+
+            </div>
+
+
+          </div>
+
           {/* Table */}
           {<Table aria-label="Tableau des prospects" shadow="none">
-            <TableHeader>
+            <TableHeader className="mb-4">
               <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
               <TableColumn>
                 <Button
@@ -470,7 +470,6 @@ export default function ProspectsPage() {
                   )}
                 </Button>
               </TableColumn>
-              <TableColumn className="font-light text-sm">Ville</TableColumn>
               <TableColumn>
                 <Button
                   className="p-0 h-auto font-light"
@@ -503,32 +502,27 @@ export default function ProspectsPage() {
               <TableColumn className="font-light text-sm">Modifier</TableColumn>
               <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
             </TableHeader>
-            <TableBody>
+            <TableBody className="mt-4">
               {
 
                 loading ? (
                   <TableRow>
-                    <TableCell className="text-center" colSpan={8}>
+                    <TableCell className="text-center" colSpan={7}>
                       <Spinner className="text-black dark:text-white p-20" size="lg" />
                     </TableCell>
                   </TableRow>
                 ) :
                   prospects.map((prospect) => (
-                    <TableRow key={prospect.id}>
-                      <TableCell className="font-light">
+                    <TableRow className="border-t border-gray-100  dark:border-gray-700" key={prospect.id}>
+                      <TableCell className="font-light py-5">
                         {prospect.nomEtablissement}
                       </TableCell>
                       <TableCell className="font-light">
                         <CategoryBadge category={prospect.categorie} />
                       </TableCell>
-                      <TableCell className="font-light">{prospect.ville}</TableCell>
                       <TableCell className="font-light">
                         {prospect.dateRelance
-                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          })
+                          ? prospect.dateRelance
                           : "-"
                         }
                       </TableCell>
@@ -548,7 +542,8 @@ export default function ProspectsPage() {
                       </TableCell>
                       <TableCell className="font-light">
                         <Button
-                          color="secondary"
+                          color="primary"
+                          className="bg-gray-800 text-white dark:bg-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-200 px-6"
                           size="sm"
                           variant="flat"
                           onPress={() => openConvertModal(prospect)}
@@ -917,11 +912,11 @@ export default function ProspectsPage() {
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               isDisabled={
-                Object.keys(editFieldErrors).length > 0 || 
-                !editingProspect?.nomEtablissement || 
-                !editingProspect?.ville || 
-                !editingProspect?.telephone || 
-                !editingProspect?.datePremierRendezVous || 
+                Object.keys(editFieldErrors).length > 0 ||
+                !editingProspect?.nomEtablissement ||
+                !editingProspect?.ville ||
+                !editingProspect?.telephone ||
+                !editingProspect?.datePremierRendezVous ||
                 !editingProspect?.dateRelance
               }
               onPress={handleUpdateProspect}

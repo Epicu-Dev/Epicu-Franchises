@@ -414,8 +414,8 @@ export default function TodoPage() {
             </TableHeader>
             <TableBody>
               {todos.map((todo) => (
-                <TableRow key={todo.id}>
-                  <TableCell className="font-light">
+                <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
+                  <TableCell className="font-light py-5">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         className="text-black"

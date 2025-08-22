@@ -241,9 +241,10 @@ export default function EquipePage() {
           <div className="flex justify-between items-center mb-6">
             {viewMode === "grid" ? (
               <Tabs
-                className="w-full"
+                className="w-full pt-3"
                 classNames={{
-                  cursor: "w-[50px] left-[12px] h-1",
+                  cursor: "w-[50px]  left-[12px] h-1   rounded",
+                  tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
                 }}
                 selectedKey={selectedCategory}
                 variant="underlined"
@@ -286,7 +287,7 @@ export default function EquipePage() {
                 variant="light"
                 onClick={handleViewModeToggle}
               >
-                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" />: <Squares2X2Icon className="h-5 w-5" />}
+                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
 
               </Button>
             </div>
@@ -337,8 +338,8 @@ export default function EquipePage() {
                   </TableHeader>
                   <TableBody>
                     {adminMembers.map((member) => (
-                      <TableRow key={member.id}>
-                        <TableCell>
+                      <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
+                        <TableCell className="py-5">
                           <Tooltip content="Modifier">
                             <Button
                               isIconOnly

@@ -142,9 +142,10 @@ export default function RessourcesPage() {
         <CardHeader className="p-6">
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               variant="underlined"
               selectedKey={selectedTab}
@@ -193,7 +194,7 @@ export default function RessourcesPage() {
               <TableColumn className="font-light text-sm">Commentaires</TableColumn>
               <TableColumn className="font-light text-sm">Lien</TableColumn>
               <TableColumn>
-                <button 
+                <button
                   className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
                   onClick={handleSort}
                   onKeyDown={(e) => e.key === "Enter" && handleSort()}
@@ -208,8 +209,8 @@ export default function RessourcesPage() {
             </TableHeader>
             <TableBody>
               {sortedResources.map((resource) => (
-                <TableRow key={resource.id}>
-                  <TableCell>
+                <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
+                  <TableCell className="py-5">
                     <span className="font-light">
                       {resource.title}
                     </span>

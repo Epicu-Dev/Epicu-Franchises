@@ -18,17 +18,17 @@ export const getStatusBadgeColor = (status: string) => {
 export const getCategoryBadgeColor = (category: string) => {
     switch (category) {
         case "FOOD":
-            return "bg-orange-50 text-orange-700 border-orange-200";
+            return "bg-orange-50 text-orange-300 border-orange-200";
         case "SHOP":
-            return "bg-purple-50 text-purple-700 border-purple-200";
+            return "bg-purple-50 text-purple-300 border-purple-200";
         case "TRAVEL":
-            return "bg-blue-50 text-blue-700 border-blue-200";
+            return "bg-blue-50 text-blue-300 border-blue-200";
         case "FUN":
-            return "bg-green-50 text-green-700 border-green-200";
+            return "bg-green-50 text-green-300 border-green-200";
         case "BEAUTY":
-            return "bg-pink-50 text-pink-700 border-pink-200";
+            return "bg-pink-50 text-pink-300 border-pink-200";
         default:
-            return "bg-gray-50 text-gray-700 border-gray-200";
+            return "bg-gray-50 text-gray-300 border-gray-200";
     }
 };
 
