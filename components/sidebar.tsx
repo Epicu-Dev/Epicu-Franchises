@@ -90,7 +90,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/facturation",
       showFor: ["franchise"]
     },
-    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["admin"] },
+    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise","admin"] },
     {
       key: "studio",
       label: "Le studio",
