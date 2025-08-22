@@ -19,6 +19,12 @@ type Client = {
   commentaire?: string;
 };
 
+type Collaborateur = {
+  id: string;                // record id du collaborateur
+  nomComplet: string;        // "Nom complet"
+  villes: string[];          // liste de noms de villes EPICU
+};
+
 type Pagination = {
   limit: number;
   offset: number;
@@ -44,6 +50,7 @@ export default function TestProspects() {
   const [clients, setClients] = useState<Client[]>([]);
   const [villes, setVilles] = useState<{ id: string; ville: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [collaborateurs, setCollaborateurs] = useState<Collaborateur[]>([]);
 
   // Pagination
   const [lostNextOffset, setLostNextOffset] = useState<number | null>(0);
@@ -57,6 +64,9 @@ export default function TestProspects() {
 
   const [villesNextOffset, setVillesNextOffset] = useState<number | null>(0);
   const [villesHasMore, setVillesHasMore] = useState<boolean>(false);
+
+  const [collabNextOffset, setCollabNextOffset] = useState<number | null>(0);
+  const [collabHasMore, setCollabHasMore] = useState<boolean>(false);
 
   const [selected, setSelected] = useState<string | null>('categories');
 
@@ -96,7 +106,7 @@ export default function TestProspects() {
     const token = await getValidAccessToken();
     if (!token) throw new Error('No access token');
 
-    const headers = new Headers(init?.headers as HeadersInit || {});
+    const headers = new Headers((init?.headers as HeadersInit) || {});
     headers.set('Authorization', `Bearer ${token}`);
 
     const merged: RequestInit = { ...init, headers };
@@ -307,6 +317,22 @@ export default function TestProspects() {
           setVillesNextOffset(p?.nextOffset ?? null);
           break;
         }
+        case 'collaborateurs': {
+          // ✅ Nouvelle section Collaborateurs
+          setCollaborateurs([]);
+          setCollabNextOffset(0);
+          setCollabHasMore(false);
+
+          const url = buildUrl('/api/collaborateurs', q, 0, PAGE_SIZE);
+          const res = await authFetch(url);
+          const data = await res.json();
+
+          setCollaborateurs(data.results || []);
+          const p: Pagination | undefined = data.pagination;
+          setCollabHasMore(Boolean(p?.hasMore));
+          setCollabNextOffset(p?.nextOffset ?? null);
+          break;
+        }
         case 'agenda': {
           // lancer la récupération de l'agenda pour le collaborateur courant
           await fetchAgenda();
@@ -333,7 +359,7 @@ export default function TestProspects() {
       if (selected === 'glacial' || selected === 'lost') {
         if (lostNextOffset == null) return;
         const url = buildUrl('/api/prospects/glacial', searchQuery, lostNextOffset, PAGE_SIZE);
-  const res = await authFetch(url);
+        const res = await authFetch(url);
         const data = await res.json();
         setLostProspects(prev => [...prev, ...(data.prospects || [])]);
         const p: Pagination | undefined = data.pagination;
@@ -342,7 +368,7 @@ export default function TestProspects() {
       } else if (selected === 'prospects') {
         if (prospectsNextOffset == null) return;
         const url = buildUrl('/api/prospects/prospects', searchQuery, prospectsNextOffset, PAGE_SIZE);
-  const res = await authFetch(url);
+        const res = await authFetch(url);
         const data = await res.json();
         setProspects(prev => [...prev, ...(data.prospects || [])]);
         const p: Pagination | undefined = data.pagination;
@@ -351,7 +377,7 @@ export default function TestProspects() {
       } else if (selected === 'discussion') {
         if (discussionsNextOffset == null) return;
         const url = buildUrl('/api/prospects/discussion', searchQuery, discussionsNextOffset, PAGE_SIZE);
-  const res = await authFetch(url);
+        const res = await authFetch(url);
         const data = await res.json();
         setDiscussions(prev => [...prev, ...(data.discussions || [])]);
         const p: Pagination | undefined = data.pagination;
@@ -360,12 +386,21 @@ export default function TestProspects() {
       } else if (selected === 'villes') {
         if (villesNextOffset == null) return;
         const url = buildUrl('/api/villes', searchQuery, villesNextOffset, PAGE_SIZE);
-  const res = await authFetch(url);
+        const res = await authFetch(url);
         const data = await res.json();
         setVilles(prev => [...prev, ...(data.results || [])]);
         const p: Pagination | undefined = data.pagination;
         setVillesHasMore(Boolean(p?.hasMore));
         setVillesNextOffset(p?.nextOffset ?? null);
+      } else if (selected === 'collaborateurs') {
+        if (collabNextOffset == null) return;
+        const url = buildUrl('/api/collaborateurs', searchQuery, collabNextOffset, PAGE_SIZE);
+        const res = await authFetch(url);
+        const data = await res.json();
+        setCollaborateurs(prev => [...prev, ...(data.results || [])]);
+        const p: Pagination | undefined = data.pagination;
+        setCollabHasMore(Boolean(p?.hasMore));
+        setCollabNextOffset(p?.nextOffset ?? null);
       }
     } catch {
       setError('Erreur lors du chargement supplémentaire');
@@ -468,6 +503,42 @@ export default function TestProspects() {
     </div>
   );
 
+  const renderCollaborateursTable = (data: Collaborateur[], canLoadMore: boolean) => (
+    <div>
+      <h2 className="text-xl font-semibold mb-2">Collaborateurs</h2>
+      <table className="min-w-full border">
+        <thead>
+          <tr>
+            <th className="border px-2 py-1">Nom complet</th>
+            <th className="border px-2 py-1">Ville EPICU</th>
+            <th className="border px-2 py-1">Record ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((c) => (
+            <tr key={c.id}>
+              <td className="border px-2 py-1">{c.nomComplet || '-'}</td>
+              <td className="border px-2 py-1">{(c.villes && c.villes.length > 0) ? c.villes.join(', ') : '-'}</td>
+              <td className="border px-2 py-1"><code>{c.id}</code></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {canLoadMore && (
+        <div className="mt-3">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
+            disabled={loadingMore}
+            onClick={loadMore}
+          >
+            {loadingMore ? 'Chargement…' : 'Charger plus'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold mb-4">Test Prospects</h1>
@@ -481,6 +552,7 @@ export default function TestProspects() {
             <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'villes' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('villes')}>Villes Epicu</button></li>
             <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'categories' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('categories')}>Catégories</button></li>
             <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'clients' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('clients')}>Clients</button></li>
+            <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'collaborateurs' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('collaborateurs')}>Collaborateurs</button></li>
             <li><button className={`w-full text-left px-2 py-1 rounded ${selected === 'agenda' ? 'bg-gray-200' : ''}`} onClick={() => loadCollection('agenda')}>Agenda</button></li>
           </ul>
 
@@ -574,6 +646,7 @@ export default function TestProspects() {
               </ul>
             </div>
           )}
+          {!loading && !error && selected === 'collaborateurs' && renderCollaborateursTable(collaborateurs, collabHasMore)}
           {!loading && !error && selected === 'agenda' && (
             <div>
               <h2 className="text-xl font-semibold mb-2">Agenda</h2>
