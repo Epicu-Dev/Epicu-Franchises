@@ -388,7 +388,13 @@ export default function TestProspects() {
           setLostProspects([]);
           setLostNextOffset(0);
           setLostHasMore(false);
-          const url = buildUrl('/api/prospects/glacial', q, 0, PAGE_SIZE);
+          const paramsG = new URLSearchParams();
+          if (q) paramsG.set('q', q);
+          paramsG.set('limit', String(PAGE_SIZE));
+          paramsG.set('offset', '0');
+          if (filterCategory) paramsG.set('category', filterCategory);
+          if (filterSuivi) paramsG.set('suivi', filterSuivi);
+          const url = `/api/prospects/glacial?${paramsG.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
           setLostProspects(data.prospects || []);
@@ -401,7 +407,13 @@ export default function TestProspects() {
           setProspects([]);
           setProspectsNextOffset(0);
           setProspectsHasMore(false);
-          const url = buildUrl('/api/prospects/prospects', q, 0, PAGE_SIZE);
+          const paramsP = new URLSearchParams();
+          if (q) paramsP.set('q', q);
+          paramsP.set('limit', String(PAGE_SIZE));
+          paramsP.set('offset', '0');
+          if (filterCategory) paramsP.set('category', filterCategory);
+          if (filterSuivi) paramsP.set('suivi', filterSuivi);
+          const url = `/api/prospects/prospects?${paramsP.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
           setProspects(data.prospects || []);
@@ -498,7 +510,13 @@ export default function TestProspects() {
 
       if (selected === 'glacial' || selected === 'lost') {
         if (lostNextOffset == null) return;
-        const url = buildUrl('/api/prospects/glacial', searchQuery, lostNextOffset, PAGE_SIZE);
+        const paramsG = new URLSearchParams();
+        if (searchQuery) paramsG.set('q', searchQuery);
+        paramsG.set('limit', String(PAGE_SIZE));
+        paramsG.set('offset', String(lostNextOffset));
+        if (filterCategory) paramsG.set('category', filterCategory);
+        if (filterSuivi) paramsG.set('suivi', filterSuivi);
+        const url = `/api/prospects/glacial?${paramsG.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
         setLostProspects(prev => [...prev, ...(data.prospects || [])]);
@@ -507,7 +525,13 @@ export default function TestProspects() {
         setLostNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'prospects') {
         if (prospectsNextOffset == null) return;
-        const url = buildUrl('/api/prospects/prospects', searchQuery, prospectsNextOffset, PAGE_SIZE);
+        const paramsP = new URLSearchParams();
+        if (searchQuery) paramsP.set('q', searchQuery);
+        paramsP.set('limit', String(PAGE_SIZE));
+        paramsP.set('offset', String(prospectsNextOffset));
+        if (filterCategory) paramsP.set('category', filterCategory);
+        if (filterSuivi) paramsP.set('suivi', filterSuivi);
+        const url = `/api/prospects/prospects?${paramsP.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
         setProspects(prev => [...prev, ...(data.prospects || [])]);
@@ -887,9 +911,8 @@ export default function TestProspects() {
             <div className="rounded-xl border bg-white p-6">Sélectionnez une collection à gauche pour afficher les résultats.</div>
           )}
 
-          {!loading && !error && selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
-          {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
-          {!loading && !error && selected === 'discussion' && (
+          {/* rendered below with filters when selected === 'prospects' or 'glacial' */}
+            {!loading && !error && selected === 'discussion' && (
             <div className="space-y-4">
               <Card title="Filtres - En discussion">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -926,6 +949,47 @@ export default function TestProspects() {
               </Card>
 
               {renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
+            </div>
+          )}
+          {/* Prospects & Glacial filters: reuse same controls when showing those lists */}
+          {!loading && !error && (selected === 'prospects' || selected === 'glacial') && (
+            <div className="space-y-4">
+              <Card title="Filtres">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Catégorie</label>
+                    <select className="w-full border rounded-xl px-3 py-2" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                      <option value="">— Toutes —</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Suivi par...</label>
+                    <input
+                      className="w-full border rounded-xl px-3 py-2"
+                      placeholder="Rechercher collaborateur..."
+                      value={collaboratorSearch}
+                      onChange={(e) => setCollaboratorSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
+                      <option value="">— Aucun (tous) —</option>
+                      {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
+                        <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
+                      )))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-end gap-2">
+                    <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => selected && loadCollection(selected, searchQuery)}>Appliquer</button>
+                    <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
+                  </div>
+                </div>
+              </Card>
+
+              {selected === 'prospects' && renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+              {selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
             </div>
           )}
           {!loading && !error && selected === 'clients' && renderClientsTable(clients)}

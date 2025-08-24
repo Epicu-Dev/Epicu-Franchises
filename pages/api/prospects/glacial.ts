@@ -38,14 +38,54 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     };
 
     // Filtre plein-texte
+    // Optional filters: q + category + suivi
+    const categoryFilter = (req.query.category as string) || (req.query.categorie as string) || null;
+    const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
+
+    const formulaParts: string[] = [];
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
-      selectOptions.filterByFormula =
+      const qFormula =
         `OR(` +
         `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
         `)`;
+      formulaParts.push(qFormula);
+    }
+
+    if (categoryFilter) {
+      try {
+        let catName = String(categoryFilter);
+        if (/^rec/i.test(categoryFilter)) {
+          const rec = await base('Catégories').find(categoryFilter);
+          catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
+        }
+        const catEsc = catName.replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
+      } catch (e) {
+        const catEsc = String(categoryFilter).replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
+      }
+    }
+
+    if (suiviFilter) {
+      try {
+        let suiviName = String(suiviFilter);
+        if (/^rec/i.test(suiviFilter)) {
+          const rec = await base('Collaborateurs').find(suiviFilter);
+          suiviName = String(rec.get('Nom complet') || `${rec.get('Prénom') || ''} ${rec.get('Nom') || ''}`.trim() || suiviName);
+        }
+        const suEsc = suiviName.replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
+      } catch (e) {
+        const suEsc = String(suiviFilter).replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
+      }
+    }
+
+    if (formulaParts.length > 0) {
+      selectOptions.filterByFormula = formulaParts.length === 1 ? formulaParts[0] : `AND(${formulaParts.join(',')})`;
     }
 
     // Ne récupérer qu'au plus offset+limit
