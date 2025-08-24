@@ -20,7 +20,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       "Nom de l'établissement",
       'Catégorie',
       'Ville',
-      'Suivi par...',
+      'Suivi par',
       'Commentaires',
       'Date de relance',
     ];
@@ -38,16 +38,58 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       sort: [{ field: orderBy, direction: order }],
     };
 
-    // Filtre plein-texte (regex insensitive en minuscule)
+    // Optional filters: full-text q + category (linked record id) + suivi (linked collaborator id)
+  const categoryFilter = (req.query.category as string) || (req.query.categorie as string) || null;
+  const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
+
+    const formulaParts: string[] = [];
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
-      const filterFormula =
+      const qFormula =
         `OR(` +
         `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
         `)`;
-      selectOptions.filterByFormula = filterFormula;
+      formulaParts.push(qFormula);
+    }
+
+    // If the client provided a record id (ex: starts with 'rec'), resolve it to the display name
+    if (categoryFilter) {
+      try {
+        let catName = String(categoryFilter);
+        if (/^rec/i.test(categoryFilter)) {
+          const rec = await base('Catégories').find(categoryFilter);
+          // prefer 'Name' field, fallback to any common name fields
+          catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
+        }
+        const catEsc = catName.replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
+      } catch (e) {
+        // if resolve fails, fallback to raw value
+        const catEsc = String(categoryFilter).replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
+      }
+    }
+
+    if (suiviFilter) {
+      try {
+        let suiviName = String(suiviFilter);
+        if (/^rec/i.test(suiviFilter)) {
+          const rec = await base('Collaborateurs').find(suiviFilter);
+          // prefer a full name field if present, else concat Prenom + Nom
+          suiviName = String(rec.get('Nom complet') || `${rec.get('Prénom') || ''} ${rec.get('Nom') || ''}`.trim() || suiviName);
+        }
+        const suEsc = suiviName.replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
+      } catch (e) {
+        const suEsc = String(suiviFilter).replace(/'/g, "\\'");
+        formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
+      }
+    }
+
+    if (formulaParts.length > 0) {
+      selectOptions.filterByFormula = formulaParts.length === 1 ? formulaParts[0] : `AND(${formulaParts.join(',')})`;
     }
 
     // ⚡️ On ne récupère que 'offset + limit' en tout.
@@ -61,7 +103,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     // Résolution des relations (uniquement pour la page courante)
     const categoryIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Catégorie') || [])));
-    const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par...') || [])));
+    const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par') || [])));
 
     let categoryNames: Record<string, string> = {};
     if (categoryIds.length > 0) {
@@ -101,7 +143,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         ? (categoryNames[catIds[0]] || catIds[0])
         : '';
 
-      const spIds = record.get('Suivi par...') || [];
+      const spIds = record.get('Suivi par') || [];
       const suiviPar = Array.isArray(spIds) && spIds.length > 0
         ? (suiviNames[spIds[0]] || spIds[0])
         : '';

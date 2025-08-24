@@ -71,6 +71,9 @@ export default function TestProspects() {
   const [villes, setVilles] = useState<{ id: string; ville: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [collaborateurs, setCollaborateurs] = useState<Collaborateur[]>([]);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterSuivi, setFilterSuivi] = useState<string | null>(null);
+  const [collaboratorSearch, setCollaboratorSearch] = useState<string>('');
 
   // Pagination
   const [lostNextOffset, setLostNextOffset] = useState<number | null>(0);
@@ -142,6 +145,24 @@ export default function TestProspects() {
     const merged: RequestInit = { ...init, headers };
     return fetch(input, merged);
   };
+
+  // précharger les collaborateurs pour le filtre (page init)
+  const fetchCollaborateursList = async () => {
+    try {
+      const res = await authFetch('/api/collaborateurs?limit=200&offset=0');
+      if (!res.ok) return;
+      const data = await res.json();
+      // data.results expected
+      setCollaborateurs(data.results || []);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchCollaborateursList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getParisOffset = (dateObj: Date) => {
     try {
@@ -393,7 +414,14 @@ export default function TestProspects() {
           setDiscussions([]);
           setDiscussionsNextOffset(0);
           setDiscussionsHasMore(false);
-          const url = buildUrl('/api/prospects/discussion', q, 0, PAGE_SIZE);
+          // include optional filters category and suivi
+          const params = new URLSearchParams();
+          if (q) params.set('q', q);
+          params.set('limit', String(PAGE_SIZE));
+          params.set('offset', '0');
+          if (filterCategory) params.set('category', filterCategory);
+          if (filterSuivi) params.set('suivi', filterSuivi);
+          const url = `/api/prospects/discussion?${params.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
           setDiscussions(data.discussions || []);
@@ -488,7 +516,13 @@ export default function TestProspects() {
         setProspectsNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'discussion') {
         if (discussionsNextOffset == null) return;
-        const url = buildUrl('/api/prospects/discussion', searchQuery, discussionsNextOffset, PAGE_SIZE);
+        const params = new URLSearchParams();
+        if (searchQuery) params.set('q', searchQuery);
+        params.set('limit', String(PAGE_SIZE));
+        params.set('offset', String(discussionsNextOffset));
+        if (filterCategory) params.set('category', filterCategory);
+        if (filterSuivi) params.set('suivi', filterSuivi);
+        const url = `/api/prospects/discussion?${params.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
         setDiscussions(prev => [...prev, ...(data.discussions || [])]);
@@ -855,7 +889,45 @@ export default function TestProspects() {
 
           {!loading && !error && selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
           {!loading && !error && selected === 'prospects' && renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
-          {!loading && !error && selected === 'discussion' && renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
+          {!loading && !error && selected === 'discussion' && (
+            <div className="space-y-4">
+              <Card title="Filtres - En discussion">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Catégorie</label>
+                    <select className="w-full border rounded-xl px-3 py-2" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                      <option value="">— Toutes —</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Suivi par...</label>
+                    <input
+                      className="w-full border rounded-xl px-3 py-2"
+                      placeholder="Rechercher collaborateur..."
+                      value={collaboratorSearch}
+                      onChange={(e) => setCollaboratorSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()} // prevent bubbling that may change focus
+                    />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
+                      <option value="">— Aucun (tous) —</option>
+                      {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
+                        <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
+                      )))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-end gap-2">
+                    <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => loadCollection('discussion', searchQuery)}>Appliquer</button>
+                    <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
+                  </div>
+                </div>
+              </Card>
+
+              {renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
+            </div>
+          )}
           {!loading && !error && selected === 'clients' && renderClientsTable(clients)}
           {!loading && !error && selected === 'villes' && renderVillesList(villes, villesHasMore)}
           {!loading && !error && selected === 'categories' && (

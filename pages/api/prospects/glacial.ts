@@ -19,7 +19,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       "Nom de l'établissement",
       'Catégorie',
       'Ville',
-      'Suivi par...',
+      'Suivi par',
       'Commentaires',
       'Date de relance',
     ];
@@ -57,7 +57,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     // Relations (Catégorie / Suivi par...) sur la page courante uniquement
     const categoryIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Catégorie') || [])));
-    const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par...') || [])));
+    const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par') || [])));
 
     let categoryNames: Record<string, string> = {};
     if (categoryIds.length > 0) {
@@ -97,7 +97,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         ? (categoryNames[catIds[0]] || catIds[0])
         : '';
 
-      const spIds = record.get('Suivi par...') || [];
+      const spIds = record.get('Suivi par') || [];
       const suiviPar = Array.isArray(spIds) && spIds.length > 0
         ? (suiviNames[spIds[0]] || spIds[0])
         : '';
