@@ -552,9 +552,6 @@ export default function AgendaPage() {
               >
                 Mois
               </Button>
-              <Button isIconOnly size="sm" variant="light">
-                <Bars3Icon className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 

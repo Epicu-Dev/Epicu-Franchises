@@ -34,7 +34,7 @@ export function Header() {
         </div>
         
         {/* Theme Switch */}
-        <ThemeSwitch />
+        {/* <ThemeSwitch /> */}
         
         {/* User Profile Picture */}
         <button 

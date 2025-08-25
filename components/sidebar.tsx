@@ -310,15 +310,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             }
 
           </div>
-
-          {/* Theme Switch Section */}
-          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Thème
-              </span>
-              <ThemeSwitch/>
-            </div>
+          <div className="flex justify-center items-center pb-6">
+            <img src="/images/logo-e.png" width={42} height={42} alt="logo" />
           </div>
         </CardBody>
       </Card>
