@@ -32,6 +32,20 @@ export const getCategoryBadgeColor = (category: string) => {
     }
 };
 
+// Fonction pour obtenir la couleur du badge de statut de facture
+export const getInvoiceStatusBadgeColor = (status: string) => {
+    switch (status) {
+        case "Validée":
+            return "bg-custom-green-success/10 text-custom-green-success";
+        case "En attente":
+            return "bg-custom-red-retard/10 text-custom-red-retard";
+        case "En retard":
+            return "bg-custom-red-error/10 text-custom-red-error";
+        default:
+            return "bg-gray-50/10 text-gray-600";
+    }
+};
+
 // Composant Badge de catégorie
 interface CategoryBadgeProps {
     category: string;
@@ -64,6 +78,25 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     return (
         <span
             className={`px-2 py-1 text-xs font-light rounded-full ${getStatusBadgeColor(status)} ${className}`}
+        >
+            {status}
+        </span>
+    );
+};
+
+// Composant Badge de statut de facture (même design que CategoryBadge)
+interface InvoiceStatusBadgeProps {
+    status: string;
+    className?: string;
+}
+
+export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
+    status,
+    className = ""
+}) => {
+    return (
+        <span
+            className={`px-6 py-1 text-xs font-light rounded ${getInvoiceStatusBadgeColor(status)} ${className}`}
         >
             {status}
         </span>

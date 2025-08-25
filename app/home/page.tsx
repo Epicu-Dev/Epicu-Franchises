@@ -259,11 +259,11 @@ export default function HomePage() {
     <DashboardLayout>
       {/* Greeting */}
       <div className="mb-4 lg:mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Re, Clémence!
+        <h1 className="text-4xl">
+          Re, <span className="font-semibold">Clémence</span> !
         </h1>
       </div>
-      <Card className="w-full" shadow="none" >
+      <Card className="w-full rounded-2xl" shadow="none" >
         <CardBody className="p-6">
           {/* Location Filters and Add Prospect Button */}
           <div className="mb-4 lg:mb-6">

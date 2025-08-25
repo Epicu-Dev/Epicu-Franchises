@@ -7,11 +7,22 @@ import { Input } from '@heroui/input';
 import { Tabs, Tab } from '@heroui/tabs';
 import { Avatar } from '@heroui/avatar';
 import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@heroui/table';
+import {
   PencilIcon,
   DocumentTextIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
+import { SortableColumnHeader } from '@/components/sortable-column-header';
+import { useSortableTable } from '@/hooks/use-sortable-table';
+import { InvoiceStatusBadge } from '@/components/badges';
 
 interface UserProfile {
   id: string;
@@ -26,25 +37,24 @@ interface UserProfile {
 
 interface Invoice {
   id: string;
-  number: string;
+  etat: 'Validée' | 'En attente';
   date: string;
-  amount: number;
-  status: 'payee' | 'en_attente' | 'retard';
+  montant: string;
+  typeFacture: string;
 }
 
 interface Document {
   id: string;
-  name: string;
   type: string;
-  uploadDate: string;
-  size: string;
+  dateAjout: string;
 }
 
 interface HistoryItem {
   id: string;
+  personne: string;
   action: string;
   date: string;
-  description: string;
+  heure: string;
 }
 
 export default function ProfilPage() {
@@ -67,6 +77,25 @@ export default function ProfilPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
+  // Hook pour le tri du tableau historique
+  const { sortField, sortDirection, handleSort, sortedData } = useSortableTable<HistoryItem>(history);
+  
+  // Hook pour le tri du tableau documents
+  const { 
+    sortField: docSortField, 
+    sortDirection: docSortDirection, 
+    handleSort: handleDocSort, 
+    sortedData: sortedDocData 
+  } = useSortableTable<Document>(documents);
+  
+  // Hook pour le tri du tableau factures
+  const { 
+    sortField: invoiceSortField, 
+    sortDirection: invoiceSortDirection, 
+    handleSort: handleInvoiceSort, 
+    sortedData: sortedInvoiceData 
+  } = useSortableTable<Invoice>(invoices);
+
   const fetchProfileData = async () => {
     try {
       setLoading(true);
@@ -79,24 +108,38 @@ export default function ProfilPage() {
       setInvoices([
         {
           id: '1',
-          number: 'FAC-2025-001',
-          date: '2025-06-15',
-          amount: 1457.98,
-          status: 'payee'
+          etat: 'Validée',
+          date: '10.07.2025',
+          montant: '1450€67',
+          typeFacture: 'Redevance annuelle'
         },
         {
           id: '2',
-          number: 'FAC-2025-002',
-          date: '2025-06-20',
-          amount: 2340.50,
-          status: 'en_attente'
+          etat: 'Validée',
+          date: '10.07.2025',
+          montant: '1450€67',
+          typeFacture: 'Redevance annuelle'
         },
         {
           id: '3',
-          number: 'FAC-2025-003',
-          date: '2025-06-25',
-          amount: 890.25,
-          status: 'retard'
+          etat: 'Validée',
+          date: '10.07.2025',
+          montant: '1450€67',
+          typeFacture: 'Redevance annuelle'
+        },
+        {
+          id: '4',
+          etat: 'En attente',
+          date: '10.07.2025',
+          montant: '1450€67',
+          typeFacture: 'Redevance mensuelle'
+        },
+        {
+          id: '5',
+          etat: 'Validée',
+          date: '10.07.2025',
+          montant: '1450€67',
+          typeFacture: 'Droit d\'entrée'
         }
       ]);
 
@@ -104,24 +147,18 @@ export default function ProfilPage() {
       setDocuments([
         {
           id: '1',
-          name: 'Contrat de franchise.pdf',
-          type: 'PDF',
-          uploadDate: '2025-01-15',
-          size: '2.5 MB'
+          type: 'DIP',
+          dateAjout: '12.08.2025'
         },
         {
           id: '2',
-          name: 'Guide utilisateur.docx',
-          type: 'DOCX',
-          uploadDate: '2025-02-20',
-          size: '1.8 MB'
+          type: 'Contrat de franchisé',
+          dateAjout: '12.08.2025'
         },
         {
           id: '3',
-          name: 'Certificat formation.pdf',
-          type: 'PDF',
-          uploadDate: '2025-03-10',
-          size: '3.2 MB'
+          type: 'Autre',
+          dateAjout: '12.08.2025'
         }
       ]);
 
@@ -129,21 +166,52 @@ export default function ProfilPage() {
       setHistory([
         {
           id: '1',
-          action: 'Connexion',
-          date: '2025-06-15 14:30',
-          description: 'Connexion réussie depuis l\'adresse IP 192.168.1.100'
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
         },
         {
           id: '2',
-          action: 'Modification profil',
-          date: '2025-06-10 09:15',
-          description: 'Mise à jour des informations personnelles'
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
         },
         {
           id: '3',
-          action: 'Téléchargement document',
-          date: '2025-06-05 16:45',
-          description: 'Téléchargement du guide utilisateur'
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
+        },
+        {
+          id: '4',
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
+        },
+        {
+          id: '5',
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
+        },
+        {
+          id: '6',
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
+        },
+        {
+          id: '7',
+          personne: 'Dominique',
+          action: 'Ajout d\'un prospect',
+          date: '12.07.2025',
+          heure: '18:45'
         }
       ]);
 
@@ -405,75 +473,138 @@ export default function ProfilPage() {
           {activeTab === 'factures' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes factures Epicu</h3>
-              <div className="space-y-3">
-                {invoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">{invoice.number}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatDate(invoice.date)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        {formatAmount(invoice.amount)}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${invoice.status === 'payee' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-                        invoice.status === 'en_attente' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
-                          'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                        }`}>
-                        {getStatusLabel(invoice.status)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Table aria-label="Tableau des factures" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="etat"
+                      label="Etat"
+                      sortField={invoiceSortField}
+                      sortDirection={invoiceSortDirection}
+                      onSort={handleInvoiceSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="date"
+                      label="Date"
+                      sortField={invoiceSortField}
+                      sortDirection={invoiceSortDirection}
+                      onSort={handleInvoiceSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Montant</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="typeFacture"
+                      label="Type de facture"
+                      sortField={invoiceSortField}
+                      sortDirection={invoiceSortDirection}
+                      onSort={handleInvoiceSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Télécharger</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {sortedInvoiceData.map((invoice) => (
+                    <TableRow key={invoice.id} className="border-t border-gray-100 dark:border-gray-700">
+                      <TableCell className="font-light text-sm py-3">
+                        <InvoiceStatusBadge status={invoice.etat} />
+                      </TableCell>
+                      <TableCell className="font-light text-sm">{invoice.date}</TableCell>
+                      <TableCell className="font-light text-sm">{invoice.montant}</TableCell>
+                      <TableCell className="font-light text-sm">{invoice.typeFacture}</TableCell>
+                      <TableCell className="font-light text-sm">
+                        <Button
+                          isIconOnly
+                          aria-label={`Télécharger la facture ${invoice.id}`}
+                          className="text-gray-600 hover:text-gray-800"
+                          size="sm"
+                          variant="light"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
 
           {activeTab === 'documents' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes documents</h3>
-              <div className="space-y-3">
-                {documents.map((document) => (
-                  <div key={document.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <DocumentTextIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" />
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">{document.name}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {document.type} • {document.size} • {formatDate(document.uploadDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      size="sm"
-                      variant="light"
-                    >
-                      Télécharger
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <Table aria-label="Tableau des documents" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="type"
+                      label="Type de documents"
+                      sortField={docSortField}
+                      sortDirection={docSortDirection}
+                      onSort={handleDocSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Date d&apos;ajout</TableColumn>
+                  <TableColumn className="font-light text-sm">Télécharger</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {sortedDocData.map((document) => (
+                    <TableRow key={document.id} className="border-t border-gray-100 dark:border-gray-700">
+                      <TableCell className="font-light text-sm py-3">{document.type}</TableCell>
+                      <TableCell className="font-light text-sm">{document.dateAjout}</TableCell>
+                      <TableCell className="font-light text-sm">
+                        <Button
+                          isIconOnly
+                          aria-label={`Télécharger ${document.type}`}
+                          className="text-gray-600 hover:text-gray-800"
+                          size="sm"
+                          variant="light"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
 
           {activeTab === 'historique' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Historique des activités</h3>
-              <div className="space-y-3">
-                {history.map((item) => (
-                  <div key={item.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-1" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">{item.action}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{item.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Table aria-label="Tableau de l'historique" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">Personne</TableColumn>
+                  <TableColumn className="font-light text-sm">Action réalis&eacute;e</TableColumn>
+                  <TableColumn className="font-light text-sm">Date de l'action</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="heure"
+                      label="Heure de l'action"
+                      sortField={sortField}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {sortedData.map((item) => (
+                    <TableRow key={item.id} className="border-t border-gray-100 dark:border-gray-700">
+                      <TableCell className="font-light text-sm py-3">{item.personne}</TableCell>
+                      <TableCell className="font-light text-sm">{item.action}</TableCell>
+                      <TableCell className="font-light text-sm">{item.date}</TableCell>
+                      <TableCell className="font-light text-sm">{item.heure}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardBody>
