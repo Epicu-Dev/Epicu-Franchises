@@ -69,11 +69,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     ]);
 
+    // fetch only villes epicu linked to this user (id + Ville EPICU)
+    let villesEpicu: { id: string; ville: string }[] = [];
+    try {
+      const linked = user.get('Ville EPICU');
+      let linkedIds: string[] = [];
+      if (linked) {
+        if (Array.isArray(linked)) linkedIds = linked;
+        else if (typeof linked === 'string') linkedIds = [linked];
+      }
+      if (linkedIds.length > 0) {
+        const v = await base('VILLES EPICU')
+          .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
+          .all();
+        villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
+      }
+    } catch (e) {
+      // ignore failures to fetch villes
+    }
+
     return res.status(200).json({
       message: 'Connexion réussie',
       user: {
         id: user.id,
         email: user.get('Email EPICU'),
+        firstname: user.get('Prénom'),
+        lastname: user.get('Nom'),
+        villes: villesEpicu,
       },
       accessToken,
       refreshToken,

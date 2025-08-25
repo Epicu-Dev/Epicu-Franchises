@@ -84,11 +84,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     ]);
 
+    // Récupérer les infos utilisateur à retourner (similaire à /api/auth/login)
+    let userInfo = null;
+    try {
+      const userRecord = await base('COLLABORATEURS').find(userId);
+
+      // construire la liste des villes liées à l'utilisateur
+      let villesEpicu: { id: string; ville: string }[] = [];
+      try {
+        const linked = userRecord.get('Ville EPICU');
+        let linkedIds: string[] = [];
+        if (linked) {
+          if (Array.isArray(linked)) linkedIds = linked;
+          else if (typeof linked === 'string') linkedIds = [linked];
+        }
+        if (linkedIds.length > 0) {
+          const v = await base('VILLES EPICU')
+            .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
+            .all();
+          villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
+        }
+      } catch (e) {
+        // ignore failures to fetch villes
+      }
+
+      userInfo = {
+        id: userRecord.id,
+        email: userRecord.get('Email EPICU'),
+        firstname: userRecord.get('Prénom'),
+        lastname: userRecord.get('Nom'),
+        villes: villesEpicu,
+      };
+    } catch (e) {
+      // ignore if user fetch fails
+    }
+
     return res.status(200).json({
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresAtAccess,
       expiresAtRefresh,
+      user: userInfo,
     });
   } catch (error) {
     console.error('Erreur lors du refresh :', error);
