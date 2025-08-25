@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+
 import { getValidAccessToken } from '../../utils/auth';
 
 // ———————————————————————————————————————————————————————————
@@ -90,6 +91,7 @@ const Button = ({ variant = 'primary', className = '', ...rest }: any) => {
     success: 'bg-emerald-600 text-white hover:bg-emerald-700',
     danger: 'bg-red-600 text-white hover:bg-red-700',
   };
+
   return <button className={`${base} ${styles[variant]} ${className}`} {...rest} />;
 };
 
@@ -137,6 +139,7 @@ export default function TestProspects() {
   const [agendaStart, setAgendaStart] = useState<string>(() => {
     const now = new Date();
     const first = new Date(now.getFullYear(), now.getMonth(), 1);
+
     return first.toISOString().split('T')[0];
   });
   const [agendaEnd, setAgendaEnd] = useState<string | null>(null);
@@ -194,24 +197,29 @@ export default function TestProspects() {
 
   useEffect(() => {
     loadCollection('categories');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const buildUrl = (base: string, q: string, offset = 0, limit = PAGE_SIZE) => {
     const params = new URLSearchParams();
+
     if (q) params.set('q', q);
     params.set('limit', String(limit));
     params.set('offset', String(offset));
+
     return `${base}?${params.toString()}`;
   };
 
   // wrapper fetch
   const authFetch = async (input: RequestInfo, init?: RequestInit) => {
     const token = await getValidAccessToken();
+
     if (!token) throw new Error('No access token');
     const headers = new Headers((init?.headers as HeadersInit) || {});
+
     headers.set('Authorization', `Bearer ${token}`);
     const merged: RequestInit = { ...init, headers };
+
     return fetch(input, merged);
   };
 
@@ -219,8 +227,10 @@ export default function TestProspects() {
   const fetchCollaborateursList = async () => {
     try {
       const res = await authFetch('/api/collaborateurs?limit=200&offset=0');
+
       if (!res.ok) return;
       const data = await res.json();
+
       // data.results expected
       setCollaborateurs(data.results || []);
     } catch (e) {
@@ -230,7 +240,7 @@ export default function TestProspects() {
 
   useEffect(() => {
     fetchCollaborateursList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const getParisOffset = (dateObj: Date) => {
@@ -239,13 +249,16 @@ export default function TestProspects() {
       const parts = dtf.formatToParts(dateObj);
       const tzPart = parts.find(p => p.type === 'timeZoneName')?.value || '';
       const m = tzPart.match(/GMT([+-]?\d+)/);
+
       if (m) {
         const hours = parseInt(m[1], 10);
         const sign = hours >= 0 ? '+' : '-';
         const hh = String(Math.abs(hours)).padStart(2, '0');
+
         return `${sign}${hh}:00`;
       }
     } catch {}
+
     return '+00:00';
   };
 
@@ -258,16 +271,19 @@ export default function TestProspects() {
     setError(null);
     try {
       const meRes = await authFetch('/api/auth/me');
+
       if (!meRes.ok) throw new Error('Impossible de récupérer le collaborateur');
       const me = await meRes.json();
       const collaboratorId = me.id as string;
 
       const params = new URLSearchParams();
+
       if (collaboratorId) params.set('collaborator', collaboratorId);
       const start = opts?.start ?? agendaStart;
       const end = opts?.end ?? agendaEnd;
       const limit = opts?.limit ?? agendaLimit;
       const offset = opts?.offset ?? agendaOffset;
+
       if (start) params.set('dateStart', start);
       if (end) params.set('dateEnd', end);
       if (limit) params.set('limit', String(limit));
@@ -275,11 +291,13 @@ export default function TestProspects() {
 
       const url = `/api/agenda?${params.toString()}`;
       const res = await authFetch(url);
+
       if (!res.ok) throw new Error('Erreur lors de la récupération de l\'agenda');
       const data = await res.json();
+
       setAgendaEvents(data.events || []);
     } catch (err: any) {
-      console.error('fetchAgenda error', err);
+      
       setError(err?.message || 'Erreur lors de la récupération de l\'agenda');
     } finally {
       setAgendaLoading(false);
@@ -291,11 +309,13 @@ export default function TestProspects() {
     setCreateSuccess(null);
     if (!newDate || !newTask || !newType) {
       setCreateError('Date, Tâche et Type sont obligatoires');
+
       return;
     }
     setCreating(true);
     try {
       const meRes = await authFetch('/api/auth/me');
+
       if (!meRes.ok) throw new Error('Impossible de récupérer le collaborateur');
       const me = await meRes.json();
       const collaboratorId = me.id as string | undefined;
@@ -310,6 +330,7 @@ export default function TestProspects() {
         'Tâche': newTask,
         'Type': newType,
       };
+
       if (newDescription) payload['Description'] = newDescription;
       if (collaboratorId) payload['Collaborateur'] = [collaboratorId];
 
@@ -321,16 +342,17 @@ export default function TestProspects() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la création');
       }
       const created = await res.json();
+
       setCreateSuccess(`Événement créé (id: ${created.id})`);
       setNewTask('');
       setNewType('');
       setNewDescription('');
       await fetchAgenda();
     } catch (err: any) {
-      console.error('createAgendaItem error', err);
       setCreateError(err?.message || 'Erreur lors de la création');
     } finally {
       setCreating(false);
@@ -347,24 +369,28 @@ export default function TestProspects() {
     try {
       // récupérer le collaborateur lié au token
       const meRes = await authFetch('/api/auth/me');
+
       if (!meRes.ok) throw new Error('Impossible de récupérer le collaborateur');
       const me = await meRes.json();
       const collaboratorId = me.id as string;
 
       const params = new URLSearchParams();
+
       params.set('collaborator', collaboratorId);
       const limit = opts?.limit ?? todoLimit;
       const offset = opts?.offset ?? todoOffset;
+
       if (limit) params.set('limit', String(limit));
       if (offset) params.set('offset', String(offset));
 
       const url = `/api/todo?${params.toString()}`;
       const res = await authFetch(url);
+
       if (!res.ok) throw new Error('Erreur lors de la récupération des TODO');
       const data = await res.json();
+
       setTodoItems(data.todos || []);
     } catch (err: any) {
-      console.error('fetchTodos error', err);
       setError(err?.message || 'Erreur lors de la récupération des TODO');
     } finally {
       setTodoLoading(false);
@@ -377,12 +403,14 @@ export default function TestProspects() {
 
     if (!todoName || !todoCreatedAt || !todoStatus || !todoType) {
       setTodoCreateError('Nom, Date de création, Statut et Type sont obligatoires');
+
       return;
     }
 
     setTodoCreating(true);
     try {
       const meRes = await authFetch('/api/auth/me');
+
       if (!meRes.ok) throw new Error('Impossible de récupérer le collaborateur');
       const me = await meRes.json();
       const collaboratorId = me.id as string | undefined;
@@ -393,10 +421,12 @@ export default function TestProspects() {
       const createdIso = `${todoCreatedAt}:00${createdOffset}`;
 
       let dueIso: string | undefined;
+
       if (todoDueDate) {
         const dueBase = `${todoDueDate}:00`;
         const dueDate = new Date(dueBase);
         const dueOffset = getParisOffset(dueDate);
+
         dueIso = `${todoDueDate}:00${dueOffset}`;
       }
 
@@ -406,6 +436,7 @@ export default function TestProspects() {
         'Statut': todoStatus,
         'Type de tâche': todoType,
       };
+
       if (todoDesc) payload['Description'] = todoDesc;
       if (dueIso) payload['Date d\'échéance'] = dueIso;
       if (collaboratorId) payload['Collaborateur'] = [collaboratorId];
@@ -418,9 +449,11 @@ export default function TestProspects() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la création du TODO');
       }
       const created = await res.json();
+
       setTodoCreateSuccess(`TODO créé (id: ${created.id})`);
 
       // reset formulaire
@@ -433,7 +466,6 @@ export default function TestProspects() {
       // refresh
       await fetchTodos();
     } catch (err: any) {
-      console.error('createTodo error', err);
       setTodoCreateError(err?.message || 'Erreur lors de la création du TODO');
     } finally {
       setTodoCreating(false);
@@ -458,6 +490,7 @@ export default function TestProspects() {
           setLostNextOffset(0);
           setLostHasMore(false);
           const paramsG = new URLSearchParams();
+
           if (q) paramsG.set('q', q);
           paramsG.set('limit', String(PAGE_SIZE));
           paramsG.set('offset', '0');
@@ -466,8 +499,10 @@ export default function TestProspects() {
           const url = `/api/prospects/glacial?${paramsG.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
+
           setLostProspects(data.prospects || []);
           const p: Pagination | undefined = data.pagination;
+
           setLostHasMore(Boolean(p?.hasMore));
           setLostNextOffset(p?.nextOffset ?? null);
           break;
@@ -477,6 +512,7 @@ export default function TestProspects() {
           setProspectsNextOffset(0);
           setProspectsHasMore(false);
           const paramsP = new URLSearchParams();
+
           if (q) paramsP.set('q', q);
           paramsP.set('limit', String(PAGE_SIZE));
           paramsP.set('offset', '0');
@@ -485,8 +521,10 @@ export default function TestProspects() {
           const url = `/api/prospects/prospects?${paramsP.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
+
           setProspects(data.prospects || []);
           const p: Pagination | undefined = data.pagination;
+
           setProspectsHasMore(Boolean(p?.hasMore));
           setProspectsNextOffset(p?.nextOffset ?? null);
           break;
@@ -497,6 +535,7 @@ export default function TestProspects() {
           setDiscussionsHasMore(false);
           // include optional filters category and suivi
           const params = new URLSearchParams();
+
           if (q) params.set('q', q);
           params.set('limit', String(PAGE_SIZE));
           params.set('offset', '0');
@@ -505,8 +544,10 @@ export default function TestProspects() {
           const url = `/api/prospects/discussion?${params.toString()}`;
           const res = await authFetch(url);
           const data = await res.json();
+
           setDiscussions(data.discussions || []);
           const p: Pagination | undefined = data.pagination;
+
           setDiscussionsHasMore(Boolean(p?.hasMore));
           setDiscussionsNextOffset(p?.nextOffset ?? null);
           break;
@@ -515,6 +556,7 @@ export default function TestProspects() {
           const url = buildUrl('/api/clients/clients', q, 0, PAGE_SIZE);
           const res = await authFetch(url);
           const data = await res.json();
+
           setClients(data.clients || []);
           break;
         }
@@ -522,6 +564,7 @@ export default function TestProspects() {
           const url = buildUrl('/api/categories', q, 0, PAGE_SIZE);
           const res = await authFetch(url);
           const data = await res.json();
+
           setCategories(data.results || []);
           break;
         }
@@ -532,8 +575,10 @@ export default function TestProspects() {
           const url = buildUrl('/api/villes', q, 0, PAGE_SIZE);
           const res = await authFetch(url);
           const data = await res.json();
+
           setVilles(data.results || []);
           const p: Pagination | undefined = data.pagination;
+
           setVillesHasMore(Boolean(p?.hasMore));
           setVillesNextOffset(p?.nextOffset ?? null);
           break;
@@ -545,8 +590,10 @@ export default function TestProspects() {
           const url = buildUrl('/api/collaborateurs', q, 0, PAGE_SIZE);
           const res = await authFetch(url);
           const data = await res.json();
+
           setCollaborateurs(data.results || []);
           const p: Pagination | undefined = data.pagination;
+
           setCollabHasMore(Boolean(p?.hasMore));
           setCollabNextOffset(p?.nextOffset ?? null);
           break;
@@ -580,6 +627,7 @@ export default function TestProspects() {
       if (selected === 'glacial' || selected === 'lost') {
         if (lostNextOffset == null) return;
         const paramsG = new URLSearchParams();
+
         if (searchQuery) paramsG.set('q', searchQuery);
         paramsG.set('limit', String(PAGE_SIZE));
         paramsG.set('offset', String(lostNextOffset));
@@ -588,13 +636,16 @@ export default function TestProspects() {
         const url = `/api/prospects/glacial?${paramsG.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
+
         setLostProspects(prev => [...prev, ...(data.prospects || [])]);
         const p: Pagination | undefined = data.pagination;
+
         setLostHasMore(Boolean(p?.hasMore));
         setLostNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'prospects') {
         if (prospectsNextOffset == null) return;
         const paramsP = new URLSearchParams();
+
         if (searchQuery) paramsP.set('q', searchQuery);
         paramsP.set('limit', String(PAGE_SIZE));
         paramsP.set('offset', String(prospectsNextOffset));
@@ -603,13 +654,16 @@ export default function TestProspects() {
         const url = `/api/prospects/prospects?${paramsP.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
+
         setProspects(prev => [...prev, ...(data.prospects || [])]);
         const p: Pagination | undefined = data.pagination;
+
         setProspectsHasMore(Boolean(p?.hasMore));
         setProspectsNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'discussion') {
         if (discussionsNextOffset == null) return;
         const params = new URLSearchParams();
+
         if (searchQuery) params.set('q', searchQuery);
         params.set('limit', String(PAGE_SIZE));
         params.set('offset', String(discussionsNextOffset));
@@ -618,8 +672,10 @@ export default function TestProspects() {
         const url = `/api/prospects/discussion?${params.toString()}`;
         const res = await authFetch(url);
         const data = await res.json();
+
         setDiscussions(prev => [...prev, ...(data.discussions || [])]);
         const p: Pagination | undefined = data.pagination;
+
         setDiscussionsHasMore(Boolean(p?.hasMore));
         setDiscussionsNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'villes') {
@@ -627,8 +683,10 @@ export default function TestProspects() {
         const url = buildUrl('/api/villes', searchQuery, villesNextOffset, PAGE_SIZE);
         const res = await authFetch(url);
         const data = await res.json();
+
         setVilles(prev => [...prev, ...(data.results || [])]);
         const p: Pagination | undefined = data.pagination;
+
         setVillesHasMore(Boolean(p?.hasMore));
         setVillesNextOffset(p?.nextOffset ?? null);
       } else if (selected === 'collaborateurs') {
@@ -636,8 +694,10 @@ export default function TestProspects() {
         const url = buildUrl('/api/collaborateurs', searchQuery, collabNextOffset, PAGE_SIZE);
         const res = await authFetch(url);
         const data = await res.json();
+
         setCollaborateurs(prev => [...prev, ...(data.results || [])]);
         const p: Pagination | undefined = data.pagination;
+
         setCollabHasMore(Boolean(p?.hasMore));
         setCollabNextOffset(p?.nextOffset ?? null);
       }
@@ -766,12 +826,12 @@ export default function TestProspects() {
 
   // Cartes de formulaire "plus joli"
   const AgendaControls = () => (
-    <Card title="Agenda — Filtres & Création" footer={null}>
+    <Card footer={null} title="Agenda — Filtres & Création">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Date début" required>
+        <Field required label="Date début">
           <Input type="date" value={agendaStart} onChange={(e) => setAgendaStart(e.target.value)} />
         </Field>
-        <Field label="Date fin" hint="Optionnelle">
+        <Field hint="Optionnelle" label="Date fin">
           <Input type="date" value={agendaEnd || ''} onChange={(e) => setAgendaEnd(e.target.value || null)} />
         </Field>
         <Field label="Limit">
@@ -789,23 +849,23 @@ export default function TestProspects() {
       <div className="pt-4">
         <h5 className="font-medium mb-2">Créer un événement</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Date et heure" required>
+          <Field required label="Date et heure">
             <Input type="datetime-local" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
           </Field>
-          <Field label="Type" required>
+          <Field required label="Type">
             <Input type="text" value={newType} onChange={(e) => setNewType(e.target.value)} />
           </Field>
-          <Field label="Tâche" required>
+          <Field required label="Tâche">
             <Input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} />
           </Field>
-          <Field label="Description" hint="Optionnelle">
+          <Field hint="Optionnelle" label="Description">
             <Textarea rows={3} value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
           </Field>
         </div>
         {createError && <div className="text-red-500 mt-2 text-sm">{createError}</div>}
         {createSuccess && <div className="text-emerald-600 mt-2 text-sm">{createSuccess}</div>}
         <div className="flex gap-2 pt-2">
-          <Button onClick={() => createAgendaItem()} disabled={creating}>{creating ? 'Création…' : 'Créer'}</Button>
+          <Button disabled={creating} onClick={() => createAgendaItem()}>{creating ? 'Création…' : 'Créer'}</Button>
           <Button variant="ghost" onClick={() => { setNewDate(new Date().toISOString().slice(0,16)); setNewTask(''); setNewType(''); setNewDescription(''); setCreateError(null); setCreateSuccess(null); }}>Annuler</Button>
         </div>
       </div>
@@ -813,7 +873,7 @@ export default function TestProspects() {
   );
 
   const TodoControls = () => (
-    <Card title="TODO — Filtres & Création" footer={null}>
+    <Card footer={null} title="TODO — Filtres & Création">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Field label="Limit">
           <Input type="number" value={todoLimit} onChange={(e) => setTodoLimit(Number(e.target.value || 0))} />
@@ -829,29 +889,29 @@ export default function TestProspects() {
       <div className="pt-4">
         <h5 className="font-medium mb-2">Ajouter un TODO</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Nom de la tâche" required>
-            <Input type="text" value={todoName} onChange={(e) => setTodoName(e.target.value)} placeholder="Ex: Relancer Camping Les Flots" />
+          <Field required label="Nom de la tâche">
+            <Input placeholder="Ex: Relancer Camping Les Flots" type="text" value={todoName} onChange={(e) => setTodoName(e.target.value)} />
           </Field>
-          <Field label="Type de tâche" required>
-            <Input type="text" value={todoType} onChange={(e) => setTodoType(e.target.value)} placeholder="Ex: Relance / Appel / Email" />
+          <Field required label="Type de tâche">
+            <Input placeholder="Ex: Relance / Appel / Email" type="text" value={todoType} onChange={(e) => setTodoType(e.target.value)} />
           </Field>
-          <Field label="Date de création" required>
+          <Field required label="Date de création">
             <Input type="datetime-local" value={todoCreatedAt} onChange={(e) => setTodoCreatedAt(e.target.value)} />
           </Field>
-          <Field label="Statut" required>
-            <Input type="text" value={todoStatus} onChange={(e) => setTodoStatus(e.target.value)} placeholder="Ex: À faire / En cours / Fait" />
+          <Field required label="Statut">
+            <Input placeholder="Ex: À faire / En cours / Fait" type="text" value={todoStatus} onChange={(e) => setTodoStatus(e.target.value)} />
           </Field>
-          <Field label="Date d'échéance" hint="Optionnelle">
+          <Field hint="Optionnelle" label="Date d'échéance">
             <Input type="datetime-local" value={todoDueDate} onChange={(e) => setTodoDueDate(e.target.value)} />
           </Field>
-          <Field label="Description" hint="Optionnelle">
+          <Field hint="Optionnelle" label="Description">
             <Textarea rows={3} value={todoDesc} onChange={(e) => setTodoDesc(e.target.value)} />
           </Field>
         </div>
         {todoCreateError && <div className="text-red-500 mt-2 text-sm">{todoCreateError}</div>}
         {todoCreateSuccess && <div className="text-emerald-600 mt-2 text-sm">{todoCreateSuccess}</div>}
         <div className="flex gap-2 pt-2">
-          <Button onClick={() => createTodo()} disabled={todoCreating}>{todoCreating ? 'Création…' : 'Créer le TODO'}</Button>
+          <Button disabled={todoCreating} onClick={() => createTodo()}>{todoCreating ? 'Création…' : 'Créer le TODO'}</Button>
           <Button variant="ghost" onClick={() => { setTodoName(''); setTodoType('Général'); setTodoStatus('À faire'); setTodoDesc(''); setTodoDueDate(''); setTodoCreatedAt(new Date().toISOString().slice(0,16)); setTodoCreateError(null); setTodoCreateSuccess(null); }}>Annuler</Button>
         </div>
       </div>
@@ -901,6 +961,7 @@ export default function TestProspects() {
       if (t.dueDate) {
         const d = new Date(t.dueDate);
         const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+
         setTodoEditDue(isoLocal);
       } else setTodoEditDue('');
     } catch { setTodoEditDue(t.dueDate || ''); }
@@ -929,6 +990,7 @@ export default function TestProspects() {
     setTodoEditError(null);
     try {
       const payload: any = {};
+
       if (todoEditName) payload['Nom de la tâche'] = todoEditName;
       if (todoEditDue) payload["Date d'échéance"] = `${todoEditDue}:00`;
       if (todoEditStatus) payload['Statut'] = todoEditStatus;
@@ -940,14 +1002,15 @@ export default function TestProspects() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la mise à jour');
       }
       await fetchTodos();
       closeTodoEdit();
     } catch (err: any) {
-      console.error('handleTodoUpdate error', err);
       setTodoEditError(err?.message || 'Erreur lors de la mise à jour');
     } finally {
       setTodoEditLoading(false);
@@ -968,14 +1031,15 @@ export default function TestProspects() {
       const res = await authFetch(`/api/todo?id=${encodeURIComponent(todoEditId)}`, {
         method: 'DELETE',
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la suppression');
       }
       await fetchTodos();
       closeTodoEdit();
     } catch (err: any) {
-      console.error('handleTodoDelete error', err);
       setTodoEditError(err?.message || 'Erreur lors de la suppression');
     } finally {
       setTodoEditLoading(false);
@@ -989,6 +1053,7 @@ export default function TestProspects() {
     try {
       const d = new Date(ev.date);
       const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+
       setEditDate(isoLocal);
     } catch {
       setEditDate(ev.date || '');
@@ -1019,6 +1084,7 @@ export default function TestProspects() {
       // Build payload
       const d = editDate ? `${editDate}:00` : undefined;
       const payload: any = {};
+
       if (d) payload['Date'] = d;
       if (editTask) payload['Tâche'] = editTask;
       if (editType) payload['Type'] = editType;
@@ -1029,14 +1095,15 @@ export default function TestProspects() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la mise à jour');
       }
       await fetchAgenda();
       closeEditModal();
     } catch (err: any) {
-      console.error('handleUpdate error', err);
       setEditError(err?.message || 'Erreur lors de la mise à jour');
     } finally {
       setEditLoading(false);
@@ -1058,14 +1125,15 @@ export default function TestProspects() {
       const res = await authFetch(`/api/agenda?id=${encodeURIComponent(editId)}`, {
         method: 'DELETE',
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la suppression');
       }
       await fetchAgenda();
       closeEditModal();
     } catch (err: any) {
-      console.error('handleDelete error', err);
       setEditError(err?.message || 'Erreur lors de la suppression');
     } finally {
       setEditLoading(false);
@@ -1128,17 +1196,18 @@ export default function TestProspects() {
               <Card title="Filtres - En discussion">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-sm font-medium">Catégorie</label>
-                    <select className="w-full border rounded-xl px-3 py-2" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                    <label className="text-sm font-medium" htmlFor="filter-category-discussion">Catégorie</label>
+                    <select className="w-full border rounded-xl px-3 py-2" id="filter-category-discussion" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
                       <option value="">— Toutes —</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Suivi par...</label>
+                    <label className="text-sm font-medium" htmlFor="collaborator-search-discussion">Suivi par...</label>
                     <input
                       className="w-full border rounded-xl px-3 py-2"
+                      id="collaborator-search-discussion"
                       placeholder="Rechercher collaborateur..."
                       value={collaboratorSearch}
                       onChange={(e) => setCollaboratorSearch(e.target.value)}
@@ -1168,17 +1237,18 @@ export default function TestProspects() {
               <Card title="Filtres">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-sm font-medium">Catégorie</label>
-                    <select className="w-full border rounded-xl px-3 py-2" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                    <label className="text-sm font-medium" htmlFor="filter-category-prospects">Catégorie</label>
+                    <select className="w-full border rounded-xl px-3 py-2" id="filter-category-prospects" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
                       <option value="">— Toutes —</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Suivi par...</label>
+                    <label className="text-sm font-medium" htmlFor="collaborator-search-prospects">Suivi par...</label>
                     <input
                       className="w-full border rounded-xl px-3 py-2"
+                      id="collaborator-search-prospects"
                       placeholder="Rechercher collaborateur..."
                       value={collaboratorSearch}
                       onChange={(e) => setCollaboratorSearch(e.target.value)}
@@ -1220,7 +1290,7 @@ export default function TestProspects() {
           {!loading && !error && selected === 'agenda' && (
             <div className="space-y-3">
               <h2 className="text-xl font-semibold">Agenda</h2>
-              {agendaLoading && <div className="rounded-xl border bg-white p-4">Chargement de l'agenda…</div>}
+              {agendaLoading && <div className="rounded-xl border bg-white p-4">Chargement de l&apos;agenda…</div>}
               {!agendaLoading && agendaEvents.length === 0 && <div className="rounded-xl border bg-white p-4">Aucun événement</div>}
               {!agendaLoading && agendaEvents.length > 0 && (
                 <div className="overflow-auto rounded-xl border">
@@ -1271,13 +1341,13 @@ export default function TestProspects() {
           <h3 className="text-lg font-semibold mb-3">{editId ? (editLoading ? '...' : 'Modifier / Supprimer') : 'Événement'}</h3>
           {editError && <div className="text-red-600 mb-2">{editError}</div>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Date et heure" required>
+            <Field required label="Date et heure">
               <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
             </Field>
-            <Field label="Type" required>
+            <Field required label="Type">
               <Input type="text" value={editType} onChange={(e) => setEditType(e.target.value)} />
             </Field>
-            <Field label="Tâche" required>
+            <Field required label="Tâche">
               <Input type="text" value={editTask} onChange={(e) => setEditTask(e.target.value)} />
             </Field>
             <Field label="Description">
@@ -1285,9 +1355,9 @@ export default function TestProspects() {
             </Field>
           </div>
           <div className="flex items-center justify-end gap-2 mt-4">
-            <Button variant="danger" onClick={() => handleDelete()} disabled={editLoading}>Supprimer</Button>
-            <Button onClick={() => handleUpdate()} disabled={editLoading}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
-            <Button variant="ghost" onClick={() => closeEditModal()} disabled={editLoading}>Annuler</Button>
+            <Button disabled={editLoading} variant="danger" onClick={() => handleDelete()}>Supprimer</Button>
+            <Button disabled={editLoading} onClick={() => handleUpdate()}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+            <Button disabled={editLoading} variant="ghost" onClick={() => closeEditModal()}>Annuler</Button>
           </div>
         </div>
       </div>
@@ -1299,7 +1369,7 @@ export default function TestProspects() {
           <h3 className="text-lg font-semibold mb-3">{todoEditId ? (todoEditLoading ? '...' : 'Modifier / Supprimer TODO') : 'TODO'}</h3>
           {todoEditError && <div className="text-red-600 mb-2">{todoEditError}</div>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Nom de la tâche" required>
+            <Field required label="Nom de la tâche">
               <Input type="text" value={todoEditName} onChange={(e) => setTodoEditName(e.target.value)} />
             </Field>
             <Field label="Date d&apos;échéance">
@@ -1316,9 +1386,9 @@ export default function TestProspects() {
             </Field>
           </div>
           <div className="flex items-center justify-end gap-2 mt-4">
-            <Button variant="danger" onClick={() => handleTodoDelete()} disabled={todoEditLoading}>Supprimer</Button>
-            <Button onClick={() => handleTodoUpdate()} disabled={todoEditLoading}>{todoEditLoading ? 'En cours…' : 'Mettre à jour'}</Button>
-            <Button variant="ghost" onClick={() => closeTodoEdit()} disabled={todoEditLoading}>Annuler</Button>
+            <Button disabled={todoEditLoading} variant="danger" onClick={() => handleTodoDelete()}>Supprimer</Button>
+            <Button disabled={todoEditLoading} onClick={() => handleTodoUpdate()}>{todoEditLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+            <Button disabled={todoEditLoading} variant="ghost" onClick={() => closeTodoEdit()}>Annuler</Button>
           </div>
         </div>
       </div>
