@@ -27,6 +27,7 @@ import { MagnifyingGlassIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/o
 import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge, StatusBadge } from "@/components/badges";
+import { SortableColumnHeader } from "@/components";
 
 interface Client {
   id: string;
@@ -34,6 +35,7 @@ interface Client {
   ville: string;
   categorie: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
   telephone: string;
+  nomEtablissement: string;
   email: string;
   numeroSiret: string;
   dateSignatureContrat: string;
@@ -78,7 +80,6 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
@@ -101,15 +102,14 @@ export default function ClientsPage() {
       // Construire les paramètres de requête
       const params = new URLSearchParams();
 
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (sortField) params.append('sortBy', sortField);
-      if (sortDirection) params.append('sortOrder', sortDirection);
-      params.append('page', pagination.currentPage.toString());
+      if (searchTerm) params.append('q', searchTerm);
+      if (sortField) params.append('orderBy', sortField);
+      if (sortDirection) params.append('order', sortDirection);
       params.append('limit', pagination.itemsPerPage.toString());
+      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
 
       const queryString = params.toString();
-      const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/clients${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url);
 
@@ -123,8 +123,8 @@ export default function ClientsPage() {
       setViewCount(data.viewCount ?? null);
       setPagination(prev => ({
         ...prev,
-        totalItems: data.pagination?.totalItems || 0,
-        totalPages: data.pagination?.totalPages || 1
+        totalItems: data.totalCount || 0,
+        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
       }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -153,47 +153,7 @@ export default function ClientsPage() {
     }
   };
 
-  const handleAddClient = async () => {
-    try {
-      // Validation côté client
-      if (!newClient.raisonSociale.trim()) {
-        setError("La raison sociale est requise");
 
-        return;
-      }
-
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newClient),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        throw new Error(errorData.error || "Erreur lors de l'ajout du client");
-      }
-
-      // Réinitialiser le formulaire et fermer le modal
-      setNewClient({
-        raisonSociale: "",
-        email: "",
-        telephone: "",
-        adresse: "",
-        commentaire: "",
-        statut: "actif",
-      });
-      setIsAddModalOpen(false);
-      setError(null);
-
-      // Recharger les clients
-      fetchClients();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client);
@@ -289,13 +249,6 @@ export default function ClientsPage() {
                 <SelectItem key="BEAUTY">Beauty</SelectItem>
               </StyledSelect>
 
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
-              >
-                Ajouter un client
-              </Button>
             </div>
 
             <div className="relative">
@@ -321,51 +274,41 @@ export default function ClientsPage() {
           {/* Table */}
           {<Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
-              <TableColumn className="font-normal">Raison sociale</TableColumn>
-              <TableColumn className="font-normal">
-                <button
-                  className=" cursor-pointer"
-                  onClick={() => handleSort("categorie")}
-                >
-                  Catégorie
-                  {sortField === "categorie" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="categorie"
+                  label="Catégorie"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
               </TableColumn>
-              <TableColumn className="font-normal">Ville</TableColumn>
-              <TableColumn className="font-normal">
-                <button
-                  className=" cursor-pointer"
-                  onClick={() => handleSort("dateSignatureContrat")}
-                >
-                  Date signature contrat
-                  {sortField === "dateSignatureContrat" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+              <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="dateSignatureContrat"
+                  label="Date signature contrat"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn className="font-normal">
-                <button
-                  className="cursor-pointer text-left w-full"
-                  type="button"
-                  onClick={() => handleSort("statutPaiementContenu")}
-                >
-                  Statut paiement
-                  {sortField === "statutPaiementContenu" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+              <TableColumn className="font-light text-sm">Facture contenu</TableColumn>
+
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="statutPaiementContenu"
+                  label="Facture publication"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn className="font-normal">Montant facturé</TableColumn>
-              <TableColumn className="font-normal">Modifier</TableColumn>
-              <TableColumn className="font-normal">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
               {
@@ -376,19 +319,39 @@ export default function ClientsPage() {
                     </TableCell>
                   </TableRow>
                 ) : clients.map((client, index) => (
-                  <TableRow key={client.id || index}>
+                  <TableRow key={client.id || index} className="border-t border-gray-100  dark:border-gray-700">
+                    <TableCell className="font-light py-5">
+                      <CategoryBadge category={client.categorie || "FOOD"} />
+                    </TableCell>
+                    <TableCell className="font-light">
+                      {client.nomEtablissement}
+                    </TableCell>
                     <TableCell className="font-light">
                       {client.raisonSociale}
                     </TableCell>
                     <TableCell className="font-light">
-                      <CategoryBadge category={client.categorie || "FOOD"} />
+                      {client.dateSignatureContrat
+                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        }).replace(/\//g, '.')
+                        : "-"
+                      }
                     </TableCell>
-                    <TableCell className="font-light">{client.ville || "-"}</TableCell>
-                    <TableCell className="font-light">{client.dateSignatureContrat || "-"}</TableCell>
+                    <TableCell className="font-light">
+                      {client.dateSignatureContrat
+                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        }).replace(/\//g, '.')
+                        : "-"
+                      }
+                    </TableCell>
                     <TableCell className="font-light">
                       <StatusBadge status={client.statutPaiementContenu || "En attente"} />
                     </TableCell>
-                    <TableCell className="font-light">{client.montantFactureContenu ? `${client.montantFactureContenu}€` : "-"}</TableCell>
                     <TableCell className="font-light">
                       <Button
                         isIconOnly
@@ -433,120 +396,6 @@ export default function ClientsPage() {
         </CardBody>
       </Card>
 
-      {/* Modal d'ajout de client */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>Ajouter un nouveau client</ModalHeader>
-          <ModalBody>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
-            <div className="space-y-4">
-              <Input
-                isRequired
-                errorMessage={fieldErrors.raisonSociale}
-                isInvalid={!!fieldErrors.raisonSociale}
-                label="Raison sociale"
-                placeholder="Nom de l'entreprise"
-                value={newClient.raisonSociale}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewClient((prev) => ({
-                    ...prev,
-                    raisonSociale: value,
-                  }));
-                  // Validation simple
-                  if (!value.trim()) {
-                    setFieldErrors(prev => ({ ...prev, raisonSociale: 'La raison sociale est requise' }));
-                  } else {
-                    setFieldErrors(prev => {
-                      const newErrors = { ...prev };
-
-                      delete newErrors.raisonSociale;
-
-                      return newErrors;
-                    });
-                  }
-                }}
-              />
-              <Input
-                label="Email"
-                placeholder="contact@entreprise.fr"
-                type="email"
-                value={newClient.email}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, email: e.target.value }))
-                }
-              />
-              <Input
-                label="Téléphone"
-                placeholder="01 23 45 67 89"
-                value={newClient.telephone}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    telephone: e.target.value,
-                  }))
-                }
-              />
-              <Input
-                label="Adresse"
-                placeholder="123 Rue de l'entreprise, 75001 Paris"
-                value={newClient.adresse}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, adresse: e.target.value }))
-                }
-              />
-              <StyledSelect
-                label="Statut"
-                selectedKeys={[newClient.statut]}
-                onSelectionChange={(keys) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "actif"
-                      | "inactif"
-                      | "prospect",
-                  }))
-                }
-              >
-                <SelectItem key="actif">Actif</SelectItem>
-                <SelectItem key="inactif">Inactif</SelectItem>
-                <SelectItem key="prospect">Prospect</SelectItem>
-              </StyledSelect>
-              <Textarea
-                label="Commentaire"
-                placeholder="Informations supplémentaires..."
-                value={newClient.commentaire}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    commentaire: e.target.value,
-                  }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddClient}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
       {/* Modal d'édition de client */}
       <Modal
         isOpen={isEditModalOpen}
@@ -555,12 +404,7 @@ export default function ClientsPage() {
         onOpenChange={setIsEditModalOpen}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <h2>Modifier le client</h2>
-            <p className="text-sm text-gray-500 font-normal">
-              {editingClient?.raisonSociale}
-            </p>
-          </ModalHeader>
+         
           <ModalBody className="max-h-[70vh] overflow-y-auto">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">

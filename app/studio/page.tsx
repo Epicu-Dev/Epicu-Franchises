@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Pagination } from '@heroui/pagination';
 import { CategoryBadge, StatusBadge } from '@/components/badges';
+import { SortableColumnHeader } from '@/components';
 
 interface Service {
   id: string;
@@ -299,13 +300,13 @@ export default function StudioPage() {
   // Fonction de filtrage et tri des prestations
   const getFilteredAndSortedPrestations = () => {
     let filtered = prestations.filter((prestation) => {
-      const matchesSearch = 
+      const matchesSearch =
         prestation.establishmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prestation.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prestation.category.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = selectedStatus === "" || prestation.status === selectedStatus;
-      
+
       return matchesSearch && matchesStatus;
     });
 
@@ -367,9 +368,10 @@ export default function StudioPage() {
           {/* Onglets et bouton d'action sur la même ligne */}
           <div className="flex justify-between items-center mb-6">
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={selectedTab}
               variant='underlined'
@@ -490,87 +492,53 @@ export default function StudioPage() {
                   {/* Table */}
                   <Table aria-label="Tableau des prestations en cours" shadow="none">
                     <TableHeader>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("category")}
-                        >
-                          Catégorie
-                          {sortField === "category" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="category"
+                          label="Catégorie"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("establishmentName")}
-                        >
-                          Nom établissement
-                          {sortField === "establishmentName" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        Nom établissement
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("contractDate")}
-                        >
-                          Date signature contrat
-                          {sortField === "contractDate" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="contractDate"
+                          label="Date signature contrat"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("serviceTitle")}
-                        >
-                          Prestation demandée
-                          {sortField === "serviceTitle" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="serviceTitle"
+                          label="Prestation demandée"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
                       </TableColumn>
-                      <TableColumn>Facture</TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("amount")}
-                        >
-                          Montant prestation
-                          {sortField === "amount" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">Facture</TableColumn>
+                      <TableColumn className="font-light text-sm">
+
+                        Montant prestation
+
                       </TableColumn>
-                      <TableColumn>Montant commission</TableColumn>
-                      <TableColumn>Progression</TableColumn>
+                      <TableColumn className="font-light text-sm">Montant commission</TableColumn>
+                      <TableColumn className="font-light text-sm">Progression</TableColumn>
                     </TableHeader>
                     <TableBody>
                       {paginatedPrestations.map((prestation) => (
-                        <TableRow key={prestation.id}>
+                        <TableRow key={prestation.id} className="border-t border-gray-100  dark:border-gray-700">
                           <TableCell>
                             <CategoryBadge category={prestation.category} />
                           </TableCell>
-                          <TableCell>{prestation.establishmentName}</TableCell>
+                          <TableCell className="py-5">{prestation.establishmentName}</TableCell>
                           <TableCell>{prestation.contractDate}</TableCell>
                           <TableCell>
                             {prestation.serviceTitle}

@@ -12,15 +12,14 @@ import {
   TableCell,
 } from "@heroui/table";
 import { Tabs, Tab } from "@heroui/tabs";
-import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { DashboardLayout } from "../dashboard-layout";
 import { StyledSelect } from "@/components/styled-select";
+import { SortableColumnHeader } from "@/components/sortable-column-header";
+import { useSortableTable } from "@/hooks/use-sortable-table";
 
 export default function DataPage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const allTableData = [
@@ -93,7 +92,7 @@ export default function DataPage() {
   ];
 
   // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
-  const tableData = allTableData.filter((row) => {
+  const filteredData = allTableData.filter((row) => {
     // Filtre par ville (onglet)
     if (activeTab !== "overview" && row.city !== activeTab) {
       return false;
@@ -107,28 +106,8 @@ export default function DataPage() {
     return true;
   });
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return (
-        <ChevronUpIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-      );
-    }
-
-    return sortDirection === "asc" ? (
-      <ChevronUpIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-    ) : (
-      <ChevronDownIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-    );
-  };
+  // Utiliser le hook de tri réutilisable
+  const { sortField, sortDirection, handleSort, sortedData } = useSortableTable(filteredData);
 
   return (
     <DashboardLayout>
@@ -137,9 +116,10 @@ export default function DataPage() {
           <CardBody className="space-y-6">
             {/* Tabs */}
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={activeTab}
               variant="underlined"
@@ -152,7 +132,7 @@ export default function DataPage() {
 
             {/* Filter */}
             <StyledSelect
-              className="w-40"
+              className="w-40 pl-4"
               placeholder="Catégorie"
               selectedKeys={selectedCategory ? [selectedCategory] : []}
               onSelectionChange={(keys) =>
@@ -172,48 +152,46 @@ export default function DataPage() {
               <CardBody className="p-0">
                 <Table aria-label="Data table">
                   <TableHeader>
-                    <TableColumn>
-                      <button
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
-                        type="button"
-                        onClick={() => handleSort("month")}
-                      >
-                        Mois
-                        {getSortIcon("month")}
-                      </button>
+                    <TableColumn className="font-light text-sm">
+                      <SortableColumnHeader
+                        field="month"
+                        label="Mois"
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                      />
                     </TableColumn>
-                    <TableColumn>Chiffre d&apos;affaires</TableColumn>
-                    <TableColumn>Taux de conversion</TableColumn>
-                    <TableColumn>Clients signés</TableColumn>
-                    <TableColumn>Prospects rencontrés</TableColumn>
-                    <TableColumn>Nouveaux prospects</TableColumn>
-                    <TableColumn>
-                      <button
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
-                        type="button"
-                        onClick={() => handleSort("publishedPosts")}
-                      >
-                        Posts publiés
-                        {getSortIcon("publishedPosts")}
-                      </button>
+                    <TableColumn className="font-light text-sm">Chiffre d&apos;affaires</TableColumn>
+                    <TableColumn className="font-light text-sm">Taux de conversion</TableColumn>
+                    <TableColumn className="font-light text-sm">Clients signés</TableColumn>
+                    <TableColumn className="font-light text-sm">Prospects rencontrés</TableColumn>
+                    <TableColumn className="font-light text-sm">Nouveaux prospects</TableColumn>
+                    <TableColumn className="font-light text-sm">
+                      <SortableColumnHeader
+                        field="publishedPosts"
+                        label="Posts publiés"
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                      />
                     </TableColumn>
                   </TableHeader>
-                  <TableBody>
-                    {tableData.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">
+                  <TableBody  className="mt-30">
+                    {sortedData.map((row, index) => (
+                      <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700 ">
+                        <TableCell className="font-light text-sm py-5">
                           {row.month}
                         </TableCell>
-                        <TableCell>{row.revenue}</TableCell>
+                        <TableCell className="font-light text-sm">{row.revenue}</TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-custom-green-stats/14 text-custom-green-stats dark:text-custom-green-stats">
                             {row.conversionRate}
                           </span>
                         </TableCell>
-                        <TableCell>{row.signedClients}</TableCell>
-                        <TableCell>{row.prospectsMet}</TableCell>
-                        <TableCell>{row.newProspects}</TableCell>
-                        <TableCell>{row.publishedPosts}</TableCell>
+                        <TableCell className="font-light text-sm">{row.signedClients}</TableCell>
+                        <TableCell className="font-light text-sm">{row.prospectsMet}</TableCell>
+                        <TableCell className="font-light text-sm">{row.newProspects}</TableCell>
+                        <TableCell className="font-light text-sm">{row.publishedPosts}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

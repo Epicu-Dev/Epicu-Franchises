@@ -24,6 +24,8 @@ import {
 import { Checkbox } from "@heroui/checkbox";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { TodoBadge } from "../../components/badges";
+import { SortableColumnHeader } from "@/components";
 
 interface Todo {
   id: string;
@@ -58,7 +60,7 @@ export default function TodoPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
@@ -262,9 +264,9 @@ export default function TodoPage() {
         prevTodos.map((todo) =>
           todo.id === todoId
             ? {
-                ...todo,
-                statut: todo.statut === "terminee" ? "a_faire" : "terminee",
-              }
+              ...todo,
+              statut: todo.statut === "terminee" ? "a_faire" : "terminee",
+            }
             : todo
         )
       );
@@ -272,34 +274,7 @@ export default function TodoPage() {
     }
   };
 
-  const getStatutLabel = (statut: string) => {
-    switch (statut) {
-      case "a_faire":
-        return "Pas commencé";
-      case "en_cours":
-        return "En cours";
-      case "terminee":
-        return "Validée";
-      case "annulee":
-        return "Annulée";
-      default:
-        return statut;
-    }
-  };
 
-  const getStatutBadgeClass = (statut: string) => {
-    switch (statut) {
-      case "terminee":
-        return "bg-green-100 text-green-800";
-      case "en_cours":
-        return "bg-blue-100 text-blue-800";
-      case "annulee":
-        return "bg-red-100 text-red-800";
-      case "a_faire":
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   if (loading && todos.length === 0) {
     return (
@@ -346,9 +321,7 @@ export default function TodoPage() {
               >
                 <SelectItem key="tous">Tous</SelectItem>
                 <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
                 <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
               </Select>
             </div>
 
@@ -370,54 +343,36 @@ export default function TodoPage() {
           {/* Table */}
           <Table aria-label="Tableau des tâches" shadow="none">
             <TableHeader>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("titre")}
-                >
-                  Tâches
-                  {sortField === "titre" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+
+                Tâches
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("dateEcheance")}
-                >
-                  Deadline
-                  {sortField === "dateEcheance" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="dateEcheance"
+                  label="Deadline"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("statut")}
-                >
-                  État
-                  {sortField === "statut" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="statut"
+                  label="État"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>Actions</TableColumn>
+              <TableColumn className="font-light text-sm">Actions</TableColumn>
             </TableHeader>
             <TableBody>
               {todos.map((todo) => (
-                <TableRow key={todo.id}>
-                  <TableCell>
+                <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
+                  <TableCell className="font-light py-5">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         className="text-black"
@@ -432,18 +387,19 @@ export default function TodoPage() {
                       <span>{todo.titre}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{todo.dateEcheance}</TableCell>
+                  <TableCell className="font-light">
+                    {new Date(todo.dateEcheance).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    }).replace(/\//g, '.')}
+                  </TableCell>
                   <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutBadgeClass(todo.statut)}`}
-                    >
-                      {getStatutLabel(todo.statut)}
-                    </span>
+                    <TodoBadge status={todo.statut} />
                   </TableCell>
                   <TableCell>
                     <Button
                       isIconOnly
-                      color="danger"
                       size="sm"
                       variant="light"
                       onPress={() => openDeleteConfirmation(todo)}
@@ -527,25 +483,7 @@ export default function TodoPage() {
                   validateField('dateEcheance', value);
                 }}
               />
-              <Select
-                label="État"
-                selectedKeys={[newTodo.statut]}
-                onSelectionChange={(keys) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "a_faire"
-                      | "en_cours"
-                      | "terminee"
-                      | "annulee",
-                  }))
-                }
-              >
-                <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
-                <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
-              </Select>
+
             </div>
           </ModalBody>
           <ModalFooter>

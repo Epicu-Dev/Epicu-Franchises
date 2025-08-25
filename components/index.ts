@@ -10,12 +10,15 @@ export { ProspectModal } from './prospect-modal';
 export { PrestationModal } from './prestation-modal';
 export { AgendaModals } from './agenda-modals';
 export { HelpModal } from './help-modal';
+export { default as ResourceModal } from './resource-modal';
 
 // Composants de badges
 export { 
   CategoryBadge, 
   StatusBadge, 
   Badge,
+  AgendaBadge,
+  TodoBadge,
   getCategoryBadgeColor,
   getStatusBadgeColor 
 } from './badges';
@@ -30,6 +33,9 @@ export { default as ToastNotification } from './toast-notification';
 
 // Composants de formulaire
 export { StyledSelect } from './styled-select';
+
+// Composants de tableau
+export { SortableColumnHeader } from './sortable-column-header';
 
 // Composants d'agenda
 export { AgendaDropdown } from './agenda-dropdown';

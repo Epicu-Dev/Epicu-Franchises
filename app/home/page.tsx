@@ -32,6 +32,7 @@ import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
+import { AgendaBadge, TodoBadge } from "@/components/badges";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -47,7 +48,6 @@ export default function HomePage() {
     mission: "",
     deadline: "",
     status: "En cours" as "En cours" | "En retard" | "Terminé",
-    color: "bg-blue-100 text-blue-800",
   });
 
   // État pour le filtre de ville
@@ -163,15 +163,15 @@ export default function HomePage() {
       value: loading ? "..." : `+${Math.floor(filteredClients.length * 4.2)}k`,
       label: "Nombre d'abonnés",
       icon: <ChartBarIcon className="h-6 w-6" />,
-      iconBgColor: "bg-green-100",
-      iconColor: "text-green-600",
+      iconBgColor: "bg-custom-green-stats/40",
+      iconColor: "text-custom-green-stats",
     },
     {
       value: loading ? "..." : `+${Math.floor(filteredClients.length * 0.8)}M`,
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
-      iconBgColor: "bg-pink-100",
-      iconColor: "text-pink-600",
+      iconBgColor: "bg-custom-rose/40",
+      iconColor: "text-custom-rose",
     },
     {
       value: loading ? "..." : filteredProspects.length.toString(),
@@ -184,27 +184,19 @@ export default function HomePage() {
       value: loading ? "..." : conversionRate,
       label: "Taux de conversion",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-orange-100",
-      iconColor: "text-orange-600",
+      iconBgColor: "bg-custom-orange-food/40",
+      iconColor: "text-custom-orange-food",
     },
   ];
 
   // Transformation des événements filtrés pour l'affichage
   const agendaEvents = useMemo(() => {
-    const typeColorMap = {
-      "tournage": "bg-pink-100 text-pink-800",
-      "rendez-vous": "bg-purple-100 text-purple-800",
-      "publication": "bg-blue-100 text-blue-800",
-      "evenement": "bg-orange-100 text-orange-800",
-    };
-
     return filteredEvents.slice(0, 3).map(event => ({
       clientName: event.title || "Nom client",
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
       type: event.type === "rendez-vous" ? "Rendez-vous" :
         event.type === "tournage" ? "Tournage" :
           event.type === "publication" ? "Publication" : "Evènement",
-      color: typeColorMap[event.type as keyof typeof typeColorMap] || "bg-gray-100 text-gray-800",
     }));
   }, [filteredEvents]);
 
@@ -213,33 +205,23 @@ export default function HomePage() {
       mission: "Mission",
       deadline: "Deadline",
       status: "En cours",
-      color: "bg-blue-100 text-blue-800",
     },
     {
       mission: "Mission",
       deadline: "Deadline",
       status: "En retard",
-      color: "bg-red-100 text-red-800",
     },
     {
       mission: "Mission",
       deadline: "Deadline",
       status: "En cours",
-      color: "bg-blue-100 text-blue-800",
     },
   ]);
 
   const handleAddTodo = () => {
     if (newTodo.mission.trim()) {
-      const colorMap = {
-        "En cours": "bg-blue-100 text-blue-800",
-        "En retard": "bg-red-100 text-red-800",
-        Terminé: "bg-green-100 text-green-800",
-      };
-
       const todoToAdd = {
         ...newTodo,
-        color: colorMap[newTodo.status],
       };
 
       setTodoItems((prev) => [...prev, todoToAdd]);
@@ -249,7 +231,6 @@ export default function HomePage() {
         mission: "",
         deadline: "",
         status: "En cours",
-        color: "bg-blue-100 text-blue-800",
       });
 
       onAddTodoModalClose();
@@ -275,8 +256,8 @@ export default function HomePage() {
                 <Button
                   className={
                     selectedCity === "tout"
-                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0 rounded"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded"
+                      ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
                   }
                   size="sm"
                   variant="solid"
@@ -286,7 +267,7 @@ export default function HomePage() {
                 </Button>
 
                 {/* Groupe des villes locales */}
-                <div className="flex rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                <div className="flex rounded-md overflow-hidden flex-shrink-0">
                   {["vannes", "nantes", "saint-brieuc"].map((cityKey) => {
                     const city = cities.find(c => c.key === cityKey);
 
@@ -295,7 +276,7 @@ export default function HomePage() {
                         key={cityKey}
                         className={
                           selectedCity === cityKey
-                            ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 rounded-none"
+                            ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
                         }
                         size="sm"
@@ -312,8 +293,8 @@ export default function HomePage() {
                 <Button
                   className={
                     selectedCity === "national"
-                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200 border-0 flex-shrink-0 rounded"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded"
+                      ? "bg-custom-blue-select/14 text-custom-blue-select border-0 flex-shrink-0 rounded-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
                   }
                   size="sm"
                   variant="solid"
@@ -412,18 +393,14 @@ export default function HomePage() {
                       className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <p className="text-sm font-light text-custom-text-color">
                           {event.clientName}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-custom-text-color-light">
                           {event.date}
                         </p>
                       </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${event.color}`}
-                      >
-                        {event.type}
-                      </span>
+                      <AgendaBadge type={event.type} />
                     </div>
                   ))}
                 </div>
@@ -451,18 +428,14 @@ export default function HomePage() {
                       className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <p className="text-sm font-light text-custom-text-color">
                           {item.mission}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-custom-text-color-light">
                           {item.deadline}
                         </p>
                       </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${item.color}`}
-                      >
-                        {item.status}
-                      </span>
+                      <TodoBadge status={item.status} />
                     </div>
                   ))}
                 </div>

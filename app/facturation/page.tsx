@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -22,18 +21,16 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { Chip } from "@heroui/chip";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { StyledSelect } from "@/components/styled-select";
-import { CategoryBadge } from "@/components";
+import { CategoryBadge, SortableColumnHeader } from "@/components";
+import { SelectItem } from "@heroui/select";
 
 interface Invoice {
   id: string;
@@ -44,6 +41,15 @@ interface Invoice {
   serviceType: string;
   status: "payee" | "en_attente" | "retard";
   comment?: string;
+}
+
+interface Client {
+  id: string;
+  nomEtablissement: string;
+  raisonSociale: string;
+  ville?: string;
+  categorie?: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
+  numeroSiret?: string;
 }
 
 interface PaginationInfo {
@@ -70,7 +76,6 @@ export default function FacturationPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [newInvoice, setNewInvoice] = useState({
     category: "shop",
@@ -80,7 +85,9 @@ export default function FacturationPage() {
     serviceType: "",
     status: "en_attente" as Invoice["status"],
     comment: "",
+    siret: "",
   });
+  const [isSearchingClient, setIsSearchingClient] = useState(false);
 
   const fetchInvoices = async () => {
     try {
@@ -114,6 +121,72 @@ export default function FacturationPage() {
     }
   };
 
+  const searchClientBySiret = async (siret: string) => {
+    if (!siret || siret.length < 14) return;
+
+    try {
+      setIsSearchingClient(true);
+      setError(null);
+
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ siret }),
+      });
+
+      if (!response.ok) {
+        setFieldErrors(prev => ({
+          ...prev,
+          siret: 'Aucun client trouvé avec ce numéro SIRET'
+        }));
+        return;
+      }
+
+      const client: Client = await response.json();
+
+      // Pré-remplir les champs avec les informations du client
+      setNewInvoice(prev => ({
+        ...prev,
+        establishmentName: client.nomEtablissement,
+        category: client.categorie?.toLowerCase() || "shop",
+        siret: siret,
+      }));
+
+      // Effacer les erreurs de validation
+      setFieldErrors(prev => ({
+        ...prev,
+        establishmentName: "",
+        siret: "",
+      }));
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsSearchingClient(false);
+    }
+  };
+
+  const openEditModal = (invoice: Invoice) => {
+    // Pré-remplir le formulaire avec les données de la facture existante
+    setNewInvoice({
+      category: invoice.category,
+      establishmentName: invoice.establishmentName,
+      date: invoice.date,
+      amount: invoice.amount.toString(),
+      serviceType: invoice.serviceType,
+      status: invoice.status,
+      comment: invoice.comment || "",
+      siret: "", // On ne peut pas récupérer le SIRET depuis la facture
+    });
+
+    setSelectedInvoice(invoice);
+    setError(null);
+    setFieldErrors({});
+    setIsAddModalOpen(true);
+  };
+
   useEffect(() => {
     fetchInvoices();
   }, [
@@ -138,6 +211,15 @@ export default function FacturationPage() {
     const errors = { ...fieldErrors };
 
     switch (fieldName) {
+      case 'siret':
+        if (!value || !value.trim()) {
+          errors.siret = 'Le numéro SIRET est requis';
+        } else if (value.length !== 14) {
+          errors.siret = 'Le numéro SIRET doit contenir 14 chiffres';
+        } else {
+          delete errors.siret;
+        }
+        break;
       case 'establishmentName':
         if (!value || !value.trim()) {
           errors.establishmentName = 'Le nom de l\'établissement est requis';
@@ -174,7 +256,7 @@ export default function FacturationPage() {
   };
 
   const validateAllFields = (invoice: any) => {
-    const fields = ['establishmentName', 'date', 'amount', 'serviceType'];
+    const fields = ['siret', 'establishmentName', 'date', 'amount', 'serviceType'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -191,7 +273,6 @@ export default function FacturationPage() {
       // Validation complète avant soumission
       if (!validateAllFields(newInvoice)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
-
         return;
       }
 
@@ -208,21 +289,22 @@ export default function FacturationPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-
         throw new Error(errorData.error || "Erreur lors de l'ajout de la facture");
       }
 
       setNewInvoice({
         category: "shop",
         establishmentName: "",
-        date: new Date().toISOString().split('T')[0], // Date d'aujourd'hui par défaut
+        date: new Date().toISOString().split('T')[0],
         amount: "",
         serviceType: "",
         status: "en_attente",
         comment: "",
+        siret: "",
       });
       setIsAddModalOpen(false);
-      setError(null); // Réinitialiser l'erreur
+      setSelectedInvoice(null);
+      setError(null);
       setFieldErrors({});
       fetchInvoices();
     } catch (err) {
@@ -235,47 +317,63 @@ export default function FacturationPage() {
 
     try {
       // Validation côté client
-      if (!selectedInvoice.establishmentName.trim()) {
+      if (!newInvoice.establishmentName.trim()) {
         setError("Le nom de l'établissement est requis");
-
         return;
       }
 
-      if (!selectedInvoice.date) {
+      if (!newInvoice.date) {
         setError("La date est requise");
-
         return;
       }
 
-      if (!selectedInvoice.amount || selectedInvoice.amount <= 0) {
+      if (!newInvoice.amount || parseFloat(newInvoice.amount) <= 0) {
         setError("Le montant doit être supérieur à 0");
-
         return;
       }
 
-      if (!selectedInvoice.serviceType) {
+      if (!newInvoice.serviceType) {
         setError("Le type de prestation est requis");
-
         return;
       }
+
+      const updatedInvoice = {
+        ...selectedInvoice,
+        category: newInvoice.category,
+        establishmentName: newInvoice.establishmentName,
+        date: newInvoice.date,
+        amount: parseFloat(newInvoice.amount),
+        serviceType: newInvoice.serviceType,
+        comment: newInvoice.comment,
+      };
 
       const response = await fetch(`/api/facturation/${selectedInvoice.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(selectedInvoice),
+        body: JSON.stringify(updatedInvoice),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-
         throw new Error(errorData.error || "Erreur lors de la modification de la facture");
       }
 
-      setIsEditModalOpen(false);
+      setIsAddModalOpen(false);
       setSelectedInvoice(null);
+      setNewInvoice({
+        category: "shop",
+        establishmentName: "",
+        date: new Date().toISOString().split('T')[0],
+        amount: "",
+        serviceType: "",
+        status: "en_attente",
+        comment: "",
+        siret: "",
+      });
       setError(null);
+      setFieldErrors({});
       fetchInvoices();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -347,9 +445,10 @@ export default function FacturationPage() {
           {/* En-tête avec onglets et bouton d'ajout */}
           <div className="flex justify-between items-center p-2">
             <Tabs
-              className="w-full"
+              className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1",
+                cursor: "w-[50px]  left-[12px] h-1 rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={selectedStatus}
               variant="underlined"
@@ -380,106 +479,56 @@ export default function FacturationPage() {
           {/* Tableau des factures */}
           <Table aria-label="Tableau des factures" shadow="none">
             <TableHeader>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto"
-                  variant="light"
-                  onPress={() => handleSort("category")}
-                >
-                  Catégorie
-                  {sortField === "category" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="category"
+                  label="Catégorie"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto "
-                  variant="light"
-                  onPress={() => handleSort("establishmentName")}
-                >
-                  Nom établissement
-                  {sortField === "establishmentName" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="establishmentName"
+                  label="Nom établissement"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto "
-                  variant="light"
-                  onPress={() => handleSort("date")}
-                >
-                  Date
-                  {sortField === "date" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="date"
+                  label="Date"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto text-sm font-ligth"
-                  variant="light"
-                  onPress={() => handleSort("amount")}
-                >
-                  Montant
-                  {sortField === "amount" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="amount"
+                  label="Montant"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto text-sm font-normal"
-                  variant="light"
-                  onPress={() => handleSort("serviceType")}
-                >
-                  Type de prestation
-                  {sortField === "serviceType" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUpIcon className="h-3 w-3" />
-                      ) : (
-                        <ChevronDownIcon className="h-3 w-3" />
-                      )}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                Type de prestation
               </TableColumn>
-              <TableColumn className="text-sm font-normal">Modifier</TableColumn>
-              <TableColumn className="text-sm font-normal">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+                <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
                   <TableCell>
                     <CategoryBadge category={invoice.category} />
                   </TableCell>
-                  <TableCell className="font-light">
+                  <TableCell className="font-light py-5">
                     {invoice.establishmentName}
                   </TableCell>
                   <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>
@@ -487,17 +536,13 @@ export default function FacturationPage() {
                     {formatAmount(invoice.amount)}
                   </TableCell>
                   <TableCell className="font-light">{getServiceTypeLabel(invoice.serviceType)}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-light">
                     <Button
                       isIconOnly
                       className="text-gray-600 hover:text-gray-800"
                       size="sm"
                       variant="light"
-                      onPress={() => {
-                        setError(null);
-                        setSelectedInvoice(invoice);
-                        setIsEditModalOpen(true);
-                      }}
+                      onPress={() => openEditModal(invoice)}
                     >
                       <PencilIcon className="h-4 w-4" />
                     </Button>
@@ -541,7 +586,9 @@ export default function FacturationPage() {
       {/* Modal d'ajout de facture */}
       <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <ModalContent>
-          <ModalHeader>Ajouter une nouvelle facture</ModalHeader>
+          <ModalHeader>
+            {selectedInvoice ? "Modifier la facture" : "Ajouter une nouvelle facture"}
+          </ModalHeader>
           <ModalBody>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -552,15 +599,52 @@ export default function FacturationPage() {
               </div>
             )}
             <div className="space-y-4">
+              <Input
+                isRequired
+                errorMessage={fieldErrors.siret}
+                isInvalid={!!fieldErrors.siret}
+                label="Client"
+                placeholder="Numéro de SIRET* (14 chiffres)"
+                value={newInvoice.siret}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, siret: value }));
+                  // Effacer l'erreur du SIRET quand l'utilisateur tape
+                  if (fieldErrors.siret) {
+                    setFieldErrors(prev => ({ ...prev, siret: "" }));
+                  }
+                  validateField('siret', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  if (value.length === 14) {
+                    searchClientBySiret(value);
+                  }
+                }}
+                endContent={
+                  isSearchingClient ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                  )
+                }
+              />
+
               <StyledSelect
+                isRequired
+                errorMessage={fieldErrors.category}
+                isInvalid={!!fieldErrors.category}
                 label="Catégorie"
+                placeholder="Sélectionnez une catégorie"
                 selectedKeys={newInvoice.category ? [newInvoice.category] : []}
-                onSelectionChange={(keys) =>
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
                   setNewInvoice((prev) => ({
                     ...prev,
-                    category: Array.from(keys)[0] as string,
-                  }))
-                }
+                    category: value,
+                  }));
+                  validateField('category', value);
+                }}
               >
                 <SelectItem key="shop">Shop</SelectItem>
                 <SelectItem key="restaurant">Restaurant</SelectItem>
@@ -576,44 +660,8 @@ export default function FacturationPage() {
                 value={newInvoice.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
-
-                  setNewInvoice((prev) => ({
-                    ...prev,
-                    establishmentName: value,
-                  }));
+                  setNewInvoice((prev) => ({ ...prev, establishmentName: value }));
                   validateField('establishmentName', value);
-                }}
-              />
-
-              <Input
-                isRequired
-                errorMessage={fieldErrors.date}
-                isInvalid={!!fieldErrors.date}
-                label="Date"
-                type="date"
-                value={newInvoice.date}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewInvoice((prev) => ({ ...prev, date: value }));
-                  validateField('date', value);
-                }}
-              />
-
-              <Input
-                isRequired
-                errorMessage={fieldErrors.amount}
-                isInvalid={!!fieldErrors.amount}
-                label="Montant (€)"
-                placeholder="Ex: 1457.98"
-                step="0.01"
-                type="number"
-                value={newInvoice.amount}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewInvoice((prev) => ({ ...prev, amount: value }));
-                  validateField('amount', value);
                 }}
               />
 
@@ -621,12 +669,11 @@ export default function FacturationPage() {
                 isRequired
                 errorMessage={fieldErrors.serviceType}
                 isInvalid={!!fieldErrors.serviceType}
-                label="Type de prestation"
+                label="Prestation"
                 placeholder="Sélectionnez une prestation"
                 selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
-
                   setNewInvoice((prev) => ({
                     ...prev,
                     serviceType: value,
@@ -639,179 +686,72 @@ export default function FacturationPage() {
                 <SelectItem key="studio">Studio</SelectItem>
               </StyledSelect>
 
-              <StyledSelect
-                label="Statut"
-                selectedKeys={[newInvoice.status]}
-                onSelectionChange={(keys) =>
-                  setNewInvoice((prev) => ({
-                    ...prev,
-                    status: Array.from(keys)[0] as Invoice["status"],
-                  }))
-                }
-              >
-                <SelectItem key="payee">Payée</SelectItem>
-                <SelectItem key="en_attente">En attente</SelectItem>
-                <SelectItem key="retard">Retard</SelectItem>
-              </StyledSelect>
+              <Input
+                isRequired
+                errorMessage={fieldErrors.amount}
+                isInvalid={!!fieldErrors.amount}
+                label="Montant (€)"
+                placeholder="Ex: 1457.98"
+                step="0.01"
+                type="number"
+                value={newInvoice.amount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, amount: value }));
+                  validateField('amount', value);
+                }}
+              />
+
+              <Input
+                isRequired
+                errorMessage={fieldErrors.date}
+                isInvalid={!!fieldErrors.date}
+                label="Date du paiement"
+                type="date"
+                value={newInvoice.date}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, date: value }));
+                  validateField('date', value);
+                }}
+              />
 
               <Textarea
                 label="Commentaire"
                 placeholder="Commentaires sur la facture..."
                 value={newInvoice.comment}
-                onChange={(e) =>
-                  setNewInvoice((prev) => ({
-                    ...prev,
-                    comment: e.target.value,
-                  }))
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewInvoice((prev) => ({ ...prev, comment: value }));
+                }}
               />
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
+            <Button variant="light" onPress={() => {
+              setIsAddModalOpen(false);
+              setSelectedInvoice(null);
+              setNewInvoice({
+                category: "shop",
+                establishmentName: "",
+                date: new Date().toISOString().split('T')[0],
+                amount: "",
+                serviceType: "",
+                status: "en_attente",
+                comment: "",
+                siret: "",
+              });
+              setFieldErrors({});
+              setError(null);
+            }}>
               Annuler
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
-              onPress={handleAddInvoice}
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
+              onPress={selectedInvoice ? handleEditInvoice : handleAddInvoice}
             >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Modal d'édition de facture */}
-      <Modal isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <ModalContent>
-          <ModalHeader>Modifier la facture</ModalHeader>
-          <ModalBody>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
-            {selectedInvoice && (
-              <div className="space-y-4">
-                <StyledSelect
-                  label="Catégorie"
-                  selectedKeys={[selectedInvoice.category]}
-                  onSelectionChange={(keys) =>
-                    setSelectedInvoice((prev) =>
-                      prev
-                        ? { ...prev, category: Array.from(keys)[0] as string }
-                        : null
-                    )
-                  }
-                >
-                  <SelectItem key="shop">Shop</SelectItem>
-                  <SelectItem key="restaurant">Restaurant</SelectItem>
-                  <SelectItem key="service">Service</SelectItem>
-                </StyledSelect>
-
-                <Input
-                  isRequired
-                  label="Nom de l'établissement"
-                  placeholder="Ex: L'ambiance"
-                  value={selectedInvoice.establishmentName}
-                  onChange={(e) =>
-                    setSelectedInvoice((prev) =>
-                      prev
-                        ? { ...prev, establishmentName: e.target.value }
-                        : null
-                    )
-                  }
-                />
-
-                <Input
-                  isRequired
-                  label="Date"
-                  type="date"
-                  value={selectedInvoice.date}
-                  onChange={(e) =>
-                    setSelectedInvoice((prev) =>
-                      prev ? { ...prev, date: e.target.value } : null
-                    )
-                  }
-                />
-
-                <Input
-                  isRequired
-                  label="Montant (€)"
-                  placeholder="Ex: 1457.98"
-                  step="0.01"
-                  type="number"
-                  value={selectedInvoice.amount.toString()}
-                  onChange={(e) =>
-                    setSelectedInvoice((prev) =>
-                      prev
-                        ? { ...prev, amount: parseFloat(e.target.value) || 0 }
-                        : null
-                    )
-                  }
-                />
-
-                <StyledSelect
-                  isRequired
-                  label="Type de prestation"
-                  placeholder="Sélectionnez une prestation"
-                  selectedKeys={selectedInvoice.serviceType ? [selectedInvoice.serviceType] : []}
-                  onSelectionChange={(keys) =>
-                    setSelectedInvoice((prev) =>
-                      prev ? { ...prev, serviceType: Array.from(keys)[0] as string } : null
-                    )
-                  }
-                >
-                  <SelectItem key="creation_contenu">Création de contenu</SelectItem>
-                  <SelectItem key="publication">Publication</SelectItem>
-                  <SelectItem key="studio">Studio</SelectItem>
-                </StyledSelect>
-
-                <StyledSelect
-                  label="Statut"
-                  selectedKeys={[selectedInvoice.status]}
-                  onSelectionChange={(keys) =>
-                    setSelectedInvoice((prev) =>
-                      prev
-                        ? {
-                          ...prev,
-                          status: Array.from(keys)[0] as Invoice["status"],
-                        }
-                        : null
-                    )
-                  }
-                >
-                  <SelectItem key="payee">Payée</SelectItem>
-                  <SelectItem key="en_attente">En attente</SelectItem>
-                  <SelectItem key="retard">Retard</SelectItem>
-                </StyledSelect>
-
-                <Textarea
-                  label="Commentaire"
-                  placeholder="Commentaires sur la facture..."
-                  value={selectedInvoice.comment || ""}
-                  onChange={(e) =>
-                    setSelectedInvoice((prev) =>
-                      prev ? { ...prev, comment: e.target.value } : null
-                    )
-                  }
-                />
-              </div>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsEditModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleEditInvoice}
-            >
-              Modifier
+              {selectedInvoice ? "Modifier" : "Ajouter"}
             </Button>
           </ModalFooter>
         </ModalContent>

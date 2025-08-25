@@ -33,6 +33,7 @@ import { CategoryBadge } from "@/components/badges";
 
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
+import { SortableColumnHeader } from "@/components";
 
 interface Prospect {
   id: string;
@@ -52,12 +53,19 @@ interface Prospect {
 }
 
 interface ApiProspect {
+  id: string;
   nomEtablissement: string;
   categorie: string;
   ville: string;
   suiviPar: string;
   commentaires: string;
   dateRelance: string;
+  telephone?: string;
+  datePremierRendezVous?: string;
+  vientDeRencontrer?: boolean;
+  email?: string;
+  adresse?: string;
+  siret?: string;
 }
 
 interface PaginationInfo {
@@ -89,6 +97,7 @@ export default function ProspectsPage() {
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [editFieldErrors, setEditFieldErrors] = useState<{ [key: string]: string }>({});
   const previousTabRef = useRef(selectedTab);
 
   const fetchProspects = async () => {
@@ -104,77 +113,45 @@ export default function ProspectsPage() {
         previousTabRef.current = selectedTab;
       }
 
-      let url = '';
-      let data: any;
-
       // Construire les paramètres de requête
       const params = new URLSearchParams();
+      params.append('statut', selectedTab);
       if (searchTerm) params.append('q', searchTerm);
+      if (selectedCategory && selectedCategory !== 'tous') params.append('categorie', selectedCategory);
+      if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.append('suiviPar', selectedSuiviPar);
       if (sortField) params.append('orderBy', sortField);
       if (sortDirection) params.append('order', sortDirection);
       params.append('limit', pagination.itemsPerPage.toString());
       params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
 
       const queryString = params.toString();
+      const url = `/api/prospects${queryString ? `?${queryString}` : ''}`;
 
-      // Appeler l'endpoint approprié selon l'onglet sélectionné
-      switch (selectedTab) {
-        case 'a_contacter':
-          url = `/api/prospects/prospects${queryString ? `?${queryString}` : ''}`;
-          const prospectsRes = await fetch(url);
-          if (!prospectsRes.ok) {
-            throw new Error("Erreur lors de la récupération des prospects");
-          }
-          data = await prospectsRes.json();
-          setProspects(data.prospects || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        case 'en_discussion':
-          url = `/api/prospects/discussion${queryString ? `?${queryString}` : ''}`;
-          const discussionRes = await fetch(url);
-          if (!discussionRes.ok) {
-            throw new Error("Erreur lors de la récupération des discussions");
-          }
-          data = await discussionRes.json();
-          setProspects(data.discussions || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        case 'glacial':
-          url = `/api/prospects/glacial${queryString ? `?${queryString}` : ''}`;
-          const glacialRes = await fetch(url);
-          if (!glacialRes.ok) {
-            throw new Error("Erreur lors de la récupération des prospects glaciaux");
-          }
-          data = await glacialRes.json();
-          setProspects(data.prospects || []);
-          setViewCount(data.viewCount ?? null);
-          setPagination(prev => ({
-            ...prev,
-            totalItems: data.totalCount || 0,
-            totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-          }));
-          break;
-
-        default:
-          break;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des prospects");
       }
+
+      const data = await response.json();
+
+      // Adapter la réponse selon le statut
+      if (selectedTab === 'en_discussion') {
+        setProspects(data.discussions || []);
+      } else {
+        setProspects(data.prospects || []);
+      }
+
+      setViewCount(data.viewCount ?? null);
+      setPagination(prev => ({
+        ...prev,
+        totalItems: data.totalCount || 0,
+        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
+      }));
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       console.log('finally');
-
       setLoading(false);
     }
   };
@@ -200,22 +177,82 @@ export default function ProspectsPage() {
     }
   };
 
+  const validateEditField = (fieldName: string, value: any) => {
+    const errors = { ...editFieldErrors };
+
+    switch (fieldName) {
+      case 'nomEtablissement':
+        if (!value || !value.trim()) {
+          errors.nomEtablissement = 'Le nom de l\'établissement est requis';
+        } else {
+          delete errors.nomEtablissement;
+        }
+        break;
+      case 'ville':
+        if (!value || !value.trim()) {
+          errors.ville = 'La ville est requise';
+        } else {
+          delete errors.ville;
+        }
+        break;
+      case 'telephone':
+        if (!value || !value.trim()) {
+          errors.telephone = 'Le téléphone est requis';
+        } else {
+          delete errors.telephone;
+        }
+        break;
+      case 'datePremierRendezVous':
+        if (!value) {
+          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
+        } else {
+          delete errors.datePremierRendezVous;
+        }
+        break;
+      case 'dateRelance':
+        if (!value) {
+          errors.dateRelance = 'La date de relance est requise';
+        } else {
+          delete errors.dateRelance;
+        }
+        break;
+    }
+
+    setEditFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateAllEditFields = (prospect: Prospect) => {
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateEditField(field, prospect[field as keyof Prospect]);
+      if (!fieldValid) isValid = false;
+    });
+
+    return isValid;
+  };
+
   const handleEditProspect = (prospect: ApiProspect) => {
     setError(null);
+    setEditFieldErrors({});
     // Convertir ApiProspect en Prospect pour l'édition
     const prospectForEdit: Prospect = {
-      id: '', // L'API ne retourne pas d'ID, on devra adapter
-      siret: '',
+      id: prospect.id,
+      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
-      telephone: '',
+      telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: '',
+      datePremierRendezVous: prospect.datePremierRendezVous || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: false,
+      vientDeRencontrer: prospect.vientDeRencontrer || false,
       commentaire: prospect.commentaires,
       suiviPar: prospect.suiviPar,
+      email: prospect.email,
+      adresse: prospect.adresse,
     };
     setEditingProspect(prospectForEdit);
     setIsEditModalOpen(true);
@@ -225,29 +262,9 @@ export default function ProspectsPage() {
     if (!editingProspect) return;
 
     try {
-      // Validation côté client
-      if (!editingProspect.nomEtablissement.trim()) {
-        setError("Le nom de l'établissement est requis");
-        return;
-      }
-
-      if (!editingProspect.ville.trim()) {
-        setError("La ville est requise");
-        return;
-      }
-
-      if (!editingProspect.telephone.trim()) {
-        setError("Le téléphone est requis");
-        return;
-      }
-
-      if (!editingProspect.datePremierRendezVous) {
-        setError("La date du premier rendez-vous est requise");
-        return;
-      }
-
-      if (!editingProspect.dateRelance) {
-        setError("La date de relance est requise");
+      // Validation complète avant soumission
+      if (!validateAllEditFields(editingProspect)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
         return;
       }
 
@@ -260,14 +277,22 @@ export default function ProspectsPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la modification du prospect");
+        let errorMessage = "Erreur lors de la modification du prospect";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // Si la réponse n'est pas du JSON valide, utiliser le message par défaut
+          console.error('Erreur de parsing JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       // Fermer le modal et recharger les prospects
       setIsEditModalOpen(false);
       setEditingProspect(null);
       setError(null);
+      setEditFieldErrors({});
       fetchProspects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -303,18 +328,20 @@ export default function ProspectsPage() {
   const openConvertModal = (prospect: ApiProspect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
-      id: '', // L'API ne retourne pas d'ID, on devra adapter
-      siret: '',
+      id: prospect.id,
+      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
-      telephone: '',
+      telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: '',
+      datePremierRendezVous: prospect.datePremierRendezVous || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: false,
+      vientDeRencontrer: prospect.vientDeRencontrer || false,
       commentaire: prospect.commentaires,
       suiviPar: prospect.suiviPar,
+      email: prospect.email,
+      adresse: prospect.adresse,
     };
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
@@ -352,64 +379,24 @@ export default function ProspectsPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full" shadow="none">
+      <Card className="w-full shadow-none" shadow="none">
         <CardBody>
           {/* Tabs */}
-          <Tabs
-            className="mb-6"
-            classNames={{
-              cursor: "w-[50px] left-[12px] h-1",
-            }}
-            selectedKey={selectedTab}
-            variant="underlined"
-            onSelectionChange={(key) => setSelectedTab(key as string)}
-          >
-            <Tab key="a_contacter" title="À contacter" />
-            <Tab key="en_discussion" title="En discussion" />
-            <Tab key="glacial" title="Glacial" />
-          </Tabs>
-
-          {/* Header with filters */}
-          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
-            <div className="flex items-center gap-4">
-              <StyledSelect
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="FOOD">FOOD</SelectItem>
-                <SelectItem key="SHOP">SHOP</SelectItem>
-                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                <SelectItem key="FUN">FUN</SelectItem>
-                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-              </StyledSelect>
-
-              <StyledSelect
-                className="w-48"
-                placeholder="Suivi par"
-                selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedSuiviPar(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="nom">Nom</SelectItem>
-                <SelectItem key="prenom">Prénom</SelectItem>
-              </StyledSelect>
-
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsProspectModalOpen(true)}
-              >
-                Ajouter un prospect
-              </Button>
-            </div>
-
+          <div className="flex justify-between items-center">
+            <Tabs
+              className="mb-6  pt-3 text-xl"
+              classNames={{
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
+              }}
+              selectedKey={selectedTab}
+              variant="underlined"
+              onSelectionChange={(key) => setSelectedTab(key as string)}
+            >
+              <Tab key="a_contacter" title="À contacter" />
+              <Tab key="en_discussion" title="En discussion" />
+              <Tab key="glacial" title="Glacial" />
+            </Tabs>
             <div className="relative">
               <Input
                 className="w-64 pr-4 pl-10"
@@ -428,77 +415,110 @@ export default function ProspectsPage() {
             </div>
           </div>
 
+
+          {/* Header with filters */}
+          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
+            <div className="flex items-center gap-4">
+              <StyledSelect
+                className="w-32"
+                placeholder="Catégorie"
+                selectedKeys={selectedCategory ? [selectedCategory] : []}
+                onSelectionChange={(keys) =>
+                  setSelectedCategory(Array.from(keys)[0] as string)
+                }
+              >
+                <SelectItem key="tous">Tous</SelectItem>
+                <SelectItem key="FOOD">FOOD</SelectItem>
+                <SelectItem key="SHOP">SHOP</SelectItem>
+                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                <SelectItem key="FUN">FUN</SelectItem>
+                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+              </StyledSelect>
+
+              <StyledSelect
+                className="w-32"
+                placeholder="Suivi par"
+                selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
+                onSelectionChange={(keys) =>
+                  setSelectedSuiviPar(Array.from(keys)[0] as string)
+                }
+              >
+                <SelectItem key="tous">Tous</SelectItem>
+                <SelectItem key="nom">Nom</SelectItem>
+                <SelectItem key="prenom">Prénom</SelectItem>
+              </StyledSelect>
+
+            </div>
+
+
+          </div>
+
           {/* Table */}
           {<Table aria-label="Tableau des prospects" shadow="none">
-            <TableHeader>
-              <TableColumn>Nom établissement</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("categorie")}
-                >
-                  Catégorie
-                  {sortField === "categorie" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+            <TableHeader className="mb-4 ">
+              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="categorie"
+                  label="Catégorie"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>Ville</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("dateRelance")}
-                >
-                  Date de relance
-                  {sortField === "dateRelance" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="dateRelance"
+                  label="Date de relance"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("suiviPar")}
-                >
-                  Suivi par
-                  {sortField === "suiviPar" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="suiviPar"
+                  label="Suivi par"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>Commentaire</TableColumn>
-              <TableColumn>Modifier</TableColumn>
-              <TableColumn>Basculer en client</TableColumn>
+              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+              <TableColumn className="font-light text-sm">Modifier</TableColumn>
+              <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
             </TableHeader>
-            <TableBody>
+            <TableBody className="mt-4">
               {
 
                 loading ? (
                   <TableRow>
-                    <TableCell className="text-center" colSpan={8}>
+                    <TableCell className="text-center" colSpan={7}>
                       <Spinner className="text-black dark:text-white p-20" size="lg" />
                     </TableCell>
                   </TableRow>
                 ) :
-                  prospects.map((prospect, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-light">
+                  prospects.map((prospect) => (
+                    <TableRow className="border-t border-gray-100  dark:border-gray-700" key={prospect.id}>
+                      <TableCell className="font-light py-5">
                         {prospect.nomEtablissement}
                       </TableCell>
                       <TableCell className="font-light">
                         <CategoryBadge category={prospect.categorie} />
                       </TableCell>
-                      <TableCell className="font-light">{prospect.ville}</TableCell>
-                      <TableCell className="font-light">{prospect.dateRelance}</TableCell>
+                      <TableCell className="font-light">
+                        {prospect.dateRelance
+                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          }).replace(/\//g, '.')
+                          : "-"
+                        }
+                      </TableCell>
                       <TableCell className="font-light">{prospect.suiviPar}</TableCell>
                       <TableCell className="font-light">{prospect.commentaires}</TableCell>
                       <TableCell>
@@ -515,7 +535,8 @@ export default function ProspectsPage() {
                       </TableCell>
                       <TableCell className="font-light">
                         <Button
-                          color="secondary"
+                          color="primary"
+                          className="bg-gray-800 text-white dark:bg-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-200 px-6"
                           size="sm"
                           variant="flat"
                           onPress={() => openConvertModal(prospect)}
@@ -605,6 +626,8 @@ export default function ProspectsPage() {
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.nomEtablissement}
+                    isInvalid={!!editFieldErrors.nomEtablissement}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -612,17 +635,21 @@ export default function ProspectsPage() {
                     label="Nom établissement"
                     placeholder="Nom de l'établissement"
                     value={editingProspect.nomEtablissement}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
                         prev
-                          ? { ...prev, nomEtablissement: e.target.value }
+                          ? { ...prev, nomEtablissement: value }
                           : null
-                      )
-                    }
+                      );
+                      validateEditField('nomEtablissement', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.ville}
+                    isInvalid={!!editFieldErrors.ville}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -630,15 +657,19 @@ export default function ProspectsPage() {
                     label="Ville"
                     placeholder="Paris"
                     value={editingProspect.ville || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, ville: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, ville: value } : null
+                      );
+                      validateEditField('ville', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.telephone}
+                    isInvalid={!!editFieldErrors.telephone}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -646,11 +677,13 @@ export default function ProspectsPage() {
                     label="Téléphone"
                     placeholder="01 23 45 67 89"
                     value={editingProspect.telephone || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, telephone: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, telephone: value } : null
+                      );
+                      validateEditField('telephone', value);
+                    }}
                   />
 
                   <StyledSelect
@@ -726,6 +759,8 @@ export default function ProspectsPage() {
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.datePremierRendezVous}
+                    isInvalid={!!editFieldErrors.datePremierRendezVous}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -733,17 +768,21 @@ export default function ProspectsPage() {
                     label="Date du premier rendez-vous"
                     type="date"
                     value={editingProspect.datePremierRendezVous || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
                         prev
-                          ? { ...prev, datePremierRendezVous: e.target.value }
+                          ? { ...prev, datePremierRendezVous: value }
                           : null
-                      )
-                    }
+                      );
+                      validateEditField('datePremierRendezVous', value);
+                    }}
                   />
 
                   <Input
                     isRequired
+                    errorMessage={editFieldErrors.dateRelance}
+                    isInvalid={!!editFieldErrors.dateRelance}
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
@@ -751,11 +790,13 @@ export default function ProspectsPage() {
                     label="Date de la relance"
                     type="date"
                     value={editingProspect.dateRelance || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setEditingProspect((prev) =>
-                        prev ? { ...prev, dateRelance: e.target.value } : null
-                      )
-                    }
+                        prev ? { ...prev, dateRelance: value } : null
+                      );
+                      validateEditField('dateRelance', value);
+                    }}
                   />
 
                   <StyledSelect
@@ -856,12 +897,21 @@ export default function ProspectsPage() {
               onPress={() => {
                 setIsEditModalOpen(false);
                 setEditingProspect(null);
+                setEditFieldErrors({});
               }}
             >
               Annuler
             </Button>
             <Button
               className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              isDisabled={
+                Object.keys(editFieldErrors).length > 0 ||
+                !editingProspect?.nomEtablissement ||
+                !editingProspect?.ville ||
+                !editingProspect?.telephone ||
+                !editingProspect?.datePremierRendezVous ||
+                !editingProspect?.dateRelance
+              }
               onPress={handleUpdateProspect}
             >
               Modifier

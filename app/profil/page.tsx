@@ -233,9 +233,10 @@ export default function ProfilPage() {
         <CardBody className="p-6">
           {/* Onglets */}
           <Tabs
-            className="w-full mb-6"
+            className="w-full pt-3 mb-6"
             classNames={{
-              cursor: "w-[50px] left-[12px] h-1",
+              cursor: "w-[50px]  left-[12px] h-1   rounded",
+              tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
             }}
             selectedKey={activeTab}
             variant='underlined'
