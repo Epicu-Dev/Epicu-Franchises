@@ -119,6 +119,37 @@ export default function TestProspects() {
   const [filterSuivi, setFilterSuivi] = useState<string | null>(null);
   const [collaboratorSearch, setCollaboratorSearch] = useState<string>('');
 
+  // --- Prospects creation / edit (test hooks)
+  const [pSiret, setPSiret] = useState<string>('');
+  const [pNom, setPNom] = useState<string>('');
+  const [pVille, setPVille] = useState<string>('');
+  const [pVilleId, setPVilleId] = useState<string>('');
+  const [villesOptions, setVillesOptions] = useState<{ id: string; ville: string }[]>([]);
+  const [villesQuery, setVillesQuery] = useState<string>('');
+  const [villesLoading, setVillesLoading] = useState<boolean>(false);
+  const [pTelephone, setPTelephone] = useState<string>('');
+  const [pCategorie, setPCategorie] = useState<string>('');
+  const [pCategorieId, setPCategorieId] = useState<string>('');
+  const [categoriesOptions, setCategoriesOptions] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesQuery, setCategoriesQuery] = useState<string>('');
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
+  const [pStatut, setPStatut] = useState<string>('');
+  const [pDatePremier, setPDatePremier] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [pDateRelance, setPDateRelance] = useState<string>('');
+  const [pJeRencontre, setPJeRencontre] = useState<boolean>(false);
+  const [pCommentaires, setPCommentaires] = useState<string>('');
+  const [pCreating, setPCreating] = useState<boolean>(false);
+  const [pCreateError, setPCreateError] = useState<string | null>(null);
+  const [pCreateSuccess, setPCreateSuccess] = useState<string | null>(null);
+
+  // Edit by id
+  const [pEditId, setPEditId] = useState<string>('');
+  const [pUpdateLoading, setPUpdateLoading] = useState<boolean>(false);
+  const [pUpdateError, setPUpdateError] = useState<string | null>(null);
+  const [pUpdateSuccess, setPUpdateSuccess] = useState<string | null>(null);
+
+  
+
   // Pagination
   const [lostNextOffset, setLostNextOffset] = useState<number | null>(0);
   const [lostHasMore, setLostHasMore] = useState<boolean>(false);
@@ -132,6 +163,63 @@ export default function TestProspects() {
   const [collabHasMore, setCollabHasMore] = useState<boolean>(false);
 
   const [selected, setSelected] = useState<string | null>('categories');
+
+  // fetch villes / categories helper (placed after `selected` declaration)
+  const fetchVilles = async (q = '') => {
+    setVillesLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      params.set('limit', '10');
+      const res = await authFetch(`/api/villes?${params.toString()}`);
+      if (!res.ok) return setVillesOptions([]);
+      const data = await res.json();
+      setVillesOptions(data.results || []);
+    } catch (e) {
+      setVillesOptions([]);
+    } finally {
+      setVillesLoading(false);
+    }
+  };
+
+  const fetchCategories = async (q = '') => {
+    setCategoriesLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      params.set('limit', '10');
+      const res = await authFetch(`/api/categories?${params.toString()}`);
+      if (!res.ok) return setCategoriesOptions([]);
+      const data = await res.json();
+      setCategoriesOptions(data.results || []);
+    } catch (e) {
+      setCategoriesOptions([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // debounce queries
+  useEffect(() => {
+    const t = setTimeout(() => fetchVilles(villesQuery), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [villesQuery]);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchCategories(categoriesQuery), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesQuery]);
+
+  // when viewing prospects, prefetch defaults
+  useEffect(() => {
+    if (selected === 'prospects') {
+      fetchVilles('');
+      fetchCategories('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   // ——— Agenda ———
   const [agendaStart, setAgendaStart] = useState<string>(() => {
@@ -858,6 +946,116 @@ export default function TestProspects() {
     </Card>
   );
 
+  // Prospect creation & edit UI (test)
+  // NOTE: Prospect create/edit markup will be inlined into the render to avoid
+  // recreating component functions on every render (which caused input focus loss).
+
+  // Create prospect (client) -> POST /api/prospects/prospects
+  const createProspect = async () => {
+    setPCreateError(null);
+    setPCreateSuccess(null);
+    if (!pSiret || !pNom || !pVille || !pTelephone || !pCategorie || !pStatut || !pDatePremier || !pDateRelance) {
+      setPCreateError('Veuillez renseigner tous les champs requis');
+      return;
+    }
+    // Validate SIRET: 14 digits (allow spaces in input)
+    const siretClean = String(pSiret || '').replace(/\s+/g, '');
+    if (!/^\d{14}$/.test(siretClean)) {
+      setPCreateError('SIRET invalide — doit contenir exactement 14 chiffres');
+      return;
+    }
+    setPCreating(true);
+    try {
+      const payload: any = {
+        'SIRET': siretClean,
+        "Nom de l'établissement": pNom,
+        'Ville EPICU': pVille,
+        'Téléphone': pTelephone,
+        'Catégorie': pCategorie,
+        'Statut': pStatut,
+        'Date du premier contact': pDatePremier,
+        'Date de relance': pDateRelance,
+        'Je viens de le rencontrer (bool)': Boolean(pJeRencontre),
+      };
+      if (pCommentaires) payload['Commentaires'] = pCommentaires;
+
+      const res = await authFetch('/api/prospects/prospects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la création du prospect');
+      }
+      const created = await res.json();
+      setPCreateSuccess(`Prospect créé (id: ${created.id})`);
+      // reset minimal fields
+      setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires('');
+      // refresh list if showing prospects
+      if (selected === 'prospects') loadCollection('prospects');
+    } catch (err: any) {
+      console.error('createProspect error', err);
+      setPCreateError(err?.message || 'Erreur lors de la création');
+    } finally {
+      setPCreating(false);
+    }
+  };
+
+  const updateProspect = async () => {
+    setPUpdateError(null);
+    setPUpdateSuccess(null);
+    if (!pEditId) {
+      setPUpdateError('Record id requis');
+      return;
+    }
+    setPUpdateLoading(true);
+    try {
+      const payload: any = {};
+      if (pSiret) {
+        const siretClean = String(pSiret).replace(/\s+/g, '');
+        if (!/^\d{14}$/.test(siretClean)) {
+          setPUpdateError('SIRET invalide — doit contenir exactement 14 chiffres');
+          setPUpdateLoading(false);
+          return;
+        }
+        payload['SIRET'] = siretClean;
+      }
+      if (pNom) payload["Nom de l'établissement"] = pNom;
+      if (pVille) payload['Ville EPICU'] = pVille;
+      if (pTelephone) payload['Téléphone'] = pTelephone;
+      if (pCategorie) payload['Catégorie'] = pCategorie;
+      if (pStatut) payload['Statut'] = pStatut;
+      if (pDatePremier) payload['Date du premier contact'] = pDatePremier;
+      if (pDateRelance) payload['Date de relance'] = pDateRelance;
+      if (typeof pJeRencontre === 'boolean') payload['Je viens de le rencontrer (bool)'] = Boolean(pJeRencontre);
+      if (pCommentaires) payload['Commentaires'] = pCommentaires;
+
+      if (Object.keys(payload).length === 0) {
+        setPUpdateError('Aucun champ à mettre à jour');
+        return;
+      }
+
+      const res = await authFetch(`/api/prospects/prospects?id=${encodeURIComponent(pEditId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la mise à jour');
+      }
+      const updated = await res.json();
+      setPUpdateSuccess(`Prospect mis à jour (id: ${updated.id})`);
+      if (selected === 'prospects') loadCollection('prospects');
+    } catch (err: any) {
+      console.error('updateProspect error', err);
+      setPUpdateError(err?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setPUpdateLoading(false);
+    }
+  };
+
   const TodoList = () => (
     <div className="space-y-3">
       <h2 className="text-xl font-semibold">Mes TODO</h2>
@@ -1111,6 +1309,78 @@ export default function TestProspects() {
 
           {/* Panneau TODO */}
           <TodoControls />
+          
+          {/* Panneau Prospects (édition test) - inlined to avoid remounts */}
+          <div className="">
+            <div className="bg-white border rounded-2xl shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-gray-900">Prospect — Édition (test)</h4>
+              </div>
+              <div className="space-y-3">
+                <h5 className="font-medium">Modifier un prospect (par id)</h5>
+                <p className="text-sm text-gray-600">Collez l'id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Record id (rec...)</label>
+                    <Input type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} placeholder="recXXXXXXXXXXXX" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Champ à mettre à jour (ex: Statut)</label>
+                    <Input type="text" onChange={() => {}} placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" disabled />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Nom de l'établissement</label>
+                    <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Ville EPICU</label>
+                    <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                      const id = e.target.value;
+                      if (!id) { setPVille(''); setPVilleId(''); return; }
+                      const sel = villesOptions.find(v => v.id === id);
+                      if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
+                    }}>
+                      <option value="">— Aucun —</option>
+                      {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Catégorie</label>
+                    <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                      const id = e.target.value;
+                      if (!id) { setPCategorie(''); setPCategorieId(''); return; }
+                      const sel = categoriesOptions.find(c => c.id === id);
+                      if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
+                    }}>
+                      <option value="">— Aucun —</option>
+                      {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Statut</label>
+                    <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Date de relance</label>
+                    <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Commentaires</label>
+                    <Textarea rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                  </div>
+                </div>
+                {pUpdateError && <div className="text-red-500 text-sm">{pUpdateError}</div>}
+                {pUpdateSuccess && <div className="text-emerald-600 text-sm">{pUpdateSuccess}</div>}
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={() => updateProspect()} disabled={pUpdateLoading}>{pUpdateLoading ? 'Mise à jour…' : 'Mettre à jour le prospect'}</Button>
+                  <Button variant="ghost" onClick={() => { setPEditId(''); setPUpdateError(null); setPUpdateSuccess(null); }}>Annuler</Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </aside>
 
         {/* ————————————————— Contenu ————————————————— */}
@@ -1199,7 +1469,85 @@ export default function TestProspects() {
                 </div>
               </Card>
 
-              {selected === 'prospects' && renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+              {selected === 'prospects' && (
+                <div className="space-y-4">
+                  <div className="bg-white border rounded-2xl shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900">Créer un prospect (test)</h4>
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L'id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">SIRET</label>
+                          <Input type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} placeholder="SIRET" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Nom de l'établissement</label>
+                          <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} placeholder="Nom établissement" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Ville EPICU</label>
+                          <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} placeholder="Rechercher une ville…" />
+                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                            const id = e.target.value;
+                            if (!id) { setPVille(''); setPVilleId(''); return; }
+                            const sel = villesOptions.find(v => v.id === id);
+                            if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
+                          }}>
+                            <option value="">— Aucun —</option>
+                            {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Téléphone</label>
+                          <Input type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} placeholder="Téléphone" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Catégorie</label>
+                          <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} placeholder="Rechercher une catégorie…" />
+                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                            const id = e.target.value;
+                            if (!id) { setPCategorie(''); setPCategorieId(''); return; }
+                            const sel = categoriesOptions.find(c => c.id === id);
+                            if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
+                          }}>
+                            <option value="">— Aucun —</option>
+                            {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Statut</label>
+                          <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} placeholder="Statut" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Date du premier contact</label>
+                          <Input type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium">Date de relance</label>
+                          <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input id="jeRencontreMain" type="checkbox" checked={pJeRencontre} onChange={(e) => setPJeRencontre(e.target.checked)} />
+                          <label htmlFor="jeRencontreMain" className="text-sm">Je viens de le rencontrer</label>
+                        </div>
+                        <div className="flex flex-col gap-1 md:col-span-2">
+                          <label className="text-sm font-medium">Commentaires</label>
+                          <Textarea rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                        </div>
+                      </div>
+                      {pCreateError && <div className="text-red-500 text-sm">{pCreateError}</div>}
+                      {pCreateSuccess && <div className="text-emerald-600 text-sm">{pCreateSuccess}</div>}
+                      <div className="flex gap-2 pt-2">
+                        <Button onClick={() => createProspect()} disabled={pCreating}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
+                        <Button variant="ghost" onClick={() => { setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
+                      </div>
+                    </div>
+                  </div>
+                  {renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+                </div>
+              )}
               {selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
             </div>
           )}

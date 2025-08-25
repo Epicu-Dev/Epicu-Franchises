@@ -4,8 +4,9 @@ import { base } from '../constants';
 const VIEW_NAME = '🟡 Prospects';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 
-export default async function GET(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    if (req.method === 'GET') {
     const limitRaw = parseInt((req.query.limit as string) || '10', 10);
     const offsetRaw = parseInt((req.query.offset as string) || '0', 10);
     const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 10 : limitRaw)); // Airtable pageSize max 100
@@ -170,6 +171,160 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         prevOffset: Math.max(0, offset - limit),
       },
     });
+    return;
+    }
+    // --- POST: create a prospect
+    if (req.method === 'POST') {
+      try {
+        const body = req.body || {};
+
+        // Respect exact field names
+        const SIRET = body['SIRET'];
+        // server-side validation: SIRET must be exactly 14 digits
+        if (SIRET && typeof SIRET === 'string') {
+          const siretClean = SIRET.replace(/\s+/g, '');
+          if (!/^\d{14}$/.test(siretClean)) return res.status(400).json({ error: 'SIRET invalide — doit contenir exactement 14 chiffres' });
+        }
+        const nom = body["Nom de l'établissement"];
+        const villeRaw = body['Ville EPICU'];
+        const telephone = body['Téléphone'];
+        const categorieRaw = body['Catégorie'];
+        const statut = body['Statut'];
+        const datePremier = body['Date du premier contact'];
+        const dateRelance = body['Date de relance'];
+        const jeRencontre = body['Je viens de le rencontrer (bool)'];
+        const commentaires = body['Commentaires'];
+
+        // Required validation
+        const missing: string[] = [];
+        if (!SIRET) missing.push('SIRET');
+        if (!nom) missing.push("Nom de l'établissement");
+        if (!villeRaw) missing.push('Ville EPICU');
+        if (!telephone) missing.push('Téléphone');
+        if (!categorieRaw) missing.push('Catégorie');
+        if (!statut) missing.push('Statut');
+        if (!datePremier) missing.push('Date du premier contact');
+        if (!dateRelance) missing.push('Date de relance');
+
+  if (missing.length > 0) return res.status(400).json({ error: 'Champs requis manquants', missing });
+
+        const fieldsToCreate: any = {};
+  fieldsToCreate['SIRET'] = String(SIRET).replace(/\s+/g, '');
+        fieldsToCreate["Nom de l'établissement"] = nom;
+        fieldsToCreate['Téléphone'] = telephone;
+        fieldsToCreate['Statut'] = statut;
+        fieldsToCreate['Date du premier contact'] = datePremier;
+        fieldsToCreate['Date de relance'] = dateRelance;
+        if (typeof jeRencontre !== 'undefined') fieldsToCreate['Je viens de le rencontrer (bool)'] = Boolean(jeRencontre);
+        if (commentaires) fieldsToCreate['Commentaires'] = commentaires;
+
+        // Resolve Ville EPICU relation (table 'VILLES EPICU')
+        const ensureRelatedRecord = async (tableName: string, candidateValue: any, candidateFields: string[]) => {
+          if (!candidateValue) return null;
+          if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
+          const val = String(candidateValue).trim();
+          if (!val) return null;
+          const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+          try {
+            const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+            if (found && found.length > 0) return found[0].id;
+          } catch (e) {}
+          try {
+            const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+            return created[0].id;
+          } catch (e) { return null; }
+        };
+
+        const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
+        if (villeId) fieldsToCreate['Ville'] = [villeId];
+
+        const catId = await ensureRelatedRecord('Catégories', categorieRaw, ['Name']);
+        if (catId) fieldsToCreate['Catégorie'] = [catId];
+
+        const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
+        return res.status(201).json({ id: created[0].id, fields: created[0].fields });
+      } catch (err: any) {
+        console.error('prospects POST error', err);
+        return res.status(500).json({ error: 'Erreur création prospect', details: err?.message || String(err) });
+      }
+    }
+
+    // --- PATCH: update existing prospect
+    if (req.method === 'PATCH') {
+      try {
+        const body = req.body || {};
+        const id = (req.query.id as string) || body.id;
+        if (!id) return res.status(400).json({ error: 'id requis' });
+
+        const fieldsToUpdate: any = {};
+        if (Object.prototype.hasOwnProperty.call(body, 'SIRET')) {
+          const s = String(body['SIRET'] || '').replace(/\s+/g, '');
+          if (!/^\d{14}$/.test(s)) return res.status(400).json({ error: 'SIRET invalide — doit contenir exactement 14 chiffres' });
+          fieldsToUpdate['SIRET'] = s;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "Nom de l'établissement")) fieldsToUpdate["Nom de l'établissement"] = body["Nom de l'établissement"];
+        if (Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fieldsToUpdate['Téléphone'] = body['Téléphone'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Statut')) fieldsToUpdate['Statut'] = body['Statut'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Date du premier contact')) fieldsToUpdate['Date du premier contact'] = body['Date du premier contact'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) fieldsToUpdate['Date de relance'] = body['Date de relance'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Je viens de le rencontrer (bool)')) fieldsToUpdate['Je viens de le rencontrer (bool)'] = Boolean(body['Je viens de le rencontrer (bool)']);
+        if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
+
+        if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
+          const villeRaw = body['Ville EPICU'];
+          const ensureRelatedRecord = async (tableName: string, candidateValue: any, candidateFields: string[]) => {
+            if (!candidateValue) return null;
+            if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
+            const val = String(candidateValue).trim();
+            if (!val) return null;
+            const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+            try {
+              const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+              if (found && found.length > 0) return found[0].id;
+            } catch (e) {}
+            try {
+              const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+              return created[0].id;
+            } catch (e) { return null; }
+          };
+          const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
+          if (villeId) fieldsToUpdate['Ville'] = [villeId]; else fieldsToUpdate['Ville'] = [];
+        }
+
+        if (Object.prototype.hasOwnProperty.call(body, 'Catégorie')) {
+          const catRaw = body['Catégorie'];
+          const ensureRelatedRecord = async (tableName: string, candidateValue: any, candidateFields: string[]) => {
+            if (!candidateValue) return null;
+            if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
+            const val = String(candidateValue).trim();
+            if (!val) return null;
+            const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+            try {
+              const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+              if (found && found.length > 0) return found[0].id;
+            } catch (e) {}
+            try {
+              const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+              return created[0].id;
+            } catch (e) { return null; }
+          };
+          const catId = await ensureRelatedRecord('Catégories', catRaw, ['Name']);
+          if (catId) fieldsToUpdate['Catégorie'] = [catId]; else fieldsToUpdate['Catégorie'] = [];
+        }
+
+        if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+
+        const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
+        return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
+      } catch (err: any) {
+        console.error('prospects PATCH error', err);
+        return res.status(500).json({ error: 'Erreur mise à jour prospect', details: err?.message || String(err) });
+      }
+    }
+
+    // If none matched
+    res.setHeader('Allow', ['GET', 'POST', 'PATCH']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     res.status(500).json({
       error: 'Erreur Airtable',
