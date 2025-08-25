@@ -12,6 +12,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
 import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+import { FormLabel } from "./form-label";
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -133,10 +134,12 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
           ) : (
             <div className="space-y-6">
               <div>
+                <FormLabel htmlFor="objet" isRequired={true}>
+                  Objet de la demande
+                </FormLabel>
                 <Input
                   isRequired
-
-                  label="Objet de la demande"
+                  id="objet"
                   placeholder="Ex: Accès WordPress, Problème de facturation..."
                   value={formData.objet}
                   onChange={(e) =>
@@ -147,9 +150,11 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
               </div>
 
               <div>
+                <FormLabel htmlFor="commentaires" isRequired={false}>
+                  Commentaires
+                </FormLabel>
                 <Textarea
-
-                  label="Commentaires"
+                  id="commentaires"
                   maxRows={8}
                   minRows={4}
                   placeholder="Décrivez votre problème en détail..."
@@ -170,17 +175,17 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         </ModalBody>
 
         {!isSubmitted && (
-          <ModalFooter>
+          <ModalFooter className="flex justify-end gap-2">
             <Button
-              className="text-gray-600 dark:text-gray-400"
+              className="flex-1"
               disabled={isSubmitting}
-              variant="light"
+              variant="bordered"
               onPress={handleClose}
             >
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="bg-black text-white hover:bg-gray-900 flex-1"
               disabled={!formData.objet.trim() || isSubmitting || !userProfile}
               isLoading={isSubmitting}
               onPress={handleSubmit}
