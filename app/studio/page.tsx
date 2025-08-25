@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Pagination } from '@heroui/pagination';
 import { CategoryBadge, StatusBadge } from '@/components/badges';
+import { SortableColumnHeader } from '@/components';
 
 interface Service {
   id: string;
@@ -491,79 +492,45 @@ export default function StudioPage() {
                   {/* Table */}
                   <Table aria-label="Tableau des prestations en cours" shadow="none">
                     <TableHeader>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("category")}
-                        >
-                          Catégorie
-                          {sortField === "category" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="category"
+                          label="Catégorie"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
+
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("establishmentName")}
-                        >
-                          Nom établissement
-                          {sortField === "establishmentName" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        Nom établissement
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("contractDate")}
-                        >
-                          Date signature contrat
-                          {sortField === "contractDate" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="contractDate"
+                          label="Date signature contrat"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
                       </TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("serviceTitle")}
-                        >
-                          Prestation demandée
-                          {sortField === "serviceTitle" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="serviceTitle"
+                          label="Prestation demandée"
+                          sortField={sortField}
+                          sortDirection={sortDirection}
+                          onSort={handleSort}
+                        />
                       </TableColumn>
-                      <TableColumn>Facture</TableColumn>
-                      <TableColumn>
-                        <Button
-                          className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                          variant="light"
-                          onPress={() => handleSort("amount")}
-                        >
-                          Montant prestation
-                          {sortField === "amount" && (
-                            <span className="ml-1">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </Button>
+                      <TableColumn className="font-light text-sm">Facture</TableColumn>
+                      <TableColumn className="font-light text-sm">
+
+                        Montant prestation
+
                       </TableColumn>
-                      <TableColumn>Montant commission</TableColumn>
-                      <TableColumn>Progression</TableColumn>
+                      <TableColumn className="font-light text-sm">Montant commission</TableColumn>
+                      <TableColumn className="font-light text-sm">Progression</TableColumn>
                     </TableHeader>
                     <TableBody>
                       {paginatedPrestations.map((prestation) => (

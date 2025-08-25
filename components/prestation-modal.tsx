@@ -158,9 +158,6 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
         return;
       }
 
-      // Ici vous pouvez ajouter la logique pour envoyer le formulaire
-      console.log('Demande de prestation soumise:', prestationRequest);
-
       // Réinitialiser le formulaire et fermer le modal
       setPrestationRequest({
         nom: "Dominique Dupont",
@@ -207,7 +204,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
       onOpenChange={handleClose}
     >
       <ModalContent>
-        <ModalHeader>Demande de prestation</ModalHeader>
+        <ModalHeader>Nouvelle demande du studio ! 🚀</ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">

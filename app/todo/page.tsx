@@ -25,6 +25,7 @@ import { Checkbox } from "@heroui/checkbox";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { TodoBadge } from "../../components/badges";
+import { SortableColumnHeader } from "@/components";
 
 interface Todo {
   id: string;
@@ -59,7 +60,7 @@ export default function TodoPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
@@ -263,9 +264,9 @@ export default function TodoPage() {
         prevTodos.map((todo) =>
           todo.id === todoId
             ? {
-                ...todo,
-                statut: todo.statut === "terminee" ? "a_faire" : "terminee",
-              }
+              ...todo,
+              statut: todo.statut === "terminee" ? "a_faire" : "terminee",
+            }
             : todo
         )
       );
@@ -342,47 +343,29 @@ export default function TodoPage() {
           {/* Table */}
           <Table aria-label="Tableau des tâches" shadow="none">
             <TableHeader>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("titre")}
-                >
-                  Tâches
-                  {sortField === "titre" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+
+                Tâches
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("dateEcheance")}
-                >
-                  Deadline
-                  {sortField === "dateEcheance" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="dateEcheance"
+                  label="Deadline"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("statut")}
-                >
-                  État
-                  {sortField === "statut" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="statut"
+                  label="État"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
               <TableColumn className="font-light text-sm">Actions</TableColumn>
             </TableHeader>
@@ -417,7 +400,6 @@ export default function TodoPage() {
                   <TableCell>
                     <Button
                       isIconOnly
-                      color="danger"
                       size="sm"
                       variant="light"
                       onPress={() => openDeleteConfirmation(todo)}
@@ -501,7 +483,7 @@ export default function TodoPage() {
                   validateField('dateEcheance', value);
                 }}
               />
-              
+
             </div>
           </ModalBody>
           <ModalFooter>

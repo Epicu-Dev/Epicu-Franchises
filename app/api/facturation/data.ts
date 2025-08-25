@@ -23,7 +23,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '2',
-    category: 'Restaurant',
+    category: 'food',
     establishmentName: 'Le Gourmet',
     date: '2025-06-10',
     amount: 2340.50,
@@ -43,7 +43,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '4',
-    category: 'Service',
+    category: 'beauty',
     establishmentName: 'Tech Solutions',
     date: '2025-06-15',
     amount: 3200.00,
@@ -53,7 +53,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '5',
-    category: 'Restaurant',
+    category: 'food',
     establishmentName: 'La Terrasse',
     date: '2025-06-18',
     amount: 1567.75,
@@ -73,7 +73,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '7',
-    category: 'Service',
+    category: 'fun',
     establishmentName: 'Digital Agency',
     date: '2025-06-22',
     amount: 4500.00,
@@ -83,7 +83,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '8',
-    category: 'Restaurant',
+    category: 'travel',
     establishmentName: 'Cuisine du Monde',
     date: '2025-06-25',
     amount: 1789.30,
@@ -103,7 +103,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '10',
-    category: 'Service',
+    category: 'food',
     establishmentName: 'Innovation Lab',
     date: '2025-06-30',
     amount: 5600.00,
@@ -123,7 +123,7 @@ export const mockInvoices: Invoice[] = [
   },
   {
     id: '12',
-    category: 'Restaurant',
+    category: 'food',
     establishmentName: 'Le Gourmet',
     date: '2025-07-05',
     amount: 1450.00,

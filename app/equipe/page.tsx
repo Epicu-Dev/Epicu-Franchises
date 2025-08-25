@@ -256,10 +256,7 @@ export default function EquipePage() {
                 <Tab key="prestataire" title="Prestataires" />
               </Tabs>
             ) : (
-              <div className="w-full">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Gestion des membres
-                </h2>
+              <div>
               </div>
             )}
 
@@ -329,20 +326,20 @@ export default function EquipePage() {
               <div className="overflow-x-auto">
                 <Table aria-label="Tableau des membres de l'équipe">
                   <TableHeader>
-                    <TableColumn>Modifier</TableColumn>
-                    <TableColumn>Ville</TableColumn>
-                    <TableColumn>Prénom</TableColumn>
-                    <TableColumn>Nom</TableColumn>
-                    <TableColumn>Identifiant</TableColumn>
-                    <TableColumn>Mot de passe</TableColumn>
-                    <TableColumn>Date de naissance</TableColumn>
-                    <TableColumn>Mail perso</TableColumn>
-                    <TableColumn>Mail franchisé</TableColumn>
+                    <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                    <TableColumn className="font-light text-sm">Ville</TableColumn>
+                    <TableColumn className="font-light text-sm">Prénom</TableColumn>
+                    <TableColumn className="font-light text-sm">Nom</TableColumn>
+                    <TableColumn className="font-light text-sm">Identifiant</TableColumn>
+                    <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
+                    <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
+                    <TableColumn className="font-light text-sm">Mail perso</TableColumn>
+                    <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
                   </TableHeader>
                   <TableBody>
                     {adminMembers.map((member) => (
                       <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
-                        <TableCell className="py-5">
+                        <TableCell className="py-5 font-light">
                           <Tooltip content="Modifier">
                             <Button
                               isIconOnly
@@ -355,42 +352,38 @@ export default function EquipePage() {
                             </Button>
                           </Tooltip>
                         </TableCell>
-                        <TableCell>
-                          <Chip
-                            className="bg-gray-100 text-gray-800"
-                            variant="flat"
-                          >
-                            {member.city}
-                          </Chip>
+                        <TableCell className="font-light">
+
+                          {member.city}
                         </TableCell>
                         <TableCell>
-                          <span className="text-gray-900 dark:text-gray-100">
+                          <span className="font-light">
                             {member.firstName}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-gray-900 dark:text-gray-100">
+                          <span className="font-light">
                             {member.lastName}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-gray-900 dark:text-gray-100">
+                          <span className="font-light">
                             {member.identifier}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <span className="text-gray-900 dark:text-gray-100 font-mono text-sm">
+                        <TableCell className="font-light">
+                          <span >
                             {member.password}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-gray-900 dark:text-gray-100">
+                          <span className="font-light">
                             {member.birthDate}
                           </span>
                         </TableCell>
                         <TableCell>
                           <a
-                            className="text-blue-600 hover:text-blue-800 underline"
+                            className="font-light underline"
                             href={`mailto:${member.personalEmail}`}
                           >
                             {member.personalEmail}
@@ -398,7 +391,7 @@ export default function EquipePage() {
                         </TableCell>
                         <TableCell>
                           <a
-                            className="text-blue-600 hover:text-blue-800 underline"
+                            className="font-light underline"
                             href={`mailto:${member.franchiseEmail}`}
                           >
                             {member.franchiseEmail}
