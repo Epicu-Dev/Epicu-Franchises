@@ -137,6 +137,35 @@ export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
     );
 };
 
+// Fonction pour obtenir le label du statut de todo
+export const getTodoStatutLabel = (statut: string) => {
+    switch (statut) {
+        case "a_faire":
+            return "Pas commencé";
+        case "en_cours":
+            return "En cours";
+        case "terminee":
+            return "Validée";
+
+        default:
+            return statut;
+    }
+};
+
+// Fonction pour obtenir la classe CSS du badge de statut de todo
+export const getTodoStatutBadgeClass = (statut: string) => {
+    switch (statut) {
+        case "terminee":
+            return "bg-custom-green-success/10 text-custom-green-success";
+        case "en_cours":
+            return "bg-custom-blue-rdv/10 text-custom-blue-rdv";
+
+        case "a_faire":
+        default:
+            return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+};
+
 // Composant Badge pour les statuts de todo
 interface TodoBadgeProps {
     status: string;
@@ -147,24 +176,11 @@ export const TodoBadge: React.FC<TodoBadgeProps> = ({
     status,
     className = ""
 }) => {
-    const getTodoBadgeColor = (status: string) => {
-        switch (status) {
-            case "En cours":
-                return "bg-blue-50 text-blue-700 border-blue-200";
-            case "En retard":
-                return "bg-red-50 text-red-700 border-red-200";
-            case "Terminé":
-                return "bg-green-50 text-green-700 border-green-200";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
     return (
         <span
-            className={`px-6 py-1 rounded text-xs font-normal ml-2 flex-shrink-0 ${getTodoBadgeColor(status)} ${className}`}
+            className={`px-3 py-1 rounded text-xs font-light ${getTodoStatutBadgeClass(status)} ${className}`}
         >
-            {status}
+            {getTodoStatutLabel(status)}
         </span>
     );
 };

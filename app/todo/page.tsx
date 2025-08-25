@@ -24,6 +24,7 @@ import {
 import { Checkbox } from "@heroui/checkbox";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { TodoBadge } from "../../components/badges";
 
 interface Todo {
   id: string;
@@ -272,34 +273,7 @@ export default function TodoPage() {
     }
   };
 
-  const getStatutLabel = (statut: string) => {
-    switch (statut) {
-      case "a_faire":
-        return "Pas commencé";
-      case "en_cours":
-        return "En cours";
-      case "terminee":
-        return "Validée";
-      case "annulee":
-        return "Annulée";
-      default:
-        return statut;
-    }
-  };
 
-  const getStatutBadgeClass = (statut: string) => {
-    switch (statut) {
-      case "terminee":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "en_cours":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "annulee":
-        return "bg-red-50 text-red-700 border-red-200";
-      case "a_faire":
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
 
   if (loading && todos.length === 0) {
     return (
@@ -438,11 +412,7 @@ export default function TodoPage() {
                     }).replace(/\//g, '.')}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`px-6 py-1 rounded text-xs font-medium  ${getStatutBadgeClass(todo.statut)}`}
-                    >
-                      {getStatutLabel(todo.statut)}
-                    </span>
+                    <TodoBadge status={todo.statut} />
                   </TableCell>
                   <TableCell>
                     <Button
