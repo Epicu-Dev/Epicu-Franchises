@@ -317,7 +317,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 Thème
               </span>
-              <ThemeSwitch />
+              <ThemeSwitch/>
             </div>
           </div>
         </CardBody>

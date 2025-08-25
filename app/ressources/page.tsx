@@ -224,7 +224,7 @@ export default function RessourcesPage() {
                     <Button
                       size="sm"
                       variant="bordered"
-                      className="rounded-full"
+                      className="rounded-full font-light text-sm border-black border-1 bg-page-bg"
                       as="a"
                       href={resource.link}
                       target="_blank"
@@ -244,7 +244,7 @@ export default function RessourcesPage() {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric'
-                      })}
+                      }).replace(/\//g, '.')}
                     </span>
                   </TableCell>
                 </TableRow>

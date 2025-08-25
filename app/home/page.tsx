@@ -202,19 +202,37 @@ export default function HomePage() {
 
   const [todoItems, setTodoItems] = useState([
     {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En cours",
+      id: '1',
+      titre: 'Finaliser le design de la page clients',
+      description: 'Terminer la mise en page et les interactions de la page clients selon les maquettes',
+      priorite: 'haute',
+      statut: 'a_faire',
+      assigne: 'Nom',
+      dateEcheance: '2025-01-15',
+      dateCreation: '2024-12-01',
+      tags: ['design', 'frontend', 'clients']
     },
     {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En retard",
+      id: '2',
+      titre: 'Implémenter l\'API de conversion prospects',
+      description: 'Créer l\'endpoint pour convertir un prospect en client avec toutes les validations',
+      priorite: 'urgente',
+      statut: 'a_faire',
+      assigne: 'Prénom',
+      dateEcheance: '2024-12-20',
+      dateCreation: '2024-12-01',
+      tags: ['api', 'backend', 'prospects']
     },
     {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En cours",
+      id: '3',
+      titre: 'Tests unitaires pour les composants',
+      description: 'Écrire les tests unitaires pour tous les composants React de l\'application',
+      priorite: 'moyenne',
+      statut: 'a_faire',
+      assigne: 'Nom',
+      dateEcheance: '2025-01-30',
+      dateCreation: '2024-12-01',
+      tags: ['tests', 'frontend', 'qualité']
     },
   ]);
 
@@ -429,13 +447,17 @@ export default function HomePage() {
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-light text-custom-text-color">
-                          {item.mission}
+                          {item.titre}
                         </p>
                         <p className="text-xs text-custom-text-color-light">
-                          {item.deadline}
+                          {new Date(item.dateEcheance).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          }).replace(/\//g, '.')}
                         </p>
                       </div>
-                      <TodoBadge status={item.status} />
+                      <TodoBadge status={item.statut} />
                     </div>
                   ))}
                 </div>
