@@ -4,6 +4,14 @@ import { base } from '../constants';
 const TABLE_NAME = 'TO DO';
 const VIEW_NAME = 'Grid view';
 
+function dateOnly(v?: any) {
+  if (v == null) return v;
+  if (typeof v !== 'string') return v;
+  // handle ISO datetimes and 'YYYY-MM-DD hh:mm' etc. Keep only YYYY-MM-DD
+  const t = v.split('T')[0];
+  return t.split(' ')[0];
+}
+
 // util pour lire une clé avec ou sans apostrophe typographique
 const getField = (obj: any, keys: string[]) =>
   keys.reduce<any>((acc, k) => (acc ?? obj?.[k]), undefined);
@@ -116,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const descPayload =
         getField(body, ['Description', 'description', 'desc']);
 
-      if (duePayload) fieldsToCreate["Date d'échéance"] = duePayload;
+  if (duePayload) fieldsToCreate["Date d'échéance"] = dateOnly(duePayload);
       if (descPayload) fieldsToCreate['Description'] = descPayload;
 
       // Collaborateur (id ou tableau d’ids)
@@ -135,7 +143,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    res.setHeader('Allow', ['GET', 'POST']);
+    if (req.method === 'PATCH') {
+      const body = req.body || {};
+      const id = (req.query.id as string) || body.id;
+      if (!id) return res.status(400).json({ error: 'id requis' });
+
+      const fieldsToUpdate: any = {};
+      const name = getField(body, ['Nom de la tâche', 'nom', 'name', 'title', 'Tâche', 'tache']);
+      if (name) fieldsToUpdate['Nom de la tâche'] = name;
+
+      const due = getField(body, ["Date d'échéance", 'dueDate', 'due_date']);
+      if (typeof due !== 'undefined') {
+        if (due === null || due === '') fieldsToUpdate["Date d'échéance"] = '';
+        else fieldsToUpdate["Date d'échéance"] = dateOnly(due);
+      }
+
+      const status = getField(body, ['Statut', 'status']);
+      if (typeof status !== 'undefined') fieldsToUpdate['Statut'] = status;
+
+      const type = getField(body, ['Type de tâche', 'type', 'taskType']);
+      if (typeof type !== 'undefined') fieldsToUpdate['Type de tâche'] = type;
+
+      const desc = getField(body, ['Description', 'description', 'desc']);
+      if (typeof desc !== 'undefined') fieldsToUpdate['Description'] = desc;
+
+      const collPayload = getField(body, ['Collaborateur', 'collaborator', 'collaborateurs', 'collaborators', 'user']);
+      if (Object.prototype.hasOwnProperty.call(body, 'Collaborateur') || Object.prototype.hasOwnProperty.call(body, 'collaborator') || Object.prototype.hasOwnProperty.call(body, 'collaborateurs') || Object.prototype.hasOwnProperty.call(body, 'collaborators') || Object.prototype.hasOwnProperty.call(body, 'user')) {
+        if (collPayload === null) fieldsToUpdate['Collaborateur'] = [];
+        else if (Array.isArray(collPayload)) fieldsToUpdate['Collaborateur'] = collPayload;
+        else if (collPayload) fieldsToUpdate['Collaborateur'] = [collPayload];
+        else fieldsToUpdate['Collaborateur'] = [];
+      }
+
+      if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+
+      const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
+      res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      const id = (req.query.id as string) || req.body.id;
+      if (!id) return res.status(400).json({ error: 'id requis' });
+
+      const deleted = await base(TABLE_NAME).destroy([id]);
+      res.status(200).json({ id: deleted[0].id });
+      return;
+    }
+
+  res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     console.error('pages/api/todo error:', error?.message || error);

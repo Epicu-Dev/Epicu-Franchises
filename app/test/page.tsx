@@ -181,6 +181,17 @@ export default function TestProspects() {
   const [todoCreateError, setTodoCreateError] = useState<string | null>(null);
   const [todoCreateSuccess, setTodoCreateSuccess] = useState<string | null>(null);
 
+  // TODO edit/delete modal state
+  const [isTodoEditOpen, setIsTodoEditOpen] = useState<boolean>(false);
+  const [todoEditId, setTodoEditId] = useState<string | null>(null);
+  const [todoEditName, setTodoEditName] = useState<string>('');
+  const [todoEditDue, setTodoEditDue] = useState<string>('');
+  const [todoEditStatus, setTodoEditStatus] = useState<string>('');
+  const [todoEditType, setTodoEditType] = useState<string>('');
+  const [todoEditDesc, setTodoEditDesc] = useState<string>('');
+  const [todoEditLoading, setTodoEditLoading] = useState<boolean>(false);
+  const [todoEditError, setTodoEditError] = useState<string | null>(null);
+
   useEffect(() => {
     loadCollection('categories');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -864,6 +875,10 @@ export default function TestProspects() {
                     <Badge>{t.status || '—'}</Badge>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => openTodoEdit(t)}>Modifier</Button>
+                  <Button variant="danger" onClick={() => confirmTodoDelete(t.id)}>Supprimer</Button>
+                </div>
               </div>
               <div className="mt-3 text-sm text-gray-700 space-y-1">
                 <p><span className="font-medium">Créé le :</span> {t.createdAt}</p>
@@ -876,6 +891,96 @@ export default function TestProspects() {
       )}
     </div>
   );
+
+  // TODO modal helpers & actions
+  const openTodoEdit = (t: TodoItem) => {
+    setTodoEditId(t.id);
+    setTodoEditName(t.name || '');
+    // convert created/due to datetime-local if possible for dueDate
+    try {
+      if (t.dueDate) {
+        const d = new Date(t.dueDate);
+        const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+        setTodoEditDue(isoLocal);
+      } else setTodoEditDue('');
+    } catch { setTodoEditDue(t.dueDate || ''); }
+    setTodoEditStatus(t.status || '');
+    setTodoEditType(t.type || '');
+    setTodoEditDesc(t.description || '');
+    setTodoEditError(null);
+    setIsTodoEditOpen(true);
+  };
+
+  const closeTodoEdit = () => {
+    setIsTodoEditOpen(false);
+    setTodoEditId(null);
+    setTodoEditName('');
+    setTodoEditDue('');
+    setTodoEditStatus('');
+    setTodoEditType('');
+    setTodoEditDesc('');
+    setTodoEditLoading(false);
+    setTodoEditError(null);
+  };
+
+  const handleTodoUpdate = async () => {
+    if (!todoEditId) return;
+    setTodoEditLoading(true);
+    setTodoEditError(null);
+    try {
+      const payload: any = {};
+      if (todoEditName) payload['Nom de la tâche'] = todoEditName;
+      if (todoEditDue) payload["Date d'échéance"] = `${todoEditDue}:00`;
+      if (todoEditStatus) payload['Statut'] = todoEditStatus;
+      if (todoEditType) payload['Type de tâche'] = todoEditType;
+      if (todoEditDesc) payload['Description'] = todoEditDesc;
+
+      const res = await authFetch(`/api/todo?id=${encodeURIComponent(todoEditId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la mise à jour');
+      }
+      await fetchTodos();
+      closeTodoEdit();
+    } catch (err: any) {
+      console.error('handleTodoUpdate error', err);
+      setTodoEditError(err?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setTodoEditLoading(false);
+    }
+  };
+
+  const confirmTodoDelete = (id: string) => {
+    setTodoEditId(id);
+    setTodoEditError(null);
+    setIsTodoEditOpen(true);
+  };
+
+  const handleTodoDelete = async () => {
+    if (!todoEditId) return;
+    setTodoEditLoading(true);
+    setTodoEditError(null);
+    try {
+      const res = await authFetch(`/api/todo?id=${encodeURIComponent(todoEditId)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la suppression');
+      }
+      await fetchTodos();
+      closeTodoEdit();
+    } catch (err: any) {
+      console.error('handleTodoDelete error', err);
+      setTodoEditError(err?.message || 'Erreur lors de la suppression');
+    } finally {
+      setTodoEditLoading(false);
+    }
+  };
 
   // — Modal helpers & actions —
   const openEditModal = (ev: { id: string; date: string; task?: string; type?: string; description?: string }) => {
@@ -1183,6 +1288,37 @@ export default function TestProspects() {
             <Button variant="danger" onClick={() => handleDelete()} disabled={editLoading}>Supprimer</Button>
             <Button onClick={() => handleUpdate()} disabled={editLoading}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
             <Button variant="ghost" onClick={() => closeEditModal()} disabled={editLoading}>Annuler</Button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* TODO Edit / Delete Modal */}
+    {isTodoEditOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
+          <h3 className="text-lg font-semibold mb-3">{todoEditId ? (todoEditLoading ? '...' : 'Modifier / Supprimer TODO') : 'TODO'}</h3>
+          {todoEditError && <div className="text-red-600 mb-2">{todoEditError}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Nom de la tâche" required>
+              <Input type="text" value={todoEditName} onChange={(e) => setTodoEditName(e.target.value)} />
+            </Field>
+            <Field label="Date d'échéance">
+              <Input type="datetime-local" value={todoEditDue} onChange={(e) => setTodoEditDue(e.target.value)} />
+            </Field>
+            <Field label="Statut">
+              <Input type="text" value={todoEditStatus} onChange={(e) => setTodoEditStatus(e.target.value)} />
+            </Field>
+            <Field label="Type">
+              <Input type="text" value={todoEditType} onChange={(e) => setTodoEditType(e.target.value)} />
+            </Field>
+            <Field label="Description">
+              <Textarea rows={3} value={todoEditDesc} onChange={(e) => setTodoEditDesc(e.target.value)} />
+            </Field>
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <Button variant="danger" onClick={() => handleTodoDelete()} disabled={todoEditLoading}>Supprimer</Button>
+            <Button onClick={() => handleTodoUpdate()} disabled={todoEditLoading}>{todoEditLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+            <Button variant="ghost" onClick={() => closeTodoEdit()} disabled={todoEditLoading}>Annuler</Button>
           </div>
         </div>
       </div>
