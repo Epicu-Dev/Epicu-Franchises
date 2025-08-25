@@ -53,6 +53,50 @@ export type TodoItem = {
 
 const PAGE_SIZE = 10;
 
+// Presentational helpers (moved to module scope to keep stable identity)
+const Field = ({ label, required, children, hint }: { label: string; required?: boolean; children: React.ReactNode; hint?: string; }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-sm font-medium text-gray-700">
+      {label} {required && <span className="text-red-600">*</span>}
+    </label>
+    {children}
+    {hint && <p className="text-xs text-gray-500">{hint}</p>}
+  </div>
+);
+
+const Card = ({ title, children, footer }: { title: string; children: React.ReactNode; footer?: React.ReactNode }) => (
+  <div className="bg-white border rounded-2xl shadow-sm p-4">
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-semibold text-gray-900">{title}</h4>
+    </div>
+    <div className="space-y-3">{children}</div>
+    {footer && <div className="pt-3 mt-3 border-t">{footer}</div>}
+  </div>
+);
+
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input {...props} className={`w-full rounded-xl border px-3 py-2 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition ${props.className || ''}`} />
+);
+
+const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+  <textarea {...props} className={`w-full rounded-xl border px-3 py-2 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition ${props.className || ''}`} />
+);
+
+const Button = ({ variant = 'primary', className = '', ...rest }: any) => {
+  const base = 'px-4 py-2 rounded-xl font-medium transition disabled:opacity-60 disabled:cursor-not-allowed';
+  const styles: Record<string,string> = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    ghost: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+  };
+  return <button className={`${base} ${styles[variant]} ${className}`} {...rest} />;
+};
+
+const Badge = ({ children }: { children: React.ReactNode }) => (
+  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-gray-700 bg-gray-50">{children}</span>
+);
+
 // ———————————————————————————————————————————————————————————
 // Composant principal
 // ———————————————————————————————————————————————————————————
@@ -90,7 +134,11 @@ export default function TestProspects() {
   const [selected, setSelected] = useState<string | null>('categories');
 
   // ——— Agenda ———
-  const [agendaStart, setAgendaStart] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [agendaStart, setAgendaStart] = useState<string>(() => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    return first.toISOString().split('T')[0];
+  });
   const [agendaEnd, setAgendaEnd] = useState<string | null>(null);
   const [agendaLimit, setAgendaLimit] = useState<number>(50);
   const [agendaOffset, setAgendaOffset] = useState<number>(0);
@@ -105,6 +153,16 @@ export default function TestProspects() {
   const [creating, setCreating] = useState<boolean>(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+
+  // Edit / Delete modal state
+  const [isEditOpen, setIsEditOpen] = useState<boolean>(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState<string>('');
+  const [editTask, setEditTask] = useState<string>('');
+  const [editType, setEditType] = useState<string>('');
+  const [editDescription, setEditDescription] = useState<string>('');
+  const [editLoading, setEditLoading] = useState<boolean>(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // ——— TODO ———
   const [todoLimit, setTodoLimit] = useState<number>(50);
@@ -579,50 +637,7 @@ export default function TestProspects() {
     }
   };
 
-  // ———————————————————————————————————————————————————————————
-  // Renders
-  // ———————————————————————————————————————————————————————————
-
-  const Field = ({ label, required, children, hint }: { label: string; required?: boolean; children: React.ReactNode; hint?: string; }) => (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
-        {label} {required && <span className="text-red-600">*</span>}
-      </label>
-      {children}
-      {hint && <p className="text-xs text-gray-500">{hint}</p>}
-    </div>
-  );
-
-  const Card = ({ title, children, footer }: { title: string; children: React.ReactNode; footer?: React.ReactNode }) => (
-    <div className="bg-white border rounded-2xl shadow-sm p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-semibold text-gray-900">{title}</h4>
-      </div>
-      <div className="space-y-3">{children}</div>
-      {footer && <div className="pt-3 mt-3 border-t">{footer}</div>}
-    </div>
-  );
-
-  const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input {...props} className={`w-full rounded-xl border px-3 py-2 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition ${props.className || ''}`} />
-  );
-  const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-    <textarea {...props} className={`w-full rounded-xl border px-3 py-2 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition ${props.className || ''}`} />
-  );
-  const Button = ({ variant = 'primary', className = '', ...rest }: any) => {
-    const base = 'px-4 py-2 rounded-xl font-medium transition disabled:opacity-60 disabled:cursor-not-allowed';
-    const styles: Record<string,string> = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700',
-      ghost: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-      success: 'bg-emerald-600 text-white hover:bg-emerald-700',
-      danger: 'bg-red-600 text-white hover:bg-red-700',
-    };
-    return <button className={`${base} ${styles[variant]} ${className}`} {...rest} />;
-  };
-
-  const Badge = ({ children }: { children: React.ReactNode }) => (
-    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-gray-700 bg-gray-50">{children}</span>
-  );
+  // Renders — use module-scope presentational components (Field, Card, Input, Textarea, Button, Badge)
 
   const renderProspectTable = (data: Prospect[], title: string, canLoadMore: boolean) => (
     <div className="space-y-3">
@@ -862,7 +877,98 @@ export default function TestProspects() {
     </div>
   );
 
+  // — Modal helpers & actions —
+  const openEditModal = (ev: { id: string; date: string; task?: string; type?: string; description?: string }) => {
+    setEditId(ev.id);
+    // convert ISO-ish date to datetime-local input if possible
+    try {
+      const d = new Date(ev.date);
+      const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      setEditDate(isoLocal);
+    } catch {
+      setEditDate(ev.date || '');
+    }
+    setEditTask(ev.task || '');
+    setEditType(ev.type || '');
+    setEditDescription(ev.description || '');
+    setEditError(null);
+    setIsEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+    setEditId(null);
+    setEditDate('');
+    setEditTask('');
+    setEditType('');
+    setEditDescription('');
+    setEditLoading(false);
+    setEditError(null);
+  };
+
+  const handleUpdate = async () => {
+    if (!editId) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      // Build payload
+      const d = editDate ? `${editDate}:00` : undefined;
+      const payload: any = {};
+      if (d) payload['Date'] = d;
+      if (editTask) payload['Tâche'] = editTask;
+      if (editType) payload['Type'] = editType;
+      if (editDescription) payload['Description'] = editDescription;
+
+      const res = await authFetch(`/api/agenda?id=${encodeURIComponent(editId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la mise à jour');
+      }
+      await fetchAgenda();
+      closeEditModal();
+    } catch (err: any) {
+      console.error('handleUpdate error', err);
+      setEditError(err?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    // reuse modal to confirm delete
+    setEditId(id);
+    setEditError(null);
+    setIsEditOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!editId) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const res = await authFetch(`/api/agenda?id=${encodeURIComponent(editId)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la suppression');
+      }
+      await fetchAgenda();
+      closeEditModal();
+    } catch (err: any) {
+      console.error('handleDelete error', err);
+      setEditError(err?.message || 'Erreur lors de la suppression');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
+    <>
     <main className="p-8 bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Test Prospects</h1>
       <div className="flex gap-6">
@@ -1020,6 +1126,7 @@ export default function TestProspects() {
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Tâche</th>
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Type</th>
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Description</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1029,6 +1136,12 @@ export default function TestProspects() {
                           <td className="px-3 py-2 text-sm">{ev.task || '-'}</td>
                           <td className="px-3 py-2 text-sm">{ev.type || '-'}</td>
                           <td className="px-3 py-2 text-sm">{ev.description || '-'}</td>
+                          <td className="px-3 py-2 text-sm">
+                            <div className="flex gap-2">
+                              <Button variant="ghost" onClick={() => openEditModal(ev)}>Modifier</Button>
+                              <Button variant="danger" onClick={() => confirmDelete(ev.id)}>Supprimer</Button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1046,5 +1159,34 @@ export default function TestProspects() {
         </section>
       </div>
     </main>
+    {/* Edit / Delete Modal */}
+    {isEditOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
+          <h3 className="text-lg font-semibold mb-3">{editId ? (editLoading ? '...' : 'Modifier / Supprimer') : 'Événement'}</h3>
+          {editError && <div className="text-red-600 mb-2">{editError}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Date et heure" required>
+              <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+            </Field>
+            <Field label="Type" required>
+              <Input type="text" value={editType} onChange={(e) => setEditType(e.target.value)} />
+            </Field>
+            <Field label="Tâche" required>
+              <Input type="text" value={editTask} onChange={(e) => setEditTask(e.target.value)} />
+            </Field>
+            <Field label="Description">
+              <Textarea rows={3} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </Field>
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <Button variant="danger" onClick={() => handleDelete()} disabled={editLoading}>Supprimer</Button>
+            <Button onClick={() => handleUpdate()} disabled={editLoading}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+            <Button variant="ghost" onClick={() => closeEditModal()} disabled={editLoading}>Annuler</Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

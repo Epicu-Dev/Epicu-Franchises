@@ -21,7 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
 
       const collaborator = (req.query.collaborator as string) || (req.query.user as string) || null;
-      const dateStart = parseDateParam(req.query.dateStart as string | undefined);
+      // dateStart: if not provided, default to first day of current month at 00:00
+      const rawDateStart = req.query.dateStart as string | undefined;
+      let dateStart = parseDateParam(rawDateStart);
+      if (!dateStart) {
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        dateStart = firstOfMonth;
+      }
       const dateEnd = parseDateParam(req.query.dateEnd as string | undefined);
 
       // Champs attendus (français) : utiliser les champs fournis
@@ -136,7 +144,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    res.setHeader('Allow', ['GET', 'POST']);
+    if (req.method === 'PATCH') {
+      const body = req.body || {};
+      const id = (req.query.id as string) || body.id;
+      if (!id) return res.status(400).json({ error: 'id requis' });
+
+      const fieldsToUpdate: any = {};
+      if (body['Tâche'] ?? body.tache ?? body.title ?? body.name) {
+        fieldsToUpdate['Tâche'] = body['Tâche'] || body.tache || body.title || body.name;
+      }
+      if (body['Date'] ?? body.date) {
+        fieldsToUpdate['Date'] = body['Date'] || body.date;
+      }
+      if (body['Type'] ?? body.type) {
+        fieldsToUpdate['Type'] = body['Type'] || body.type;
+      }
+      if (body['Description'] ?? body.description ?? body.desc) {
+        fieldsToUpdate['Description'] = body['Description'] || body.description || body.desc;
+      }
+
+      // Collaborateur linkage: accept array, single id, null (to clear)
+      if (Object.prototype.hasOwnProperty.call(body, 'Collaborateur') || Object.prototype.hasOwnProperty.call(body, 'collaborator') || Object.prototype.hasOwnProperty.call(body, 'collaborateurs') || Object.prototype.hasOwnProperty.call(body, 'collaborators') || Object.prototype.hasOwnProperty.call(body, 'user')) {
+        const collPayload = body['Collaborateur'] ?? body.collaborator ?? body.collaborateurs ?? body.collaborators ?? body.user;
+        if (collPayload === null) {
+          // clear links
+          fieldsToUpdate['Collaborateur'] = [];
+        } else if (Array.isArray(collPayload)) {
+          fieldsToUpdate['Collaborateur'] = collPayload;
+        } else if (collPayload) {
+          fieldsToUpdate['Collaborateur'] = [collPayload];
+        } else {
+          // empty string or falsy -> clear
+          fieldsToUpdate['Collaborateur'] = [];
+        }
+      }
+
+      if (Object.keys(fieldsToUpdate).length === 0) {
+        return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
+      }
+
+      const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
+      res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      const id = (req.query.id as string) || req.body.id;
+      if (!id) return res.status(400).json({ error: 'id requis' });
+
+      const deleted = await base(TABLE_NAME).destroy([id]);
+      res.status(200).json({ id: deleted[0].id });
+      return;
+    }
+
+  res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     console.error('pages/api/agenda error:', error?.message || error);
