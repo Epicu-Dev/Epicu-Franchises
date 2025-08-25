@@ -411,11 +411,11 @@ export default function HomePage() {
                     onTournageSelect={() => setIsTournageModalOpen(true)}
                   />
                 </div>
-                <div className="space-y-2 lg:space-y-3">
+                <div >
                   {agendaEvents.map((event, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-light text-custom-text-color">
@@ -450,7 +450,7 @@ export default function HomePage() {
                   {todoItems.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-light text-custom-text-color">
