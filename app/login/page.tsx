@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 
 import MessageAlert from "@/components/message-alert";
+import { FormLabel } from "@/components/form-label";
 
 export default function LoginPage() {
   const [identifiant, setIdentifiant] = useState("");
@@ -125,9 +126,9 @@ export default function LoginPage() {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="identifiant">
-                  Identifiant<span className="text-red-500">*</span>
-                </label>
+                <FormLabel htmlFor="identifiant" isRequired={true}>
+                  Identifiant
+                </FormLabel>
                 <Input
                   required
                   classNames={{
@@ -144,9 +145,9 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="password">
-                  Mot de passe<span className="text-red-500">*</span>
-                </label>
+                <FormLabel htmlFor="password" isRequired={true}>
+                  Mot de passe
+                </FormLabel>
                 <Input
                   required
                   classNames={{

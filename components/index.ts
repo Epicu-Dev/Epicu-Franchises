@@ -33,6 +33,7 @@ export { default as ToastNotification } from './toast-notification';
 
 // Composants de formulaire
 export { StyledSelect } from './styled-select';
+export { FormLabel } from './form-label';
 
 // Composants de tableau
 export { SortableColumnHeader } from './sortable-column-header';

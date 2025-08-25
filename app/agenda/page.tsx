@@ -330,12 +330,14 @@ export default function AgendaPage() {
                           ? "bg-purple-100 text-purple-800"
                           : "bg-orange-100 text-orange-800"
                       }`}
-                    title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                   >
                     <div className="font-medium truncate">{event.title}</div>
-                    <div className="text-xs opacity-75">
-                      {event.startTime}
-                    </div>
+                    {event.startTime && (
+                      <div className="text-xs opacity-75">
+                        {event.startTime}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {day.events.length > 3 && (
@@ -361,19 +363,22 @@ export default function AgendaPage() {
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
             <div className="p-2 text-center font-medium text-gray-600 text-sm">
-              Heure
             </div>
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center font-medium text-gray-600 text-sm"
+                className="p-2 text-center gap-4 flex items-center font-semibold text-custom-text-color-light"
               >
-                <div className="font-bold">{day.dayName}</div>
                 <div
-                  className={`text-lg ${day.isToday ? "text-red-600 font-bold" : "text-gray-900"}`}
+                  className={` w-8 h-8 flex items-center justify-center ${day.isToday
+                    ? "text-white bg-red-500 rounded-full flex items-center justify-center"
+                    : ""
+                    }`}
                 >
                   {day.dayNumber}
                 </div>
+                <div >{day.dayName}</div>
+
               </div>
             ))}
           </div>
@@ -390,6 +395,11 @@ export default function AgendaPage() {
                 {/* Cellules des jours */}
                 {weekDays.map((day) => {
                   const hourEvents = day.events.filter((event) => {
+                    // Vérifier que startTime existe et n'est pas undefined
+                    if (!event.startTime) {
+                      return false;
+                    }
+
                     const eventStartHour = parseInt(
                       event.startTime.split(":")[0]
                     );
@@ -414,12 +424,14 @@ export default function AgendaPage() {
                                 ? "bg-purple-100 text-purple-800"
                                 : "bg-orange-100 text-orange-800"
                             }`}
-                          title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                         >
                           <div className="font-medium truncate">{event.title}</div>
-                          <div className="text-xs opacity-75 mt-0.5">
-                            {event.startTime} - {event.endTime}
-                          </div>
+                          {event.startTime && event.endTime && (
+                            <div className="text-xs opacity-75 mt-0.5">
+                              {event.startTime} - {event.endTime}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

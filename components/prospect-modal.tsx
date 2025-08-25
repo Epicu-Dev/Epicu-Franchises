@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
 import {
   Modal,
@@ -13,23 +13,6 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { StyledSelect } from "./styled-select";
-
-interface Prospect {
-  id: string;
-  siret: string;
-  nomEtablissement: string;
-  ville: string;
-  telephone: string;
-  categorie: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
-  statut: "a_contacter" | "en_discussion" | "glacial";
-  datePremierRendezVous: string;
-  dateRelance: string;
-  vientDeRencontrer: boolean;
-  commentaire: string;
-  suiviPar: string;
-  email?: string;
-  adresse?: string;
-}
 
 interface ProspectModalProps {
   isOpen: boolean;
