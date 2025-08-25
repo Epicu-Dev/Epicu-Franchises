@@ -496,7 +496,7 @@ export default function TodoPage() {
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}
-              <strong>&quot;{todoToDelete?.titre}&quot;</strong> ?
+              <strong>&ldquo;{todoToDelete?.titre}&rdquo;</strong> ?
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Cette action est irréversible.

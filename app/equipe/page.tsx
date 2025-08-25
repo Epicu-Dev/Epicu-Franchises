@@ -440,7 +440,7 @@ export default function EquipePage() {
             searchTerm && (
               <div className="text-center py-12">
                 <div className="text-gray-500 dark:text-gray-400">
-                  Aucun membre trouvé pour &quot;{searchTerm}&quot;
+                  Aucun membre trouvé pour &ldquo;{searchTerm}&rdquo;
                 </div>
               </div>
             )}
