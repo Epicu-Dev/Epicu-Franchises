@@ -139,7 +139,7 @@ export default function ProfilPage() {
           etat: 'Validée',
           date: '10.07.2025',
           montant: '1450€67',
-          typeFacture: 'Droit d\'entrée'
+          typeFacture: 'Droit d&apos;entrée'
         }
       ]);
 
@@ -583,7 +583,7 @@ export default function ProfilPage() {
                 <TableHeader>
                   <TableColumn className="font-light text-sm">Personne</TableColumn>
                   <TableColumn className="font-light text-sm">Action réalis&eacute;e</TableColumn>
-                  <TableColumn className="font-light text-sm">Date de l'action</TableColumn>
+                  <TableColumn className="font-light text-sm">Date de l&apos;action</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="heure"
