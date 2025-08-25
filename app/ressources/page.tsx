@@ -224,6 +224,7 @@ export default function RessourcesPage() {
                     <Button
                       size="sm"
                       variant="bordered"
+                      className="rounded-full"
                       as="a"
                       href={resource.link}
                       target="_blank"
