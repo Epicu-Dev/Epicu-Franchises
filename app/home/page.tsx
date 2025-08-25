@@ -178,7 +178,7 @@ export default function HomePage() {
       label: "Prospects",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
-      iconColor: "text-yellow-600",
+      iconColor: "text-yellow-400",
     },
     {
       value: loading ? "..." : conversionRate,
