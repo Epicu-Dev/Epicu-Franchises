@@ -18,17 +18,17 @@ export const getStatusBadgeColor = (status: string) => {
 export const getCategoryBadgeColor = (category: string) => {
     switch (category) {
         case "FOOD":
-            return "bg-orange-50 text-orange-300 border-orange-200";
+            return "bg-custom-orange-food/10 text-custom-orange-food ";
         case "SHOP":
-            return "bg-purple-50 text-purple-300 border-purple-200";
+            return "bg-custom-purple-shop/10 text-custom-purple-shop";
         case "TRAVEL":
-            return "bg-blue-50 text-blue-300 border-blue-200";
+            return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
         case "FUN":
-            return "bg-green-50 text-green-300 border-green-200";
+            return "bg-custom-green-travel/10 text-custom-green-travel";
         case "BEAUTY":
-            return "bg-pink-50 text-pink-300 border-pink-200";
+            return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
         default:
-            return "bg-gray-50 text-gray-300 border-gray-200";
+            return "bg-gray-50/10 text-gray-300 border-gray-200";
     }
 };
 
@@ -44,7 +44,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-6 py-1 text-xs font-medium rounded  ${getCategoryBadgeColor(category.toUpperCase())} ${className}`}
+            className={`px-6 py-1 text-xs font-light rounded  ${getCategoryBadgeColor(category.toUpperCase())} ${className}`}
         >
             {category.toUpperCase()}
         </span>
@@ -63,7 +63,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(status)} ${className}`}
+            className={`px-2 py-1 text-xs font-light rounded-full ${getStatusBadgeColor(status)} ${className}`}
         >
             {status}
         </span>
@@ -84,7 +84,7 @@ export const Badge: React.FC<BadgeProps> = ({
     className = "",
     rounded = 'rounded'
 }) => {
-    let baseClasses = "px-2 py-1 text-xs font-medium";
+    let baseClasses = "px-2 py-1 text-xs font-light";
 
     if (variant === 'category') {
         baseClasses += ` ${getCategoryBadgeColor(text)} border`;
@@ -95,6 +95,76 @@ export const Badge: React.FC<BadgeProps> = ({
     return (
         <span className={`${baseClasses} ${rounded} ${className}`}>
             {text}
+        </span>
+    );
+};
+
+// Composant Badge pour les événements d'agenda
+interface AgendaBadgeProps {
+    type: string;
+    className?: string;
+}
+
+export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
+    type,
+    className = ""
+}) => {
+    const getAgendaBadgeColor = (type: string) => {
+        console.log(type);
+
+        switch (type.toLowerCase()) {
+            case "tournage":
+                return "bg-custom-rose/14 text-custom-rose";
+            case "rendez-vous":
+                return "bg-custom-blue-rdv/14 text-custom-blue-rdv";
+            case "publication":
+                return "bg-custom-blue-pub/14 text-custom-blue-pub";
+            case "evenement":
+            case "évenement":
+            case "evènement":
+                return "bg-custom-orange-event/14 text-custom-orange-event";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
+    return (
+        <span
+            className={`px-6 py-1 rounded text-xs font-light ml-2 flex-shrink-0 ${getAgendaBadgeColor(type)} ${className}`}
+        >
+            {type}
+        </span>
+    );
+};
+
+// Composant Badge pour les statuts de todo
+interface TodoBadgeProps {
+    status: string;
+    className?: string;
+}
+
+export const TodoBadge: React.FC<TodoBadgeProps> = ({
+    status,
+    className = ""
+}) => {
+    const getTodoBadgeColor = (status: string) => {
+        switch (status) {
+            case "En cours":
+                return "bg-blue-50 text-blue-700 border-blue-200";
+            case "En retard":
+                return "bg-red-50 text-red-700 border-red-200";
+            case "Terminé":
+                return "bg-green-50 text-green-700 border-green-200";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
+    return (
+        <span
+            className={`px-6 py-1 rounded text-xs font-normal ml-2 flex-shrink-0 ${getTodoBadgeColor(status)} ${className}`}
+        >
+            {status}
         </span>
     );
 };

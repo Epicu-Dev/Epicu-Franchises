@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { Client, getAllClients, addClient } from './data';
+import { Client, getAllClients, addClient, getClientBySiret } from './data';
 
 export async function GET(request: Request) {
   try {
@@ -82,6 +82,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    
+    // Si c'est une recherche par SIRET
+    if (body.siret) {
+      const client = getClientBySiret(body.siret);
+      if (!client) {
+        return NextResponse.json(
+          { error: 'Aucun client trouvé avec ce SIRET' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(client);
+    }
     
     // Validation des données
     if (!body.raisonSociale) {

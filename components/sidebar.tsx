@@ -28,6 +28,8 @@ import {
   Bars3Icon,
   XMarkIcon,
   ArchiveBoxIcon,
+  ArrowRightIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 
 import { useUserType } from "../contexts/user-type-context";
@@ -64,7 +66,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   }, [isMobileOpen]);
 
   const menuItems = [
-    { key: "home", label: "Accueil", icon: HomeIcon, href: "/home", showFor: ["franchise"] },
+    { key: "home", label: "Accueil", icon: Squares2X2Icon, href: "/home", showFor: ["franchise"] },
     {
       key: "home-admin",
       label: "Accueil ",
@@ -77,12 +79,12 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     {
       key: "prospects",
       label: "Prospects",
-      icon: BellIcon,
+      icon: UsersIcon,
       href: "/prospects",
       showFor: ["franchise"]
     },
     { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise"] },
-    { key: "todo", label: "To do", icon: CheckCircleIcon, href: "/todo", showFor: ["franchise"] },
+    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise"] },
     {
       key: "facturation",
       label: "Facturation",
@@ -90,7 +92,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/facturation",
       showFor: ["franchise"]
     },
-    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise","admin"] },
+    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise", "admin"] },
     {
       key: "studio",
       label: "Le studio",
@@ -248,32 +250,31 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               MENU
             </h3>
-            <Listbox
-              aria-label="Menu navigation"
-              className="gap-1"
-              onAction={(key) => {
-                const item = filteredMenuItems.find((item) => item.key === key);
-
-                if (item) handleItemClick(item);
-              }}
-            >
-              {filteredMenuItems.map((item) => {
+            {
+              filteredMenuItems.map((item) => {
                 const isActive = pathname === item.href;
 
                 return (
-                  <ListboxItem
-                    key={item.key}
-                    className={`rounded-lg px-3 py-2 transition-colors ${isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  <div
+                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors ${isActive
+                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
-                    startContent={<item.icon className="h-5 w-5" />}
+                    key={item.key}
+                    onClick={() => handleItemClick(item)}
                   >
-                    {item.label}
-                  </ListboxItem>
-                );
-              })}
-            </Listbox>
+                    <item.icon className="h-5 w-5" />
+                    <div className="flex-1">
+
+                      {item.label}
+                    </div>
+                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`}></ArrowRightIcon>
+
+                  </div>
+                )
+              })
+            }
+
           </div>
 
           <hr className="mx-4 border-gray-200 dark:border-gray-700" />
@@ -283,34 +284,31 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               PARAMÈTRES
             </h3>
-            <Listbox
-              aria-label="Settings navigation"
-              className="gap-1"
-              onAction={(key) => {
-                const item = settingsItems.find((item) => item.key === key);
-
-                if (item) handleItemClick(item);
-              }}
-            >
-              {settingsItems.map((item) => {
+            {
+              settingsItems.map((item) => {
                 const isActive = pathname === item.href;
 
                 return (
-                  <ListboxItem
-                    key={item.key}
-                    className={`rounded-lg px-3 py-2 transition-colors ${isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : item.key === "logout"
-                        ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  <div
+                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors ${isActive
+                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
-                    startContent={<item.icon className="h-5 w-5" />}
+                    key={item.key}
+                    onClick={() => handleItemClick(item)}
                   >
-                    {item.label}
-                  </ListboxItem>
-                );
-              })}
-            </Listbox>
+                    <item.icon className="h-5 w-5" />
+                    <div className="flex-1">
+
+                      {item.label}
+                    </div>
+                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`}></ArrowRightIcon>
+
+                  </div>
+                )
+              })
+            }
+
           </div>
 
           {/* Theme Switch Section */}

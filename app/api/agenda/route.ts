@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 interface Event {
   id: string;
   title: string;
-  type: 'rendez-vous' | 'tournage' | 'publication' | 'evenement';
+  type: 'rendez-vous' | 'tournage' | 'tournage' | 'evenement';
   date: string;
   startTime: string;
   endTime: string;
@@ -84,13 +84,13 @@ const mockEvents: Event[] = [
   },
   {
     id: 'today-4',
-    title: 'Publication - Gagnant du mois',
-    type: 'publication',
+    title: 'tournage - Gagnant du mois',
+    type: 'tournage',
     date: getTodayDate(),
     startTime: '17:00',
     endTime: '17:30',
     location: 'Bureau marketing',
-    description: 'Publication du gagnant du concours mensuel sur les réseaux sociaux',
+    description: 'tournage du gagnant du concours mensuel sur les réseaux sociaux',
     category: 'siege'
   },
   {
@@ -130,13 +130,13 @@ const mockEvents: Event[] = [
   },
   {
     id: 'tomorrow-3',
-    title: 'Publication - Story Instagram',
-    type: 'publication',
+    title: 'tournage - Story Instagram',
+    type: 'tournage',
     date: getTomorrowDate(),
     startTime: '16:00',
     endTime: '16:15',
     location: 'Bureau marketing',
-    description: 'Publication des stories quotidiennes sur Instagram',
+    description: 'tournage des stories quotidiennes sur Instagram',
     category: 'siege'
   },
 
@@ -187,12 +187,12 @@ const mockEvents: Event[] = [
   },
   {
     id: '3',
-    title: 'Publication réseaux sociaux',
-    type: 'publication',
+    title: 'tournage réseaux sociaux',
+    type: 'tournage',
     date: '2025-06-24',
     startTime: '12:00',
     endTime: '13:00',
-    description: 'Publication du contenu de la semaine sur Instagram et Facebook',
+    description: 'tournage du contenu de la semaine sur Instagram et Facebook',
     category: 'siege'
   },
   {
@@ -219,8 +219,8 @@ const mockEvents: Event[] = [
   },
   {
     id: '6',
-    title: 'Publication newsletter',
-    type: 'publication',
+    title: 'tournage newsletter',
+    type: 'tournage',
     date: '2025-06-12',
     startTime: '08:00',
     endTime: '09:00',

@@ -311,11 +311,14 @@ export default function EquipePage() {
                     name={member.name}
                     src={member.avatar}
                   />
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                  <h3 className="font-semibold  text-sm mb-1">
                     {member.name}
                   </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {member.role} {member.location}
+                  <p className="text-sm font-light ">
+                    {member.role}
+                  </p>
+                  <p className="text-xs font-light ">
+                    {member.location}
                   </p>
                 </div>
               ))}

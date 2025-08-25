@@ -12,15 +12,14 @@ import {
   TableCell,
 } from "@heroui/table";
 import { Tabs, Tab } from "@heroui/tabs";
-import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { DashboardLayout } from "../dashboard-layout";
 import { StyledSelect } from "@/components/styled-select";
+import { SortableColumnHeader } from "@/components/sortable-column-header";
+import { useSortableTable } from "@/hooks/use-sortable-table";
 
 export default function DataPage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const allTableData = [
@@ -93,7 +92,7 @@ export default function DataPage() {
   ];
 
   // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
-  const tableData = allTableData.filter((row) => {
+  const filteredData = allTableData.filter((row) => {
     // Filtre par ville (onglet)
     if (activeTab !== "overview" && row.city !== activeTab) {
       return false;
@@ -107,28 +106,8 @@ export default function DataPage() {
     return true;
   });
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return (
-        <ChevronUpIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-      );
-    }
-
-    return sortDirection === "asc" ? (
-      <ChevronUpIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-    ) : (
-      <ChevronDownIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-    );
-  };
+  // Utiliser le hook de tri réutilisable
+  const { sortField, sortDirection, handleSort, sortedData } = useSortableTable(filteredData);
 
   return (
     <DashboardLayout>
@@ -174,14 +153,13 @@ export default function DataPage() {
                 <Table aria-label="Data table">
                   <TableHeader>
                     <TableColumn className="font-light text-sm">
-                      <button
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
-                        type="button"
-                        onClick={() => handleSort("month")}
-                      >
-                        Mois
-                        {getSortIcon("month")}
-                      </button>
+                      <SortableColumnHeader
+                        field="month"
+                        label="Mois"
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                      />
                     </TableColumn>
                     <TableColumn className="font-light text-sm">Chiffre d&apos;affaires</TableColumn>
                     <TableColumn className="font-light text-sm">Taux de conversion</TableColumn>
@@ -189,25 +167,24 @@ export default function DataPage() {
                     <TableColumn className="font-light text-sm">Prospects rencontrés</TableColumn>
                     <TableColumn className="font-light text-sm">Nouveaux prospects</TableColumn>
                     <TableColumn className="font-light text-sm">
-                      <button
-                        className="flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-left w-full"
-                        type="button"
-                        onClick={() => handleSort("publishedPosts")}
-                      >
-                        Posts publiés
-                        {getSortIcon("publishedPosts")}
-                      </button>
+                      <SortableColumnHeader
+                        field="publishedPosts"
+                        label="Posts publiés"
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                      />
                     </TableColumn>
                   </TableHeader>
-                  <TableBody>
-                    {tableData.map((row, index) => (
-                      <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700">
+                  <TableBody  className="mt-30">
+                    {sortedData.map((row, index) => (
+                      <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700 ">
                         <TableCell className="font-light text-sm py-5">
                           {row.month}
                         </TableCell>
                         <TableCell className="font-light text-sm">{row.revenue}</TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-custom-green-stats/14 text-custom-green-stats dark:text-custom-green-stats">
                             {row.conversionRate}
                           </span>
                         </TableCell>

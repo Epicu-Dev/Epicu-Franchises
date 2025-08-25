@@ -435,7 +435,7 @@ export default function TodoPage() {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric'
-                    })}
+                    }).replace(/\//g, '.')}
                   </TableCell>
                   <TableCell>
                     <span
@@ -531,21 +531,7 @@ export default function TodoPage() {
                   validateField('dateEcheance', value);
                 }}
               />
-              <Select
-                label="État"
-                selectedKeys={[newTodo.statut]}
-                onSelectionChange={(keys) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "a_faire"
-                      | "terminee"
-                  }))
-                }
-              >
-                <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="terminee">Validée</SelectItem>
-              </Select>
+              
             </div>
           </ModalBody>
           <ModalFooter>

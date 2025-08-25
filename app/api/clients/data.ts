@@ -249,6 +249,10 @@ export const getClientById = (id: string): Client | undefined => {
   return globalThis.clientsCache?.find(c => c.id === id);
 };
 
+export const getClientBySiret = (siret: string): Client | undefined => {
+  return globalThis.clientsCache?.find(c => c.numeroSiret === siret);
+};
+
 export const updateClient = (id: string, updatedData: Partial<Client>): Client | null => {
   if (!globalThis.clientsCache) return null;
 

@@ -27,6 +27,7 @@ import { MagnifyingGlassIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/o
 import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge, StatusBadge } from "@/components/badges";
+import { SortableColumnHeader } from "@/components";
 
 interface Client {
   id: string;
@@ -274,48 +275,37 @@ export default function ClientsPage() {
           {<Table aria-label="Tableau des clients" shadow="none" >
             <TableHeader>
               <TableColumn className="font-light text-sm">
-                <button
-                  className=" cursor-pointer"
-                  onClick={() => handleSort("categorie")}
-                >
-                  Catégorie
-                  {sortField === "categorie" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+                <SortableColumnHeader
+                  field="categorie"
+                  label="Catégorie"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
               </TableColumn>
               <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
               <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
               <TableColumn className="font-light text-sm">
-                <button
-                  className=" cursor-pointer"
-                  onClick={() => handleSort("dateSignatureContrat")}
-                >
-                  Date signature contrat
-                  {sortField === "dateSignatureContrat" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+                <SortableColumnHeader
+                  field="dateSignatureContrat"
+                  label="Date signature contrat"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
               <TableColumn className="font-light text-sm">Facture contenu</TableColumn>
 
               <TableColumn className="font-light text-sm">
-                <button
-                  className="cursor-pointer text-left w-full"
-                  type="button"
-                  onClick={() => handleSort("statutPaiementContenu")}
-                >
-                  Facture publication
-                  {sortField === "statutPaiementContenu" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </button>
+                <SortableColumnHeader
+                  field="statutPaiementContenu"
+                  label="Facture publication"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
               <TableColumn className="font-light text-sm">Modifier</TableColumn>
               <TableColumn className="font-light text-sm">Commentaire</TableColumn>
@@ -345,7 +335,7 @@ export default function ClientsPage() {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric'
-                        })
+                        }).replace(/\//g, '.')
                         : "-"
                       }
                     </TableCell>
@@ -355,7 +345,7 @@ export default function ClientsPage() {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric'
-                        })
+                        }).replace(/\//g, '.')
                         : "-"
                       }
                     </TableCell>
@@ -414,12 +404,7 @@ export default function ClientsPage() {
         onOpenChange={setIsEditModalOpen}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <h2>Modifier le client</h2>
-            <p className="text-sm text-gray-500 font-normal">
-              {editingClient?.raisonSociale}
-            </p>
-          </ModalHeader>
+         
           <ModalBody className="max-h-[70vh] overflow-y-auto">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">

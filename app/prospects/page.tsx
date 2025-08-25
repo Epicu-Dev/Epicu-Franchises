@@ -33,6 +33,7 @@ import { CategoryBadge } from "@/components/badges";
 
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
+import { SortableColumnHeader } from "@/components";
 
 interface Prospect {
   id: string;
@@ -383,10 +384,10 @@ export default function ProspectsPage() {
           {/* Tabs */}
           <div className="flex justify-between items-center">
             <Tabs
-              className="mb-6 text-xl"
+              className="mb-6  pt-3 text-xl"
               classNames={{
-                cursor: "w-[50px] left-[12px] h-1 rounded",
-                tab: "data-[selected=true]:font-semibold text-base font-light ",
+                cursor: "w-[50px]  left-[12px] h-1   rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
               selectedKey={selectedTab}
               variant="underlined"
@@ -454,49 +455,37 @@ export default function ProspectsPage() {
 
           {/* Table */}
           {<Table aria-label="Tableau des prospects" shadow="none">
-            <TableHeader className="mb-4">
+            <TableHeader className="mb-4 ">
               <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("categorie")}
-                >
-                  Catégorie
-                  {sortField === "categorie" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="categorie"
+                  label="Catégorie"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("dateRelance")}
-                >
-                  Date de relance
-                  {sortField === "dateRelance" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="dateRelance"
+                  label="Date de relance"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-light"
-                  variant="light"
-                  onPress={() => handleSort("suiviPar")}
-                >
-                  Suivi par
-                  {sortField === "suiviPar" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
+              <TableColumn className="font-light text-sm">
+                <SortableColumnHeader
+                  field="suiviPar"
+                  label="Suivi par"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+
               </TableColumn>
               <TableColumn className="font-light text-sm">Commentaire</TableColumn>
               <TableColumn className="font-light text-sm">Modifier</TableColumn>
@@ -522,7 +511,11 @@ export default function ProspectsPage() {
                       </TableCell>
                       <TableCell className="font-light">
                         {prospect.dateRelance
-                          ? prospect.dateRelance
+                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          }).replace(/\//g, '.')
                           : "-"
                         }
                       </TableCell>
