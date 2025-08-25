@@ -255,8 +255,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 const isActive = pathname === item.href;
 
                 return (
-                  <div
-                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors ${isActive
+                  <button
+                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                       ? "bg-black text-white dark:bg-white dark:text-black shadow"
                       : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
@@ -268,9 +268,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
                       {item.label}
                     </div>
-                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`}></ArrowRightIcon>
+                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
 
-                  </div>
+                  </button>
                 )
               })
             }
@@ -289,8 +289,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 const isActive = pathname === item.href;
 
                 return (
-                  <div
-                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors ${isActive
+                  <button
+                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                       ? "bg-black text-white dark:bg-white dark:text-black shadow"
                       : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
@@ -302,9 +302,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
                       {item.label}
                     </div>
-                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`}></ArrowRightIcon>
+                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
 
-                  </div>
+                  </button>
                 )
               })
             }

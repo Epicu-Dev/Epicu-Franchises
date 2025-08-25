@@ -99,8 +99,8 @@ export default function SortableTableExample() {
       <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Comment utiliser :</h2>
         <ol className="list-decimal list-inside space-y-1 text-sm">
-          <li>Importer le composant : <code>import {`{ SortableColumnHeader }`} from "@/components/sortable-column-header"</code></li>
-          <li>Importer le hook : <code>import {`{ useSortableTable }`} from "@/hooks/use-sortable-table"</code></li>
+          <li>Importer le composant : <code>import {`{ SortableColumnHeader }`} from &ldquo;@/components/sortable-column-header&rdquo;</code></li>
+          <li>Importer le hook : <code>import {`{ useSortableTable }`} from &ldquo;@/hooks/use-sortable-table&rdquo;</code></li>
           <li>Utiliser le hook : <code>const {`{ sortField, sortDirection, handleSort, sortedData }`} = useSortableTable(data)</code></li>
           <li>Remplacer les en-têtes de colonnes par <code>SortableColumnHeader</code></li>
           <li>Utiliser <code>sortedData</code> au lieu des données originales</li>
