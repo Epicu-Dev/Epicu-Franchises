@@ -239,7 +239,15 @@ export default function HomePage() {
   const handleAddTodo = () => {
     if (newTodo.mission.trim()) {
       const todoToAdd = {
-        ...newTodo,
+        id: Date.now().toString(),
+        titre: newTodo.mission,
+        description: newTodo.mission,
+        priorite: 'moyenne',
+        statut: newTodo.status === 'En cours' ? 'a_faire' : newTodo.status === 'Terminé' ? 'termine' : 'en_retard',
+        assigne: 'À assigner',
+        dateEcheance: newTodo.deadline || new Date().toISOString().split('T')[0],
+        dateCreation: new Date().toISOString().split('T')[0],
+        tags: []
       };
 
       setTodoItems((prev) => [...prev, todoToAdd]);
