@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 
     switch (type) {
       case 'services':
-        data = category 
+        data = category
           ? services.filter(service => service.category === category)
           : services;
         break;
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validation des données
     if (!body.type || !body.serviceId) {
       return NextResponse.json(

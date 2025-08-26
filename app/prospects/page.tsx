@@ -13,7 +13,7 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
+
 import {
   Modal,
   ModalContent,
@@ -67,21 +67,19 @@ interface ApiProspect {
   siret?: string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+// Interface pour le LazyLoading
+interface LazyLoadingInfo {
+  hasMore: boolean;
+  nextOffset: number | null;
+  loadingMore: boolean;
 }
 
 export default function ProspectsPage() {
   const [prospects, setProspects] = useState<ApiProspect[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  // Variables pour le LazyLoading
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState<number | null>(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSuiviPar, setSelectedSuiviPar] = useState("");
@@ -97,66 +95,157 @@ export default function ProspectsPage() {
   const [, setViewCount] = useState<number | null>(null);
   const previousTabRef = useRef(selectedTab);
 
-  const fetchProspects = async () => {
-
+  const fetchProspects = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      // Vérifier si l'onglet a changé et remettre la pagination à 1
-      if (previousTabRef.current !== selectedTab) {
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+      // Vérifier si l'onglet a changé et remettre les données à zéro
+      if (!isLoadMore && previousTabRef.current !== selectedTab) {
+        setProspects([]);
+        setNextOffset(0);
+        setHasMore(true);
         previousTabRef.current = selectedTab;
       }
 
-      // Construire les paramètres de requête
+      // Construire les paramètres de requête pour l'API Airtable
       const params = new URLSearchParams();
-
-      params.append('statut', selectedTab);
-      if (searchTerm) params.append('q', searchTerm);
-      if (selectedCategory && selectedCategory !== 'tous') params.append('categorie', selectedCategory);
-      if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.append('suiviPar', selectedSuiviPar);
-      if (sortField) params.append('orderBy', sortField);
-      if (sortDirection) params.append('order', sortDirection);
-      params.append('limit', pagination.itemsPerPage.toString());
-      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
-
-      const queryString = params.toString();
-      const url = `/api/prospects${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des prospects");
-      }
-
-      const data = await response.json();
-
-      // Adapter la réponse selon le statut
+      
+      // Adapter les paramètres selon l'onglet sélectionné
       if (selectedTab === 'en_discussion') {
-        setProspects(data.discussions || []);
+        // Utiliser l'API des discussions
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/discussion?limit=20&offset=${offset}`;
+        
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+        
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+        
+        const response = await fetch(fullUrl);
+        
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des discussions");
+        }
+        
+        const data = await response.json();
+        
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.discussions || [])]);
+        } else {
+          setProspects(data.discussions || []);
+        }
+        
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+        
+      } else if (selectedTab === 'glacial') {
+        // Utiliser l'API des prospects glaciaux
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/glacial?limit=20&offset=${offset}`;
+        
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+        
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+        
+        const response = await fetch(fullUrl);
+        
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects glaciaux");
+        }
+        
+        const data = await response.json();
+        
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+        
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+        
       } else {
-        setProspects(data.prospects || []);
+        // Onglet "À contacter" - utiliser l'API des prospects normaux
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
+        
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+        
+        // Ajouter le tri si spécifié
+        if (sortField) {
+          let orderByField = sortField;
+          // Mapper les champs de tri vers les noms Airtable
+          switch (sortField) {
+            case 'categorie':
+              orderByField = 'Catégorie';
+              break;
+            case 'dateRelance':
+              orderByField = 'Date de relance';
+              break;
+            case 'suiviPar':
+              orderByField = 'Suivi par';
+              break;
+            default:
+              orderByField = "Nom de l'établissement";
+          }
+          params.set('orderBy', orderByField);
+        }
+        if (sortDirection) params.set('order', sortDirection);
+        
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+        
+        const response = await fetch(fullUrl);
+        
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects");
+        }
+        
+        const data = await response.json();
+        
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+        
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
       }
-
-      setViewCount(data.viewCount ?? null);
-      setPagination(prev => ({
-        ...prev,
-        totalItems: data.totalCount || 0,
-        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-      }));
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Fonction pour charger plus de données
+  const loadMore = () => {
+    if (hasMore && !loadingMore && nextOffset !== null) {
+      fetchProspects(true);
     }
   };
 
   useEffect(() => {
     fetchProspects();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedCategory,
     selectedSuiviPar,
@@ -363,9 +452,27 @@ export default function ProspectsPage() {
             </Button>
           </div>
 
-          {/* Table */}
-          {<Table aria-label="Tableau des prospects" shadow="none">
-            <TableHeader className="mb-4 ">
+          {/* Table avec LazyLoading */}
+          <Table 
+            aria-label="Tableau des prospects" 
+            shadow="none"
+            bottomContent={
+              hasMore && (
+                <div className="flex justify-center py-4">
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    onPress={loadMore}
+                    isLoading={loadingMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Chargement...' : 'Charger plus'}
+                  </Button>
+                </div>
+              )
+            }
+          >
+            <TableHeader className="mb-4">
               <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
               <TableColumn className="font-light text-sm">
                 <SortableColumnHeader
@@ -375,7 +482,6 @@ export default function ProspectsPage() {
                   sortField={sortField}
                   onSort={handleSort}
                 />
-
               </TableColumn>
               <TableColumn className="font-light text-sm">
                 <SortableColumnHeader
@@ -385,7 +491,6 @@ export default function ProspectsPage() {
                   sortField={sortField}
                   onSort={handleSort}
                 />
-
               </TableColumn>
               <TableColumn className="font-light text-sm">
                 <SortableColumnHeader
@@ -395,93 +500,70 @@ export default function ProspectsPage() {
                   sortField={sortField}
                   onSort={handleSort}
                 />
-
               </TableColumn>
               <TableColumn className="font-light text-sm">Commentaire</TableColumn>
               <TableColumn className="font-light text-sm">Modifier</TableColumn>
               <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
             </TableHeader>
-            <TableBody className="mt-4">
-              {
-
-                loading ? (
-                  <TableRow>
-                    <TableCell className="text-center" colSpan={7}>
-                      <Spinner className="text-black dark:text-white p-20" size="lg" />
-                    </TableCell>
-                  </TableRow>
-                ) :
-                  prospects.map((prospect) => (
-                    <TableRow key={prospect.id} className="border-t border-gray-100  dark:border-gray-700">
-                      <TableCell className="font-light py-5">
-                        {prospect.nomEtablissement}
-                      </TableCell>
-                      <TableCell className="font-light">
-                        <CategoryBadge category={prospect.categorie} />
-                      </TableCell>
-                      <TableCell className="font-light">
-                        {prospect.dateRelance
-                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          }).replace(/\//g, '.')
-                          : "-"
-                        }
-                      </TableCell>
-                      <TableCell className="font-light">{prospect.suiviPar}</TableCell>
-                      <TableCell className="font-light">{prospect.commentaires}</TableCell>
-                      <TableCell>
-                        <Button
-                          isIconOnly
-                          aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
-                          className="text-gray-600 hover:text-gray-800"
-                          size="sm"
-                          variant="light"
-                          onPress={() => handleEditProspect(prospect)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-light">
-                        <Button
-                          className="px-6"
-                          color="primary"
-                          size="sm"
-                          variant="flat"
-                          onPress={() => openConvertModal(prospect)}
-                        >
-                          Convertir
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+            <TableBody 
+              className="mt-4"
+              loadingContent={<Spinner className="text-black dark:text-white" size="lg" />}
+              loadingState={loading ? "loading" : "idle"}
+            >
+              {prospects.map((prospect) => (
+                <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
+                  <TableCell className="font-light py-5">
+                    {prospect.nomEtablissement}
+                  </TableCell>
+                  <TableCell className="font-light">
+                    <CategoryBadge category={prospect.categorie} />
+                  </TableCell>
+                  <TableCell className="font-light">
+                    {prospect.dateRelance
+                      ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      }).replace(/\//g, '.')
+                      : "-"
+                    }
+                  </TableCell>
+                  <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                  <TableCell className="font-light">{prospect.commentaires}</TableCell>
+                  <TableCell>
+                    <Button
+                      isIconOnly
+                      aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                      className="text-gray-600 hover:text-gray-800"
+                      size="sm"
+                      variant="light"
+                      onPress={() => handleEditProspect(prospect)}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="font-light">
+                    <Button
+                      className="px-6"
+                      color="primary"
+                      size="sm"
+                      onPress={() => openConvertModal(prospect)}
+                    >
+                      Convertir
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
-          </Table>}
+          </Table>
 
-          {/* Pagination */}
-          {!loading && <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>}
-
-          {/* Info sur le nombre total d'éléments */}
-          {!loading && <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {prospects.length} prospect(s) sur{" "}
-            {pagination.totalItems} au total
-          </div>}
+          {/* Info sur le nombre d'éléments chargés */}
+          {!loading && (
+            <div className="text-center mt-4 text-sm text-gray-500">
+              Affichage de {prospects.length} prospect(s) chargé(s)
+              {hasMore && " - Plus de données disponibles"}
+            </div>
+          )}
         </CardBody>
       </Card>
 

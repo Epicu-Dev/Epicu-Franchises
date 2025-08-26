@@ -160,18 +160,48 @@ export function ProspectModal({
         return;
       }
 
-      const url = isEditing && newProspect.id
-        ? `/api/prospects/${newProspect.id}`
-        : "/api/prospects";
+      // Adapter les données pour l'API Airtable
+      const prospectData: Record<string, any> = {
+        'SIRET': newProspect.siret,
+        "Nom de l'établissement": newProspect.nomEtablissement,
+        'Ville EPICU': newProspect.ville,
+        'Téléphone': newProspect.telephone,
+        'Catégorie': newProspect.categorie,
+        'Statut': newProspect.statut,
+        'Date du premier contact': newProspect.datePremierRendezVous,
+        'Date de relance': newProspect.dateRelance,
+        'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
+        'Commentaires': newProspect.commentaire,
+        'Suivi par': newProspect.suiviPar,
+      };
 
-      const method = isEditing ? "PUT" : "POST";
+      // Ajouter les champs optionnels s'ils existent
+      if (newProspect.email) {
+        prospectData['Email'] = newProspect.email;
+      }
+      if (newProspect.adresse) {
+        prospectData['Adresse'] = newProspect.adresse;
+      }
+
+      let url: string;
+      let method: string;
+
+      if (isEditing && newProspect.id) {
+        // Mise à jour - utiliser l'API Airtable avec PATCH
+        url = `/api/prospects/prospects?id=${encodeURIComponent(newProspect.id)}`;
+        method = "PATCH";
+      } else {
+        // Création - utiliser l'API Airtable
+        url = "/api/prospects/prospects";
+        method = "POST";
+      }
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newProspect),
+        body: JSON.stringify(prospectData),
       });
 
       if (!response.ok) {

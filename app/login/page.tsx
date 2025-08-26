@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 
 import MessageAlert from "@/components/message-alert";
 import { FormLabel } from "@/components/form-label";
+import { isUserLoggedIn } from "@/utils/auth";
 
 export default function LoginPage() {
   const [identifiant, setIdentifiant] = useState("");
@@ -15,6 +16,13 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"error" | "success" | "info">("error");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Vérifier si l'utilisateur est déjà connecté et le rediriger
+  useEffect(() => {
+    if (isUserLoggedIn()) {
+      router.push("/home");
+    }
+  }, [router]);
 
   // Appel de préchauffage Airtable en arrière-plan dès l'arrivée sur la page
   useEffect(() => {

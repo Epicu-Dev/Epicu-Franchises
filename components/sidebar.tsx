@@ -178,7 +178,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
         transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `} shadow="none">
-        <CardBody className="p-0 h-full flex flex-col">
+        <CardBody className="p-0 h-full flex flex-col text-rimary">
           {/* Header avec bouton fermer sur mobile */}
           <div className="flex items-center justify-between p-4 md:hidden border-b border-gray-100 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Menu</h2>
