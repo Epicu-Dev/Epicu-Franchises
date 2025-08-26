@@ -546,20 +546,30 @@ export default function AgendaPage() {
               </StyledSelect>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex rounded-md overflow-hidden flex-shrink-0">
 
               <Button
                 color={view === "semaine" ? "primary" : "default"}
+                className={
+                  view === "semaine"
+                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                }
                 size="sm"
-                variant={view === "semaine" ? "solid" : "light"}
+                variant="solid"
                 onPress={() => setView("semaine")}
               >
                 Semaine
               </Button>
               <Button
                 color={view === "mois" ? "primary" : "default"}
+                className={
+                  view === "mois"
+                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                }
                 size="sm"
-                variant={view === "mois" ? "solid" : "light"}
+                variant="solid"
                 onPress={() => setView("mois")}
               >
                 Mois
