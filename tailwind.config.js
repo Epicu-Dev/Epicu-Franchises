@@ -14,10 +14,10 @@ const config = {
         mono: ["var(--font-mono)"],
       },
       colors: {
-        'page-bg': '#F5F5F5',
+        'page-bg': '#FAFAFA',
         'custom-text-color': '#2B2B2B',
-        'custom-text-color-light': '#666666',
-        'text-primary': '#2B2B2B',
+        'primary-light': '#666666',
+        'primary': '#2B2B2B',
         'custom-blue-beauty': '#30BCE3',
         'custom-blue-rdv': '#1E40AF',
         'custom-blue-in-progress': '#5DADEC',

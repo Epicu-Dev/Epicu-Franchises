@@ -384,8 +384,8 @@ export default function StudioPage() {
             <div>
 
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onClick={handleOpenPrestationModal}
               >
                 Demander une prestation
@@ -404,17 +404,17 @@ export default function StudioPage() {
                 <>
 
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-primary px-4">
                     {services.map((service) => (
                       <div
                         key={service.id}
-                        className=" relative p-6 bg-white dark:bg-gray-800 rounded-lg hover:border  hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer "
+                        className=" relative p-2 "
                       >
                         <div className="space-y-4">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-primary">
                             {service.title}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                          <p className="text-sm font-light">
                             {service.description}
                           </p>
                         </div>
@@ -433,17 +433,17 @@ export default function StudioPage() {
                       className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
                     >
                       <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-xl font-semibold text-primary">
                           {pack.title}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm font-light">
                           {pack.description}
                         </p>
                         <div className="flex justify-between items-center">
-                          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <span className="text-lg font-semibold text-primary">
                             {pack.price}€
                           </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                          <span className="text-sm font-light">
                             {pack.duration}
                           </span>
                         </div>
@@ -530,7 +530,6 @@ export default function StudioPage() {
 
                       </TableColumn>
                       <TableColumn className="font-light text-sm">Montant commission</TableColumn>
-                      <TableColumn className="font-light text-sm">Progression</TableColumn>
                     </TableHeader>
                     <TableBody>
                       {paginatedPrestations.map((prestation) => (
@@ -538,30 +537,17 @@ export default function StudioPage() {
                           <TableCell>
                             <CategoryBadge category={prestation.category} />
                           </TableCell>
-                          <TableCell className="py-5">{prestation.establishmentName}</TableCell>
-                          <TableCell>{prestation.contractDate}</TableCell>
-                          <TableCell>
+                          <TableCell className="py-5 font-light">{prestation.establishmentName}</TableCell>
+                          <TableCell className="font-light">{prestation.contractDate}</TableCell>
+                          <TableCell className="font-light">
                             {prestation.serviceTitle}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="font-light">
                             <StatusBadge status={prestation.invoiceStatus} />
                           </TableCell>
-                          <TableCell>{prestation.amount}€</TableCell>
-                          <TableCell>{prestation.commission}€</TableCell>
-                          <TableCell>
-                            {prestation.status === 'en_cours' && (
-                              <Progress
-                                className="w-20"
-                                classNames={{
-                                  track: "bg-gray-200 dark:bg-gray-700",
-                                  indicator: "bg-black dark:bg-white"
-                                }}
-                                showValueLabel={true}
-                                value={prestation.progress}
-                                size="sm"
-                              />
-                            )}
-                          </TableCell>
+                          <TableCell className="font-light">{prestation.amount}€</TableCell>
+                          <TableCell className="font-light">{prestation.commission}€</TableCell>
+
                         </TableRow>
                       ))}
                     </TableBody>
@@ -583,10 +569,6 @@ export default function StudioPage() {
                     />
                   </div>
 
-                  {/* Info sur le nombre total d'éléments */}
-                  <div className="text-center mt-4 text-sm text-gray-500">
-                    Affichage de {paginatedPrestations.length} prestation(s) sur {filteredPrestations.length} au total
-                  </div>
                 </div>
               )}
 

@@ -179,7 +179,8 @@ export default function HomeAdminPage() {
                   Ce mois-ci
                 </Button>
                 <Button
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="border-1"
+                  color='primary'
                   size="sm"
                   variant="bordered"
                 >
@@ -350,7 +351,7 @@ export default function HomeAdminPage() {
                   Annuler
                 </Button>
                 <Button
-                  className="bg-black text-white hover:bg-gray-800"
+                  color='primary'
                   onPress={() => {
                     // TODO: Implémenter la logique d'ajout de prospect
                     setIsAddProspectModalOpen(false);

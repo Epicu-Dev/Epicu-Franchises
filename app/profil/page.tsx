@@ -15,13 +15,16 @@ import {
   TableCell,
 } from '@heroui/table';
 import {
-  PencilIcon
+  ArrowDownTrayIcon,
+  PencilIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 
 import { SortableColumnHeader } from '@/components/sortable-column-header';
 import { useSortableTable } from '@/hooks/use-sortable-table';
 import { InvoiceStatusBadge } from '@/components/badges';
+import { FormLabel } from '@/components';
 
 interface UserProfile {
   id: string;
@@ -78,21 +81,21 @@ export default function ProfilPage() {
 
   // Hook pour le tri du tableau historique
   const { sortField, sortDirection, handleSort, sortedData } = useSortableTable<HistoryItem>(history);
-  
+
   // Hook pour le tri du tableau documents
-  const { 
-    sortField: docSortField, 
-    sortDirection: docSortDirection, 
-    handleSort: handleDocSort, 
-    sortedData: sortedDocData 
+  const {
+    sortField: docSortField,
+    sortDirection: docSortDirection,
+    handleSort: handleDocSort,
+    sortedData: sortedDocData
   } = useSortableTable<Document>(documents);
-  
+
   // Hook pour le tri du tableau factures
-  const { 
-    sortField: invoiceSortField, 
-    sortDirection: invoiceSortDirection, 
-    handleSort: handleInvoiceSort, 
-    sortedData: sortedInvoiceData 
+  const {
+    sortField: invoiceSortField,
+    sortDirection: invoiceSortDirection,
+    handleSort: handleInvoiceSort,
+    sortedData: sortedInvoiceData
   } = useSortableTable<Invoice>(invoices);
 
   const fetchProfileData = async () => {
@@ -265,8 +268,8 @@ export default function ProfilPage() {
   }
 
   return (
-    <div className="w-full">
-      <Card className="w-full bg-white dark:bg-gray-900 shadow-none">
+    <div className="w-full text-primary">
+      <Card className="w-full bg-white shadow-none">
         <CardBody className="p-6">
           {/* Onglets */}
           <Tabs
@@ -317,8 +320,9 @@ export default function ProfilPage() {
                   </div>
                 </div>
                 <Button
-                  className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                  startContent={<PencilIcon className="h-4 w-4" />}
+                  className='text-base'
+                  variant='light'
+                  startContent={<PencilSquareIcon className="h-6 w-6" />}
                   onPress={() => setIsEditing(!isEditing)}
                 >
                   Modifier
@@ -327,121 +331,157 @@ export default function ProfilPage() {
 
               {/* Formulaire d'informations */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Identifiant"
-                  placeholder="Identifiant"
-                  value={profile.identifier}
-                  onChange={(e) => setProfile(prev => ({ ...prev, identifier: e.target.value }))}
-                />
+                <div className="space-y-4 text-primary-light/20">
 
-                <Input
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Mot de passe"
-                  placeholder="••••••••"
-                  type="password"
-                />
+                  <FormLabel htmlFor="identifier" isRequired={false}>
+                    Identifiant
+                  </FormLabel>
+                  <Input
+                    classNames={{
+                      input: "text-primary-light/20 placeholder:text-primary-light/20",
+                    }}
+                    id="identifier"
+                    isReadOnly={!isEditing}
+                    placeholder="Identifiant"
+                    value={profile.identifier}
+                    onChange={(e) => setProfile(prev => ({ ...prev, identifier: e.target.value }))}
+                  />
+                </div>
 
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Nom*"
-                  placeholder="Nom"
-                  value={profile.lastName}
-                  onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
-                />
+                <div className="space-y-4 text-primary-light/20">
+                  <FormLabel htmlFor="password" isRequired={false}>
+                    Mot de passe
+                  </FormLabel>
+                  <Input
+                    classNames={{
+                      input: "text-primary-light/20 placeholder:text-primary-light/20",
+                    }}
+                    id="password"
+                    isReadOnly={!isEditing}
+                    placeholder="••••••••"
+                    type="password"
+                  />
+                </div>
 
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Prénom*"
-                  placeholder="Prénom"
-                  value={profile.firstName}
-                  onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
-                />
+                <div className="space-y-4">
 
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Email de la ville*"
-                  placeholder="email@epicu.fr"
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                />
+                  <FormLabel htmlFor="lastName" isRequired={true}>
+                    Nom
+                  </FormLabel>
+                  <Input
+                    id="lastName"
+                    isRequired
+                    classNames={{
+                      input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                      inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                      label: "text-gray-700 dark:text-gray-300 font-medium"
+                    }}
+                    isReadOnly={!isEditing}
+                    placeholder="Nom"
+                    value={profile.lastName}
+                    onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                  />
+                </div>
 
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Tel*"
-                  placeholder="06 00 00 00 00"
-                  value={profile.phone}
-                  onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                />
+                <div className="space-y-4">
 
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Rôle*"
-                  placeholder="Rôle"
-                  value={profile.role}
-                  onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))}
-                />
+                  <FormLabel htmlFor="firstName" isRequired={true}>
+                    Prénom
+                  </FormLabel>
+                  <Input
+                    id="firstName"
+                    isRequired
+                    classNames={{
+                      input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                      inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                      label: "text-gray-700 dark:text-gray-300 font-medium"
+                    }}
+                    isReadOnly={!isEditing}
+                    placeholder="Prénom"
+                    value={profile.firstName}
+                    onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-4">
+
+                  <FormLabel htmlFor="email" isRequired={true}>
+                    Email de la ville
+                  </FormLabel>
+                  <Input
+                    id="email"
+                    isRequired
+                    classNames={{
+                      input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                      inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                      label: "text-gray-700 dark:text-gray-300 font-medium"
+                    }}
+                    isReadOnly={!isEditing}
+                    placeholder="email@epicu.fr"
+                    type="email"
+                    value={profile.email}
+                    onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-4">
+
+                  <FormLabel htmlFor="phone" isRequired={true}>
+                    Tel
+                  </FormLabel>
+                  <Input
+                    id="phone"
+                    isRequired
+                    classNames={{
+                      input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                      inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                      label: "text-gray-700 dark:text-gray-300 font-medium"
+                    }}
+                    isReadOnly={!isEditing}
+                    placeholder="06 00 00 00 00"
+                    value={profile.phone}
+                    onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-4">
+
+                  <FormLabel htmlFor="role" isRequired={true}>
+                    Rôle
+                  </FormLabel>
+                  <Input
+                    id="role"
+                    isRequired
+                    classNames={{
+                      input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                      inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                      label: "text-gray-700 dark:text-gray-300 font-medium"
+                    }}
+                    isReadOnly={!isEditing}
+                    placeholder="Rôle"
+                    value={profile.role}
+                    onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))}
+                  />
+                </div>
               </div>
 
               {/* Bouton de sauvegarde */}
-              {isEditing && (
-                <div className="flex justify-center pt-6">
-                  <Button
-                    className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                    size="lg"
-                    onPress={handleSaveProfile}
-                  >
-                    Mettre à jour
-                  </Button>
-                </div>
-              )}
+
+              <div className="flex justify-center pt-6">
+                <Button
+                  className='w-100'
+                  color='primary'
+                  onPress={handleSaveProfile}
+                >
+                  Mettre à jour
+                </Button>
+              </div>
+
             </div>
           )}
 
           {activeTab === 'factures' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes factures Epicu</h3>
               <Table aria-label="Tableau des factures" shadow="none">
                 <TableHeader>
                   <TableColumn className="font-light text-sm">
@@ -487,13 +527,10 @@ export default function ProfilPage() {
                         <Button
                           isIconOnly
                           aria-label={`Télécharger la facture ${invoice.id}`}
-                          className="text-gray-600 hover:text-gray-800"
-                          size="sm"
+                          size="md"
                           variant="light"
                         >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                          </svg>
+                          <ArrowDownTrayIcon className="w-5 h-5" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -505,7 +542,6 @@ export default function ProfilPage() {
 
           {activeTab === 'documents' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes documents</h3>
               <Table aria-label="Tableau des documents" shadow="none">
                 <TableHeader>
                   <TableColumn className="font-light text-sm">
@@ -529,13 +565,10 @@ export default function ProfilPage() {
                         <Button
                           isIconOnly
                           aria-label={`Télécharger ${document.type}`}
-                          className="text-gray-600 hover:text-gray-800"
                           size="sm"
                           variant="light"
                         >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                          </svg>
+                          <ArrowDownTrayIcon className="w-5 h-5" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -547,7 +580,6 @@ export default function ProfilPage() {
 
           {activeTab === 'historique' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Historique des activités</h3>
               <Table aria-label="Tableau de l'historique" shadow="none">
                 <TableHeader>
                   <TableColumn className="font-light text-sm">Personne</TableColumn>

@@ -40,12 +40,12 @@ interface ProspectModalProps {
   isEditing?: boolean;
 }
 
-export function ProspectModal({ 
-  isOpen, 
-  onClose, 
-  onProspectAdded, 
+export function ProspectModal({
+  isOpen,
+  onClose,
+  onProspectAdded,
   editingProspect = null,
-  isEditing = false 
+  isEditing = false
 }: ProspectModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
@@ -158,10 +158,10 @@ export function ProspectModal({
         return;
       }
 
-      const url = isEditing && newProspect.id 
+      const url = isEditing && newProspect.id
         ? `/api/prospects/${newProspect.id}`
         : "/api/prospects";
-      
+
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -471,11 +471,12 @@ export function ProspectModal({
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-end gap-2">
-          <Button className="flex-1" variant="bordered" onPress={handleClose}>
+          <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={handleClose}>
             Annuler
           </Button>
           <Button
-            className="bg-black text-white hover:bg-gray-900 flex-1"
+            className="flex-1"
+            color='primary'
             isDisabled={Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
             onPress={handleSubmit}
           >

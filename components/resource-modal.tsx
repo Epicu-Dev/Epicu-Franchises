@@ -101,9 +101,10 @@ export default function ResourceModal({
           </ModalBody>
           <ModalFooter className="flex justify-end gap-2">
             <Button
+              className="flex-1 border-1"
+              color='primary'
               variant="bordered"
               onPress={onClose}
-              className="flex-1"
             >
               Annuler
             </Button>

@@ -234,7 +234,7 @@ export default function EquipePage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}

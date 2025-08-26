@@ -117,38 +117,6 @@ export default function AgendaPage() {
     });
   };
 
-
-
-  const getEventTypeColor = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "primary";
-      case "tournage":
-        return "secondary";
-      case "publication":
-        return "success";
-      case "evenement":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
-
-  const getEventTypeLabel = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "Rendez-vous";
-      case "tournage":
-        return "Tournage";
-      case "publication":
-        return "Publication";
-      case "evenement":
-        return "Événement";
-      default:
-        return type;
-    }
-  };
-
   const formatMonthYear = (date: Date) => {
     const months = [
       "Janvier",
@@ -367,7 +335,7 @@ export default function AgendaPage() {
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center gap-4 flex items-center font-semibold text-custom-text-color-light"
+                className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
               >
                 <div
                   className={` w-8 h-8 flex items-center justify-center ${day.isToday
@@ -476,7 +444,7 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* En-tête avec navigation et boutons */}
@@ -503,24 +471,24 @@ export default function AgendaPage() {
 
             <div className="flex items-center space-x-4">
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsRdvModalOpen(true)}
               >
                 Créer un rendez-vous
               </Button>
 
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsTournageModalOpen(true)}
               >
                 Ajouter un tournage
               </Button>
 
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsPublicationModalOpen(true)}
               >
                 Ajouter une publication

@@ -331,8 +331,9 @@ export default function HomePage() {
 
               {/* Add Prospect Button */}
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 flex-shrink-0"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                className="flex-shrink-0"
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsProspectModalOpen(true)}
               >
                 Ajouter un prospect
@@ -418,10 +419,10 @@ export default function HomePage() {
                       className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-light text-custom-text-color">
+                        <p className="text-sm font-light text-primary">
                           {event.clientName}
                         </p>
-                        <p className="text-xs text-custom-text-color-light">
+                        <p className="text-xs text-primary-light">
                           {event.date}
                         </p>
                       </div>
@@ -439,7 +440,7 @@ export default function HomePage() {
                   </h3>
                   <Button
                     isIconOnly
-                    className="bg-black dark:bg-white text-white dark:text-black"
+                    color='primary'
                     size="sm"
                     onPress={onAddTodoModalOpen}
                   >
@@ -453,10 +454,10 @@ export default function HomePage() {
                       className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-light text-custom-text-color">
+                        <p className="text-sm font-light text-primary">
                           {item.titre}
                         </p>
-                        <p className="text-xs text-custom-text-color-light">
+                        <p className="text-xs text-primary-light">
                           {new Date(item.dateEcheance).toLocaleDateString('fr-FR', {
                             day: '2-digit',
                             month: '2-digit',
@@ -532,11 +533,12 @@ export default function HomePage() {
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">
-            <Button className="flex-1" variant="bordered" onPress={onAddTodoModalClose}>
+            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={onAddTodoModalClose}>
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               onPress={handleAddTodo}
             >
               Ajouter

@@ -327,8 +327,8 @@ export default function TodoPage() {
 
             <div className="relative">
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => {
                   setError(null);
                   setFieldErrors({});
@@ -491,7 +491,7 @@ export default function TodoPage() {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.titre || !newTodo.dateEcheance}
               onPress={handleAddTodo}
             >

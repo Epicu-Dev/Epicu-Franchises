@@ -90,7 +90,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex text-primary">
       {/* Left Side - Background Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div
@@ -110,15 +110,15 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-6">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-page-bg px-6 ">
         <div className="w-full max-w-md">
           {/* Login Card */}
           <div className="bg-white rounded-3xl shadow-lg shadow-gray-100 p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              <h1 className="text-3xl font-bold mb-2 ">
                 Bienvenue !
               </h1>
-              <p className="text-gray-600 text-sm pl-8 pr-8 font-light">
+              <p className=" text-sm pl-8 pr-8 font-light">
                 Votre réseau réuni ici pour vous aider à prendre les meilleures
                 décisions
               </p>
@@ -165,8 +165,8 @@ export default function LoginPage() {
               </div>
 
               <Button
-                className="w-full bg-gray-800 text-white hover:bg-gray-700"
-                color="default"
+                className="w-full "
+                color="primary"
                 isLoading={isLoading}
                 size="lg"
                 type="submit"

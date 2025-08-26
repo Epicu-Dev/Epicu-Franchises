@@ -150,7 +150,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
               </div>
 
               <div>
-                <FormLabel htmlFor="commentaires" isRequired={false}>
+                <FormLabel htmlFor="commentaires" isRequired={true}>
                   Commentaires
                 </FormLabel>
                 <Textarea
@@ -177,7 +177,8 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         {!isSubmitted && (
           <ModalFooter className="flex justify-end gap-2">
             <Button
-              className="flex-1"
+              className="flex-1 border-1"
+              color='primary'
               disabled={isSubmitting}
               variant="bordered"
               onPress={handleClose}
@@ -185,7 +186,8 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white hover:bg-gray-900 flex-1"
+              className="flex-1"
+              color='primary'
               disabled={!formData.objet.trim() || isSubmitting || !userProfile}
               isLoading={isSubmitting}
               onPress={handleSubmit}

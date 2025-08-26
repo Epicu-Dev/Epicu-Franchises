@@ -155,10 +155,7 @@ export default function RessourcesPage() {
                 key="liens-importants"
                 title="Liens importants"
               />
-              <Tab
-                key="bibliotheque"
-                title="Bibliothèque"
-              />
+              
               <Tab
                 key="ressources-canva"
                 title="Ressources Canva"
@@ -173,8 +170,7 @@ export default function RessourcesPage() {
 
               <Button
                 color="primary"
-                className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsModalOpen(true)}
               >
                 Ajouter un document
@@ -220,7 +216,8 @@ export default function RessourcesPage() {
                     <Button
                       size="sm"
                       variant="bordered"
-                      className="rounded-full font-light text-sm border-black border-1 bg-page-bg"
+                      className="rounded-full font-light text-sm border-1"
+                      color='primary'
                       as="a"
                       href={resource.link}
                       target="_blank"

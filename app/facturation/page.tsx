@@ -439,7 +439,7 @@ export default function FacturationPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody>
           {/* En-tête avec onglets et bouton d'ajout */}
@@ -461,8 +461,8 @@ export default function FacturationPage() {
 
             <div>
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => {
                   setError(null);
                   setFieldErrors({});
@@ -749,7 +749,7 @@ export default function FacturationPage() {
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-end">
-            <Button className="flex-1" variant="bordered" onPress={() => {
+            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={() => {
               setIsAddModalOpen(false);
               setSelectedInvoice(null);
               setNewInvoice({
@@ -768,7 +768,8 @@ export default function FacturationPage() {
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
               onPress={selectedInvoice ? handleEditInvoice : handleAddInvoice}
             >

@@ -111,7 +111,7 @@ export default function DataPage() {
 
   return (
     <DashboardLayout>
-      <div className="">
+      <div className="text-primary">
         <Card className="w-full" shadow="none">
           <CardBody className="space-y-6">
             {/* Tabs */}

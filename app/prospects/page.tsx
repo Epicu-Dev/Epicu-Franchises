@@ -351,8 +351,8 @@ export default function ProspectsPage() {
             </div>
 
             <Button
-              className="bg-black text-white hover:bg-gray-900"
-              startContent={<PlusIcon className="h-4 w-4" />}
+              color='primary'
+              endContent={<PlusIcon className="h-4 w-4" />}
               onPress={() => {
                 setEditingProspect(null);
                 setIsProspectModalOpen(true);
@@ -445,7 +445,7 @@ export default function ProspectsPage() {
                       <TableCell className="font-light">
                         <Button
                           color="primary"
-                          className="bg-gray-800 text-white dark:bg-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-200 px-6"
+                          className="px-6"
                           size="sm"
                           variant="flat"
                           onPress={() => openConvertModal(prospect)}
@@ -493,7 +493,7 @@ export default function ProspectsPage() {
         <ModalContent>
           <ModalHeader>Confirmer la conversion</ModalHeader>
           <ModalBody>
-            <div className="space-y-4">
+            <div className="space-y-4 text-primary">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
                   <svg className="h-12 w-12 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -501,10 +501,10 @@ export default function ProspectsPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <h3 className="text-lg font-medium">
                     Convertir ce prospect en client ?
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm mt-1">
                     Cette action va convertir <strong>{prospectToConvert?.nomEtablissement}</strong> en client.
                     Le prospect sera supprimé de la liste des prospects.
                   </p>
@@ -513,10 +513,10 @@ export default function ProspectsPage() {
 
               {prospectToConvert && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  <h4 className="text-sm font-medium mb-2">
                     Informations du prospect :
                   </h4>
-                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="space-y-1 text-sm">
                     <p><strong>Établissement :</strong> {prospectToConvert.nomEtablissement}</p>
                     <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
                     <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
@@ -528,7 +528,9 @@ export default function ProspectsPage() {
           </ModalBody>
           <ModalFooter>
             <Button
-              variant="light"
+              className="border-1"
+              color='primary'
+              variant="bordered"
               onPress={() => {
                 setIsConvertModalOpen(false);
                 setProspectToConvert(null);
@@ -537,8 +539,7 @@ export default function ProspectsPage() {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-
+              color='primary'
               onPress={handleConvertToClient}
             >
               Confirmer la conversion

@@ -83,7 +83,7 @@ export default function ClientsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
-  
+
 
   const fetchClients = async () => {
     try {
@@ -217,7 +217,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-2" >
           {/* Header with filters */}
@@ -591,7 +591,7 @@ export default function ClientsPage() {
                   />
 
                   <Button
-                    className="bg-black text-white"
+                    color='primary'
                     endContent={<ArrowDownTrayIcon className="w-4 h-4" />}
                   >
                     Télécharger
@@ -874,7 +874,8 @@ export default function ClientsPage() {
           </ModalBody>
           <ModalFooter className="flex justify-between">
             <Button
-              className="flex-1"
+              className="flex-1 border-1"
+              color='primary'
               variant="bordered"
               onPress={() => {
                 setIsEditModalOpen(false);
@@ -884,7 +885,8 @@ export default function ClientsPage() {
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               onPress={handleUpdateClient}
             >
               Modifier
