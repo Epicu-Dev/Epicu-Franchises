@@ -14,6 +14,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const order = req.query.order === 'desc' ? 'desc' : 'asc';
     const orderByReq = (req.query.orderBy as string) || "Nom de l'établissement";
     const q = (req.query.q as string) || (req.query.search as string) || '';
+    const category = (req.query.category as string) || '';
 
     const fields = [
       'Catégorie',
@@ -40,14 +41,42 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       sort: [{ field: orderBy, direction: order }],
     };
 
+    // Construire la formule de filtrage
+    let filterFormulas: string[] = [];
+    
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
-      selectOptions.filterByFormula =
+      filterFormulas.push(
         `OR(` +
         `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Raison sociale}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Commentaire}), "${pattern}")` +
-        `)`;
+        `)`
+      );
+    }
+    
+    if (category && category.trim().length > 0) {
+      // D'abord récupérer l'ID de la catégorie par son nom
+      const catRecords = await base('Catégories')
+        .select({
+          filterByFormula: `{Name} = "${category}"`,
+          fields: ['Name'],
+          pageSize: 1,
+          maxRecords: 1,
+        })
+        .all();
+      
+      if (catRecords.length > 0) {
+        const catId = catRecords[0].id;
+        filterFormulas.push(`FIND('${catId}', ARRAYJOIN({Catégorie})) > 0`);
+      }
+    }
+    
+    // Appliquer les filtres si il y en a
+    if (filterFormulas.length > 0) {
+      selectOptions.filterByFormula = filterFormulas.length === 1 
+        ? filterFormulas[0] 
+        : `AND(${filterFormulas.join(', ')})`;
     }
 
     // Ne récupérer qu'au plus offset+limit en mémoire
@@ -85,7 +114,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         categorie: catName,
         raisonSociale: record.get('Raison sociale'),
         dateSignature: 'waiting', // conservé comme dans ton code
-        commentaire: "record.get('Commentaire')", // conservé comme dans ton code
+        commentaire: "", // conservé comme dans ton code
       };
     });
 

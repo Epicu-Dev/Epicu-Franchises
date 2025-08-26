@@ -13,7 +13,7 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
+
 import {
   Modal,
   ModalContent,
@@ -22,7 +22,7 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { ArrowDownTrayIcon, MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { Switch } from "@heroui/switch";
 
@@ -34,7 +34,7 @@ interface Client {
   id: string;
   raisonSociale: string;
   ville: string;
-  categorie: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
+  categorie: string;
   telephone: string;
   nomEtablissement: string;
   email: string;
@@ -59,48 +59,59 @@ interface Client {
   statut?: "actif" | "inactif" | "prospect";
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+// Interface pour le LazyLoading
+interface LazyLoadingInfo {
+  hasMore: boolean;
+  nextOffset: number | null;
+  loadingMore: boolean;
 }
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  // Variables pour le LazyLoading
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState<number | null>(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("tous");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [categories, setCategories] = useState<Array<{ id: string, name: string }>>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [, setViewCount] = useState<number | null>(null);
 
 
-  const fetchClients = async () => {
+  const fetchClients = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      // Construire les paramètres de requête
+      // Construire les paramètres de requête pour l'API Airtable
       const params = new URLSearchParams();
 
       if (searchTerm) params.append('q', searchTerm);
+      if (selectedCategoryId && selectedCategoryId !== '') {
+        params.append('category', selectedCategoryId);
+      }
       if (sortField) params.append('orderBy', sortField);
       if (sortDirection) params.append('order', sortDirection);
-      params.append('limit', pagination.itemsPerPage.toString());
-      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
+
+      const limit = 20;
+      const offset = isLoadMore ? (nextOffset || 0) : 0;
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
 
       const queryString = params.toString();
-      const url = `/api/clients${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url);
 
@@ -110,29 +121,58 @@ export default function ClientsPage() {
 
       const data = await response.json();
 
-      setClients(data.clients || []);
+      if (isLoadMore) {
+        setClients(prev => [...prev, ...(data.clients || [])]);
+      } else {
+        setClients(data.clients || []);
+      }
+
       setViewCount(data.viewCount ?? null);
-      setPagination(prev => ({
-        ...prev,
-        totalItems: data.totalCount || 0,
-        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-      }));
+
+      // Mettre à jour la pagination pour le LazyLoading
+      setHasMore(data.pagination?.hasMore || false);
+      setNextOffset(data.pagination?.nextOffset || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Fonction pour récupérer les catégories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Catégories récupérées:', data.results);
+        setCategories(data.results || []);
+      }
+    } catch (err) {
+      console.error('Erreur lors de la récupération des catégories:', err);
+    }
+  };
+
+  // Fonction pour charger plus de données
+  const loadMore = () => {
+    if (hasMore && !loadingMore && nextOffset !== null) {
+      fetchClients(true);
     }
   };
 
   useEffect(() => {
     fetchClients();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedCategory,
     sortField,
     sortDirection,
   ]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -154,15 +194,25 @@ export default function ClientsPage() {
     if (!editingClient) return;
 
     try {
-      // Validation côté client
-      if (!editingClient.raisonSociale.trim()) {
-        setError("La raison sociale est requise");
+      setIsLoading(true);
+      setError(null);
 
+      // Validation côté client
+      if (!editingClient.raisonSociale?.trim()) {
+        setError("La raison sociale est requise");
+        setIsLoading(false);
         return;
       }
 
-      const response = await fetch(`/api/clients/${editingClient.id}`, {
-        method: "PUT",
+      const isEditing = editingClient.id;
+      const url = isEditing
+        ? `/api/clients/${editingClient.id}`
+        : '/api/clients/clients';
+
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -171,8 +221,7 @@ export default function ClientsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-
-        throw new Error(errorData.error || "Erreur lors de la modification du client");
+        throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'la création'} du client`);
       }
 
       // Fermer le modal et recharger les clients
@@ -182,38 +231,11 @@ export default function ClientsPage() {
       fetchClients();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
-  if (loading && clients.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <div className="text-red-500">Erreur: {error}</div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full text-primary">
@@ -224,165 +246,227 @@ export default function ClientsPage() {
             <div className="flex items-center gap-4">
               <StyledSelect
                 className="w-40"
-
                 placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
+                selectedKeys={selectedCategoryId ? [selectedCategoryId] : []}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as string;
+                  console.log('Catégorie sélectionnée:', selected);
+                  if (selected === 'tous') {
+                    setSelectedCategory('tous');
+                    setSelectedCategoryId('');
+                  } else {
+                    const category = categories.find(cat => cat.id === selected);
+                    setSelectedCategory(category?.name || '');
+                    setSelectedCategoryId(selected);
+                  }
+                }}
               >
-                <SelectItem key="tous">Catégorie</SelectItem>
-                <SelectItem key="FOOD">Food</SelectItem>
-                <SelectItem key="SHOP">Shop</SelectItem>
-                <SelectItem key="TRAVEL">Travel</SelectItem>
-                <SelectItem key="FUN">Fun</SelectItem>
-                <SelectItem key="BEAUTY">Beauty</SelectItem>
+                <SelectItem key="tous">Toutes</SelectItem>
+                {categories.length > 0 ? (
+                  <>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
               </StyledSelect>
 
+              {(searchTerm || selectedCategoryId !== '') && (
+                <Button
+                  color="primary"
+                  variant="bordered"
+                  size="sm"
+                  onPress={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('tous');
+                    setSelectedCategoryId('');
+                  }}
+                >
+                  Réinitialiser
+                </Button>
+              )}
             </div>
 
-            <div className="relative">
-              <Input
-                className="w-64 pr-4 pl-10"
-                classNames={{
-                  input:
-                    "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-                  inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+            <div className="flex items-center gap-4">
+              <Button
+                color="primary"
+                onPress={() => {
+                  setEditingClient({} as Client);
+                  setIsEditModalOpen(true);
                 }}
-                placeholder="Rechercher..."
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+              >
+                Ajouter un client
+              </Button>
+
+              <div className="relative">
+                <Input
+                  className="w-64 pr-4 pl-10"
+                  classNames={{
+                    input:
+                      "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
+                    inputWrapper:
+                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+                  }}
+                  placeholder="Rechercher..."
+                  type="text"
+                  value={searchTerm}
+                  endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+              </div>
             </div>
           </div>
 
 
 
-          {/* Table */}
-          {<Table aria-label="Tableau des clients" shadow="none" >
-            <TableHeader>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="categorie"
-                  label="Catégorie"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-              <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="dateSignatureContrat"
-                  label="Date signature contrat"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
+          {/* Table avec LazyLoading */}
+          {loading ? <div className="w-full">
+            <Card className="w-full" shadow="none">
+              <CardBody className="p-6">
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
+                </div>
+              </CardBody>
+            </Card>
+          </div> :
 
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Facture contenu</TableColumn>
-
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="statutPaiementContenu"
-                  label="Facture publication"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Modifier</TableColumn>
-              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {
-                loading ? (
-                  <TableRow>
-                    <TableCell className="text-center" colSpan={8}>
-                      <Spinner className="text-black dark:text-white p-20" size="lg" />
-                    </TableCell>
-                  </TableRow>
-                ) : clients.map((client, index) => (
-                  <TableRow key={client.id || index} className="border-t border-gray-100  dark:border-gray-700">
-                    <TableCell className="font-light py-5">
-                      <CategoryBadge category={client.categorie || "FOOD"} />
-                    </TableCell>
-                    <TableCell className="font-light">
-                      {client.nomEtablissement}
-                    </TableCell>
-                    <TableCell className="font-light">
-                      {client.raisonSociale}
-                    </TableCell>
-                    <TableCell className="font-light">
-                      {client.dateSignatureContrat
-                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        }).replace(/\//g, '.')
-                        : "-"
-                      }
-                    </TableCell>
-                    <TableCell className="font-light">
-                      {client.dateSignatureContrat
-                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        }).replace(/\//g, '.')
-                        : "-"
-                      }
-                    </TableCell>
-                    <TableCell className="font-light">
-                      <StatusBadge status={client.statutPaiementContenu || "En attente"} />
-                    </TableCell>
-                    <TableCell className="font-light">
+            error ? <div className="flex justify-center items-center h-64">
+              <div className="text-red-500">Erreur: {error}</div>
+            </div> :
+              <Table aria-label="Tableau des clients" shadow="none"
+                bottomContent={
+                  hasMore && (
+                    <div className="flex justify-center py-4">
                       <Button
-                        isIconOnly
-                        aria-label={`Modifier le client ${client.raisonSociale}`}
-                        className="text-gray-600 hover:text-gray-800"
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleEditClient(client)}
+                        color="primary"
+                        onPress={loadMore}
+                        isLoading={loadingMore}
+                        disabled={loadingMore}
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        {loadingMore ? 'Chargement...' : 'Charger plus'}
                       </Button>
-                    </TableCell>
-                    <TableCell className="font-light">{client.commentaire || "-"}</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>}
+                    </div>
+                  )
+                }
+              >
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="categorie"
+                      label="Catégorie"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">Raison sociale</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="dateSignatureContrat"
+                      label="Date signature contrat"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Facture contenu</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="statutPaiementContenu"
+                      label="Facture publication"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+                </TableHeader>
+                <TableBody className="mt-4">
+                  {clients.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="text-center" colSpan={8}>
+                        <div className="py-20 text-gray-500">
+                          <div>
+                            <div className="text-lg mb-2">Aucun client trouvé</div>
+                            <div className="text-sm">Essayez de modifier vos filtres</div>
+                            <Button
+                              className="mt-4"
+                              color="primary"
+                              onPress={() => {
+                                setSearchTerm('');
+                                setSelectedCategory('tous');
+                                setSelectedCategoryId('');
+                              }}
+                            >
+                              Réinitialiser les filtres
+                            </Button>
+                          </div>
 
-          {/* Pagination */}
-          {!loading && <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    clients.map((client, index) => (
+                      <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
+                        <TableCell className="font-light py-5">
+                          <CategoryBadge category={client.categorie || ""} />
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {client.nomEtablissement}
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {client.raisonSociale}
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {client.dateSignatureContrat
+                            ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')
+                            : "-"
+                          }
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {client.dateSignatureContrat
+                            ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')
+                            : "-"
+                          }
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <StatusBadge status={client.statutPaiementContenu || "En attente"} />
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <Button
+                            isIconOnly
+                            aria-label={`Modifier le client ${client.raisonSociale}`}
+                            className="text-gray-600 hover:text-gray-800"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleEditClient(client)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-light">{client.commentaire || "-"}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>}
 
-          {/* Info sur le nombre total d'éléments */}
-          {!loading && <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {clients.length} client(s) sur {pagination.totalItems}{" "}
-            au total
-          </div>}
+
         </CardBody>
       </Card>
 
@@ -394,17 +478,11 @@ export default function ClientsPage() {
         onOpenChange={setIsEditModalOpen}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">Modifier le client</ModalHeader>
+          <ModalHeader className="flex flex-col gap-1">
+            {editingClient?.id ? 'Modifier le client' : 'Ajouter un client'}
+          </ModalHeader>
 
           <ModalBody className="max-h-[70vh] overflow-y-auto">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
             {editingClient && (
               <div className="space-y-6">
                 {/* Informations générales */}
@@ -469,17 +547,21 @@ export default function ClientsPage() {
                         prev
                           ? {
                             ...prev,
-                            categorie: Array.from(keys)[0] as 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY',
+                            categorie: Array.from(keys)[0] as string,
                           }
                           : null
                       )
                     }
                   >
-                    <SelectItem key="FOOD">Food</SelectItem>
-                    <SelectItem key="SHOP">Shop</SelectItem>
-                    <SelectItem key="TRAVEL">Travel</SelectItem>
-                    <SelectItem key="FUN">Fun</SelectItem>
-                    <SelectItem key="BEAUTY">Beauty</SelectItem>
+                    {categories.length > 0 ? (
+                      categories.map((category) => (
+                        <SelectItem key={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem key="loading">Chargement...</SelectItem>
+                    )}
                   </StyledSelect>
 
                   <FormLabel htmlFor="telephone" isRequired={true}>
@@ -871,25 +953,38 @@ export default function ClientsPage() {
               </div>
             )}
           </ModalBody>
-          <ModalFooter className="flex justify-between">
-            <Button
-              className="flex-1 border-1"
-              color='primary'
-              variant="bordered"
-              onPress={() => {
-                setIsEditModalOpen(false);
-                setEditingClient(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="flex-1"
-              color='primary'
-              onPress={handleUpdateClient}
-            >
-              Modifier
-            </Button>
+          <ModalFooter className="flex flex-col gap-3">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center w-full">
+                <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+            <div className="flex justify-between gap-3">
+              <Button
+                className="flex-1 border-1"
+                color='primary'
+                variant="bordered"
+                isDisabled={isLoading}
+                onPress={() => {
+                  setIsEditModalOpen(false);
+                  setEditingClient(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1"
+                color='primary'
+                isLoading={isLoading}
+                isDisabled={isLoading}
+                onPress={handleUpdateClient}
+              >
+                {isLoading ? 'Chargement...' : (editingClient?.id ? 'Modifier' : 'Ajouter')}
+              </Button>
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>

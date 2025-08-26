@@ -26,6 +26,8 @@ import {
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
+  XCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
@@ -67,12 +69,6 @@ interface ApiProspect {
   siret?: string;
 }
 
-// Interface pour le LazyLoading
-interface LazyLoadingInfo {
-  hasMore: boolean;
-  nextOffset: number | null;
-  loadingMore: boolean;
-}
 
 export default function ProspectsPage() {
   const [prospects, setProspects] = useState<ApiProspect[]>([]);
@@ -95,6 +91,35 @@ export default function ProspectsPage() {
   const [, setViewCount] = useState<number | null>(null);
   const previousTabRef = useRef(selectedTab);
 
+  // Variables pour les filtres
+  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  // Récupérer la liste des collaborateurs et catégories au chargement de la page
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        // Récupérer les collaborateurs
+        const collabResponse = await fetch('/api/collaborateurs?limit=200&offset=0');
+        if (collabResponse.ok) {
+          const collabData = await collabResponse.json();
+          setCollaborateurs(collabData.results || []);
+        }
+
+        // Récupérer les catégories
+        const catResponse = await fetch('/api/categories?limit=200&offset=0');
+        if (catResponse.ok) {
+          const catData = await catResponse.json();
+          setCategories(catData.results || []);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération des filtres:', err);
+      }
+    };
+
+    fetchFilters();
+  }, []);
+
   const fetchProspects = async (isLoadMore = false) => {
     try {
       if (isLoadMore) {
@@ -114,77 +139,77 @@ export default function ProspectsPage() {
 
       // Construire les paramètres de requête pour l'API Airtable
       const params = new URLSearchParams();
-      
+
       // Adapter les paramètres selon l'onglet sélectionné
       if (selectedTab === 'en_discussion') {
         // Utiliser l'API des discussions
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/discussion?limit=20&offset=${offset}`;
-        
+
         if (searchTerm) params.set('q', searchTerm);
         if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
         if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
-        
+
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
-        
+
         const response = await fetch(fullUrl);
-        
+
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des discussions");
         }
-        
+
         const data = await response.json();
-        
+
         if (isLoadMore) {
           setProspects(prev => [...prev, ...(data.discussions || [])]);
         } else {
           setProspects(data.discussions || []);
         }
-        
+
         // Mettre à jour la pagination pour le LazyLoading
         setHasMore(data.pagination?.hasMore || false);
         setNextOffset(data.pagination?.nextOffset || null);
-        
+
       } else if (selectedTab === 'glacial') {
         // Utiliser l'API des prospects glaciaux
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/glacial?limit=20&offset=${offset}`;
-        
+
         if (searchTerm) params.set('q', searchTerm);
         if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
         if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
-        
+
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
-        
+
         const response = await fetch(fullUrl);
-        
+
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des prospects glaciaux");
         }
-        
+
         const data = await response.json();
-        
+
         if (isLoadMore) {
           setProspects(prev => [...prev, ...(data.prospects || [])]);
         } else {
           setProspects(data.prospects || []);
         }
-        
+
         // Mettre à jour la pagination pour le LazyLoading
         setHasMore(data.pagination?.hasMore || false);
         setNextOffset(data.pagination?.nextOffset || null);
-        
+
       } else {
         // Onglet "À contacter" - utiliser l'API des prospects normaux
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
-        
+
         if (searchTerm) params.set('q', searchTerm);
         if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
         if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
-        
+
         // Ajouter le tri si spécifié
         if (sortField) {
           let orderByField = sortField;
@@ -205,24 +230,24 @@ export default function ProspectsPage() {
           params.set('orderBy', orderByField);
         }
         if (sortDirection) params.set('order', sortDirection);
-        
+
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
-        
+
         const response = await fetch(fullUrl);
-        
+
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des prospects");
         }
-        
+
         const data = await response.json();
-        
+
         if (isLoadMore) {
           setProspects(prev => [...prev, ...(data.prospects || [])]);
         } else {
           setProspects(data.prospects || []);
         }
-        
+
         // Mettre à jour la pagination pour le LazyLoading
         setHasMore(data.pagination?.hasMore || false);
         setNextOffset(data.pagination?.nextOffset || null);
@@ -339,35 +364,6 @@ export default function ProspectsPage() {
   };
 
 
-
-  if (loading && prospects.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <div className="text-red-500">Erreur: {error}</div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
       <Card className="w-full shadow-none" shadow="none">
@@ -400,6 +396,7 @@ export default function ProspectsPage() {
                 placeholder="Rechercher..."
                 type="text"
                 value={searchTerm}
+                endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -418,12 +415,18 @@ export default function ProspectsPage() {
                   setSelectedCategory(Array.from(keys)[0] as string)
                 }
               >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="FOOD">FOOD</SelectItem>
-                <SelectItem key="SHOP">SHOP</SelectItem>
-                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                <SelectItem key="FUN">FUN</SelectItem>
-                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                <SelectItem key="tous">Toutes</SelectItem>
+                {categories.length > 0 ? (
+                  <>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
               </StyledSelect>
 
               <StyledSelect
@@ -435,8 +438,17 @@ export default function ProspectsPage() {
                 }
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="nom">Nom</SelectItem>
-                <SelectItem key="prenom">Prénom</SelectItem>
+                {collaborateurs.length > 0 ? (
+                  <>
+                    {collaborateurs.map((collab) => (
+                      <SelectItem key={collab.id}>
+                        {collab.nomComplet}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
               </StyledSelect>
             </div>
 
@@ -453,117 +465,158 @@ export default function ProspectsPage() {
           </div>
 
           {/* Table avec LazyLoading */}
-          <Table 
-            aria-label="Tableau des prospects" 
-            shadow="none"
-            bottomContent={
-              hasMore && (
-                <div className="flex justify-center py-4">
-                  <Button
-                    color="primary"
-                    variant="flat"
-                    onPress={loadMore}
-                    isLoading={loadingMore}
-                    disabled={loadingMore}
-                  >
-                    {loadingMore ? 'Chargement...' : 'Charger plus'}
-                  </Button>
+          {loading ? <div className="w-full">
+            <Card className="w-full" shadow="none">
+              <CardBody className="p-6">
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
                 </div>
-              )
-            }
-          >
-            <TableHeader className="mb-4">
-              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="categorie"
-                  label="Catégorie"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="dateRelance"
-                  label="Date de relance"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="suiviPar"
-                  label="Suivi par"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-              <TableColumn className="font-light text-sm">Modifier</TableColumn>
-              <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
-            </TableHeader>
-            <TableBody 
-              className="mt-4"
-              loadingContent={<Spinner className="text-black dark:text-white" size="lg" />}
-              loadingState={loading ? "loading" : "idle"}
-            >
-              {prospects.map((prospect) => (
-                <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
-                  <TableCell className="font-light py-5">
-                    {prospect.nomEtablissement}
-                  </TableCell>
-                  <TableCell className="font-light">
-                    <CategoryBadge category={prospect.categorie} />
-                  </TableCell>
-                  <TableCell className="font-light">
-                    {prospect.dateRelance
-                      ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      }).replace(/\//g, '.')
-                      : "-"
-                    }
-                  </TableCell>
-                  <TableCell className="font-light">{prospect.suiviPar}</TableCell>
-                  <TableCell className="font-light">{prospect.commentaires}</TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
-                      className="text-gray-600 hover:text-gray-800"
-                      size="sm"
-                      variant="light"
-                      onPress={() => handleEditProspect(prospect)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell className="font-light">
-                    <Button
-                      className="px-6"
-                      color="primary"
-                      size="sm"
-                      onPress={() => openConvertModal(prospect)}
-                    >
-                      Convertir
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {/* Info sur le nombre d'éléments chargés */}
-          {!loading && (
-            <div className="text-center mt-4 text-sm text-gray-500">
-              Affichage de {prospects.length} prospect(s) chargé(s)
-              {hasMore && " - Plus de données disponibles"}
-            </div>
-          )}
+              </CardBody>
+            </Card>
+          </div> :
+            error ? <div className="flex justify-center items-center h-64">
+              <div className="text-red-500">Erreur: {error}</div>
+            </div> :
+              <Table
+                aria-label="Tableau des prospects"
+                shadow="none"
+                bottomContent={
+                  hasMore && (
+                    <div className="flex justify-center py-4">
+                      <Button
+                        color="primary"
+                        onPress={loadMore}
+                        isLoading={loadingMore}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? 'Chargement...' : 'Charger plus'}
+                      </Button>
+                    </div>
+                  )
+                }
+              >
+                <TableHeader className="mb-4">
+                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="categorie"
+                      label="Catégorie"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="dateRelance"
+                      label="Date de relance"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="suiviPar"
+                      label="Suivi par"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
+                </TableHeader>
+                <TableBody className="mt-4">
+                  {prospects.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="text-center" colSpan={7}>
+                        <div className="py-20 text-gray-500">
+                          {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
+                            <div>
+                              <div className="text-lg mb-2">Aucun prospect trouvé</div>
+                              <div className="text-sm">Essayez de modifier vos filtres ou de créer un nouveau prospect</div>
+                              <Button
+                                className="mt-4"
+                                color="primary"
+                                onPress={() => {
+                                  setSearchTerm('');
+                                  setSelectedCategory('');
+                                  setSelectedSuiviPar('');
+                                }}
+                              >
+                                Réinitialiser les filtres
+                              </Button>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="text-lg mb-2">Aucun prospect disponible</div>
+                              <div className="text-sm">Commencez par ajouter votre premier prospect</div>
+                              <Button
+                                className="mt-4"
+                                color="primary"
+                                variant="flat"
+                                onPress={() => {
+                                  setEditingProspect(null);
+                                  setIsProspectModalOpen(true);
+                                }}
+                              >
+                                Ajouter un prospect
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    prospects.map((prospect) => (
+                      <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
+                        <TableCell className="font-light py-5">
+                          {prospect.nomEtablissement}
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <CategoryBadge category={prospect.categorie} />
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {prospect.dateRelance
+                            ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')
+                            : "-"
+                          }
+                        </TableCell>
+                        <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                        <TableCell className="font-light">{prospect.commentaires}</TableCell>
+                        <TableCell>
+                          <Button
+                            isIconOnly
+                            aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                            className="text-gray-600 hover:text-gray-800"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleEditProspect(prospect)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <Button
+                            className="px-6"
+                            color="primary"
+                            size="sm"
+                            onPress={() => openConvertModal(prospect)}
+                          >
+                            Convertir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>}
         </CardBody>
       </Card>
 

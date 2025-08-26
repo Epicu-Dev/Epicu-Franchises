@@ -16,19 +16,23 @@ export const getStatusBadgeColor = (status: string) => {
 
 // Fonction pour obtenir la couleur du badge de catégorie
 export const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-        case "FOOD":
-            return "bg-custom-orange-food/10 text-custom-orange-food ";
-        case "SHOP":
-            return "bg-custom-purple-shop/10 text-custom-purple-shop";
-        case "TRAVEL":
-            return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
-        case "FUN":
-            return "bg-custom-green-travel/10 text-custom-green-travel";
-        case "BEAUTY":
-            return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
-        default:
-            return "bg-gray-50/10 text-gray-300 border-gray-200";
+    // Utiliser une approche dynamique pour les catégories
+    const categoryLower = category.toLowerCase();
+    
+    // Mapper les catégories communes à des couleurs
+    if (categoryLower.includes('restaurant') || categoryLower.includes('food') || categoryLower.includes('café')) {
+        return "bg-custom-orange-food/10 text-custom-orange-food";
+    } else if (categoryLower.includes('shop') || categoryLower.includes('boutique') || categoryLower.includes('magasin')) {
+        return "bg-custom-purple-shop/10 text-custom-purple-shop";
+    } else if (categoryLower.includes('travel') || categoryLower.includes('hôtel') || categoryLower.includes('voyage')) {
+        return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
+    } else if (categoryLower.includes('fun') || categoryLower.includes('loisir') || categoryLower.includes('divertissement')) {
+        return "bg-custom-green-travel/10 text-custom-green-travel";
+    } else if (categoryLower.includes('beauty') || categoryLower.includes('beauté') || categoryLower.includes('esthétique')) {
+        return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
+    } else {
+        // Couleur par défaut pour les nouvelles catégories
+        return "bg-gray-50/10 text-gray-300 border-gray-200";
     }
 };
 
@@ -58,9 +62,9 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-6 py-1 text-xs font-light rounded  ${getCategoryBadgeColor(category.toUpperCase())} ${className}`}
+            className={`px-6 py-1 text-xs font-light rounded  ${getCategoryBadgeColor(category)} ${className}`}
         >
-            {category.toUpperCase()}
+            {category}
         </span>
     );
 };
