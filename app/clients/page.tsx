@@ -59,13 +59,6 @@ interface Client {
   statut?: "actif" | "inactif" | "prospect";
 }
 
-// Interface pour le LazyLoading
-interface LazyLoadingInfo {
-  hasMore: boolean;
-  nextOffset: number | null;
-  loadingMore: boolean;
-}
-
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   // Variables pour le LazyLoading
@@ -274,21 +267,6 @@ export default function ClientsPage() {
                   <SelectItem key="loading">Chargement...</SelectItem>
                 )}
               </StyledSelect>
-
-              {(searchTerm || selectedCategoryId !== '') && (
-                <Button
-                  color="primary"
-                  variant="bordered"
-                  size="sm"
-                  onPress={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('tous');
-                    setSelectedCategoryId('');
-                  }}
-                >
-                  Réinitialiser
-                </Button>
-              )}
             </div>
 
             <div className="flex items-center gap-4">

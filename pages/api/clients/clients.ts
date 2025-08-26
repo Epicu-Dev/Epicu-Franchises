@@ -20,6 +20,19 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Catégorie',
       "Nom de l'établissement",
       'Raison sociale',
+      'Prénom du contact',
+      'Email',
+      'Téléphone',
+      'Adresse',
+      'Ville',
+      'Code postal',
+      'Numéro TVA',
+      'SIRET',
+      'Description',
+      'Fonction du contact',
+      'Moyen de contact',
+      'Pages Insta',
+      'Ville EPICU',
       // 'Commentaire',
     ];
 
@@ -50,25 +63,27 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         `OR(` +
         `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Raison sociale}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Commentaire}), "${pattern}")` +
+        `REGEX_MATCH(LOWER({Prénom du contact}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Email}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Code postal}), "${pattern}"),` +
+        `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
         `)`
       );
     }
     
     if (category && category.trim().length > 0) {
-      // D'abord récupérer l'ID de la catégorie par son nom
-      const catRecords = await base('Catégories')
-        .select({
-          filterByFormula: `{Name} = "${category}"`,
-          fields: ['Name'],
-          pageSize: 1,
-          maxRecords: 1,
-        })
-        .all();
-      
-      if (catRecords.length > 0) {
-        const catId = catRecords[0].id;
-        filterFormulas.push(`FIND('${catId}', ARRAYJOIN({Catégorie})) > 0`);
+      try {
+        let catName = String(category);
+        if (/^rec/i.test(category)) {
+          const rec = await base('Catégories').find(category);
+          catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
+        }
+        const catEsc = catName.replace(/'/g, "\\'");
+        filterFormulas.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
+      } catch (e) {
+        const catEsc = String(category).replace(/'/g, "\\'");
+        filterFormulas.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       }
     }
     
@@ -113,6 +128,19 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         nomEtablissement: record.get("Nom de l'établissement"),
         categorie: catName,
         raisonSociale: record.get('Raison sociale'),
+        prenomContact: record.get('Prénom du contact'),
+        email: record.get('Email'),
+        telephone: record.get('Téléphone'),
+        adresse: record.get('Adresse'),
+        ville: record.get('Ville'),
+        codePostal: record.get('Code postal'),
+        numeroTVA: record.get('Numéro TVA'),
+        siret: record.get('SIRET'),
+        description: record.get('Description'),
+        fonctionContact: record.get('Fonction du contact'),
+        moyenContact: record.get('Moyen de contact'),
+        pagesInsta: record.get('Pages Insta'),
+        villeEpicu: record.get('Ville EPICU'),
         dateSignature: 'waiting', // conservé comme dans ton code
         commentaire: "", // conservé comme dans ton code
       };
