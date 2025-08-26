@@ -114,6 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         firstname: userRecord.get('Prénom'),
         lastname: userRecord.get('Nom'),
         villes: villesEpicu,
+        role: userRecord.get('Rôle')
       };
     } catch (e) {
       // ignore if user fetch fails

@@ -96,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         firstname: user.get('Prénom'),
         lastname: user.get('Nom'),
         villes: villesEpicu,
+        role: user.get('Rôle')
       },
       accessToken,
       refreshToken,
