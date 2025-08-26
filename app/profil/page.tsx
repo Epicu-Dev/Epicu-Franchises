@@ -16,7 +16,6 @@ import {
 } from '@heroui/table';
 import {
   ArrowDownTrayIcon,
-  PencilIcon,
   PencilSquareIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
@@ -321,8 +320,8 @@ export default function ProfilPage() {
                 </div>
                 <Button
                   className='text-base'
-                  variant='light'
                   startContent={<PencilSquareIcon className="h-6 w-6" />}
+                  variant='light'
                   onPress={() => setIsEditing(!isEditing)}
                 >
                   Modifier
@@ -369,13 +368,13 @@ export default function ProfilPage() {
                     Nom
                   </FormLabel>
                   <Input
-                    id="lastName"
                     isRequired
                     classNames={{
                       input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                       inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                       label: "text-gray-700 dark:text-gray-300 font-medium"
                     }}
+                    id="lastName"
                     isReadOnly={!isEditing}
                     placeholder="Nom"
                     value={profile.lastName}
@@ -389,13 +388,13 @@ export default function ProfilPage() {
                     Prénom
                   </FormLabel>
                   <Input
-                    id="firstName"
                     isRequired
                     classNames={{
                       input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                       inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                       label: "text-gray-700 dark:text-gray-300 font-medium"
                     }}
+                    id="firstName"
                     isReadOnly={!isEditing}
                     placeholder="Prénom"
                     value={profile.firstName}
@@ -409,13 +408,13 @@ export default function ProfilPage() {
                     Email de la ville
                   </FormLabel>
                   <Input
-                    id="email"
                     isRequired
                     classNames={{
                       input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                       inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                       label: "text-gray-700 dark:text-gray-300 font-medium"
                     }}
+                    id="email"
                     isReadOnly={!isEditing}
                     placeholder="email@epicu.fr"
                     type="email"
@@ -430,13 +429,13 @@ export default function ProfilPage() {
                     Tel
                   </FormLabel>
                   <Input
-                    id="phone"
                     isRequired
                     classNames={{
                       input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                       inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                       label: "text-gray-700 dark:text-gray-300 font-medium"
                     }}
+                    id="phone"
                     isReadOnly={!isEditing}
                     placeholder="06 00 00 00 00"
                     value={profile.phone}
@@ -450,13 +449,13 @@ export default function ProfilPage() {
                     Rôle
                   </FormLabel>
                   <Input
-                    id="role"
                     isRequired
                     classNames={{
                       input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                       inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                       label: "text-gray-700 dark:text-gray-300 font-medium"
                     }}
+                    id="role"
                     isReadOnly={!isEditing}
                     placeholder="Rôle"
                     value={profile.role}

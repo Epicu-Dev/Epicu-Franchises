@@ -82,7 +82,7 @@ export default function ClientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [, setViewCount] = useState<number | null>(null);
 
 
   const fetchClients = async () => {
@@ -120,7 +120,6 @@ export default function ClientsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
-      console.log('finally');
       setLoading(false);
     }
   };

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
 import {
   Modal,
@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 
@@ -41,7 +42,7 @@ interface PrestationModalProps {
   services: Service[];
 }
 
-export function PrestationModal({ isOpen, onClose, onPrestationRequested, services }: PrestationModalProps) {
+export function PrestationModal({ isOpen, onClose, onPrestationRequested }: PrestationModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [prestationRequest, setPrestationRequest] = useState<PrestationRequest>({
@@ -136,6 +137,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
     }
 
     setFieldErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
@@ -145,6 +147,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
 
     fields.forEach(field => {
       const fieldValid = validateField(field, request[field as keyof PrestationRequest]);
+
       if (!fieldValid) isValid = false;
     });
 
@@ -156,6 +159,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
       // Validation complète avant soumission
       if (!validateAllFields(prestationRequest)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
 
@@ -226,12 +230,13 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Input
               isRequired
               errorMessage={fieldErrors.nom}
-              isInvalid={!!fieldErrors.nom}
               id="nom"
+              isInvalid={!!fieldErrors.nom}
               placeholder="Nom et prénom"
               value={prestationRequest.nom}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   nom: value,
@@ -244,17 +249,18 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
               htmlFor="etablissement"
               isRequired={true}
             >
-              Nom de l'établissement
+              Nom de l&apos;établissement
             </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.etablissement}
-              isInvalid={!!fieldErrors.etablissement}
               id="etablissement"
-              placeholder="Nom de l'établissement"
+              isInvalid={!!fieldErrors.etablissement}
+              placeholder="Nom de l&apos;établissement"
               value={prestationRequest.etablissement}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   etablissement: value,
@@ -272,13 +278,14 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Input
               isRequired
               errorMessage={fieldErrors.email}
-              isInvalid={!!fieldErrors.email}
               id="email"
-              type="email"
+              isInvalid={!!fieldErrors.email}
               placeholder="email@exemple.com"
+              type="email"
               value={prestationRequest.email}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   email: value,
@@ -296,12 +303,13 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Input
               isRequired
               errorMessage={fieldErrors.telephone}
-              isInvalid={!!fieldErrors.telephone}
               id="telephone"
+              isInvalid={!!fieldErrors.telephone}
               placeholder="06 00 00 00 00"
               value={prestationRequest.telephone}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   telephone: value,
@@ -319,12 +327,13 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Input
               isRequired
               errorMessage={fieldErrors.ville}
-              isInvalid={!!fieldErrors.ville}
               id="ville"
+              isInvalid={!!fieldErrors.ville}
               placeholder="Ville"
               value={prestationRequest.ville}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   ville: value,
@@ -360,11 +369,12 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <StyledSelect
               isRequired
               errorMessage={fieldErrors.typePrestation}
-              isInvalid={!!fieldErrors.typePrestation}
               id="typePrestation"
+              isInvalid={!!fieldErrors.typePrestation}
               selectedKeys={[prestationRequest.typePrestation]}
               onSelectionChange={(keys) => {
                 const selected = Array.from(keys)[0] as string;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   typePrestation: selected,
@@ -391,12 +401,13 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Input
               isRequired
               errorMessage={fieldErrors.budget}
-              isInvalid={!!fieldErrors.budget}
               id="budget"
+              isInvalid={!!fieldErrors.budget}
               placeholder="1500€"
               value={prestationRequest.budget}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   budget: value,
@@ -414,12 +425,13 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             <Textarea
               isRequired
               errorMessage={fieldErrors.description}
-              isInvalid={!!fieldErrors.description}
               id="description"
+              isInvalid={!!fieldErrors.description}
               placeholder="Décrivez votre demande..."
               value={prestationRequest.description}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   description: value,

@@ -172,8 +172,6 @@ export async function GET(request: NextRequest) {
       total: data.length
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des données studio:', error);
-
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des données' },
       { status: 500 }
@@ -208,8 +206,6 @@ export async function POST(request: NextRequest) {
       prestation: newPrestation
     });
   } catch (error) {
-    console.error('Erreur lors de la demande de prestation:', error);
-
     return NextResponse.json(
       { error: 'Erreur lors de la demande de prestation' },
       { status: 500 }

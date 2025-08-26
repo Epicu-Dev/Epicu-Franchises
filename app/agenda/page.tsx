@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  Bars3Icon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
 
@@ -330,8 +329,7 @@ export default function AgendaPage() {
         <div className="min-w-[800px]">
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
-            <div className="p-2 text-center font-medium text-gray-600 text-sm">
-            </div>
+            <div className="p-2 text-center font-medium text-gray-600 text-sm" />
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
@@ -463,7 +461,7 @@ export default function AgendaPage() {
                     ? formatWeekRange(currentDate)
                     : formatMonthYear(currentDate)}
                 </span>
-                <Button isIconOnly variant="light" aria-label="Mois suivant" onPress={handleNextMonth}>
+                <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
                   <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
@@ -517,12 +515,12 @@ export default function AgendaPage() {
             <div className="flex rounded-md overflow-hidden flex-shrink-0">
 
               <Button
-                color={view === "semaine" ? "primary" : "default"}
                 className={
                   view === "semaine"
                     ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
                 }
+                color={view === "semaine" ? "primary" : "default"}
                 size="sm"
                 variant="solid"
                 onPress={() => setView("semaine")}
@@ -530,12 +528,12 @@ export default function AgendaPage() {
                 Semaine
               </Button>
               <Button
-                color={view === "mois" ? "primary" : "default"}
                 className={
                   view === "mois"
                     ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
                 }
+                color={view === "mois" ? "primary" : "default"}
                 size="sm"
                 variant="solid"
                 onPress={() => setView("mois")}

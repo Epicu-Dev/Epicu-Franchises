@@ -102,9 +102,9 @@ export default function LoginPage() {
         {/* Logo Epicu en bas à gauche */}
         <div className="absolute bottom-8 left-8">
           <img
-            src="/images/logo.png"
             alt="Logo Epicu"
             className="h-30 w-auto "
+            src="/images/logo.png"
           />
         </div>
       </div>

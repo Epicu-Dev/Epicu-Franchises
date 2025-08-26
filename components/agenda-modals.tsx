@@ -46,7 +46,7 @@ export function AgendaModals({
   setIsRdvModalOpen,
   onEventAdded,
 }: AgendaModalsProps) {
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   // États pour les formulaires spécifiques

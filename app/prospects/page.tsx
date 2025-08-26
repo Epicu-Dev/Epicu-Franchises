@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -21,7 +21,6 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Textarea } from "@heroui/input";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
   MagnifyingGlassIcon,
@@ -29,8 +28,8 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
-import { CategoryBadge } from "@/components/badges";
 
+import { CategoryBadge } from "@/components/badges";
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
@@ -95,11 +94,10 @@ export default function ProspectsPage() {
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [, setViewCount] = useState<number | null>(null);
   const previousTabRef = useRef(selectedTab);
 
   const fetchProspects = async () => {
-    console.log('fetchProspects');
 
     try {
       setLoading(true);
@@ -113,6 +111,7 @@ export default function ProspectsPage() {
 
       // Construire les paramètres de requête
       const params = new URLSearchParams();
+
       params.append('statut', selectedTab);
       if (searchTerm) params.append('q', searchTerm);
       if (selectedCategory && selectedCategory !== 'tous') params.append('categorie', selectedCategory);
@@ -126,6 +125,7 @@ export default function ProspectsPage() {
       const url = `/api/prospects${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url);
+
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des prospects");
       }
@@ -149,7 +149,6 @@ export default function ProspectsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
-      console.log('finally');
       setLoading(false);
     }
   };
@@ -196,6 +195,7 @@ export default function ProspectsPage() {
       email: prospect.email,
       adresse: prospect.adresse,
     };
+
     setEditingProspect(prospectForEdit);
     setIsProspectModalOpen(true);
   };
@@ -244,6 +244,7 @@ export default function ProspectsPage() {
       email: prospect.email,
       adresse: prospect.adresse,
     };
+
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
   };
@@ -370,8 +371,8 @@ export default function ProspectsPage() {
                 <SortableColumnHeader
                   field="categorie"
                   label="Catégorie"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -380,8 +381,8 @@ export default function ProspectsPage() {
                 <SortableColumnHeader
                   field="dateRelance"
                   label="Date de relance"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -390,8 +391,8 @@ export default function ProspectsPage() {
                 <SortableColumnHeader
                   field="suiviPar"
                   label="Suivi par"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -411,7 +412,7 @@ export default function ProspectsPage() {
                   </TableRow>
                 ) :
                   prospects.map((prospect) => (
-                    <TableRow className="border-t border-gray-100  dark:border-gray-700" key={prospect.id}>
+                    <TableRow key={prospect.id} className="border-t border-gray-100  dark:border-gray-700">
                       <TableCell className="font-light py-5">
                         {prospect.nomEtablissement}
                       </TableCell>
@@ -433,10 +434,10 @@ export default function ProspectsPage() {
                       <TableCell>
                         <Button
                           isIconOnly
+                          aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
                           className="text-gray-600 hover:text-gray-800"
                           size="sm"
                           variant="light"
-                          aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
                           onPress={() => handleEditProspect(prospect)}
                         >
                           <PencilIcon className="h-4 w-4" />
@@ -444,8 +445,8 @@ export default function ProspectsPage() {
                       </TableCell>
                       <TableCell className="font-light">
                         <Button
-                          color="primary"
                           className="px-6"
+                          color="primary"
                           size="sm"
                           variant="flat"
                           onPress={() => openConvertModal(prospect)}
@@ -550,14 +551,14 @@ export default function ProspectsPage() {
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
       <ProspectModal
+        editingProspect={editingProspect}
+        isEditing={!!editingProspect}
         isOpen={isProspectModalOpen}
         onClose={() => {
           setIsProspectModalOpen(false);
           setEditingProspect(null);
         }}
         onProspectAdded={fetchProspects}
-        editingProspect={editingProspect}
-        isEditing={!!editingProspect}
       />
     </div>
   );

@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 
@@ -155,6 +156,7 @@ export function ProspectModal({
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
 
@@ -174,6 +176,7 @@ export function ProspectModal({
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`);
       }
 
@@ -262,8 +265,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.nomEtablissement}
-              isInvalid={!!fieldErrors.nomEtablissement}
               id="nomEtablissement"
+              isInvalid={!!fieldErrors.nomEtablissement}
               placeholder="Nom de l'établissement"
               value={newProspect.nomEtablissement}
               onChange={(e) => {
@@ -282,8 +285,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.ville}
-              isInvalid={!!fieldErrors.ville}
               id="ville"
+              isInvalid={!!fieldErrors.ville}
               placeholder="Paris"
               value={newProspect.ville}
               onChange={(e) => {
@@ -299,8 +302,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.telephone}
-              isInvalid={!!fieldErrors.telephone}
               id="telephone"
+              isInvalid={!!fieldErrors.telephone}
               placeholder="01 23 45 67 89"
               value={newProspect.telephone}
               onChange={(e) => {
@@ -318,8 +321,8 @@ export function ProspectModal({
             </FormLabel>
             <Input
               id="email"
-              type="email"
               placeholder="contact@etablissement.fr"
+              type="email"
               value={newProspect.email}
               onChange={(e) =>
                 setNewProspect((prev) => ({ ...prev, email: e.target.value }))
@@ -404,8 +407,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.datePremierRendezVous}
-              isInvalid={!!fieldErrors.datePremierRendezVous}
               id="datePremierRendezVous"
+              isInvalid={!!fieldErrors.datePremierRendezVous}
               type="date"
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
@@ -424,8 +427,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.dateRelance}
-              isInvalid={!!fieldErrors.dateRelance}
               id="dateRelance"
+              isInvalid={!!fieldErrors.dateRelance}
               type="date"
               value={newProspect.dateRelance}
               onChange={(e) => {

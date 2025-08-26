@@ -7,8 +7,6 @@ import { Card } from "@heroui/card";
 import { CardBody } from "@heroui/card";
 import { CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Listbox } from "@heroui/listbox";
-import { ListboxItem } from "@heroui/listbox";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import {
   HomeIcon,
@@ -16,7 +14,6 @@ import {
   UsersIcon,
   BellIcon,
   CalendarIcon,
-  CheckCircleIcon,
   DocumentTextIcon,
   UserGroupIcon,
   BuildingStorefrontIcon,
@@ -34,7 +31,6 @@ import {
 
 import { useUserType } from "../contexts/user-type-context";
 
-import { ThemeSwitch } from "./theme-switch";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -256,11 +252,11 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
                 return (
                   <button
+                    key={item.key}
                     className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                       ? "bg-black text-white dark:bg-white dark:text-black shadow"
                       : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
-                    key={item.key}
                     onClick={() => handleItemClick(item)}
                   >
                     <item.icon className="h-5 w-5" />
@@ -290,11 +286,11 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
                 return (
                   <button
+                    key={item.key}
                     className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                       ? "bg-black text-white dark:bg-white dark:text-black shadow"
                       : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                       }`}
-                    key={item.key}
                     onClick={() => handleItemClick(item)}
                   >
                     <item.icon className="h-5 w-5" />
@@ -311,7 +307,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           </div>
           <div className="flex justify-center items-center pb-6">
-            <img src="/images/logo-e.png" width={42} height={42} alt="logo" />
+            <img alt="logo" height={42} src="/images/logo-e.png" width={42} />
           </div>
         </CardBody>
       </Card>

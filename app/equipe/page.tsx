@@ -14,7 +14,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Chip } from "@heroui/chip";
 import { Tooltip } from "@heroui/tooltip";
 import { Pagination } from "@heroui/pagination";
 import {
@@ -256,8 +255,7 @@ export default function EquipePage() {
                 <Tab key="prestataire" title="Prestataires" />
               </Tabs>
             ) : (
-              <div>
-              </div>
+              <div />
             )}
 
             <div className="flex items-center gap-4">

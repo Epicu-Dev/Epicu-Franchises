@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Tabs, Tab } from '@heroui/tabs';
-import { Progress } from '@heroui/progress';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
-import { PrestationModal } from '../../components/prestation-modal';
 import { Select, SelectItem } from '@heroui/select';
 import { Input } from '@heroui/input';
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/table';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Pagination } from '@heroui/pagination';
+
+import { PrestationModal } from '../../components/prestation-modal';
+
 import { CategoryBadge, StatusBadge } from '@/components/badges';
 import { SortableColumnHeader } from '@/components';
 
@@ -229,10 +230,6 @@ export default function StudioPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
-  // Debug: vérifier que les services sont bien chargés
-  console.log('Services disponibles:', services);
-  console.log('Nombre de services:', services.length);
-
   const fetchData = async (type: string) => {
     try {
       setLoading(true);
@@ -258,9 +255,6 @@ export default function StudioPage() {
           setPrestations(data.data);
           break;
       }
-    } catch (error) {
-      console.error('Erreur:', error);
-      // En cas d'erreur, on garde les services par défaut
     } finally {
       setLoading(false);
     }
@@ -343,6 +337,7 @@ export default function StudioPage() {
 
         if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
         if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+
         return 0;
       });
     }
@@ -496,8 +491,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="category"
                           label="Catégorie"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
 
@@ -509,8 +504,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="contractDate"
                           label="Date signature contrat"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
                       </TableColumn>
@@ -518,8 +513,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="serviceTitle"
                           label="Prestation demandée"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
                       </TableColumn>
@@ -591,12 +586,11 @@ export default function StudioPage() {
 
       <PrestationModal
         isOpen={isPrestationModalOpen}
+        services={services}
         onClose={handleClosePrestationModal}
         onPrestationRequested={() => {
-          console.log('Prestation demandée avec succès');
           // Ici vous pouvez ajouter une logique supplémentaire si nécessaire
         }}
-        services={services}
       />
     </div>
   );

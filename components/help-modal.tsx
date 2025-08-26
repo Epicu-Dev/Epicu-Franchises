@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
-  ModalHeader,
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
-import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+
 import { FormLabel } from "./form-label";
 
 interface HelpModalProps {
@@ -51,7 +50,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
           setUserProfile(profile);
         }
       } catch (error) {
-        console.error("Erreur lors de la récupération du profil:", error);
+        
       }
     };
 
@@ -86,11 +85,6 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
       if (response.ok) {
         setIsSubmitted(true);
       }
-    } catch (error) {
-      console.error(
-        "Erreur lors de l&apos;envoi de la demande d&apos;aide:",
-        error
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -122,14 +116,14 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         <ModalBody className="py-6">
           {isSubmitted ? (
             <div className="text-center py-8  h-50 justify-center items-center flex">
-                <div className="text-center">
-                  <h3 className="text-xl font-bold text-black mb-2">
-                    Merci pour ta demande !
-                  </h3>
-                  <p className="text-base text-black font-normal">
-                    Notre équipe revient vers toi très vite ! 🚀
-                  </p>
-                </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-black mb-2">
+                  Merci pour ta demande !
+                </h3>
+                <p className="text-base text-black font-normal">
+                  Notre équipe revient vers toi très vite ! 🚀
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

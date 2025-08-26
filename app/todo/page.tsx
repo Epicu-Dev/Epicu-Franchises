@@ -24,7 +24,9 @@ import {
 import { Checkbox } from "@heroui/checkbox";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+
 import { TodoBadge } from "../../components/badges";
+
 import { SortableColumnHeader } from "@/components";
 
 interface Todo {
@@ -351,8 +353,8 @@ export default function TodoPage() {
                 <SortableColumnHeader
                   field="dateEcheance"
                   label="Deadline"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -361,8 +363,8 @@ export default function TodoPage() {
                 <SortableColumnHeader
                   field="statut"
                   label="État"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 

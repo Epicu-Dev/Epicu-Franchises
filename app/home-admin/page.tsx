@@ -10,11 +10,9 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
-import { Tabs, Tab } from "@heroui/tabs";
 import {
-  PlusIcon,
   ChartBarIcon,
   EyeIcon,
   UsersIcon,
@@ -22,6 +20,7 @@ import {
   CalendarIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import { Card, CardBody } from "@heroui/card";
 
 import { DashboardLayout } from "../dashboard-layout";
 
@@ -29,12 +28,11 @@ import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { StyledSelect } from "@/components/styled-select";
-import { Card, CardBody } from "@heroui/card";
 
 export default function HomeAdminPage() {
   const [isAddProspectModalOpen, setIsAddProspectModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [activeTab] = useState("overview");
+  const [selectedCategory] = useState("");
   const [newProspect, setNewProspect] = useState({
     nomEtablissement: "",
     categorie1: "",

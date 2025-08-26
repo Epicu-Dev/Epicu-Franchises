@@ -5,7 +5,6 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/table";
-import { Input } from "@heroui/input";
 import {
   FolderIcon,
   ChartBarIcon,
@@ -13,13 +12,9 @@ import {
   GlobeAltIcon,
   StarIcon,
   DocumentTextIcon,
-  PlusIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  MagnifyingGlassIcon,
-  ChevronUpIcon,
-  ChevronDownIcon
+  PlusIcon
 } from "@heroicons/react/24/outline";
+
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
 
@@ -94,7 +89,7 @@ export default function RessourcesPage() {
   const [selectedTab, setSelectedTab] = useState<ResourceCategory>("liens-importants");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm] = useState("");
   const [resources, setResources] = useState<ResourceItem[]>(resourcesData);
 
   const handleSort = () => {
@@ -111,6 +106,7 @@ export default function RessourcesPage() {
   const sortedResources = [...filteredResources].sort((a, b) => {
     const dateA = new Date(a.dateAdded.split('.').reverse().join('-'));
     const dateB = new Date(b.dateAdded.split('.').reverse().join('-'));
+
     return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
   });
 
@@ -121,6 +117,7 @@ export default function RessourcesPage() {
       dateAdded: new Date().toLocaleDateString('fr-FR'),
       icon: resourceData.icon ? getIconComponent(resourceData.icon) : FolderIcon
     };
+
     setResources(prev => [...prev, newResource]);
   };
 
@@ -133,6 +130,7 @@ export default function RessourcesPage() {
       'StarIcon': StarIcon,
       'DocumentTextIcon': DocumentTextIcon,
     };
+
     return iconMap[iconName] || FolderIcon;
   };
 
@@ -147,8 +145,8 @@ export default function RessourcesPage() {
                 cursor: "w-[50px]  left-[12px] h-1   rounded",
                 tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
               }}
-              variant="underlined"
               selectedKey={selectedTab}
+              variant="underlined"
               onSelectionChange={(key) => setSelectedTab(key as ResourceCategory)}
             >
               <Tab
@@ -188,9 +186,9 @@ export default function RessourcesPage() {
               <TableColumn>
                 <button
                   className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
+                  type="button"
                   onClick={handleSort}
                   onKeyDown={(e) => e.key === "Enter" && handleSort()}
-                  type="button"
                 >
                   Date d&apos;ajout
                   <span className="ml-1">
@@ -214,14 +212,14 @@ export default function RessourcesPage() {
                   </TableCell>
                   <TableCell>
                     <Button
-                      size="sm"
-                      variant="bordered"
+                      as="a"
                       className="rounded-full font-light text-sm border-1"
                       color='primary'
-                      as="a"
                       href={resource.link}
-                      target="_blank"
                       rel="noopener noreferrer"
+                      size="sm"
+                      target="_blank"
+                      variant="bordered"
                     >
                       {resource.title.includes("DRIVE") ? "Le drive →" :
                         resource.title.includes("DASHBOARD") ? "Le dashboard →" :
@@ -249,9 +247,9 @@ export default function RessourcesPage() {
 
       <ResourceModal
         isOpen={isModalOpen}
+        mode="create"
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddResource}
-        mode="create"
       />
     </div>
   );
