@@ -5,7 +5,6 @@ import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { SelectItem } from "@heroui/select";
-import { StyledSelect } from "@/components/styled-select";
 import {
   Table,
   TableHeader,
@@ -23,11 +22,13 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { MagnifyingGlassIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { Switch } from "@heroui/switch";
 
 import { CategoryBadge, StatusBadge } from "@/components/badges";
-import { SortableColumnHeader } from "@/components";
+import { FormLabel, SortableColumnHeader } from "@/components";
+import { StyledSelect } from "@/components/styled-select";
 
 interface Client {
   id: string;
@@ -79,22 +80,12 @@ export default function ClientsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
-  const [newClient, setNewClient] = useState({
-    raisonSociale: "",
-    email: "",
-    telephone: "",
-    adresse: "",
-    commentaire: "",
-    statut: "actif" as "actif" | "inactif" | "prospect",
-  });
+  
 
   const fetchClients = async () => {
-    console.log('fetchClients');
-
     try {
       setLoading(true);
       setError(null);
@@ -278,8 +269,8 @@ export default function ClientsPage() {
                 <SortableColumnHeader
                   field="categorie"
                   label="Catégorie"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -289,8 +280,8 @@ export default function ClientsPage() {
                 <SortableColumnHeader
                   field="dateSignatureContrat"
                   label="Date signature contrat"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -301,8 +292,8 @@ export default function ClientsPage() {
                 <SortableColumnHeader
                   field="statutPaiementContenu"
                   label="Facture publication"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -404,7 +395,8 @@ export default function ClientsPage() {
         onOpenChange={setIsEditModalOpen}
       >
         <ModalContent>
-         
+          <ModalHeader className="flex flex-col gap-1">Modifier le client</ModalHeader>
+
           <ModalBody className="max-h-[70vh] overflow-y-auto">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -422,13 +414,16 @@ export default function ClientsPage() {
                     Informations générales
                   </h3>
 
+                  <FormLabel htmlFor="raisonSociale" isRequired={true}>
+                    Nom établissement
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Nom établissement"
+                    id="raisonSociale"
                     placeholder="Nom de l'établissement"
                     value={editingClient.raisonSociale}
                     onChange={(e) =>
@@ -438,13 +433,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="ville" isRequired={true}>
+                    Ville
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Ville"
+                    id="ville"
                     placeholder="Paris"
                     value={editingClient.ville || ""}
                     onChange={(e) =>
@@ -454,12 +452,15 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="categorie" isRequired={true}>
+                    Catégorie
+                  </FormLabel>
                   <StyledSelect
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                     }}
-                    label="Catégorie"
+                    id="categorie"
                     placeholder="Sélectionner une catégorie"
                     selectedKeys={
                       editingClient.categorie ? [editingClient.categorie] : []
@@ -482,13 +483,16 @@ export default function ClientsPage() {
                     <SelectItem key="BEAUTY">Beauty</SelectItem>
                   </StyledSelect>
 
+                  <FormLabel htmlFor="telephone" isRequired={true}>
+                    Téléphone
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Téléphone"
+                    id="telephone"
                     placeholder="01 23 45 67 89"
                     value={editingClient.telephone || ""}
                     onChange={(e) =>
@@ -498,13 +502,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="email" isRequired={true}>
+                    Mail
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Mail"
+                    id="email"
                     placeholder="contact@etablissement.fr"
                     type="email"
                     value={editingClient.email || ""}
@@ -515,13 +522,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="numeroSiret" isRequired={true}>
+                    Numéro de SIRET
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Numéro de SIRET"
+                    id="numeroSiret"
                     placeholder="12345678901234"
                     value={editingClient.numeroSiret || ""}
                     onChange={(e) =>
@@ -534,9 +544,9 @@ export default function ClientsPage() {
 
                 {/* Commentaire */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  <FormLabel htmlFor="commentaire" isRequired={false}>
                     Commentaire
-                  </h3>
+                  </FormLabel>
 
                   <Textarea
                     classNames={{
@@ -559,13 +569,16 @@ export default function ClientsPage() {
                     Prestations
                   </h3>
 
+                  <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
+                    Date de signature du contrat
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date de signature du contrat"
+                    id="dateSignatureContrat"
                     type="date"
                     value={editingClient.dateSignatureContrat || ""}
                     onChange={(e) =>
@@ -578,19 +591,22 @@ export default function ClientsPage() {
                   />
 
                   <Button
-                    className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    startContent={<span>📥</span>}
+                    className="bg-black text-white"
+                    endContent={<ArrowDownTrayIcon className="w-4 h-4" />}
                   >
                     Télécharger
                   </Button>
 
+                  <FormLabel htmlFor="datePublicationContenu" isRequired={true}>
+                    Date de publication
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date de publication"
+                    id="datePublicationContenu"
                     type="date"
                     value={editingClient.datePublicationContenu || ""}
                     onChange={(e) =>
@@ -602,13 +618,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="datePublicationFacture" isRequired={true}>
+                    Date d&apos;envoie facture création de contenu
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date d'envoie facture création de contenu"
+                    id="datePublicationFacture"
                     type="date"
                     value={editingClient.datePublicationFacture || ""}
                     onChange={(e) =>
@@ -620,11 +639,14 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="statutPaiementContenu" isRequired={true}>
+                    Statut du paiement
+                  </FormLabel>
                   <StyledSelect
                     classNames={{
                       label: "text-sm font-medium",
                     }}
-                    label="Statut du paiement"
+                    id="statutPaiementContenu"
                     selectedKeys={
                       editingClient.statutPaiementContenu
                         ? [editingClient.statutPaiementContenu]
@@ -649,13 +671,16 @@ export default function ClientsPage() {
                     <SelectItem key="En retard">En retard</SelectItem>
                   </StyledSelect>
 
+                  <FormLabel htmlFor="montantFactureContenu" isRequired={true}>
+                    Montant facturé
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Montant facturé"
+                    id="montantFactureContenu"
                     placeholder="1750€"
                     value={editingClient.montantFactureContenu || ""}
                     onChange={(e) =>
@@ -667,13 +692,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="montantPaye" isRequired={true}>
+                    Montant payé
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Montant payé"
+                    id="montantPaye"
                     placeholder="750€"
                     value={editingClient.montantPaye || ""}
                     onChange={(e) =>
@@ -683,13 +711,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="dateReglementFacture" isRequired={true}>
+                    Date du règlement de la facture
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Date du règlement de la facture"
+                    id="dateReglementFacture"
                     type="date"
                     value={editingClient.dateReglementFacture || ""}
                     onChange={(e) =>
@@ -701,13 +732,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="restantDu" isRequired={true}>
+                    Restant dû
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Restant dû"
+                    id="restantDu"
                     placeholder="1750€"
                     value={editingClient.restantDu || ""}
                     onChange={(e) =>
@@ -717,13 +751,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="montantSponsorisation" isRequired={true}>
+                    Montant de la sponsorisation
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Montant de la sponsorisation"
+                    id="montantSponsorisation"
                     placeholder="1750€"
                     value={editingClient.montantSponsorisation || ""}
                     onChange={(e) =>
@@ -735,13 +772,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="montantAddition" isRequired={true}>
+                    Montant de l&apos;addition
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Montant de l'addition"
+                    id="montantAddition"
                     placeholder="1750€"
                     value={editingClient.montantAddition || ""}
                     onChange={(e) =>
@@ -756,14 +796,15 @@ export default function ClientsPage() {
 
                 {/* Commentaire */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  <FormLabel htmlFor="commentaire" isRequired={false}>
                     Commentaire
-                  </h3>
+                  </FormLabel>
 
                   <Textarea
                     classNames={{
                       input: "text-sm",
                     }}
+                    id="commentaire"
                     minRows={4}
                     placeholder="..."
                     value={editingClient.commentaire || ""}
@@ -777,14 +818,14 @@ export default function ClientsPage() {
 
                 {/* Cadeau du gérant pour le jeu concours */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  <FormLabel htmlFor="commentaireCadeauGerant" isRequired={false}>
                     Cadeau du gérant pour le jeu concours
-                  </h3>
-
+                  </FormLabel>
                   <Textarea
                     classNames={{
                       input: "text-sm",
                     }}
+                    id="commentaireCadeauGerant"
                     minRows={4}
                     placeholder="..."
                     value={editingClient.commentaireCadeauGerant || ""}
@@ -797,13 +838,16 @@ export default function ClientsPage() {
                     }
                   />
 
+                  <FormLabel htmlFor="montantCadeau" isRequired={true}>
+                    Montant du cadeau
+                  </FormLabel>
                   <Input
                     isRequired
                     classNames={{
                       label: "text-sm font-medium",
                       input: "text-sm",
                     }}
-                    label="Montant du cadeau"
+                    id="montantCadeau"
                     placeholder="150€"
                     value={editingClient.montantCadeau || ""}
                     onChange={(e) =>
@@ -812,48 +856,26 @@ export default function ClientsPage() {
                       )
                     }
                   />
-
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <span className="text-sm font-medium">
-                      Tirage au sort effectué
-                    </span>
-                    <div className="flex gap-2 ml-auto">
-                      <Button
-                        className={
-                          editingClient.tirageAuSort === false
-                            ? "bg-gray-200"
-                            : ""
-                        }
-                        size="sm"
-                        variant="light"
-                        onPress={() =>
-                          setEditingClient((prev) =>
-                            prev ? { ...prev, tirageAuSort: false } : null
-                          )
-                        }
-                      >
-                        Annuler
-                      </Button>
-                      <Button
-                        className="bg-black text-white dark:bg-white dark:text-black"
-                        size="sm"
-                        onPress={() =>
-                          setEditingClient((prev) =>
-                            prev ? { ...prev, tirageAuSort: true } : null
-                          )
-                        }
-                      >
-                        Ajouter
-                      </Button>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base ">Tirage au sort effectué</span>
+                    <Switch
+                      isSelected={editingClient.tirageAuSort}
+                      onValueChange={(checked) =>
+                        setEditingClient((prev) =>
+                          prev ? { ...prev, tirageAuSort: checked } : null
+                        )
+                      }
+                    />
                   </div>
+
                 </div>
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="flex justify-between">
             <Button
-              variant="light"
+              className="flex-1"
+              variant="bordered"
               onPress={() => {
                 setIsEditModalOpen(false);
                 setEditingClient(null);
@@ -862,7 +884,7 @@ export default function ClientsPage() {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               onPress={handleUpdateClient}
             >
               Modifier

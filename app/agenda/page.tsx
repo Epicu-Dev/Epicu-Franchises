@@ -330,12 +330,14 @@ export default function AgendaPage() {
                           ? "bg-purple-100 text-purple-800"
                           : "bg-orange-100 text-orange-800"
                       }`}
-                    title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                   >
                     <div className="font-medium truncate">{event.title}</div>
-                    <div className="text-xs opacity-75">
-                      {event.startTime}
-                    </div>
+                    {event.startTime && (
+                      <div className="text-xs opacity-75">
+                        {event.startTime}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {day.events.length > 3 && (
@@ -361,19 +363,22 @@ export default function AgendaPage() {
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
             <div className="p-2 text-center font-medium text-gray-600 text-sm">
-              Heure
             </div>
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center font-medium text-gray-600 text-sm"
+                className="p-2 text-center gap-4 flex items-center font-semibold text-custom-text-color-light"
               >
-                <div className="font-bold">{day.dayName}</div>
                 <div
-                  className={`text-lg ${day.isToday ? "text-red-600 font-bold" : "text-gray-900"}`}
+                  className={` w-8 h-8 flex items-center justify-center ${day.isToday
+                    ? "text-white bg-red-500 rounded-full flex items-center justify-center"
+                    : ""
+                    }`}
                 >
                   {day.dayNumber}
                 </div>
+                <div >{day.dayName}</div>
+
               </div>
             ))}
           </div>
@@ -390,6 +395,11 @@ export default function AgendaPage() {
                 {/* Cellules des jours */}
                 {weekDays.map((day) => {
                   const hourEvents = day.events.filter((event) => {
+                    // Vérifier que startTime existe et n'est pas undefined
+                    if (!event.startTime) {
+                      return false;
+                    }
+
                     const eventStartHour = parseInt(
                       event.startTime.split(":")[0]
                     );
@@ -414,12 +424,14 @@ export default function AgendaPage() {
                                 ? "bg-purple-100 text-purple-800"
                                 : "bg-orange-100 text-orange-800"
                             }`}
-                          title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                         >
                           <div className="font-medium truncate">{event.title}</div>
-                          <div className="text-xs opacity-75 mt-0.5">
-                            {event.startTime} - {event.endTime}
-                          </div>
+                          {event.startTime && event.endTime && (
+                            <div className="text-xs opacity-75 mt-0.5">
+                              {event.startTime} - {event.endTime}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -534,26 +546,33 @@ export default function AgendaPage() {
               </StyledSelect>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex rounded-md overflow-hidden flex-shrink-0">
 
               <Button
                 color={view === "semaine" ? "primary" : "default"}
+                className={
+                  view === "semaine"
+                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                }
                 size="sm"
-                variant={view === "semaine" ? "solid" : "light"}
+                variant="solid"
                 onPress={() => setView("semaine")}
               >
                 Semaine
               </Button>
               <Button
                 color={view === "mois" ? "primary" : "default"}
+                className={
+                  view === "mois"
+                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                }
                 size="sm"
-                variant={view === "mois" ? "solid" : "light"}
+                variant="solid"
                 onPress={() => setView("mois")}
               >
                 Mois
-              </Button>
-              <Button isIconOnly size="sm" variant="light">
-                <Bars3Icon className="h-4 w-4" />
               </Button>
             </div>
           </div>

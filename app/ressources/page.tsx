@@ -137,12 +137,12 @@ export default function RessourcesPage() {
   };
 
   return (
-    <div className="p-6">
+    <div >
       <Card className="w-full" shadow="none">
         <CardHeader className="p-6">
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
             <Tabs
-              className="w-full pt-3"
+              className=" pt-3 text-xl"
               classNames={{
                 cursor: "w-[50px]  left-[12px] h-1   rounded",
                 tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
@@ -154,22 +154,18 @@ export default function RessourcesPage() {
               <Tab
                 key="liens-importants"
                 title="Liens importants"
-                className="text-sm"
               />
               <Tab
                 key="bibliotheque"
                 title="Bibliothèque"
-                className="text-sm"
               />
               <Tab
                 key="ressources-canva"
                 title="Ressources Canva"
-                className="text-sm"
               />
               <Tab
                 key="materiel"
                 title="Matériel"
-                className="text-sm"
               />
             </Tabs>
 

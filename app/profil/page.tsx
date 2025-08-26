@@ -15,11 +15,10 @@ import {
   TableCell,
 } from '@heroui/table';
 import {
-  PencilIcon,
-  DocumentTextIcon,
-  ClockIcon
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
+
 import { SortableColumnHeader } from '@/components/sortable-column-header';
 import { useSortableTable } from '@/hooks/use-sortable-table';
 import { InvoiceStatusBadge } from '@/components/badges';
@@ -139,7 +138,7 @@ export default function ProfilPage() {
           etat: 'Validée',
           date: '10.07.2025',
           montant: '1450€67',
-          typeFacture: 'Droit d\'entrée'
+          typeFacture: 'Droit d&apos;entrée'
         }
       ]);
 
@@ -234,36 +233,6 @@ export default function ProfilPage() {
       // Ici on pourrait appeler l'API pour sauvegarder
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
-    }
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'payee':
-        return 'Payée';
-      case 'en_attente':
-        return 'En attente';
-      case 'retard':
-        return 'Retard';
-      default:
-        return status;
     }
   };
 
@@ -479,8 +448,8 @@ export default function ProfilPage() {
                     <SortableColumnHeader
                       field="etat"
                       label="Etat"
-                      sortField={invoiceSortField}
                       sortDirection={invoiceSortDirection}
+                      sortField={invoiceSortField}
                       onSort={handleInvoiceSort}
                     />
                   </TableColumn>
@@ -488,8 +457,8 @@ export default function ProfilPage() {
                     <SortableColumnHeader
                       field="date"
                       label="Date"
-                      sortField={invoiceSortField}
                       sortDirection={invoiceSortDirection}
+                      sortField={invoiceSortField}
                       onSort={handleInvoiceSort}
                     />
                   </TableColumn>
@@ -498,8 +467,8 @@ export default function ProfilPage() {
                     <SortableColumnHeader
                       field="typeFacture"
                       label="Type de facture"
-                      sortField={invoiceSortField}
                       sortDirection={invoiceSortDirection}
+                      sortField={invoiceSortField}
                       onSort={handleInvoiceSort}
                     />
                   </TableColumn>
@@ -523,7 +492,7 @@ export default function ProfilPage() {
                           variant="light"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                           </svg>
                         </Button>
                       </TableCell>
@@ -543,8 +512,8 @@ export default function ProfilPage() {
                     <SortableColumnHeader
                       field="type"
                       label="Type de documents"
-                      sortField={docSortField}
                       sortDirection={docSortDirection}
+                      sortField={docSortField}
                       onSort={handleDocSort}
                     />
                   </TableColumn>
@@ -565,7 +534,7 @@ export default function ProfilPage() {
                           variant="light"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                           </svg>
                         </Button>
                       </TableCell>
@@ -583,13 +552,13 @@ export default function ProfilPage() {
                 <TableHeader>
                   <TableColumn className="font-light text-sm">Personne</TableColumn>
                   <TableColumn className="font-light text-sm">Action réalis&eacute;e</TableColumn>
-                  <TableColumn className="font-light text-sm">Date de l'action</TableColumn>
+                  <TableColumn className="font-light text-sm">Date de l&apos;action</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="heure"
                       label="Heure de l'action"
-                      sortField={sortField}
                       sortDirection={sortDirection}
+                      sortField={sortField}
                       onSort={handleSort}
                     />
                   </TableColumn>

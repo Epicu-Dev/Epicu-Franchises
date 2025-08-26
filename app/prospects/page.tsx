@@ -90,14 +90,12 @@ export default function ProspectsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
-  const [editFieldErrors, setEditFieldErrors] = useState<{ [key: string]: string }>({});
   const previousTabRef = useRef(selectedTab);
 
   const fetchProspects = async () => {
@@ -177,66 +175,10 @@ export default function ProspectsPage() {
     }
   };
 
-  const validateEditField = (fieldName: string, value: any) => {
-    const errors = { ...editFieldErrors };
 
-    switch (fieldName) {
-      case 'nomEtablissement':
-        if (!value || !value.trim()) {
-          errors.nomEtablissement = 'Le nom de l\'établissement est requis';
-        } else {
-          delete errors.nomEtablissement;
-        }
-        break;
-      case 'ville':
-        if (!value || !value.trim()) {
-          errors.ville = 'La ville est requise';
-        } else {
-          delete errors.ville;
-        }
-        break;
-      case 'telephone':
-        if (!value || !value.trim()) {
-          errors.telephone = 'Le téléphone est requis';
-        } else {
-          delete errors.telephone;
-        }
-        break;
-      case 'datePremierRendezVous':
-        if (!value) {
-          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
-        } else {
-          delete errors.datePremierRendezVous;
-        }
-        break;
-      case 'dateRelance':
-        if (!value) {
-          errors.dateRelance = 'La date de relance est requise';
-        } else {
-          delete errors.dateRelance;
-        }
-        break;
-    }
-
-    setEditFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const validateAllEditFields = (prospect: Prospect) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
-    let isValid = true;
-
-    fields.forEach(field => {
-      const fieldValid = validateEditField(field, prospect[field as keyof Prospect]);
-      if (!fieldValid) isValid = false;
-    });
-
-    return isValid;
-  };
 
   const handleEditProspect = (prospect: ApiProspect) => {
     setError(null);
-    setEditFieldErrors({});
     // Convertir ApiProspect en Prospect pour l'édition
     const prospectForEdit: Prospect = {
       id: prospect.id,
@@ -255,48 +197,7 @@ export default function ProspectsPage() {
       adresse: prospect.adresse,
     };
     setEditingProspect(prospectForEdit);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateProspect = async () => {
-    if (!editingProspect) return;
-
-    try {
-      // Validation complète avant soumission
-      if (!validateAllEditFields(editingProspect)) {
-        setError("Veuillez corriger les erreurs dans le formulaire");
-        return;
-      }
-
-      const response = await fetch(`/api/prospects/${editingProspect.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editingProspect),
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Erreur lors de la modification du prospect";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (parseError) {
-          // Si la réponse n'est pas du JSON valide, utiliser le message par défaut
-          console.error('Erreur de parsing JSON:', parseError);
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Fermer le modal et recharger les prospects
-      setIsEditModalOpen(false);
-      setEditingProspect(null);
-      setError(null);
-      setEditFieldErrors({});
-      fetchProspects();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
+    setIsProspectModalOpen(true);
   };
 
   const handleConvertToClient = async () => {
@@ -447,10 +348,18 @@ export default function ProspectsPage() {
                 <SelectItem key="nom">Nom</SelectItem>
                 <SelectItem key="prenom">Prénom</SelectItem>
               </StyledSelect>
-
             </div>
 
-
+            <Button
+              className="bg-black text-white hover:bg-gray-900"
+              startContent={<PlusIcon className="h-4 w-4" />}
+              onPress={() => {
+                setEditingProspect(null);
+                setIsProspectModalOpen(true);
+              }}
+            >
+              Ajouter un prospect
+            </Button>
           </div>
 
           {/* Table */}
@@ -577,348 +486,7 @@ export default function ProspectsPage() {
 
 
 
-      {/* Modal de modification de prospect */}
-      <Modal
-        isOpen={isEditModalOpen}
-        scrollBehavior="inside"
-        size="2xl"
-        onOpenChange={setIsEditModalOpen}
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <h2>Modifier le prospect</h2>
-            <p className="text-sm text-gray-500 font-normal">
-              {editingProspect?.nomEtablissement}
-            </p>
-          </ModalHeader>
-          <ModalBody className="max-h-[70vh] overflow-y-auto">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
-            {editingProspect && (
-              <div className="space-y-6">
-                {/* Informations générales */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Informations générales
-                  </h3>
 
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="N° SIRET"
-                    placeholder="12345678901234"
-                    value={editingProspect.siret || ""}
-                    onChange={(e) =>
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, siret: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    errorMessage={editFieldErrors.nomEtablissement}
-                    isInvalid={!!editFieldErrors.nomEtablissement}
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Nom établissement"
-                    placeholder="Nom de l'établissement"
-                    value={editingProspect.nomEtablissement}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEditingProspect((prev) =>
-                        prev
-                          ? { ...prev, nomEtablissement: value }
-                          : null
-                      );
-                      validateEditField('nomEtablissement', value);
-                    }}
-                  />
-
-                  <Input
-                    isRequired
-                    errorMessage={editFieldErrors.ville}
-                    isInvalid={!!editFieldErrors.ville}
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Ville"
-                    placeholder="Paris"
-                    value={editingProspect.ville || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, ville: value } : null
-                      );
-                      validateEditField('ville', value);
-                    }}
-                  />
-
-                  <Input
-                    isRequired
-                    errorMessage={editFieldErrors.telephone}
-                    isInvalid={!!editFieldErrors.telephone}
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Téléphone"
-                    placeholder="01 23 45 67 89"
-                    value={editingProspect.telephone || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, telephone: value } : null
-                      );
-                      validateEditField('telephone', value);
-                    }}
-                  />
-
-                  <StyledSelect
-                    className="w-40"
-
-                    label="Catégorie"
-                    placeholder="Sélectionner une catégorie"
-                    selectedKeys={
-                      editingProspect.categorie
-                        ? [editingProspect.categorie]
-                        : []
-                    }
-                    onSelectionChange={(keys) =>
-                      setEditingProspect((prev) =>
-                        prev
-                          ? {
-                            ...prev,
-                            categorie: Array.from(keys)[0] as
-                              | "FOOD"
-                              | "SHOP"
-                              | "TRAVEL"
-                              | "FUN"
-                              | "BEAUTY",
-                          }
-                          : null
-                      )
-                    }
-                  >
-                    <SelectItem key="FOOD">FOOD</SelectItem>
-                    <SelectItem key="SHOP">SHOP</SelectItem>
-                    <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                    <SelectItem key="FUN">FUN</SelectItem>
-                    <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-                  </StyledSelect>
-
-                  <Input
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Email"
-                    placeholder="contact@etablissement.fr"
-                    type="email"
-                    value={editingProspect.email || ""}
-                    onChange={(e) =>
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, email: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Adresse"
-                    placeholder="123 Rue de l'établissement, 75001 Paris"
-                    value={editingProspect.adresse || ""}
-                    onChange={(e) =>
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, adresse: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Suivi */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Suivi
-                  </h3>
-
-                  <Input
-                    isRequired
-                    errorMessage={editFieldErrors.datePremierRendezVous}
-                    isInvalid={!!editFieldErrors.datePremierRendezVous}
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date du premier rendez-vous"
-                    type="date"
-                    value={editingProspect.datePremierRendezVous || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEditingProspect((prev) =>
-                        prev
-                          ? { ...prev, datePremierRendezVous: value }
-                          : null
-                      );
-                      validateEditField('datePremierRendezVous', value);
-                    }}
-                  />
-
-                  <Input
-                    isRequired
-                    errorMessage={editFieldErrors.dateRelance}
-                    isInvalid={!!editFieldErrors.dateRelance}
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date de la relance"
-                    type="date"
-                    value={editingProspect.dateRelance || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, dateRelance: value } : null
-                      );
-                      validateEditField('dateRelance', value);
-                    }}
-                  />
-
-                  <StyledSelect
-                    classNames={{
-                      label: "text-sm font-medium",
-                    }}
-                    label="Suivi par"
-                    placeholder="Sélectionner une personne"
-                    selectedKeys={
-                      editingProspect.suiviPar ? [editingProspect.suiviPar] : []
-                    }
-                    onSelectionChange={(keys) =>
-                      setEditingProspect((prev) =>
-                        prev
-                          ? { ...prev, suiviPar: Array.from(keys)[0] as string }
-                          : null
-                      )
-                    }
-                  >
-                    <SelectItem key="nom">Nom</SelectItem>
-                    <SelectItem key="prenom">Prénom</SelectItem>
-                  </StyledSelect>
-
-                  <StyledSelect
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                    }}
-                    label="Statut"
-                    placeholder="Sélectionner un statut"
-                    selectedKeys={
-                      editingProspect.statut ? [editingProspect.statut] : []
-                    }
-                    onSelectionChange={(keys) =>
-                      setEditingProspect((prev) =>
-                        prev
-                          ? {
-                            ...prev,
-                            statut: Array.from(keys)[0] as
-                              | "a_contacter"
-                              | "en_discussion"
-                              | "glacial",
-                          }
-                          : null
-                      )
-                    }
-                  >
-                    <SelectItem key="a_contacter">À contacter</SelectItem>
-                    <SelectItem key="en_discussion">En discussion</SelectItem>
-                    <SelectItem key="glacial">Glacial</SelectItem>
-                  </StyledSelect>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">
-                      Je viens de le rencontrer
-                    </span>
-                    <input
-                      checked={editingProspect.vientDeRencontrer || false}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      type="checkbox"
-                      onChange={(e) =>
-                        setEditingProspect((prev) =>
-                          prev
-                            ? { ...prev, vientDeRencontrer: e.target.checked }
-                            : null
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Commentaire */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Commentaire
-                  </h3>
-
-                  <Textarea
-                    classNames={{
-                      input: "text-sm",
-                    }}
-                    minRows={4}
-                    placeholder="Informations supplémentaires..."
-                    value={editingProspect.commentaire || ""}
-                    onChange={(e) =>
-                      setEditingProspect((prev) =>
-                        prev ? { ...prev, commentaire: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => {
-                setIsEditModalOpen(false);
-                setEditingProspect(null);
-                setEditFieldErrors({});
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              isDisabled={
-                Object.keys(editFieldErrors).length > 0 ||
-                !editingProspect?.nomEtablissement ||
-                !editingProspect?.ville ||
-                !editingProspect?.telephone ||
-                !editingProspect?.datePremierRendezVous ||
-                !editingProspect?.dateRelance
-              }
-              onPress={handleUpdateProspect}
-            >
-              Modifier
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Modal de confirmation de conversion */}
       <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
@@ -979,11 +547,16 @@ export default function ProspectsPage() {
         </ModalContent>
       </Modal>
 
-      {/* Modal d'ajout de prospect réutilisable */}
+      {/* Modal d'ajout et de modification de prospect réutilisable */}
       <ProspectModal
         isOpen={isProspectModalOpen}
-        onClose={() => setIsProspectModalOpen(false)}
+        onClose={() => {
+          setIsProspectModalOpen(false);
+          setEditingProspect(null);
+        }}
         onProspectAdded={fetchProspects}
+        editingProspect={editingProspect}
+        isEditing={!!editingProspect}
       />
     </div>
   );

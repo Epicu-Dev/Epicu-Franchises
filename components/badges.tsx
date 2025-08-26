@@ -143,8 +143,6 @@ export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
     className = ""
 }) => {
     const getAgendaBadgeColor = (type: string) => {
-        console.log(type);
-
         switch (type.toLowerCase()) {
             case "tournage":
                 return "bg-custom-rose/14 text-custom-rose";

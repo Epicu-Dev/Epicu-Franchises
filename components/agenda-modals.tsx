@@ -10,6 +10,10 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
+import { Checkbox } from "@heroui/checkbox";
+import { Switch } from "@heroui/switch";
+
+import { FormLabel } from "./form-label";
 
 interface Event {
   id: string;
@@ -86,14 +90,14 @@ export function AgendaModals({
     const startDate = new Date();
 
     startDate.setHours(hours, minutes, 0, 0);
-    
+
     // Ajouter 1 heure
     const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-    
+
     // Formatter en HH:MM
     const endHours = endDate.getHours().toString().padStart(2, '0');
     const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
-    
+
     return `${endHours}:${endMinutes}`;
   };
 
@@ -397,11 +401,14 @@ export function AgendaModals({
           <ModalHeader>Ajouter un tournage</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <FormLabel htmlFor="establishmentName" isRequired={true}>
+                Nom de l&apos;établissement
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['tournage.establishmentName']}
+                id="establishmentName"
                 isInvalid={!!fieldErrors['tournage.establishmentName']}
-                label="Nom de l'établissement "
                 placeholder="Nom de l'établissement"
                 value={newTournage.establishmentName}
                 onChange={(e) => {
@@ -415,151 +422,89 @@ export function AgendaModals({
                 }}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  errorMessage={fieldErrors['tournage.shootingDate']}
-                  isInvalid={!!fieldErrors['tournage.shootingDate']}
-                  label="Date du tournage "
-                  type="date"
-                  value={newTournage.shootingDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      shootingDate: value,
-                    }));
-                    validateField('shootingDate', value, 'tournage');
-                  }}
-                />
-                <Input
-                  isRequired
-                  errorMessage={fieldErrors['tournage.publicationDate']}
-                  isInvalid={!!fieldErrors['tournage.publicationDate']}
-                  label="Date de la publication "
-                  type="date"
-                  value={newTournage.publicationDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <FormLabel htmlFor="publicationDate" isRequired={true}>
+                Date de la publication
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors['tournage.publicationDate']}
+                id="publicationDate"
+                isInvalid={!!fieldErrors['tournage.publicationDate']}
+                type="date"
+                value={newTournage.publicationDate}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      publicationDate: value,
-                    }));
-                    validateField('publicationDate', value, 'tournage');
-                  }}
-                />
-              </div>
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    publicationDate: value,
+                  }));
+                  validateField('publicationDate', value, 'tournage');
+                }}
+              />
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Début tournage "
-                  type="time"
-                  value={newTournage.shootingStartTime}
-                  onChange={(e) => {
-                    const startTime = e.target.value;
-                    const endTime = calculateEndTime(startTime);
+              <FormLabel htmlFor="shootingDate" isRequired={true}>
+                Date du tournage
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors['tournage.shootingDate']}
+                id="shootingDate"
+                isInvalid={!!fieldErrors['tournage.shootingDate']}
+                type="date"
+                value={newTournage.shootingDate}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      shootingStartTime: startTime,
-                      shootingEndTime: endTime,
-                    }));
-                  }}
-                />
-                <Input
-                  isRequired
-                  label="Fin tournage "
-                  type="time"
-                  value={newTournage.shootingEndTime}
-                  onChange={(e) =>
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      shootingEndTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    shootingDate: value,
+                  }));
+                  validateField('shootingDate', value, 'tournage');
+                }}
+              />
 
-              {newTournage.publicationDate && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Début publication "
-                    type="time"
-                    value={newTournage.publicationStartTime}
-                    onChange={(e) => {
-                      const startTime = e.target.value;
-                      const endTime = calculateEndTime(startTime);
-
-                      setNewTournage((prev) => ({
-                        ...prev,
-                        publicationStartTime: startTime,
-                        publicationEndTime: endTime,
-                      }));
-                    }}
-                  />
-                  <Input
-                    label="Fin publication "
-                    type="time"
-                    value={newTournage.publicationEndTime}
-                    onChange={(e) =>
-                      setNewTournage((prev) => ({
-                        ...prev,
-                        publicationEndTime: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              )}
 
               <div className="space-y-2">
                 <div className="text-sm font-medium">Prestataires </div>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2" htmlFor="photographers-checkbox">
-                    <input
-                      checked={newTournage.photographers}
-                      className="rounded border-gray-300"
-                      id="photographers-checkbox"
-                      type="checkbox"
-                      onChange={(e) =>
-                        setNewTournage((prev) => ({
-                          ...prev,
-                          photographers: e.target.checked,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">Photographe</span>
-                  </label>
-                  <label className="flex items-center space-x-2" htmlFor="videographers-checkbox">
-                    <input
-                      checked={newTournage.videographers}
-                      className="rounded border-gray-300"
-                      id="videographers-checkbox"
-                      type="checkbox"
-                      onChange={(e) =>
-                        setNewTournage((prev) => ({
-                          ...prev,
-                          videographers: e.target.checked,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">Vidéaste</span>
-                  </label>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    isSelected={newTournage.photographers}
+                    onValueChange={(checked) =>
+                      setNewTournage((prev) => ({
+                        ...prev,
+                        photographers: checked,
+                      }))
+                    }
+                  >
+                    Photographe
+                  </Checkbox>
+                  <Checkbox
+                    isSelected={newTournage.videographers}
+                    onValueChange={(checked) =>
+                      setNewTournage((prev) => ({
+                        ...prev,
+                        videographers: checked,
+                      }))
+                    }
+                  >
+                    Vidéaste
+                  </Checkbox>
                 </div>
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="flex justify-between">
             <Button
-              variant="light"
+              className="flex-1"
+              variant="bordered"
               onPress={() => setIsTournageModalOpen(false)}
             >
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('tournage.')) || !newTournage.establishmentName || !newTournage.shootingDate || !newTournage.publicationDate}
               onPress={handleAddTournage}
             >
@@ -576,13 +521,16 @@ export function AgendaModals({
       >
         <ModalContent>
           <ModalHeader>Ajouter une publication</ModalHeader>
-          <ModalBody>
+          <ModalBody className="max-h-[70vh] overflow-y-auto">
             <div className="space-y-4">
+              <FormLabel htmlFor="categoryName" isRequired={true}>
+                Nom catégorie
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['publication.categoryName']}
+                id="categoryName"
                 isInvalid={!!fieldErrors['publication.categoryName']}
-                label="Nom catégorie "
                 placeholder="FOOD"
                 value={newPublication.categoryName}
                 onChange={(e) => {
@@ -595,11 +543,14 @@ export function AgendaModals({
                   validateField('categoryName', value, 'publication');
                 }}
               />
+              <FormLabel htmlFor="establishmentName" isRequired={true}>
+                Nom établissement
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['publication.establishmentName']}
+                id="establishmentName"
                 isInvalid={!!fieldErrors['publication.establishmentName']}
-                label="Nom établissement "
                 placeholder="Nom de l'établissement"
                 value={newPublication.establishmentName}
                 onChange={(e) => {
@@ -613,47 +564,97 @@ export function AgendaModals({
                 }}
               />
 
+              <Input
+                isRequired
+                errorMessage={fieldErrors['publication.publicationDate']}
+                id="publicationDate"
+                isInvalid={!!fieldErrors['publication.publicationDate']}
+                type="date"
+                value={newPublication.publicationDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    publicationDate: value,
+                  }));
+                  validateField('publicationDate', value, 'publication');
+                }}
+              />
+              <FormLabel htmlFor="shootingDate" isRequired={true}>
+                Date du tournage
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors['publication.shootingDate']}
+                id="shootingDate"
+                isInvalid={!!fieldErrors['publication.shootingDate']}
+                type="date"
+                value={newPublication.shootingDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    shootingDate: value,
+                  }));
+                  validateField('shootingDate', value, 'publication');
+                }}
+              />
+              {newPublication.shootingDate && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="time"
+                    value={newPublication.shootingStartTime}
+                    onChange={(e) => {
+                      const startTime = e.target.value;
+                      const endTime = calculateEndTime(startTime);
+
+                      setNewPublication((prev) => ({
+                        ...prev,
+                        shootingStartTime: startTime,
+                        shootingEndTime: endTime,
+                      }));
+                    }}
+                  />
+                  <Input
+                    type="time"
+                    value={newPublication.shootingEndTime}
+                    onChange={(e) =>
+                      setNewPublication((prev) => ({
+                        ...prev,
+                        shootingEndTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              )}
+              <FormLabel htmlFor="publicationDate" isRequired={true}>
+                Date de la publication
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors['publication.publicationDate']}
+                id="publicationDate"
+                isInvalid={!!fieldErrors['publication.publicationDate']}
+                type="date"
+                value={newPublication.publicationDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    publicationDate: value,
+                  }));
+                  validateField('publicationDate', value, 'publication');
+                }}
+              />
+
+
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  errorMessage={fieldErrors['publication.publicationDate']}
-                  isInvalid={!!fieldErrors['publication.publicationDate']}
-                  label="Date de la publication "
-                  type="date"
-                  value={newPublication.publicationDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
-
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      publicationDate: value,
-                    }));
-                    validateField('publicationDate', value, 'publication');
-                  }}
-                />
-                <Input
-                  isRequired
-                  errorMessage={fieldErrors['publication.shootingDate']}
-                  isInvalid={!!fieldErrors['publication.shootingDate']}
-                  label="Date du tournage "
-                  type="date"
-                  value={newPublication.shootingDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
-
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      shootingDate: value,
-                    }));
-                    validateField('shootingDate', value, 'publication');
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Début publication "
                   type="time"
                   value={newPublication.publicationStartTime}
                   onChange={(e) => {
@@ -669,7 +670,6 @@ export function AgendaModals({
                 />
                 <Input
                   isRequired
-                  label="Fin publication "
                   type="time"
                   value={newPublication.publicationEndTime}
                   onChange={(e) =>
@@ -681,40 +681,12 @@ export function AgendaModals({
                 />
               </div>
 
-              {newPublication.shootingDate && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Début tournage "
-                    type="time"
-                    value={newPublication.shootingStartTime}
-                    onChange={(e) => {
-                      const startTime = e.target.value;
-                      const endTime = calculateEndTime(startTime);
-
-                      setNewPublication((prev) => ({
-                        ...prev,
-                        shootingStartTime: startTime,
-                        shootingEndTime: endTime,
-                      }));
-                    }}
-                  />
-                  <Input
-                    label="Fin tournage "
-                    type="time"
-                    value={newPublication.shootingEndTime}
-                    onChange={(e) =>
-                      setNewPublication((prev) => ({
-                        ...prev,
-                        shootingEndTime: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              )}
-
+              <FormLabel htmlFor="winner" isRequired={true}>
+                Gagnant
+              </FormLabel>
               <Input
                 isRequired
-                label="Gagnant "
+                id="winner"
                 placeholder="Nom Prénom"
                 value={newPublication.winner}
                 onChange={(e) =>
@@ -726,33 +698,29 @@ export function AgendaModals({
               />
 
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium" htmlFor="draw-completed-checkbox">
-                  Tirage au sort effectué
-                </label>
-                <input
-                  checked={newPublication.drawCompleted}
-                  className="rounded border-gray-300"
-                  id="draw-completed-checkbox"
-                  type="checkbox"
-                  onChange={(e) =>
+                <span className="text-base ">Tirage au sort effectué</span>
+                <Switch
+                  isSelected={newPublication.drawCompleted}
+                  onValueChange={(checked) =>
                     setNewPublication((prev) => ({
                       ...prev,
-                      drawCompleted: e.target.checked,
+                      drawCompleted: checked,
                     }))
                   }
                 />
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="flex justify-between">
             <Button
-              variant="light"
+              className="flex-1"
+              variant="bordered"
               onPress={() => setIsPublicationModalOpen(false)}
             >
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('publication.')) || !newPublication.categoryName || !newPublication.establishmentName || !newPublication.publicationDate || !newPublication.shootingDate}
               onPress={handleAddPublication}
             >
@@ -768,11 +736,14 @@ export function AgendaModals({
           <ModalHeader>Créer un rendez-vous</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <FormLabel htmlFor="categoryName" isRequired={true}>
+                Nom catégorie
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['rdv.categoryName']}
+                id="categoryName"
                 isInvalid={!!fieldErrors['rdv.categoryName']}
-                label="Nom catégorie "
                 placeholder="FOOD"
                 value={newRdv.categoryName}
                 onChange={(e) => {
@@ -785,11 +756,14 @@ export function AgendaModals({
                   validateField('categoryName', value, 'rdv');
                 }}
               />
+              <FormLabel htmlFor="establishmentName" isRequired={true}>
+                Nom établissement
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['rdv.establishmentName']}
+                id="establishmentName"
                 isInvalid={!!fieldErrors['rdv.establishmentName']}
-                label="Nom établissement "
                 placeholder="Nom de l'établissement"
                 value={newRdv.establishmentName}
                 onChange={(e) => {
@@ -803,11 +777,14 @@ export function AgendaModals({
                 }}
               />
 
+              <FormLabel htmlFor="appointmentType" isRequired={true}>
+                Type de rendez-vous
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['rdv.appointmentType']}
+                id="appointmentType"
                 isInvalid={!!fieldErrors['rdv.appointmentType']}
-                label="Type de rendez-vous "
                 placeholder="Fidélisation"
                 value={newRdv.appointmentType}
                 onChange={(e) => {
@@ -821,11 +798,14 @@ export function AgendaModals({
                 }}
               />
 
+              <FormLabel htmlFor="appointmentDate" isRequired={true}>
+                Date du rendez-vous
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors['rdv.appointmentDate']}
+                id="appointmentDate"
                 isInvalid={!!fieldErrors['rdv.appointmentDate']}
-                label="Date du rendez-vous "
                 type="date"
                 value={newRdv.appointmentDate}
                 onChange={(e) => {
@@ -842,7 +822,7 @@ export function AgendaModals({
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   isRequired
-                  label="Début "
+                  id="startTime"
                   type="time"
                   value={newRdv.startTime}
                   onChange={(e) => {
@@ -856,9 +836,10 @@ export function AgendaModals({
                     }));
                   }}
                 />
+
                 <Input
                   isRequired
-                  label="Fin "
+                  id="endTime"
                   type="time"
                   value={newRdv.endTime}
                   onChange={(e) =>
@@ -871,12 +852,12 @@ export function AgendaModals({
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsRdvModalOpen(false)}>
+          <ModalFooter className="flex justify-between">
+            <Button className="flex-1" variant="bordered" onPress={() => setIsRdvModalOpen(false)}>
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('rdv.')) || !newRdv.categoryName || !newRdv.establishmentName || !newRdv.appointmentType || !newRdv.appointmentDate}
               onPress={handleAddRdv}
             >

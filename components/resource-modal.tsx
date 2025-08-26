@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
 import { Resource, ResourceCategory } from "../types/resource";
+import { FormLabel } from "./form-label";
 
 interface ResourceModalProps {
   isOpen: boolean;
@@ -15,12 +16,12 @@ interface ResourceModalProps {
   mode: "create" | "edit";
 }
 
-export default function ResourceModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  resource, 
-  mode 
+export default function ResourceModal({
+  isOpen,
+  onClose,
+  onSave,
+  resource,
+  mode
 }: ResourceModalProps) {
   const [formData, setFormData] = useState({
     title: resource?.title || "",
@@ -52,8 +53,11 @@ export default function ResourceModal({
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <FormLabel htmlFor="title" isRequired={true}>
+                Nom du document
+              </FormLabel>
               <Input
-                label="Nom du document*"
+                id="title"
                 placeholder="Nom du document"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
@@ -63,10 +67,12 @@ export default function ResourceModal({
                   inputWrapper: "bg-gray-50 rounded-lg"
                 }}
               />
-              
+              <FormLabel htmlFor="comment" isRequired={true}>
+                Commentaires
+              </FormLabel>
               <Textarea
-                label="Commentaires*"
-                placeholder="Description du document"
+                id="comment"
+                placeholder="Commentaires"
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 isRequired
@@ -77,8 +83,11 @@ export default function ResourceModal({
                 }}
               />
 
+              <FormLabel htmlFor="link" isRequired={true}>
+                Lien du document
+              </FormLabel>
               <Input
-                label="Lien du document*"
+                id="link"
                 placeholder="url"
                 value={formData.link}
                 onChange={(e) => handleInputChange("link", e.target.value)}
@@ -90,18 +99,18 @@ export default function ResourceModal({
               />
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button 
-              variant="bordered" 
+          <ModalFooter className="flex justify-end gap-2">
+            <Button
+              variant="bordered"
               onPress={onClose}
-              className="border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+              className="flex-1"
             >
               Annuler
             </Button>
-            <Button 
-              color="primary" 
+            <Button
+              color="primary"
               type="submit"
-              className="bg-gray-800 text-white hover:bg-gray-700"
+              className="bg-black text-white hover:bg-gray-900 flex-1"
             >
               {mode === "create" ? "Ajouter" : "Modifier"}
             </Button>

@@ -11,7 +11,6 @@ import {
   useDisclosure,
 } from "@heroui/modal";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -31,8 +30,8 @@ import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
-import { StyledSelect } from "@/components/styled-select";
 import { AgendaBadge, TodoBadge } from "@/components/badges";
+import { FormLabel } from "@/components";
 
 export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
@@ -239,7 +238,15 @@ export default function HomePage() {
   const handleAddTodo = () => {
     if (newTodo.mission.trim()) {
       const todoToAdd = {
-        ...newTodo,
+        id: Date.now().toString(),
+        titre: newTodo.mission,
+        description: newTodo.mission,
+        priorite: 'moyenne',
+        statut: newTodo.status === 'En cours' ? 'a_faire' : newTodo.status === 'Terminé' ? 'termine' : 'en_retard',
+        assigne: 'À assigner',
+        dateEcheance: newTodo.deadline || new Date().toISOString().split('T')[0],
+        dateCreation: new Date().toISOString().split('T')[0],
+        tags: []
       };
 
       setTodoItems((prev) => [...prev, todoToAdd]);
@@ -404,11 +411,11 @@ export default function HomePage() {
                     onTournageSelect={() => setIsTournageModalOpen(true)}
                   />
                 </div>
-                <div className="space-y-2 lg:space-y-3">
+                <div >
                   {agendaEvents.map((event, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-light text-custom-text-color">
@@ -443,7 +450,7 @@ export default function HomePage() {
                   {todoItems.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 lg:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between py-4 border-b border-gray-100"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-light text-custom-text-color">
@@ -499,48 +506,37 @@ export default function HomePage() {
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <FormLabel htmlFor="mission" isRequired={true}>
+                Mission
+              </FormLabel>
               <Input
                 isRequired
-                label="Mission"
+                id="mission"
                 placeholder="Titre de la tâche"
                 value={newTodo.mission}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNewTodo((prev) => ({ ...prev, mission: e.target.value }))
                 }
               />
+              <FormLabel htmlFor="deadline" isRequired={true}>
+                Deadline
+              </FormLabel>
               <Input
-                label="Deadline"
+                id="deadline"
                 type="date"
                 value={newTodo.deadline}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))
                 }
               />
-              <StyledSelect
-                label="Statut"
-                selectedKeys={[newTodo.status]}
-                onSelectionChange={(keys: any) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    status: Array.from(keys)[0] as
-                      | "En cours"
-                      | "En retard"
-                      | "Terminé",
-                  }))
-                }
-              >
-                <SelectItem key="En cours">En cours</SelectItem>
-                <SelectItem key="En retard">En retard</SelectItem>
-                <SelectItem key="Terminé">Terminé</SelectItem>
-              </StyledSelect>
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onAddTodoModalClose}>
+          <ModalFooter className="flex justify-between">
+            <Button className="flex-1" variant="bordered" onPress={onAddTodoModalClose}>
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               onPress={handleAddTodo}
             >
               Ajouter

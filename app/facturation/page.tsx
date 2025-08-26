@@ -29,7 +29,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { StyledSelect } from "@/components/styled-select";
-import { CategoryBadge, SortableColumnHeader } from "@/components";
+import { CategoryBadge, FormLabel, SortableColumnHeader } from "@/components";
 import { SelectItem } from "@heroui/select";
 
 interface Invoice {
@@ -589,7 +589,7 @@ export default function FacturationPage() {
           <ModalHeader>
             {selectedInvoice ? "Modifier la facture" : "Ajouter une nouvelle facture"}
           </ModalHeader>
-          <ModalBody>
+          <ModalBody className="max-h-[70vh] overflow-y-auto">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -599,12 +599,15 @@ export default function FacturationPage() {
               </div>
             )}
             <div className="space-y-4">
+              <FormLabel htmlFor="siret" isRequired={true}>
+                Client
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors.siret}
                 isInvalid={!!fieldErrors.siret}
-                label="Client"
-                placeholder="Numéro de SIRET* (14 chiffres)"
+                id="siret"
+                placeholder="Numéro de SIRET (14 chiffres)"
                 value={newInvoice.siret}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -630,11 +633,14 @@ export default function FacturationPage() {
                 }
               />
 
+              <FormLabel htmlFor="category" isRequired={true}>
+                Catégorie
+              </FormLabel>
               <StyledSelect
                 isRequired
                 errorMessage={fieldErrors.category}
                 isInvalid={!!fieldErrors.category}
-                label="Catégorie"
+                id="category"
                 placeholder="Sélectionnez une catégorie"
                 selectedKeys={newInvoice.category ? [newInvoice.category] : []}
                 onSelectionChange={(keys) => {
@@ -651,11 +657,14 @@ export default function FacturationPage() {
                 <SelectItem key="service">Service</SelectItem>
               </StyledSelect>
 
+              <FormLabel htmlFor="establishmentName" isRequired={true}>
+                Nom de l&apos;établissement
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors.establishmentName}
                 isInvalid={!!fieldErrors.establishmentName}
-                label="Nom de l'établissement"
+                id="establishmentName"
                 placeholder="Ex: L'ambiance"
                 value={newInvoice.establishmentName}
                 onChange={(e) => {
@@ -665,11 +674,14 @@ export default function FacturationPage() {
                 }}
               />
 
+              <FormLabel htmlFor="serviceType" isRequired={true}>
+                Prestation
+              </FormLabel>
               <StyledSelect
                 isRequired
                 errorMessage={fieldErrors.serviceType}
                 isInvalid={!!fieldErrors.serviceType}
-                label="Prestation"
+                id="serviceType"
                 placeholder="Sélectionnez une prestation"
                 selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
                 onSelectionChange={(keys) => {
@@ -686,11 +698,14 @@ export default function FacturationPage() {
                 <SelectItem key="studio">Studio</SelectItem>
               </StyledSelect>
 
+              <FormLabel htmlFor="amount" isRequired={true}>
+                Montant
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors.amount}
                 isInvalid={!!fieldErrors.amount}
-                label="Montant (€)"
+                id="amount"
                 placeholder="Ex: 1457.98"
                 step="0.01"
                 type="number"
@@ -702,11 +717,14 @@ export default function FacturationPage() {
                 }}
               />
 
+              <FormLabel htmlFor="date" isRequired={true}>
+                Date du paiement
+              </FormLabel>
               <Input
                 isRequired
                 errorMessage={fieldErrors.date}
                 isInvalid={!!fieldErrors.date}
-                label="Date du paiement"
+                id="date"
                 type="date"
                 value={newInvoice.date}
                 onChange={(e) => {
@@ -716,8 +734,11 @@ export default function FacturationPage() {
                 }}
               />
 
+              <FormLabel htmlFor="comment" isRequired={false}>
+                Commentaire
+              </FormLabel>
               <Textarea
-                label="Commentaire"
+                id="comment"
                 placeholder="Commentaires sur la facture..."
                 value={newInvoice.comment}
                 onChange={(e) => {
@@ -727,8 +748,8 @@ export default function FacturationPage() {
               />
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => {
+          <ModalFooter className="flex justify-end">
+            <Button className="flex-1" variant="bordered" onPress={() => {
               setIsAddModalOpen(false);
               setSelectedInvoice(null);
               setNewInvoice({
@@ -747,7 +768,7 @@ export default function FacturationPage() {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
               isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
               onPress={selectedInvoice ? handleEditInvoice : handleAddInvoice}
             >

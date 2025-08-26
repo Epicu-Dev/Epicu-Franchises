@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
 import {
   Modal,
@@ -13,9 +13,10 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { StyledSelect } from "./styled-select";
+import { FormLabel } from "./form-label";
 
 interface Prospect {
-  id: string;
+  id?: string;
   siret: string;
   nomEtablissement: string;
   ville: string;
@@ -35,12 +36,20 @@ interface ProspectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onProspectAdded: () => void;
+  editingProspect?: Prospect | null;
+  isEditing?: boolean;
 }
 
-export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModalProps) {
+export function ProspectModal({ 
+  isOpen, 
+  onClose, 
+  onProspectAdded, 
+  editingProspect = null,
+  isEditing = false 
+}: ProspectModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-  const [newProspect, setNewProspect] = useState({
+  const [newProspect, setNewProspect] = useState<Prospect>({
     siret: "",
     nomEtablissement: "",
     ville: "",
@@ -55,6 +64,32 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
     email: "",
     adresse: "",
   });
+
+  // Initialiser le formulaire avec les données du prospect à éditer
+  useEffect(() => {
+    if (isEditing && editingProspect) {
+      setNewProspect(editingProspect);
+    } else {
+      // Réinitialiser le formulaire pour un nouvel ajout
+      setNewProspect({
+        siret: "",
+        nomEtablissement: "",
+        ville: "",
+        telephone: "",
+        categorie: "FOOD" as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
+        statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+        datePremierRendezVous: "",
+        dateRelance: "",
+        vientDeRencontrer: false,
+        commentaire: "",
+        suiviPar: "",
+        email: "",
+        adresse: "",
+      });
+    }
+    setError(null);
+    setFieldErrors({});
+  }, [isEditing, editingProspect, isOpen]);
 
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
@@ -115,17 +150,22 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
     return isValid;
   };
 
-  const handleAddProspect = async () => {
+  const handleSubmit = async () => {
     try {
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
-
         return;
       }
 
-      const response = await fetch("/api/prospects", {
-        method: "POST",
+      const url = isEditing && newProspect.id 
+        ? `/api/prospects/${newProspect.id}`
+        : "/api/prospects";
+      
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -134,8 +174,7 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
 
       if (!response.ok) {
         const errorData = await response.json();
-
-        throw new Error(errorData.error || "Erreur lors de l'ajout du prospect");
+        throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`);
       }
 
       // Réinitialiser le formulaire et fermer le modal
@@ -192,7 +231,9 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
       onOpenChange={handleClose}
     >
       <ModalContent>
-        <ModalHeader>Ajouter un nouveau prospect</ModalHeader>
+        <ModalHeader>
+          {isEditing ? 'Modifier le prospect' : 'Ajouter un nouveau prospect'}
+        </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -203,20 +244,26 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
             </div>
           )}
           <div className="space-y-4">
+            <FormLabel htmlFor="siret" isRequired={true}>
+              N° SIRET
+            </FormLabel>
             <Input
               isRequired
-              label="N° SIRET"
+              id="siret"
               placeholder="12345678901234"
               value={newProspect.siret}
               onChange={(e) =>
                 setNewProspect((prev) => ({ ...prev, siret: e.target.value }))
               }
             />
+            <FormLabel htmlFor="nomEtablissement" isRequired={true}>
+              Nom établissement
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.nomEtablissement}
               isInvalid={!!fieldErrors.nomEtablissement}
-              label="Nom établissement"
+              id="nomEtablissement"
               placeholder="Nom de l'établissement"
               value={newProspect.nomEtablissement}
               onChange={(e) => {
@@ -229,11 +276,14 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 validateField('nomEtablissement', value);
               }}
             />
+            <FormLabel htmlFor="ville" isRequired={true}>
+              Ville
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.ville}
               isInvalid={!!fieldErrors.ville}
-              label="Ville"
+              id="ville"
               placeholder="Paris"
               value={newProspect.ville}
               onChange={(e) => {
@@ -243,11 +293,14 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 validateField('ville', value);
               }}
             />
+            <FormLabel htmlFor="telephone" isRequired={true}>
+              Téléphone
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.telephone}
               isInvalid={!!fieldErrors.telephone}
-              label="Téléphone"
+              id="telephone"
               placeholder="01 23 45 67 89"
               value={newProspect.telephone}
               onChange={(e) => {
@@ -260,9 +313,35 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 validateField('telephone', value);
               }}
             />
+            <FormLabel htmlFor="email">
+              Email
+            </FormLabel>
+            <Input
+              id="email"
+              type="email"
+              placeholder="contact@etablissement.fr"
+              value={newProspect.email}
+              onChange={(e) =>
+                setNewProspect((prev) => ({ ...prev, email: e.target.value }))
+              }
+            />
+            <FormLabel htmlFor="adresse">
+              Adresse
+            </FormLabel>
+            <Input
+              id="adresse"
+              placeholder="123 Rue de l'établissement, 75001 Paris"
+              value={newProspect.adresse}
+              onChange={(e) =>
+                setNewProspect((prev) => ({ ...prev, adresse: e.target.value }))
+              }
+            />
+            <FormLabel htmlFor="categorie" isRequired={true}>
+              Catégorie
+            </FormLabel>
             <StyledSelect
               isRequired
-              label="Catégorie"
+              id="categorie"
               selectedKeys={[newProspect.categorie]}
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
@@ -282,9 +361,12 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               <SelectItem key="FUN">FUN</SelectItem>
               <SelectItem key="BEAUTY">BEAUTY</SelectItem>
             </StyledSelect>
+            <FormLabel htmlFor="statut" isRequired={true}>
+              Statut
+            </FormLabel>
             <StyledSelect
               isRequired
-              label="Statut"
+              id="statut"
               selectedKeys={[newProspect.statut]}
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
@@ -300,11 +382,30 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
               <SelectItem key="en_discussion">En discussion</SelectItem>
               <SelectItem key="glacial">Glacial</SelectItem>
             </StyledSelect>
+            <FormLabel htmlFor="suiviPar">
+              Suivi par
+            </FormLabel>
+            <StyledSelect
+              id="suiviPar"
+              selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
+              onSelectionChange={(keys) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  suiviPar: Array.from(keys)[0] as string,
+                }))
+              }
+            >
+              <SelectItem key="nom">Nom</SelectItem>
+              <SelectItem key="prenom">Prénom</SelectItem>
+            </StyledSelect>
+            <FormLabel htmlFor="datePremierRendezVous" isRequired={true}>
+              Date du premier rendez-vous
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.datePremierRendezVous}
               isInvalid={!!fieldErrors.datePremierRendezVous}
-              label="Date du premier rendez-vous"
+              id="datePremierRendezVous"
               type="date"
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
@@ -317,11 +418,14 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 validateField('datePremierRendezVous', value);
               }}
             />
+            <FormLabel htmlFor="dateRelance" isRequired={true}>
+              Date de la relance
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.dateRelance}
               isInvalid={!!fieldErrors.dateRelance}
-              label="Date de la relance"
+              id="dateRelance"
               type="date"
               value={newProspect.dateRelance}
               onChange={(e) => {
@@ -350,8 +454,11 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
                 }
               />
             </div>
+            <FormLabel htmlFor="commentaire" isRequired={false}>
+              Commentaire
+            </FormLabel>
             <Textarea
-              label="Commentaire"
+              id="commentaire"
               placeholder="..."
               value={newProspect.commentaire}
               onChange={(e) =>
@@ -363,16 +470,16 @@ export function ProspectModal({ isOpen, onClose, onProspectAdded }: ProspectModa
             />
           </div>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="light" onPress={handleClose}>
+        <ModalFooter className="flex justify-end gap-2">
+          <Button className="flex-1" variant="bordered" onPress={handleClose}>
             Annuler
           </Button>
           <Button
-            className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            className="bg-black text-white hover:bg-gray-900 flex-1"
             isDisabled={Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
-            onPress={handleAddProspect}
+            onPress={handleSubmit}
           >
-            Ajouter
+            {isEditing ? 'Modifier' : 'Ajouter'}
           </Button>
         </ModalFooter>
       </ModalContent>
