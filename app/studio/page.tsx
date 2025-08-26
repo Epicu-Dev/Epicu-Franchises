@@ -461,7 +461,7 @@ export default function StudioPage() {
                       >
                         <SelectItem key="">Tous les statuts</SelectItem>
                         <SelectItem key="en_cours">En cours</SelectItem>
-                        <SelectItem key="terminee">Terminée</SelectItem>
+                        <SelectItem key="terminee">Terminé</SelectItem>
                         <SelectItem key="en_attente">En attente</SelectItem>
                       </Select>
                     </div>

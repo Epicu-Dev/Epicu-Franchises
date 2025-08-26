@@ -18,7 +18,7 @@ export const getStatusBadgeColor = (status: string) => {
 export const getCategoryBadgeColor = (category: string) => {
     // Utiliser une approche dynamique pour les catégories
     const categoryLower = category.toLowerCase();
-    
+
     // Mapper les catégories communes à des couleurs
     if (categoryLower.includes('restaurant') || categoryLower.includes('food') || categoryLower.includes('café')) {
         return "bg-custom-orange-food/10 text-custom-orange-food";
@@ -175,13 +175,14 @@ export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
 // Fonction pour obtenir le label du statut de todo
 export const getTodoStatutLabel = (statut: string) => {
     switch (statut) {
-        case "a_faire":
+        case "À faire":
             return "Pas commencé";
-        case "en_cours":
+        case "En cours":
             return "En cours";
-        case "terminee":
+        case "Validée":
             return "Validée";
-
+        case "Annulée":
+            return "Annulée";
         default:
             return statut;
     }
@@ -190,12 +191,14 @@ export const getTodoStatutLabel = (statut: string) => {
 // Fonction pour obtenir la classe CSS du badge de statut de todo
 export const getTodoStatutBadgeClass = (statut: string) => {
     switch (statut) {
-        case "terminee":
+        case "Terminé":
             return "bg-custom-green-success/10 text-custom-green-success";
-        case "en_cours":
-            return "bg-custom-blue-rdv/10 text-custom-blue-rdv";
-
-        case "a_faire":
+        case "En cours":
+            return "bg-blue-100 text-blue-800";
+        case "Annulée":
+            return "bg-red-100 text-red-800";
+        case "En attente":
+            return "bg-gray-100 text-gray-800";
         default:
             return "bg-gray-50 text-gray-700 border-gray-200";
     }

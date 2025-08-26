@@ -13,7 +13,7 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
+
 import {
   Modal,
   ModalContent,
@@ -27,35 +27,24 @@ import { Spinner } from "@heroui/spinner";
 
 import { TodoBadge } from "../../components/badges";
 
-import { SortableColumnHeader } from "@/components";
+import { FormLabel, SortableColumnHeader } from "@/components";
 
 interface Todo {
   id: string;
-  titre: string;
-  description: string;
-  priorite: "basse" | "moyenne" | "haute" | "urgente";
-  statut: "a_faire" | "en_cours" | "terminee" | "annulee";
-  assigne: string;
-  dateEcheance: string;
-  dateCreation: string;
-  tags: string[];
+  name: string;              // Nom de la tâche
+  createdAt: string;         // Date de création (ISO)
+  dueDate?: string;          // Date d'échéance (ISO | '')
+  status: string;            // Statut
+  type: string;              // Type de tâche
+  description?: string;      // Description
+  collaborators?: string[];  // Linked ids
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
+
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  const [itemsPerPage] = useState(50);
   const [searchTerm] = useState("");
   const [selectedStatut, setSelectedStatut] = useState("");
   const [sortField, setSortField] = useState<string>("");
@@ -66,11 +55,12 @@ export default function TodoPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
+  const [isAddingTodo, setIsAddingTodo] = useState(false);
+  const [isDeletingTodo, setIsDeletingTodo] = useState(false);
 
   const [newTodo, setNewTodo] = useState({
-    titre: "",
-    statut: "a_faire" as Todo["statut"],
-    dateEcheance: "",
+    name: "",
+    dueDate: "",
   });
 
   const fetchTodos = async () => {
@@ -79,15 +69,14 @@ export default function TodoPage() {
       setError(null);
 
       const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
-        search: searchTerm,
-        statut: selectedStatut,
-        sortBy: sortField,
-        sortOrder: sortDirection,
+        limit: itemsPerPage.toString(),
+        offset: '0',
       });
 
-      const response = await fetch(`/api/todos?${params}`);
+      if (searchTerm) params.set('q', searchTerm);
+      if (selectedStatut && selectedStatut !== 'tous') params.set('status', selectedStatut);
+
+      const response = await fetch(`/api/todo?${params}`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des tâches");
@@ -95,8 +84,7 @@ export default function TodoPage() {
 
       const data = await response.json();
 
-      setTodos(data.todos);
-      setPagination(data.pagination);
+      setTodos(data.todos || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -107,7 +95,6 @@ export default function TodoPage() {
   useEffect(() => {
     fetchTodos();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedStatut,
     sortField,
@@ -127,18 +114,18 @@ export default function TodoPage() {
     const errors = { ...fieldErrors };
 
     switch (fieldName) {
-      case 'titre':
+      case 'name':
         if (!value || !value.trim()) {
-          errors.titre = 'Le titre est requis';
+          errors.name = 'Le nom de la tâche est requis';
         } else {
-          delete errors.titre;
+          delete errors.name;
         }
         break;
-      case 'dateEcheance':
+      case 'dueDate':
         if (!value) {
-          errors.dateEcheance = 'La date d\'échéance est requise';
+          errors.dueDate = 'La date d\'échéance est requise';
         } else {
-          delete errors.dateEcheance;
+          delete errors.dueDate;
         }
         break;
     }
@@ -149,7 +136,7 @@ export default function TodoPage() {
   };
 
   const validateAllFields = (todo: any) => {
-    const fields = ['titre', 'dateEcheance'];
+    const fields = ['name', 'dueDate'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -163,19 +150,33 @@ export default function TodoPage() {
 
   const handleAddTodo = async () => {
     try {
+      setIsAddingTodo(true);
+      setError(null);
+      
       // Validation complète avant soumission
       if (!validateAllFields(newTodo)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
-
+        setIsAddingTodo(false);
         return;
       }
 
-      const response = await fetch("/api/todos", {
+      const payload: { [key: string]: string } = {
+        'Nom de la tâche': newTodo.name,
+        'Date de création': new Date().toISOString(),
+        'Statut': 'À faire',
+        'Type de tâche': 'Client',
+      };
+
+      if (newTodo.dueDate) {
+        payload["Date d'échéance"] = newTodo.dueDate;
+      }
+
+      const response = await fetch("/api/todo", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newTodo),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -186,9 +187,8 @@ export default function TodoPage() {
 
       // Réinitialiser le formulaire et fermer le modal
       setNewTodo({
-        titre: "",
-        statut: "a_faire",
-        dateEcheance: "",
+        name: "",
+        dueDate: "",
       });
       setIsAddModalOpen(false);
       setError(null);
@@ -198,12 +198,17 @@ export default function TodoPage() {
       fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsAddingTodo(false);
     }
   };
 
   const handleDeleteTodo = async (todoId: string) => {
     try {
-      const response = await fetch(`/api/todos/${todoId}`, {
+      setIsDeletingTodo(true);
+      setError(null);
+      
+      const response = await fetch(`/api/todo?id=${todoId}`, {
         method: "DELETE",
       });
 
@@ -215,6 +220,8 @@ export default function TodoPage() {
       fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsDeletingTodo(false);
     }
   };
 
@@ -232,27 +239,29 @@ export default function TodoPage() {
       setTodoToDelete(null);
     } catch {
       // L'erreur est déjà gérée dans handleDeleteTodo
+    } finally {
+      setIsDeletingTodo(false);
     }
   };
 
   const handleStatusChange = async (
     todoId: string,
-    newStatus: Todo["statut"]
+    newStatus: string
   ) => {
     try {
       // Optimistic update - mettre à jour l'état local immédiatement
       setTodos((prevTodos) =>
         prevTodos.map((todo) =>
-          todo.id === todoId ? { ...todo, statut: newStatus } : todo
+          todo.id === todoId ? { ...todo, status: newStatus } : todo
         )
       );
 
-      const response = await fetch(`/api/todos/${todoId}`, {
-        method: "PUT",
+      const response = await fetch(`/api/todo?id=${todoId}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ statut: newStatus }),
+        body: JSON.stringify({ Statut: newStatus }),
       });
 
       if (!response.ok) {
@@ -267,7 +276,7 @@ export default function TodoPage() {
           todo.id === todoId
             ? {
               ...todo,
-              statut: todo.statut === "terminee" ? "a_faire" : "terminee",
+              status: todo.status === "Terminé" ? "À faire" : "Terminé",
             }
             : todo
         )
@@ -322,8 +331,8 @@ export default function TodoPage() {
                 }
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="terminee">Validée</SelectItem>
+                <SelectItem key="À faire">Pas commencé</SelectItem>
+                <SelectItem key="Terminé">Terminé</SelectItem>
               </Select>
             </div>
 
@@ -351,7 +360,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn className="font-light text-sm">
                 <SortableColumnHeader
-                  field="dateEcheance"
+                  field="dueDate"
                   label="Deadline"
                   sortDirection={sortDirection}
                   sortField={sortField}
@@ -361,7 +370,7 @@ export default function TodoPage() {
               </TableColumn>
               <TableColumn className="font-light text-sm">
                 <SortableColumnHeader
-                  field="statut"
+                  field="status"
                   label="État"
                   sortDirection={sortDirection}
                   sortField={sortField}
@@ -378,26 +387,26 @@ export default function TodoPage() {
                     <div className="flex items-center gap-2">
                       <Checkbox
                         className="text-black"
-                        isDisabled={todo.statut === "annulee"}
-                        isSelected={todo.statut === "terminee"}
+                        isDisabled={todo.status === "Annulée"}
+                        isSelected={todo.status === "Terminé"}
                         onValueChange={(checked) => {
-                          const newStatus = checked ? "terminee" : "a_faire";
+                          const newStatus = checked ? "Terminé" : "À faire";
 
                           handleStatusChange(todo.id, newStatus);
                         }}
                       />
-                      <span>{todo.titre}</span>
+                      <span>{todo.name}</span>
                     </div>
                   </TableCell>
                   <TableCell className="font-light">
-                    {new Date(todo.dateEcheance).toLocaleDateString('fr-FR', {
+                    {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric'
-                    }).replace(/\//g, '.')}
+                    }).replace(/\//g, '.') : '-'}
                   </TableCell>
                   <TableCell>
-                    <TodoBadge status={todo.statut} />
+                    <TodoBadge status={todo.status} />
                   </TableCell>
                   <TableCell>
                     <Button
@@ -414,28 +423,9 @@ export default function TodoPage() {
             </TableBody>
           </Table>
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>
-
           {/* Info sur le nombre total d'éléments */}
           <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {todos.length} tâche(s) sur {pagination.totalItems} au
-            total
+            Affichage de {todos.length} tâche(s)
           </div>
         </CardBody>
       </Card>
@@ -454,50 +444,75 @@ export default function TodoPage() {
               </div>
             )}
             <div className="space-y-4">
+
+              <FormLabel
+                htmlFor="name"
+                isRequired={true}
+              >
+                Titre
+              </FormLabel>
               <Input
                 isRequired
-                errorMessage={fieldErrors.titre}
-                isInvalid={!!fieldErrors.titre}
-                label="Titre"
+                errorMessage={fieldErrors.name}
+                isInvalid={!!fieldErrors.name}
+                id="name"
                 placeholder="Titre de la tâche"
-                value={newTodo.titre}
+                value={newTodo.name}
                 onChange={(e) => {
                   const value = e.target.value;
 
-                  setNewTodo((prev) => ({ ...prev, titre: value }));
-                  validateField('titre', value);
+                  setNewTodo((prev) => ({ ...prev, name: value }));
+                  validateField('name', value);
                 }}
               />
+
+              <FormLabel
+                htmlFor="dueDate"
+                isRequired={true}
+              >
+                Date d&apos;échéance
+              </FormLabel>
               <Input
                 isRequired
-                errorMessage={fieldErrors.dateEcheance}
-                isInvalid={!!fieldErrors.dateEcheance}
-                label="Date d'échéance"
+                errorMessage={fieldErrors.dueDate}
+                isInvalid={!!fieldErrors.dueDate}
+                id="dueDate"
                 type="date"
-                value={newTodo.dateEcheance}
+                value={newTodo.dueDate}
                 onChange={(e) => {
                   const value = e.target.value;
 
                   setNewTodo((prev) => ({
                     ...prev,
-                    dateEcheance: value,
+                    dueDate: value,
                   }));
-                  validateField('dateEcheance', value);
+                  validateField('dueDate', value);
                 }}
               />
-
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
-              Annuler
-            </Button>
+          <ModalFooter className="flex justify-between">
+                         <Button className="flex-1 border-1"
+               color='primary'
+               variant="bordered" 
+               isDisabled={isAddingTodo}
+               onPress={() => setIsAddModalOpen(false)}>
+               Annuler
+             </Button>
             <Button
+              className="flex-1"
               color='primary'
-              isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.titre || !newTodo.dateEcheance}
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.name || !newTodo.dueDate || isAddingTodo}
               onPress={handleAddTodo}
             >
-              Ajouter
+              {isAddingTodo ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  Ajout en cours...
+                </div>
+              ) : (
+                "Ajouter"
+              )}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -510,18 +525,33 @@ export default function TodoPage() {
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}
-              <strong>&quot;{todoToDelete?.titre}&quot;</strong> ?
+              <strong>&quot;{todoToDelete?.name}&quot;</strong> ?
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Cette action est irréversible.
             </p>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsDeleteModalOpen(false)}>
+          <ModalFooter className="flex justify-between">
+            <Button className="flex-1 border-1"
+              color='primary'
+              variant="bordered" 
+              isDisabled={isDeletingTodo}
+              onPress={() => setIsDeleteModalOpen(false)}>
               Annuler
             </Button>
-            <Button color="danger" onPress={confirmDelete}>
-              Supprimer
+            <Button
+              className="flex-1"
+              color="danger" 
+              isDisabled={isDeletingTodo}
+              onPress={confirmDelete}>
+              {isDeletingTodo ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  Suppression...
+                </div>
+              ) : (
+                "Supprimer"
+              )}
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -15,7 +15,7 @@ import {
   TableCell,
 } from "@heroui/table";
 import { Tooltip } from "@heroui/tooltip";
-import { Pagination } from "@heroui/pagination";
+
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
@@ -23,6 +23,7 @@ import {
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { getValidAccessToken } from "../../utils/auth";
 
 interface TeamMember {
   id: string;
@@ -45,11 +46,13 @@ interface AdminTeamMember {
   franchiseEmail: string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+
+
+// Interface pour les données de l'API collaborateurs
+interface Collaborateur {
+  id: string;
+  nomComplet: string;
+  villes: string[];
 }
 
 export default function EquipePage() {
@@ -59,14 +62,9 @@ export default function EquipePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
 
-  // Données d'exemple pour la vue tableau (admin)
+
+  // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
   const mockAdminData: AdminTeamMember[] = [
     {
       id: "1",
@@ -147,19 +145,34 @@ export default function EquipePage() {
     },
   ];
 
+  // Wrapper fetch avec authentification
+  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
+    const token = await getValidAccessToken();
+
+    if (!token) throw new Error('No access token');
+    const headers = new Headers((init?.headers as HeadersInit) || {});
+
+    headers.set('Authorization', `Bearer ${token}`);
+    const merged: RequestInit = { ...init, headers };
+
+    return fetch(input, merged);
+  };
+
   const fetchMembers = async () => {
     try {
       setLoading(true);
 
       if (viewMode === "grid") {
         const params = new URLSearchParams({
-          category: selectedCategory,
-          search: searchTerm,
-          page: "1",
-          limit: "35",
+          limit: "100", // Récupérer plus de collaborateurs
+          offset: "0",
         });
 
-        const response = await fetch(`/api/equipe?${params}`);
+        if (searchTerm) {
+          params.set('q', searchTerm);
+        }
+
+        const response = await authFetch(`/api/collaborateurs?${params}`);
 
         if (!response.ok) {
           throw new Error(
@@ -168,30 +181,112 @@ export default function EquipePage() {
         }
 
         const data = await response.json();
+        const collaborateurs: Collaborateur[] = data.results || [];
 
-        setMembers(data.members);
+        // Transformer les données de l'API en format TeamMember
+        const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
+          // Déterminer la catégorie basée sur les villes ou l'index
+          let category: "siege" | "franchise" | "prestataire" = "siege";
+          if (index >= 10 && index < 25) category = "franchise";
+          else if (index >= 25) category = "prestataire";
+
+          // Déterminer le rôle basé sur la catégorie
+          let role = "Collaborateur";
+          if (category === "siege") role = "Collaborateur Siège";
+          else if (category === "franchise") role = "Franchisé";
+          else if (category === "prestataire") role = "Prestataire";
+
+          // Déterminer la localisation
+          let location = "Siège";
+          if (category === "franchise" || category === "prestataire") {
+            location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+          }
+
+          return {
+            id: collab.id,
+            name: collab.nomComplet || `Collaborateur ${index + 1}`,
+            role,
+            location,
+            avatar: `/api/placeholder/150/150`,
+            category,
+          };
+        });
+
+        // Filtrer par catégorie si sélectionnée
+        let filteredMembers = transformedMembers;
+        if (selectedCategory && selectedCategory !== "tout") {
+          filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+        }
+
+        setMembers(filteredMembers);
       } else {
-        // Simulation d'un appel API pour la vue tableau
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Utiliser l'API des collaborateurs pour la vue tableau aussi
+        const params = new URLSearchParams({
+          limit: "100",
+          offset: "0",
+        });
 
-        // Filtrer les données selon le terme de recherche
-        const filteredData = mockAdminData.filter(
-          (member) =>
-            member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.identifier.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        if (searchTerm) {
+          params.set('q', searchTerm);
+        }
 
-        setAdminMembers(filteredData);
+        const response = await authFetch(`/api/collaborateurs?${params}`);
 
-        // Mettre à jour la pagination
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: filteredData.length,
-          totalPages: Math.ceil(filteredData.length / prev.itemsPerPage),
-          currentPage: 1,
-        }));
+        if (!response.ok) {
+          throw new Error(
+            "Erreur lors de la récupération des collaborateurs"
+          );
+        }
+
+        const data = await response.json();
+        const collaborateurs: Collaborateur[] = data.results || [];
+
+        // Transformer les données de l'API en format AdminTeamMember
+        const transformedAdminMembers: AdminTeamMember[] = collaborateurs.map((collab, index) => {
+          // Extraire le prénom et nom du nom complet
+          const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
+          const nameParts = nomComplet.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          // Déterminer la ville (première ville de la liste ou ville par défaut)
+          const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+
+          // Générer un identifiant basé sur le nom
+          const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
+
+          // Générer un mot de passe temporaire
+          const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+          // Date de naissance par défaut (peut être modifiée plus tard)
+          const birthDate = "01.01.1990";
+
+          // Générer des emails basés sur le nom et la ville
+          const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
+          const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+
+          return {
+            id: collab.id,
+            city,
+            firstName,
+            lastName,
+            identifier,
+            password,
+            birthDate,
+            personalEmail,
+            franchiseEmail,
+          };
+        });
+
+        setAdminMembers(transformedAdminMembers);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des membres:', error);
+      // En cas d'erreur, on garde les données existantes ou on vide la liste
+      if (viewMode === "grid") {
+        setMembers([]);
+      } else {
+        setAdminMembers([]);
       }
     } finally {
       setLoading(false);
@@ -400,24 +495,6 @@ export default function EquipePage() {
                   </TableBody>
                 </Table>
               </div>
-
-              {/* Pagination pour la vue tableau */}
-              <div className="flex justify-center mt-6">
-                <Pagination
-                  showControls
-                  classNames={{
-                    wrapper: "gap-2",
-                    item: "w-8 h-8 text-sm",
-                    cursor:
-                      "bg-black text-white dark:bg-white dark:text-black font-bold",
-                  }}
-                  page={pagination.currentPage}
-                  total={pagination.totalPages}
-                  onChange={(page) =>
-                    setPagination((prev) => ({ ...prev, currentPage: page }))
-                  }
-                />
-              </div>
             </>
           )}
 
@@ -427,7 +504,7 @@ export default function EquipePage() {
               <div className="text-center mt-4 text-sm text-gray-500">
                 {viewMode === "grid"
                   ? `Affichage de ${members.length} membre(s)`
-                  : `Affichage de ${adminMembers.length} membre(s) sur ${pagination.totalItems} au total`}
+                  : `Affichage de ${adminMembers.length} membre(s)`}
               </div>
             )}
 
