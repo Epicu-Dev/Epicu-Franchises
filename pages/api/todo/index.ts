@@ -29,6 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         (req.query.user as string) ||
         null;
 
+      const statusFilter = req.query.status as string || null;
+
       const fields = [
         'Nom de la tâche',
         'Date de création',
@@ -73,11 +75,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const filtered = mapped.filter((it: any) => {
-        if (!collaborator) return true;
-        const coll = it.collaborators || it['Collaborateur'] || [];
-        if (Array.isArray(coll) && coll.length > 0) return coll.includes(collaborator);
-        if (typeof coll === 'string' && coll.length > 0) return coll === collaborator;
-        return false;
+        // Filtre par collaborateur
+        if (collaborator) {
+          const coll = it.collaborators || it['Collaborateur'] || [];
+          if (Array.isArray(coll) && coll.length > 0) {
+            if (!coll.includes(collaborator)) return false;
+          } else if (typeof coll === 'string' && coll.length > 0) {
+            if (coll !== collaborator) return false;
+          } else {
+            return false;
+          }
+        }
+
+        // Filtre par statut
+        if (statusFilter && it.status !== statusFilter) {
+          return false;
+        }
+
+        return true;
       });
 
       const page = filtered.slice(offset, offset + limit);

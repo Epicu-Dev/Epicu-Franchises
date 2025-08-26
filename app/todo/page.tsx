@@ -152,7 +152,7 @@ export default function TodoPage() {
     try {
       setIsAddingTodo(true);
       setError(null);
-      
+
       // Validation complète avant soumission
       if (!validateAllFields(newTodo)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
@@ -207,7 +207,7 @@ export default function TodoPage() {
     try {
       setIsDeletingTodo(true);
       setError(null);
-      
+
       const response = await fetch(`/api/todo?id=${todoId}`, {
         method: "DELETE",
       });
@@ -286,21 +286,6 @@ export default function TodoPage() {
   };
 
 
-
-  if (loading && todos.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full">
@@ -334,6 +319,7 @@ export default function TodoPage() {
                 <SelectItem key="À faire">Pas commencé</SelectItem>
                 <SelectItem key="Terminé">Terminé</SelectItem>
               </Select>
+
             </div>
 
             <div className="relative">
@@ -352,81 +338,83 @@ export default function TodoPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des tâches" shadow="none">
-            <TableHeader>
-              <TableColumn className="font-light text-sm">
+          {
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+              :
+              <Table aria-label="Tableau des tâches" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
 
-                Tâches
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="dueDate"
-                  label="Deadline"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
+                    Tâches
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="dueDate"
+                      label="Deadline"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
 
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="status"
-                  label="État"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="status"
+                      label="État"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
 
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Actions</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {todos.map((todo) => (
-                <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
-                  <TableCell className="font-light py-5">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        className="text-black"
-                        isDisabled={todo.status === "Annulée"}
-                        isSelected={todo.status === "Terminé"}
-                        onValueChange={(checked) => {
-                          const newStatus = checked ? "Terminé" : "À faire";
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Actions</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {todos.map((todo) => (
+                    <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
+                      <TableCell className="font-light py-5">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            className="text-black"
+                            isDisabled={todo.status === "Annulée"}
+                            isSelected={todo.status === "Terminé"}
+                            onValueChange={(checked) => {
+                              const newStatus = checked ? "Terminé" : "À faire";
 
-                          handleStatusChange(todo.id, newStatus);
-                        }}
-                      />
-                      <span>{todo.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-light">
-                    {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    }).replace(/\//g, '.') : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <TodoBadge status={todo.status} />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      onPress={() => openDeleteConfirmation(todo)}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                              handleStatusChange(todo.id, newStatus);
+                            }}
+                          />
+                          <span>{todo.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-light">
+                        {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        }).replace(/\//g, '.') : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <TodoBadge status={todo.status} />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={() => openDeleteConfirmation(todo)}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>}
 
-          {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {todos.length} tâche(s)
-          </div>
         </CardBody>
       </Card>
 
@@ -492,13 +480,13 @@ export default function TodoPage() {
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">
-                         <Button className="flex-1 border-1"
-               color='primary'
-               variant="bordered" 
-               isDisabled={isAddingTodo}
-               onPress={() => setIsAddModalOpen(false)}>
-               Annuler
-             </Button>
+            <Button className="flex-1 border-1"
+              color='primary'
+              variant="bordered"
+              isDisabled={isAddingTodo}
+              onPress={() => setIsAddModalOpen(false)}>
+              Annuler
+            </Button>
             <Button
               className="flex-1"
               color='primary'
@@ -534,14 +522,14 @@ export default function TodoPage() {
           <ModalFooter className="flex justify-between">
             <Button className="flex-1 border-1"
               color='primary'
-              variant="bordered" 
+              variant="bordered"
               isDisabled={isDeletingTodo}
               onPress={() => setIsDeleteModalOpen(false)}>
               Annuler
             </Button>
             <Button
               className="flex-1"
-              color="danger" 
+              color="danger"
               isDisabled={isDeletingTodo}
               onPress={confirmDelete}>
               {isDeletingTodo ? (

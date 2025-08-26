@@ -313,19 +313,6 @@ export default function EquipePage() {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
   };
 
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full text-primary">
@@ -386,130 +373,132 @@ export default function EquipePage() {
           {/* Contenu selon le mode de vue */}
           {viewMode === "grid" ? (
             // Vue grille (vue originale)
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="group relative flex flex-col items-center text-center cursor-pointer"
-                >
-                  <Avatar
-                    className="w-16 h-16 mb-3"
-                    classNames={{
-                      base: "ring-2 ring-gray-200 dark:ring-gray-700",
-                      img: "object-cover",
-                    }}
-                    name={member.name}
-                    src={member.avatar}
-                  />
-                  <h3 className="font-semibold  text-sm mb-1">
-                    {member.name}
-                  </h3>
-                  <p className="text-sm font-light ">
-                    {member.role}
-                  </p>
-                  <p className="text-xs font-light ">
-                    {member.location}
-                  </p>
-                </div>
-              ))}
-            </div>
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+              :
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="group relative flex flex-col items-center text-center cursor-pointer"
+                  >
+                    <Avatar
+                      className="w-16 h-16 mb-3"
+                      classNames={{
+                        base: "ring-2 ring-gray-200 dark:ring-gray-700",
+                        img: "object-cover",
+                      }}
+                      name={member.name}
+                      src={member.avatar}
+                    />
+                    <h3 className="font-semibold  text-sm mb-1">
+                      {member.name}
+                    </h3>
+                    <p className="text-sm font-light ">
+                      {member.role}
+                    </p>
+                    <p className="text-xs font-light ">
+                      {member.location}
+                    </p>
+                  </div>
+                ))}
+              </div>
           ) : (
             // Vue tableau (vue admin)
-            <>
-              <div className="overflow-x-auto">
-                <Table aria-label="Tableau des membres de l'équipe">
-                  <TableHeader>
-                    <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                    <TableColumn className="font-light text-sm">Ville</TableColumn>
-                    <TableColumn className="font-light text-sm">Prénom</TableColumn>
-                    <TableColumn className="font-light text-sm">Nom</TableColumn>
-                    <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                    <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
-                    <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
-                    <TableColumn className="font-light text-sm">Mail perso</TableColumn>
-                    <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
-                  </TableHeader>
-                  <TableBody>
-                    {adminMembers.map((member) => (
-                      <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
-                        <TableCell className="py-5 font-light">
-                          <Tooltip content="Modifier">
-                            <Button
-                              isIconOnly
-                              className="text-gray-600 hover:text-gray-800"
-                              size="sm"
-                              variant="light"
-                              onClick={() => handleEdit()}
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell className="font-light">
-
-                          {member.city}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.firstName}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.lastName}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.identifier}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <span >
-                            {member.password}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.birthDate}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <a
-                            className="font-light underline"
-                            href={`mailto:${member.personalEmail}`}
-                          >
-                            {member.personalEmail}
-                          </a>
-                        </TableCell>
-                        <TableCell>
-                          <a
-                            className="font-light underline"
-                            href={`mailto:${member.franchiseEmail}`}
-                          >
-                            {member.franchiseEmail}
-                          </a>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
               </div>
-            </>
+              :
+              <>
+                <div className="overflow-x-auto">
+                  <Table aria-label="Tableau des membres de l'équipe">
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                      <TableColumn className="font-light text-sm">Ville</TableColumn>
+                      <TableColumn className="font-light text-sm">Prénom</TableColumn>
+                      <TableColumn className="font-light text-sm">Nom</TableColumn>
+                      <TableColumn className="font-light text-sm">Identifiant</TableColumn>
+                      <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
+                      <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
+                      <TableColumn className="font-light text-sm">Mail perso</TableColumn>
+                      <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
+                    </TableHeader>
+                    <TableBody>
+                      {adminMembers.map((member) => (
+                        <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
+                          <TableCell className="py-5 font-light">
+                            <Tooltip content="Modifier">
+                              <Button
+                                isIconOnly
+                                className="text-gray-600 hover:text-gray-800"
+                                size="sm"
+                                variant="light"
+                                onClick={() => handleEdit()}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell className="font-light">
+
+                            {member.city}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.firstName}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.lastName}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.identifier}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-light">
+                            <span >
+                              {member.password}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.birthDate}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              className="font-light underline"
+                              href={`mailto:${member.personalEmail}`}
+                            >
+                              {member.personalEmail}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              className="font-light underline"
+                              href={`mailto:${member.franchiseEmail}`}
+                            >
+                              {member.franchiseEmail}
+                            </a>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
           )}
 
-          {/* Informations sur le nombre de résultats */}
-          {((viewMode === "grid" && members.length > 0) ||
-            (viewMode === "table" && adminMembers.length > 0)) && (
-              <div className="text-center mt-4 text-sm text-gray-500">
-                {viewMode === "grid"
-                  ? `Affichage de ${members.length} membre(s)`
-                  : `Affichage de ${adminMembers.length} membre(s)`}
-              </div>
-            )}
+
 
           {/* Message si aucun résultat */}
-          {((viewMode === "grid" && members.length === 0) ||
+          {!loading && ((viewMode === "grid" && members.length === 0) ||
             (viewMode === "table" && adminMembers.length === 0)) &&
             searchTerm && (
               <div className="text-center py-12">
