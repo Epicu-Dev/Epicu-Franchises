@@ -12,7 +12,8 @@ import {
   GlobeAltIcon,
   StarIcon,
   DocumentTextIcon,
-  PlusIcon
+  PlusIcon,
+  PaintBrushIcon
 } from "@heroicons/react/24/outline";
 
 import ResourceModal from "../../components/resource-modal";
@@ -82,6 +83,70 @@ const resourcesData: ResourceItem[] = [
     dateAdded: "12.08.2025",
     category: "liens-importants",
     icon: DocumentTextIcon
+  },
+  // Ressources Canva
+  {
+    id: "7",
+    title: "Page de Garde pour les Dossiers de Rendez-vous",
+    description: "À utiliser pour habiller les dossiers professionnels lors des rendez-vous avec des prospects.",
+    link: "https://canva.com/page-garde",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "8",
+    title: "Télécharger la photo de profil d'un compte Instagram",
+    description: "Gabarits pour publier des stories engageantes et harmonisées avec l'identité EPICU.",
+    link: "https://canva.com/photo-profil",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "9",
+    title: "Templates pour les Stories Instagram",
+    description: "Gabarits pour publier des stories engageantes et harmonisées avec l'identité EPICU.",
+    link: "https://canva.com/stories",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "10",
+    title: "Fichiers Ressources",
+    description: "Regroupe tous les éléments graphiques nécessaires à la création de contenus EPICU.",
+    link: "https://canva.com/fichiers-ressources",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "11",
+    title: "Miniature Instagram pour un Réel",
+    description: "À utiliser comme couverture pour les vidéos Instagram afin d'optimiser le visuel sur le feed.",
+    link: "https://canva.com/miniature",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "12",
+    title: "Story Sponsorisée « Tu es de..»",
+    description: "Story publicitaire ciblée pour promouvoir EPICU localement.",
+    link: "https://canva.com/story-sponsorisee",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
+  },
+  {
+    id: "13",
+    title: "Signature Mail personnalisée",
+    description: "Signature professionnelle à intégrer aux emails pour un branding cohérent et professionnel.",
+    link: "https://canva.com/signature-mail",
+    dateAdded: "12.08.2025",
+    category: "ressources-canva",
+    icon: PaintBrushIcon
   }
 ];
 
@@ -129,6 +194,7 @@ export default function RessourcesPage() {
       'GlobeAltIcon': GlobeAltIcon,
       'StarIcon': StarIcon,
       'DocumentTextIcon': DocumentTextIcon,
+      'PaintBrushIcon': PaintBrushIcon,
     };
 
     return iconMap[iconName] || FolderIcon;
@@ -226,7 +292,14 @@ export default function RessourcesPage() {
                           resource.title.includes("MAIL") ? "Boîte mail →" :
                             resource.title.includes("WORDPRESS") ? "Wordpress →" :
                               resource.title.includes("BOARDS") ? "Boards →" :
-                                resource.title.includes("FORMS") ? "Google forms →" : "Voir →"}
+                                resource.title.includes("FORMS") ? "Google forms →" :
+                                  resource.title.includes("Page de Garde") ? "Page de garde →" :
+                                    resource.title.includes("photo de profil") ? "Photo de profil →" :
+                                      resource.title.includes("Stories Instagram") ? "Stories →" :
+                                        resource.title.includes("Fichiers Ressources") ? "Fichiers ressources →" :
+                                          resource.title.includes("Miniature Instagram") ? "Miniature →" :
+                                            resource.title.includes("Story Sponsorisée") ? "Story sponsorisée →" :
+                                              resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
                     </Button>
                   </TableCell>
                   <TableCell>

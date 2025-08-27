@@ -3,12 +3,12 @@ import React from 'react';
 // Fonction pour obtenir la couleur du badge de statut
 export const getStatusBadgeColor = (status: string) => {
     switch (status) {
-        case "En attente":
-            return "bg-yellow-100 text-yellow-800";
+        case "Attente":
+            return "bg-custom-orange-food/10 text-custom-orange-food";
         case "Payée":
-            return "bg-green-100 text-green-800";
+            return "bg-custom-green-success/10 text-custom-green-success";
         case "En retard":
-            return "bg-red-100 text-red-800";
+            return "bg-custom-red-retard/10 text-custom-red-retard";
         default:
             return "bg-gray-100 text-gray-800";
     }

@@ -75,6 +75,12 @@ export default function TodoPage() {
 
       if (searchTerm) params.set('q', searchTerm);
       if (selectedStatut && selectedStatut !== 'tous') params.set('status', selectedStatut);
+      
+      // Ajouter les paramètres de tri
+      if (sortField) {
+        params.set('orderBy', sortField);
+        params.set('order', sortDirection);
+      }
 
       const response = await fetch(`/api/todo?${params}`);
 
@@ -109,6 +115,8 @@ export default function TodoPage() {
       setSortDirection("asc");
     }
   };
+
+
 
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
@@ -352,7 +360,7 @@ export default function TodoPage() {
                   </TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
-                      field="dueDate"
+                      field="Date d'échéance"
                       label="Deadline"
                       sortDirection={sortDirection}
                       sortField={sortField}
@@ -362,7 +370,7 @@ export default function TodoPage() {
                   </TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
-                      field="status"
+                      field="Statut"
                       label="État"
                       sortDirection={sortDirection}
                       sortField={sortField}

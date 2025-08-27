@@ -30,6 +30,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         null;
 
       const statusFilter = req.query.status as string || null;
+      const searchQuery = req.query.q as string || null;
+      
+      // Paramètres de tri
+      const order = req.query.order === 'desc' ? 'desc' : 'asc';
+      const orderByReq = (req.query.orderBy as string) || "Date de création";
 
       const fields = [
         'Nom de la tâche',
@@ -41,11 +46,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Collaborateur',
       ];
 
+      // Champs autorisés pour le tri (sécurité + cohérence)
+      const allowedOrderBy = new Set([
+        'Nom de la tâche',
+        'Date de création',
+        "Date d'échéance",
+        'Statut',
+        'Type de tâche'
+      ]);
+      const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Date de création";
+
       const selectOptions: any = {
         view: VIEW_NAME,
         fields,
         pageSize: Math.min(100, offset + limit),
         maxRecords: offset + limit,
+        sort: [{ field: orderBy, direction: order }],
       };
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -92,11 +108,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return false;
         }
 
+        // Filtre par recherche
+        if (searchQuery) {
+          const searchLower = searchQuery.toLowerCase();
+          const nameMatch = it.name.toLowerCase().includes(searchLower);
+          const descriptionMatch = it.description && it.description.toLowerCase().includes(searchLower);
+          const typeMatch = it.type && it.type.toLowerCase().includes(searchLower);
+          
+          if (!nameMatch && !descriptionMatch && !typeMatch) {
+            return false;
+          }
+        }
+
         return true;
       });
 
       const page = filtered.slice(offset, offset + limit);
-      res.status(200).json({ todos: page, total: filtered.length });
+      res.status(200).json({ 
+        todos: page, 
+        total: filtered.length,
+        pagination: {
+          limit,
+          offset,
+          orderBy,
+          order,
+          hasMore: filtered.length > offset + limit,
+          nextOffset: filtered.length > offset + limit ? offset + limit : null,
+          prevOffset: Math.max(0, offset - limit),
+        }
+      });
       return;
     }
 

@@ -47,7 +47,7 @@ interface Prestation {
   contractDate: string;
   amount: number;
   commission: number;
-  invoiceStatus: 'Payée' | 'En attente' | 'En retard';
+  invoiceStatus: 'Payée' | 'Attente' | 'En retard';
   category: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
 }
 
@@ -130,7 +130,7 @@ const defaultPrestations: Prestation[] = [
     contractDate: '15.01.2025',
     amount: 4500,
     commission: 450,
-    invoiceStatus: 'En attente',
+    invoiceStatus: 'Attente',
     category: 'FOOD'
   },
   {
@@ -171,9 +171,9 @@ const defaultPrestations: Prestation[] = [
     progress: 0,
     establishmentName: 'Fun Center',
     contractDate: '25.01.2025',
-    amount: 2200,
+    amount: 2200, // TODO: mettre à jour avec la valeur de la prestation
     commission: 220,
-    invoiceStatus: 'En attente',
+    invoiceStatus: 'Attente',
     category: 'FUN'
   }
 ];

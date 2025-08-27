@@ -21,6 +21,7 @@ import {
   Bars3Icon,
   PencilIcon,
   Squares2X2Icon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { getValidAccessToken } from "../../utils/auth";
@@ -354,6 +355,11 @@ export default function EquipePage() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
+                  endContent={
+                    searchTerm && (
+                      <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
+                    )
+                  }
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>

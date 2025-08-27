@@ -25,15 +25,21 @@ import { useSortableTable } from '@/hooks/use-sortable-table';
 import { InvoiceStatusBadge } from '@/components/badges';
 import { FormLabel } from '@/components';
 
+interface VilleEpicu {
+  id: string;
+  ville: string;
+}
+
 interface UserProfile {
   id: string;
-  identifier: string;
-  firstName: string;
-  lastName: string;
   email: string;
-  phone: string;
+  firstname: string;
+  lastname: string;
   role: string;
-  avatar?: string;
+  villes: VilleEpicu[];
+  // Champs optionnels qui peuvent exister dans Airtable
+  telephone?: string;
+  identifier?: string;
 }
 
 interface Invoice {
@@ -65,13 +71,14 @@ export default function ProfilPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<UserProfile>({
-    id: '1',
-    identifier: '',
-    firstName: 'Dominique',
-    lastName: 'Durand',
-    email: 'rennes@epicu.fr',
-    phone: '06 00 00 00 00',
-    role: 'Franchisé'
+    id: '',
+    email: '',
+    firstname: '',
+    lastname: '',
+    role: '',
+    villes: [],
+    telephone: '',
+    identifier: ''
   });
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -102,10 +109,45 @@ export default function ProfilPage() {
       setLoading(true);
       setError(null);
 
-      // Simuler le chargement des données
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Récupérer le token d'accès
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        throw new Error('Token d\'accès non trouvé');
+      }
 
-      // Données mock pour les factures
+      // Appeler l'API pour récupérer les données utilisateur
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des données utilisateur');
+      }
+
+      const userData = await response.json();
+      
+      // Transformer les données Airtable en format UserProfile
+      const transformedProfile: UserProfile = {
+        id: userData.id,
+        email: userData['Email EPICU'] || '',
+        firstname: userData['Prénom'] || '',
+        lastname: userData['Nom'] || '',
+        role: userData['Rôle'] || '',
+        villes: userData['Ville EPICU'] ? 
+          (Array.isArray(userData['Ville EPICU']) ? 
+            userData['Ville EPICU'].map((villeId: string) => ({ id: villeId, ville: villeId })) : 
+            [{ id: userData['Ville EPICU'], ville: userData['Ville EPICU'] }]
+          ) : [],
+        telephone: userData['Téléphone'] || '',
+        identifier: userData['Identifiant'] || ''
+      };
+
+      setProfile(transformedProfile);
+
+      // Données mock pour les factures (à remplacer par de vraies données API plus tard)
       setInvoices([
         {
           id: '1',
@@ -140,11 +182,11 @@ export default function ProfilPage() {
           etat: 'Validée',
           date: '10.07.2025',
           montant: '1450€67',
-          typeFacture: 'Droit d&apos;entrée'
+          typeFacture: 'Droit d\'entrée'
         }
       ]);
 
-      // Données mock pour les documents
+      // Données mock pour les documents (à remplacer par de vraies données API plus tard)
       setDocuments([
         {
           id: '1',
@@ -163,53 +205,53 @@ export default function ProfilPage() {
         }
       ]);
 
-      // Données mock pour l'historique
+      // Données mock pour l'historique (à remplacer par de vraies données API plus tard)
       setHistory([
         {
           id: '1',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '2',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '3',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '4',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '5',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '6',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
         },
         {
           id: '7',
-          personne: 'Dominique',
+          personne: transformedProfile.firstname,
           action: 'Ajout d\'un prospect',
           date: '12.07.2025',
           heure: '18:45'
@@ -229,10 +271,22 @@ export default function ProfilPage() {
 
   const handleSaveProfile = async () => {
     try {
-      // Simuler la sauvegarde
+      // TODO: Implémenter la sauvegarde via l'API Epicu
+      // Pour l'instant, on simule la sauvegarde
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsEditing(false);
-      // Ici on pourrait appeler l'API pour sauvegarder
+      
+      // Afficher un message de succès temporaire
+      setError(null);
+      // Ici on appellera plus tard l'API pour sauvegarder les modifications
+      // const response = await fetch('/api/auth/update-profile', {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify(profile)
+      // });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     }
@@ -307,13 +361,13 @@ export default function ProfilPage() {
                 <div className="flex items-center space-x-4">
                   <Avatar
                     className="w-20 h-20"
-                    name={`${profile.firstName} ${profile.lastName}`}
+                    name={`${profile.firstname} ${profile.lastname}`}
                     size="lg"
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
                   />
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                      {profile.firstName} {profile.lastName}
+                      {profile.firstname} {profile.lastname}
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">{profile.role}</p>
                   </div>
@@ -377,8 +431,8 @@ export default function ProfilPage() {
                     id="lastName"
                     isReadOnly={!isEditing}
                     placeholder="Nom"
-                    value={profile.lastName}
-                    onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                    value={profile.lastname}
+                    onChange={(e) => setProfile(prev => ({ ...prev, lastname: e.target.value }))}
                   />
                 </div>
 
@@ -397,8 +451,8 @@ export default function ProfilPage() {
                     id="firstName"
                     isReadOnly={!isEditing}
                     placeholder="Prénom"
-                    value={profile.firstName}
-                    onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                    value={profile.firstname}
+                    onChange={(e) => setProfile(prev => ({ ...prev, firstname: e.target.value }))}
                   />
                 </div>
 
@@ -438,8 +492,8 @@ export default function ProfilPage() {
                     id="phone"
                     isReadOnly={!isEditing}
                     placeholder="06 00 00 00 00"
-                    value={profile.phone}
-                    onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                    value={profile.telephone}
+                    onChange={(e) => setProfile(prev => ({ ...prev, telephone: e.target.value }))}
                   />
                 </div>
 
