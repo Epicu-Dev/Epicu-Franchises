@@ -13,6 +13,7 @@ import {
 
 import { AgendaModals } from "@/components/agenda-modals";
 import { StyledSelect } from "@/components/styled-select";
+import { getValidAccessToken } from "@/utils/auth";
 
 interface Event {
   id: string;
@@ -42,6 +43,16 @@ interface WeekDay {
   events: Event[];
 }
 
+// Interface pour les données de l'API agenda
+interface ApiEvent {
+  id: string;
+  task: string;
+  date: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+}
+
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"semaine" | "mois">("mois");
@@ -60,23 +71,101 @@ export default function AgendaPage() {
       setLoading(true);
       setError(null);
 
+      // Récupérer le token d'authentification
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error("Non authentifié");
+      }
+
+      // Calculer les dates de début et fin selon la vue
+      let dateStart: string;
+      let dateEnd: string;
+
+      if (view === "semaine") {
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        dateStart = startOfWeek.toISOString().split('T')[0];
+        dateEnd = endOfWeek.toISOString().split('T')[0];
+      } else {
+        // Vue mois
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        
+        dateStart = startOfMonth.toISOString().split('T')[0];
+        dateEnd = endOfMonth.toISOString().split('T')[0];
+      }
+
       const params = new URLSearchParams({
-        month: (currentDate.getMonth() + 1).toString(),
-        year: currentDate.getFullYear().toString(),
-        day: currentDate.getDate().toString(),
-        view,
-        category: selectedCategory,
+        dateStart,
+        dateEnd,
+        limit: '100', // Récupérer plus d'événements pour couvrir la période
       });
 
-      const response = await fetch(`/api/agenda?${params}`);
+      const response = await fetch(`/api/agenda?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des événements");
       }
 
       const data = await response.json();
+      
+      // Transformer les données de l'API en format Event
+      const transformedEvents: Event[] = (data.events || []).map((apiEvent: ApiEvent) => {
+        const eventDate = new Date(apiEvent.date);
+        const startTime = eventDate.toTimeString().slice(0, 5);
+        
+        // Calculer l'heure de fin (par défaut +1h)
+        const endDate = new Date(eventDate);
+        endDate.setHours(endDate.getHours() + 1);
+        const endTime = endDate.toTimeString().slice(0, 5);
 
-      setEvents(data.events);
+        // Mapper le type de l'API vers le type de l'interface
+        let mappedType: Event['type'] = "evenement";
+        if (apiEvent.type.toLowerCase().includes("rendez") || apiEvent.type.toLowerCase().includes("rdv")) {
+          mappedType = "rendez-vous";
+        } else if (apiEvent.type.toLowerCase().includes("tournage")) {
+          mappedType = "tournage";
+        } else if (apiEvent.type.toLowerCase().includes("publication")) {
+          mappedType = "publication";
+        }
+
+        // Déterminer la catégorie (par défaut siège)
+        let category: Event['category'] = "siege";
+        if (apiEvent.type.toLowerCase().includes("franchise")) {
+          category = "franchises";
+        } else if (apiEvent.type.toLowerCase().includes("prestataire")) {
+          category = "prestataires";
+        }
+
+        return {
+          id: apiEvent.id,
+          title: apiEvent.task,
+          type: mappedType,
+          date: apiEvent.date.split('T')[0], // Extraire juste la date
+          startTime,
+          endTime,
+          description: apiEvent.description,
+          category,
+        };
+      });
+
+      // Filtrer par catégorie si nécessaire
+      const filteredEvents = selectedCategory === "tout" 
+        ? transformedEvents 
+        : transformedEvents.filter(event => event.category === selectedCategory);
+
+      setEvents(filteredEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -330,7 +419,7 @@ export default function AgendaPage() {
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
             <div className="p-2 text-center font-medium text-gray-600 text-sm" />
-            {weekDays.map((day) => (
+            {weekDays.map((day) => (agenda
               <div
                 key={day.date.toISOString()}
                 className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
