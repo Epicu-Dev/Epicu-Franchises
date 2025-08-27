@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { SelectItem } from "@heroui/select";
@@ -563,8 +562,8 @@ export default function ClientModal({
                         <Button
                             className="flex-1 border-1"
                             color='primary'
-                            variant="bordered"
                             isDisabled={isLoading}
+                            variant="bordered"
                             onPress={() => {
                                 onOpenChange(false);
                                 setEditingClient(null);
@@ -575,8 +574,8 @@ export default function ClientModal({
                         <Button
                             className="flex-1"
                             color='primary'
-                            isLoading={isLoading}
                             isDisabled={isLoading}
+                            isLoading={isLoading}
                             onPress={onUpdateClient}
                         >
                             {isLoading ? 'Chargement...' : (editingClient?.id ? 'Modifier' : 'Ajouter')}

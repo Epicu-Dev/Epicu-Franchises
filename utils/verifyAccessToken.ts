@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../pages/api/constants';
 
 export async function requireValidAccessToken(
@@ -9,6 +10,7 @@ export async function requireValidAccessToken(
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ message: 'Token d\'accès requis' });
+
     return null;
   }
 
@@ -25,6 +27,7 @@ export async function requireValidAccessToken(
 
     if (records.length === 0) {
       res.status(401).json({ message: 'Token d\'accès invalide' });
+
       return null;
     }
 
@@ -34,12 +37,14 @@ export async function requireValidAccessToken(
 
     if (!userId) {
       res.status(401).json({ message: 'Token d\'accès invalide' });
+
       return null;
     }
 
     // Vérifier si le token n'est pas expiré
     if (new Date(expiresAt) < new Date()) {
       res.status(401).json({ message: 'Token d\'accès expiré' });
+
       return null;
     }
 
@@ -47,6 +52,7 @@ export async function requireValidAccessToken(
   } catch (error) {
     console.error('Erreur lors de la vérification du token :', error);
     res.status(500).json({ message: 'Erreur serveur' });
+
     return null;
   }
 }

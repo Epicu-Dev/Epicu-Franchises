@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import { ToastProvider } from "@/contexts/toast-context";
-import { UserTypeProvider } from "@/contexts/user-type-context";
+import { UserProvider } from "@/contexts/user-context";
+import { LoadingProvider } from "@/contexts/loading-context";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -29,11 +30,13 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <HeroUIProvider navigate={router.push}>
       <NextThemesProvider {...themeProps}>
-        <UserTypeProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </UserTypeProvider>
+        <UserProvider>
+          <LoadingProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </LoadingProvider>
+        </UserProvider>
       </NextThemesProvider>
     </HeroUIProvider>
   );

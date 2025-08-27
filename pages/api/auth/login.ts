@@ -71,9 +71,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // fetch only villes epicu linked to this user (id + Ville EPICU)
     let villesEpicu: { id: string; ville: string }[] = [];
+
     try {
       const linked = user.get('Ville EPICU');
       let linkedIds: string[] = [];
+
       if (linked) {
         if (Array.isArray(linked)) linkedIds = linked;
         else if (typeof linked === 'string') linkedIds = [linked];
@@ -82,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const v = await base('VILLES EPICU')
           .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
           .all();
+
         villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
       }
     } catch (e) {

@@ -13,7 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-
 import { MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
@@ -92,6 +91,7 @@ export default function ClientsPage() {
 
       const limit = 20;
       const offset = isLoadMore ? (nextOffset || 0) : 0;
+
       params.append('limit', limit.toString());
       params.append('offset', offset.toString());
 
@@ -129,8 +129,10 @@ export default function ClientsPage() {
   const fetchCategories = async () => {
     try {
       const response = await fetch('/api/categories');
+
       if (response.ok) {
         const data = await response.json();
+
         console.log('Catégories récupérées:', data.results);
         setCategories(data.results || []);
       }
@@ -186,6 +188,7 @@ export default function ClientsPage() {
       if (!editingClient.raisonSociale?.trim()) {
         setError("La raison sociale est requise");
         setIsLoading(false);
+
         return;
       }
 
@@ -206,6 +209,7 @@ export default function ClientsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'la création'} du client`);
       }
 
@@ -235,12 +239,14 @@ export default function ClientsPage() {
                 selectedKeys={selectedCategoryId ? [selectedCategoryId] : []}
                 onSelectionChange={(keys) => {
                   const selected = Array.from(keys)[0] as string;
+
                   console.log('Catégorie sélectionnée:', selected);
                   if (selected === 'tous') {
                     setSelectedCategory('tous');
                     setSelectedCategoryId('');
                   } else {
                     const category = categories.find(cat => cat.id === selected);
+
                     setSelectedCategory(category?.name || '');
                     setSelectedCategoryId(selected);
                   }
@@ -273,10 +279,10 @@ export default function ClientsPage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                   }}
+                  endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                   placeholder="Rechercher..."
                   type="text"
                   value={searchTerm}
-                  endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -300,21 +306,21 @@ export default function ClientsPage() {
             error ? <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
             </div> :
-              <Table aria-label="Tableau des clients" shadow="none"
-                bottomContent={
+              <Table aria-label="Tableau des clients" bottomContent={
                   hasMore && (
                     <div className="flex justify-center py-4">
                       <Button
                         color="primary"
-                        onPress={loadMore}
-                        isLoading={loadingMore}
                         disabled={loadingMore}
+                        isLoading={loadingMore}
+                        onPress={loadMore}
                       >
                         {loadingMore ? 'Chargement...' : 'Charger plus'}
                       </Button>
                     </div>
                   )
                 }
+                shadow="none"
               >
                 <TableHeader>
                   <TableColumn className="font-light text-sm">
@@ -434,14 +440,14 @@ export default function ClientsPage() {
 
       {/* Modal d'édition de client */}
       <ClientModal
-        isOpen={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        editingClient={editingClient}
-        setEditingClient={setEditingClient}
         categories={categories}
-        onUpdateClient={handleUpdateClient}
-        isLoading={isLoading}
+        editingClient={editingClient}
         error={error}
+        isLoading={isLoading}
+        isOpen={isEditModalOpen}
+        setEditingClient={setEditingClient}
+        onOpenChange={setIsEditModalOpen}
+        onUpdateClient={handleUpdateClient}
       />
     </div>
   );

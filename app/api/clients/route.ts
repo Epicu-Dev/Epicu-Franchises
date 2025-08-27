@@ -50,11 +50,13 @@ export async function GET(request: Request) {
           if (aValue instanceof Date && bValue instanceof Date) {
             return aValue.getTime() - bValue.getTime();
           }
+
           return aValue.toString().localeCompare(bValue.toString());
         } else {
           if (aValue instanceof Date && bValue instanceof Date) {
             return bValue.getTime() - aValue.getTime();
           }
+
           return bValue.toString().localeCompare(aValue.toString());
         }
       });
@@ -86,12 +88,14 @@ export async function POST(request: Request) {
     // Si c'est une recherche par SIRET
     if (body.siret) {
       const client = getClientBySiret(body.siret);
+
       if (!client) {
         return NextResponse.json(
           { error: 'Aucun client trouvé avec ce SIRET' },
           { status: 404 }
         );
       }
+
       return NextResponse.json(client);
     }
     

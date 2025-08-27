@@ -39,8 +39,8 @@ export default function SortableTableExample() {
                 <SortableColumnHeader
                   field="id"
                   label="ID"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -48,8 +48,8 @@ export default function SortableTableExample() {
                 <SortableColumnHeader
                   field="name"
                   label="Nom"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -57,8 +57,8 @@ export default function SortableTableExample() {
                 <SortableColumnHeader
                   field="age"
                   label="Âge"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -66,8 +66,8 @@ export default function SortableTableExample() {
                 <SortableColumnHeader
                   field="department"
                   label="Département"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -75,8 +75,8 @@ export default function SortableTableExample() {
                 <SortableColumnHeader
                   field="salary"
                   label="Salaire"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>

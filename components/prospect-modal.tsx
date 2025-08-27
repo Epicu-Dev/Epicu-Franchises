@@ -152,6 +152,7 @@ export function ProspectModal({
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
         setIsLoading(false);
+
         return;
       }
 
@@ -446,8 +447,8 @@ export function ProspectModal({
             <Button 
               className="flex-1 border-1" 
               color='primary' 
-              variant="bordered" 
-              isDisabled={isLoading}
+              isDisabled={isLoading} 
+              variant="bordered"
               onPress={handleClose}
             >
               Annuler
@@ -455,8 +456,8 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isLoading={isLoading}
               isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
+              isLoading={isLoading}
               onPress={handleSubmit}
             >
               {isLoading ? 'Chargement...' : (isEditing ? 'Modifier' : 'Ajouter')}

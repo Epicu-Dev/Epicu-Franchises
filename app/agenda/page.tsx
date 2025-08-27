@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,
@@ -12,7 +11,6 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { AgendaModals } from "@/components/agenda-modals";
-import { StyledSelect } from "@/components/styled-select";
 import { getValidAccessToken } from "@/utils/auth";
 
 interface Event {
@@ -73,6 +71,7 @@ export default function AgendaPage() {
 
       // Récupérer le token d'authentification
       const token = await getValidAccessToken();
+
       if (!token) {
         throw new Error("Non authentifié");
       }
@@ -83,10 +82,12 @@ export default function AgendaPage() {
 
       if (view === "semaine") {
         const startOfWeek = new Date(currentDate);
+
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
         startOfWeek.setHours(0, 0, 0, 0);
 
         const endOfWeek = new Date(startOfWeek);
+
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         endOfWeek.setHours(23, 59, 59, 999);
 
@@ -96,6 +97,7 @@ export default function AgendaPage() {
         // Vue mois
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
         endOfMonth.setHours(23, 59, 59, 999);
 
         dateStart = startOfMonth.toISOString().split('T')[0];
@@ -127,11 +129,13 @@ export default function AgendaPage() {
 
         // Calculer l'heure de fin (par défaut +1h)
         const endDate = new Date(eventDate);
+
         endDate.setHours(endDate.getHours() + 1);
         const endTime = endDate.toTimeString().slice(0, 5);
 
         // Mapper le type de l'API vers le type de l'interface
         let mappedType: Event['type'] = "evenement";
+
         if (apiEvent.type.toLowerCase().includes("rendez") || apiEvent.type.toLowerCase().includes("rdv")) {
           mappedType = "rendez-vous";
         } else if (apiEvent.type.toLowerCase().includes("tournage")) {
@@ -142,6 +146,7 @@ export default function AgendaPage() {
 
         // Déterminer la catégorie (par défaut siège)
         let category: Event['category'] = "siege";
+
         if (apiEvent.type.toLowerCase().includes("franchise")) {
           category = "franchises";
         } else if (apiEvent.type.toLowerCase().includes("prestataire")) {

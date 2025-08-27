@@ -24,9 +24,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Récupérer les villes liées à l'utilisateur
     let villesEpicu: { id: string; ville: string }[] = [];
+
     try {
       const linked = fields['Ville EPICU'];
       let linkedIds: string[] = [];
+
       if (linked) {
         if (Array.isArray(linked)) linkedIds = linked;
         else if (typeof linked === 'string') linkedIds = [linked];
@@ -39,6 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             maxRecords: linkedIds.length 
           })
           .all();
+
         villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
       }
     } catch (e) {
@@ -53,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error('Erreur /api/auth/me :', error);
+
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

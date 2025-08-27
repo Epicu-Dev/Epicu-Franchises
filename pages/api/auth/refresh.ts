@@ -86,14 +86,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Récupérer les infos utilisateur à retourner (similaire à /api/auth/login)
     let userInfo = null;
+
     try {
       const userRecord = await base('COLLABORATEURS').find(userId);
 
       // construire la liste des villes liées à l'utilisateur
       let villesEpicu: { id: string; ville: string }[] = [];
+
       try {
         const linked = userRecord.get('Ville EPICU');
         let linkedIds: string[] = [];
+
         if (linked) {
           if (Array.isArray(linked)) linkedIds = linked;
           else if (typeof linked === 'string') linkedIds = [linked];
@@ -102,6 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const v = await base('VILLES EPICU')
             .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
             .all();
+
           villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
         }
       } catch (e) {

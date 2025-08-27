@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const TABLE_NAME = 'CATÉGORIES';
@@ -32,6 +33,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     // Filtre plein-texte sur Name
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
+
       selectOptions.filterByFormula = `REGEX_MATCH(LOWER({Name}), "${pattern}")`;
     }
 

@@ -13,7 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-
 import {
   Modal,
   ModalContent,
@@ -165,6 +164,7 @@ export default function TodoPage() {
       if (!validateAllFields(newTodo)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
         setIsAddingTodo(false);
+
         return;
       }
 
@@ -450,8 +450,8 @@ export default function TodoPage() {
               <Input
                 isRequired
                 errorMessage={fieldErrors.name}
-                isInvalid={!!fieldErrors.name}
                 id="name"
+                isInvalid={!!fieldErrors.name}
                 placeholder="Titre de la tâche"
                 value={newTodo.name}
                 onChange={(e) => {
@@ -471,8 +471,8 @@ export default function TodoPage() {
               <Input
                 isRequired
                 errorMessage={fieldErrors.dueDate}
-                isInvalid={!!fieldErrors.dueDate}
                 id="dueDate"
+                isInvalid={!!fieldErrors.dueDate}
                 type="date"
                 value={newTodo.dueDate}
                 onChange={(e) => {
@@ -490,8 +490,8 @@ export default function TodoPage() {
           <ModalFooter className="flex justify-between">
             <Button className="flex-1 border-1"
               color='primary'
-              variant="bordered"
               isDisabled={isAddingTodo}
+              variant="bordered"
               onPress={() => setIsAddModalOpen(false)}>
               Annuler
             </Button>
@@ -530,8 +530,8 @@ export default function TodoPage() {
           <ModalFooter className="flex justify-between">
             <Button className="flex-1 border-1"
               color='primary'
-              variant="bordered"
               isDisabled={isDeletingTodo}
+              variant="bordered"
               onPress={() => setIsDeleteModalOpen(false)}>
               Annuler
             </Button>

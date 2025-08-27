@@ -13,7 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-
 import {
   Modal,
   ModalContent,
@@ -26,7 +25,6 @@ import {
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
-  XCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
@@ -101,15 +99,19 @@ export default function ProspectsPage() {
       try {
         // Récupérer les collaborateurs
         const collabResponse = await fetch('/api/collaborateurs?limit=200&offset=0');
+
         if (collabResponse.ok) {
           const collabData = await collabResponse.json();
+
           setCollaborateurs(collabData.results || []);
         }
 
         // Récupérer les catégories
         const catResponse = await fetch('/api/categories?limit=200&offset=0');
+
         if (catResponse.ok) {
           const catData = await catResponse.json();
+
           setCategories(catData.results || []);
         }
       } catch (err) {
@@ -213,6 +215,7 @@ export default function ProspectsPage() {
         // Ajouter le tri si spécifié
         if (sortField) {
           let orderByField = sortField;
+
           // Mapper les champs de tri vers les noms Airtable
           switch (sortField) {
             case 'categorie':
@@ -393,10 +396,10 @@ export default function ProspectsPage() {
                   inputWrapper:
                     "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                 }}
+                endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
                 type="text"
                 value={searchTerm}
-                endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -479,21 +482,21 @@ export default function ProspectsPage() {
             </div> :
               <Table
                 aria-label="Tableau des prospects"
-                shadow="none"
                 bottomContent={
                   hasMore && (
                     <div className="flex justify-center py-4">
                       <Button
                         color="primary"
-                        onPress={loadMore}
-                        isLoading={loadingMore}
                         disabled={loadingMore}
+                        isLoading={loadingMore}
+                        onPress={loadMore}
                       >
                         {loadingMore ? 'Chargement...' : 'Charger plus'}
                       </Button>
                     </div>
                   )
                 }
+                shadow="none"
               >
                 <TableHeader className="mb-4">
                   <TableColumn className="font-light text-sm">Nom établissement</TableColumn>

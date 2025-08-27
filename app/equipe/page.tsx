@@ -15,7 +15,6 @@ import {
   TableCell,
 } from "@heroui/table";
 import { Tooltip } from "@heroui/tooltip";
-
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
@@ -24,6 +23,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+
 import { getValidAccessToken } from "../../utils/auth";
 
 interface TeamMember {
@@ -188,17 +188,20 @@ export default function EquipePage() {
         const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
           // Déterminer la catégorie basée sur les villes ou l'index
           let category: "siege" | "franchise" | "prestataire" = "siege";
+
           if (index >= 10 && index < 25) category = "franchise";
           else if (index >= 25) category = "prestataire";
 
           // Déterminer le rôle basé sur la catégorie
           let role = "Collaborateur";
+
           if (category === "siege") role = "Collaborateur Siège";
           else if (category === "franchise") role = "Franchisé";
           else if (category === "prestataire") role = "Prestataire";
 
           // Déterminer la localisation
           let location = "Siège";
+
           if (category === "franchise" || category === "prestataire") {
             location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
           }
@@ -215,6 +218,7 @@ export default function EquipePage() {
 
         // Filtrer par catégorie si sélectionnée
         let filteredMembers = transformedMembers;
+
         if (selectedCategory && selectedCategory !== "tout") {
           filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
         }
@@ -351,15 +355,15 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                   }}
-                  placeholder="Rechercher..."
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
                   endContent={
                     searchTerm && (
                       <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
                     )
                   }
+                  placeholder="Rechercher..."
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>

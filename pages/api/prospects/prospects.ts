@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const VIEW_NAME = '🟡 Prospects';
@@ -45,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
 
     const formulaParts: string[] = [];
+
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
       const qFormula =
@@ -53,20 +55,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
         `)`;
+
       formulaParts.push(qFormula);
     }
 
     if (categoryFilter) {
       try {
         let catName = String(categoryFilter);
+
         if (/^rec/i.test(categoryFilter)) {
           const rec = await base('Catégories').find(categoryFilter);
+
           catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
         }
         const catEsc = catName.replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       } catch (e) {
         const catEsc = String(categoryFilter).replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       }
     }
@@ -74,14 +81,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (suiviFilter) {
       try {
         let suiviName = String(suiviFilter);
+
         if (/^rec/i.test(suiviFilter)) {
           const rec = await base('Collaborateurs').find(suiviFilter);
+
           suiviName = String(rec.get('Nom complet') || `${rec.get('Prénom') || ''} ${rec.get('Nom') || ''}`.trim() || suiviName);
         }
         const suEsc = suiviName.replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
       } catch (e) {
         const suEsc = String(suiviFilter).replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
       }
     }
@@ -104,6 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par') || [])));
 
     let categoryNames: Record<string, string> = {};
+
     if (categoryIds.length > 0) {
       const catRecords = await base('Catégories')
         .select({
@@ -113,12 +125,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           maxRecords: categoryIds.length,
         })
         .all();
+
       catRecords.forEach((cat: any) => {
         categoryNames[cat.id] = cat.get('Name');
       });
     }
 
     let suiviNames: Record<string, string> = {};
+
     if (suiviIds.length > 0) {
       const collabRecords = await base('Collaborateurs')
         .select({
@@ -128,9 +142,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           maxRecords: suiviIds.length,
         })
         .all();
+
       collabRecords.forEach((collab: any) => {
         const prenom = collab.get('Prénom') || '';
         const nom = collab.get('Nom') || '';
+
         suiviNames[collab.id] = `${prenom} ${nom}`.trim();
       });
     }
@@ -171,6 +187,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         prevOffset: Math.max(0, offset - limit),
       },
     });
+
     return;
     }
     // --- POST: create a prospect
@@ -180,9 +197,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Respect exact field names
         const SIRET = body['SIRET'];
+
         // server-side validation: SIRET must be exactly 14 digits
         if (SIRET && typeof SIRET === 'string') {
           const siretClean = SIRET.replace(/\s+/g, '');
+
           if (!/^\d{14}$/.test(siretClean)) return res.status(400).json({ error: 'SIRET invalide — doit contenir exactement 14 chiffres' });
         }
         const nom = body["Nom de l'établissement"];
@@ -197,6 +216,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Required validation
         const missing: string[] = [];
+
         if (!SIRET) missing.push('SIRET');
         if (!nom) missing.push("Nom de l'établissement");
         if (!villeRaw) missing.push('Ville EPICU');
@@ -209,6 +229,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (missing.length > 0) return res.status(400).json({ error: 'Champs requis manquants', missing });
 
         const fieldsToCreate: any = {};
+
   fieldsToCreate['SIRET'] = String(SIRET).replace(/\s+/g, '');
         fieldsToCreate["Nom de l'établissement"] = nom;
         fieldsToCreate['Téléphone'] = telephone;
@@ -223,28 +244,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (!candidateValue) return null;
           if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
           const val = String(candidateValue).trim();
+
           if (!val) return null;
           const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+
           try {
             const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+
             if (found && found.length > 0) return found[0].id;
           } catch (e) {}
           try {
             const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+
             return created[0].id;
           } catch (e) { return null; }
         };
 
         const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
+
         if (villeId) fieldsToCreate['Ville'] = [villeId];
 
         const catId = await ensureRelatedRecord('Catégories', categorieRaw, ['Name']);
+
         if (catId) fieldsToCreate['Catégorie'] = [catId];
 
         const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
+
         return res.status(201).json({ id: created[0].id, fields: created[0].fields });
       } catch (err: any) {
         console.error('prospects POST error', err);
+
         return res.status(500).json({ error: 'Erreur création prospect', details: err?.message || String(err) });
       }
     }
@@ -254,11 +283,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const body = req.body || {};
         const id = (req.query.id as string) || body.id;
+
         if (!id) return res.status(400).json({ error: 'id requis' });
 
         const fieldsToUpdate: any = {};
+
         if (Object.prototype.hasOwnProperty.call(body, 'SIRET')) {
           const s = String(body['SIRET'] || '').replace(/\s+/g, '');
+
           if (!/^\d{14}$/.test(s)) return res.status(400).json({ error: 'SIRET invalide — doit contenir exactement 14 chiffres' });
           fieldsToUpdate['SIRET'] = s;
         }
@@ -276,18 +308,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (!candidateValue) return null;
             if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
             const val = String(candidateValue).trim();
+
             if (!val) return null;
             const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+
             try {
               const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+
               if (found && found.length > 0) return found[0].id;
             } catch (e) {}
             try {
               const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+
               return created[0].id;
             } catch (e) { return null; }
           };
           const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
+
           if (villeId) fieldsToUpdate['Ville'] = [villeId]; else fieldsToUpdate['Ville'] = [];
         }
 
@@ -297,33 +334,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (!candidateValue) return null;
             if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
             const val = String(candidateValue).trim();
+
             if (!val) return null;
             const formulaParts = candidateFields.map(f => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
+
             try {
               const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
+
               if (found && found.length > 0) return found[0].id;
             } catch (e) {}
             try {
               const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
+
               return created[0].id;
             } catch (e) { return null; }
           };
           const catId = await ensureRelatedRecord('Catégories', catRaw, ['Name']);
+
           if (catId) fieldsToUpdate['Catégorie'] = [catId]; else fieldsToUpdate['Catégorie'] = [];
         }
 
         if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
         const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
+
         return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
       } catch (err: any) {
         console.error('prospects PATCH error', err);
+
         return res.status(500).json({ error: 'Erreur mise à jour prospect', details: err?.message || String(err) });
       }
     }
 
     // If none matched
     res.setHeader('Allow', ['GET', 'POST', 'PATCH']);
+
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     res.status(500).json({

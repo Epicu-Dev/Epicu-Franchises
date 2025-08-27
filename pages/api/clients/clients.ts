@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const TABLE_NAME = 'ÉTABLISSEMENTS';
@@ -59,6 +60,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
+
       filterFormulas.push(
         `OR(` +
         `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
@@ -75,14 +77,18 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     if (category && category.trim().length > 0) {
       try {
         let catName = String(category);
+
         if (/^rec/i.test(category)) {
           const rec = await base('Catégories').find(category);
+
           catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
         }
         const catEsc = catName.replace(/'/g, "\\'");
+
         filterFormulas.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       } catch (e) {
         const catEsc = String(category).replace(/'/g, "\\'");
+
         filterFormulas.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       }
     }
@@ -104,6 +110,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     // Résoudre Catégorie pour la page courante
     const categoryIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Catégorie') || [])));
     let categoryNames: Record<string, string> = {};
+
     if (categoryIds.length > 0) {
       const catRecords = await base('Catégories')
         .select({
@@ -113,6 +120,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           maxRecords: categoryIds.length,
         })
         .all();
+
       catRecords.forEach((cat: any) => {
         categoryNames[cat.id] = cat.get('Name');
       });

@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const TABLE_NAME = 'VILLES EPICU';
@@ -33,6 +34,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     if (q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
+
       selectOptions.filterByFormula = `REGEX_MATCH(LOWER({Ville EPICU}), "${pattern}")`;
     }
 
