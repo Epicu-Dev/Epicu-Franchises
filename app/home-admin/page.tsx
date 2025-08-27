@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@heroui/button";
+import { Calendar } from "@heroui/calendar";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
+  useDisclosure,
 } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { SelectItem } from "@heroui/select";
@@ -19,20 +21,47 @@ import {
   ShoppingCartIcon,
   CalendarIcon,
   DocumentTextIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardBody } from "@heroui/card";
+import { Spinner } from "@heroui/spinner";
+import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
+import { EventModal } from "@/components/event-modal";
 import { AgendaSection } from "@/components/agenda-section";
 import { StyledSelect } from "@/components/styled-select";
+import { useUser } from "@/contexts/user-context";
+import { useLoading } from "@/contexts/loading-context";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+
+// Types pour les données réelles
+type AgendaEvent = {
+  id: string;
+  task: string;
+  date: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+};
 
 export default function HomeAdminPage() {
+  const { userProfile } = useUser();
+  const { setUserProfileLoaded } = useLoading();
+  const { authFetch } = useAuthFetch();
+  const [selectedDate, setSelectedDate] = useState<CalendarDate>(
+    today(getLocalTimeZone())
+  );
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const [isAddProspectModalOpen, setIsAddProspectModalOpen] = useState(false);
   const [activeTab] = useState("overview");
   const [selectedCategory] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState<"month" | "year">("month");
   const [newProspect, setNewProspect] = useState({
     nomEtablissement: "",
     categorie1: "",
@@ -49,81 +78,235 @@ export default function HomeAdminPage() {
   const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
-  const allMetrics = [
-    {
-      value: "759k€",
-      label: "Chiffres d'affaires global",
-      icon: <ChartBarIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-green-stats/40",
-      iconColor: "text-custom-green-stats",
-      city: "overview",
-      categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-    },
-    {
-      value: "760",
-      label: "Clients signés",
-      icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-rose/40",
-      iconColor: "text-custom-rose",
-      city: "nantes",
-      categories: ["FOOD", "SHOP"],
-    },
-    {
-      value: "1243",
-      label: "Prospects",
-      icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-yellow-100",
-      iconColor: "text-yellow-400",
-      city: "saint-brieuc",
-      categories: ["TRAVEL", "FUN"],
-    },
-    {
-      value: "31",
-      label: "Franchises",
-      icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-orange-food/40",
-      iconColor: "text-custom-orange-food",
-      city: "overview",
-      categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-    },
-    {
-      value: "75",
-      label: "Posts publiés",
-      icon: <DocumentTextIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-blue-select/40",
-      iconColor: "text-custom-blue-select",
-      city: "nantes",
-      categories: ["BEAUTY", "FOOD"],
-    },
-    {
-      value: "35",
-      label: "Prestations Studio",
-      icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-purple-studio/40",
-      iconColor: "text-custom-purple-studio",
-      city: "saint-brieuc",
-      categories: ["SHOP", "TRAVEL"],
-    },
-    {
-      value: "190k",
-      label: "Abonnés",
-      icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-green-stats/40",
-      iconColor: "text-custom-green-stats",
-      city: "nantes",
-      categories: ["FUN", "BEAUTY"],
-    },
-    {
-      value: "175k",
-      label: "Vues",
-      icon: <EyeIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-rose/40",
-      iconColor: "text-custom-rose",
-      city: "saint-brieuc",
-      categories: ["FOOD", "SHOP"],
-    },
-  ];
+  // États pour les données dynamiques
+  const [events, setEvents] = useState<AgendaEvent[]>([]);
+  const [agendaLoading, setAgendaLoading] = useState(false);
+
+  // Mettre à jour le profil utilisateur chargé
+  useEffect(() => {
+    if (userProfile) {
+      setUserProfileLoaded(true);
+    }
+  }, [userProfile, setUserProfileLoaded]);
+
+  // Fonction pour récupérer les données agenda
+  const fetchAgenda = async () => {
+    try {
+      setAgendaLoading(true);
+
+      // Récupérer l'ID du collaborateur
+      const meRes = await authFetch('/api/auth/me');
+
+      if (!meRes.ok) return;
+      const me = await meRes.json();
+      const collaboratorId = me.id as string;
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
+      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
+
+      // Récupérer les événements d'agenda
+      const params = new URLSearchParams();
+
+      if (collaboratorId) params.set('collaborator', collaboratorId);
+      params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
+      params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
+      params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
+
+      const eventsResponse = await authFetch(`/api/agenda?${params.toString()}`);
+
+      if (eventsResponse.ok) {
+        const eventsData = await eventsResponse.json();
+
+        setEvents(eventsData.events || []);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'agenda:', error);
+      setEvents([]);
+    } finally {
+      setAgendaLoading(false);
+    }
+  };
+
+  // Effet pour charger les données au montage du composant
+  useEffect(() => {
+    fetchAgenda();
+  }, []);
+
+  // Effet pour recharger agenda quand la date change
+  useEffect(() => {
+    fetchAgenda();
+  }, [selectedDate]);
+
+  // Transformation des événements pour l'affichage
+  const agendaEvents = useMemo(() => {
+    return events.slice(0, 3).map(event => ({
+      clientName: event.task || "Nom client",
+      date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
+      type: event.type === "rendez-vous" ? "Rendez-vous" :
+        event.type === "tournage" ? "Tournage" :
+          event.type === "publication" ? "Publication" : "Evènement",
+    }));
+  }, [events]);
+
+  const getMetricsForPeriod = (period: "month" | "year") => {
+    const monthMetrics = [
+      {
+        value: "759k€",
+        label: "Chiffres d'affaires global",
+        icon: <ChartBarIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-green-stats/40",
+        iconColor: "text-custom-green-stats",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: "760",
+        label: "Clients signés",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-rose/40",
+        iconColor: "text-custom-rose",
+        city: "nantes",
+        categories: ["FOOD", "SHOP"],
+      },
+      {
+        value: "1243",
+        label: "Prospects",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-yellow-100",
+        iconColor: "text-yellow-400",
+        city: "saint-brieuc",
+        categories: ["TRAVEL", "FUN"],
+      },
+      {
+        value: "31",
+        label: "Franchises",
+        icon: <ShoppingCartIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-orange-food/40",
+        iconColor: "text-custom-orange-food",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: "75",
+        label: "Posts publiés",
+        icon: <DocumentTextIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-blue-select/40",
+        iconColor: "text-custom-blue-select",
+        city: "nantes",
+        categories: ["BEAUTY", "FOOD"],
+      },
+      {
+        value: "35",
+        label: "Prestations Studio",
+        icon: <ShoppingCartIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-purple-studio/40",
+        iconColor: "text-custom-purple-studio",
+        city: "saint-brieuc",
+        categories: ["SHOP", "TRAVEL"],
+      },
+      {
+        value: "190k",
+        label: "Abonnés",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-green-stats/40",
+        iconColor: "text-custom-green-stats",
+        city: "nantes",
+        categories: ["FUN", "BEAUTY"],
+      },
+      {
+        value: "175k",
+        label: "Vues",
+        icon: <EyeIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-rose/40",
+        iconColor: "text-custom-rose",
+        city: "saint-brieuc",
+        categories: ["FOOD", "SHOP"],
+      },
+    ];
+
+    const yearMetrics = [
+      {
+        value: "8.2M€",
+        label: "Chiffres d'affaires global",
+        icon: <ChartBarIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-green-stats/40",
+        iconColor: "text-custom-green-stats",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: "8920",
+        label: "Clients signés",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-rose/40",
+        iconColor: "text-custom-rose",
+        city: "nantes",
+        categories: ["FOOD", "SHOP"],
+      },
+      {
+        value: "15420",
+        label: "Prospects",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-yellow-100",
+        iconColor: "text-yellow-400",
+        city: "saint-brieuc",
+        categories: ["TRAVEL", "FUN"],
+      },
+      {
+        value: "372",
+        label: "Franchises",
+        icon: <ShoppingCartIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-orange-food/40",
+        iconColor: "text-custom-orange-food",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: "890",
+        label: "Posts publiés",
+        icon: <DocumentTextIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-blue-select/40",
+        iconColor: "text-custom-blue-select",
+        city: "nantes",
+        categories: ["BEAUTY", "FOOD"],
+      },
+      {
+        value: "420",
+        label: "Prestations Studio",
+        icon: <ShoppingCartIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-purple-studio/40",
+        iconColor: "text-custom-purple-studio",
+        city: "saint-brieuc",
+        categories: ["SHOP", "TRAVEL"],
+      },
+      {
+        value: "2.1M",
+        label: "Abonnés",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-green-stats/40",
+        iconColor: "text-custom-green-stats",
+        city: "nantes",
+        categories: ["FUN", "BEAUTY"],
+      },
+      {
+        value: "1.8M",
+        label: "Vues",
+        icon: <EyeIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-rose/40",
+        iconColor: "text-custom-rose",
+        city: "saint-brieuc",
+        categories: ["FOOD", "SHOP"],
+      },
+    ];
+
+    return period === "month" ? monthMetrics : yearMetrics;
+  };
+
+  const allMetrics = getMetricsForPeriod(selectedPeriod);
 
   // Filtrer les métriques selon l'onglet actif et la catégorie sélectionnée
   const metrics = allMetrics.filter((metric) => {
@@ -140,24 +323,6 @@ export default function HomeAdminPage() {
     return true;
   });
 
-  const agendaEvents = [
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Tournage",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Rendez-vous",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Evènement",
-    },
-  ];
-
   return (
     <DashboardLayout>
       <Card className="w-full" shadow="none" >
@@ -168,22 +333,40 @@ export default function HomeAdminPage() {
               <CalendarIcon className="h-5 w-5 text-gray-600" />
               <div className="flex gap-2">
                 <Button
-                  className="bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
+                  className={
+                    selectedPeriod === "month"
+                      ? "bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+                  }
                   size="sm"
+                  onPress={() => setSelectedPeriod("month")}
                 >
                   Ce mois-ci
                 </Button>
                 <Button
-                  className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+                  className={
+                    selectedPeriod === "year"
+                      ? "bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+                  }
                   size="sm"
+                  onPress={() => setSelectedPeriod("year")}
                 >
                   Cette année
                 </Button>
               </div>
+
             </div>
+            <Button
+              color='primary'
+              endContent={<PlusIcon className="h-4 w-4" />}
+              onPress={() => setIsEventModalOpen(true)}
+            >
+              Ajouter un évènement
+            </Button>
           </div>
 
-
+         
           {/* Main Layout - Metrics Grid on left, Agenda on right */}
           <div className="flex flex-row gap-6">
             {/* Left side - 4x2 Metrics Grid */}
@@ -206,6 +389,7 @@ export default function HomeAdminPage() {
             <div className="w-80">
               <AgendaSection
                 events={agendaEvents}
+                loading={agendaLoading}
                 onPublicationSelect={() => setIsPublicationModalOpen(true)}
                 onRendezVousSelect={() => setIsRdvModalOpen(true)}
                 onTournageSelect={() => setIsTournageModalOpen(true)}
@@ -348,9 +532,37 @@ export default function HomeAdminPage() {
             setIsPublicationModalOpen={setIsPublicationModalOpen}
             setIsRdvModalOpen={setIsRdvModalOpen}
             setIsTournageModalOpen={setIsTournageModalOpen}
+            onEventAdded={fetchAgenda}
+          />
+
+          {/* Modal d'événement */}
+          <EventModal
+            isOpen={isEventModalOpen}
+            onOpenChange={setIsEventModalOpen}
+            onEventAdded={fetchAgenda}
           />
         </CardBody>
       </Card>
+
+      {/* Calendar Modal */}
+      <Modal isOpen={isOpen} placement="center" onClose={onClose}>
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Sélectionner une date
+          </ModalHeader>
+          <ModalBody>
+            <Calendar
+              className="w-full"
+              showMonthAndYearPickers={false}
+              value={selectedDate}
+              onChange={(date) => {
+                setSelectedDate(date);
+                onClose();
+              }}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </DashboardLayout>
   );
 }

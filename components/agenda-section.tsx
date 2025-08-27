@@ -55,7 +55,7 @@ export const AgendaSection: React.FC<AgendaSectionProps> = ({
               className="flex items-center justify-between py-4 border-b border-gray-100"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-light text-primary">
+                <p className="text-sm font-ligth text-primary">
                   {event.clientName}
                 </p>
                 <p className="text-xs text-primary-light">

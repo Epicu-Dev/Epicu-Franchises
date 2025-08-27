@@ -84,8 +84,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/prospects",
       showFor: ["franchise", "admin"]
     },
-    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise"] },
-    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise"] },
+    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise", "admin"] },
+    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise", "admin"] },
     {
       key: "facturation",
       label: "Facturation",
@@ -291,7 +291,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
           {/* Settings Section */}
           <div className="p-4">
             <h3 className="text-sm font-light uppercase mb-3 mt-8 text-primary-light" style={{ letterSpacing: "0.2em" }}>
-              PARAMÈTRES  
+              PARAMÈTRES
             </h3>
             {
               settingsItems.map((item) => {

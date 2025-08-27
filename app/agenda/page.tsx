@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { AgendaModals } from "@/components/agenda-modals";
+import { EventModal } from "@/components/event-modal";
 import { getValidAccessToken } from "@/utils/auth";
 
 interface Event {
@@ -63,7 +64,7 @@ export default function AgendaPage() {
   const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
-
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -553,6 +554,13 @@ export default function AgendaPage() {
               >
                 Ajouter un rendez-vous
               </Button>
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsEventModalOpen(true)}
+              >
+                Ajouter un évènement
+              </Button>
             </div>
           </div>
 
@@ -633,6 +641,13 @@ export default function AgendaPage() {
         setIsPublicationModalOpen={setIsPublicationModalOpen}
         setIsRdvModalOpen={setIsRdvModalOpen}
         setIsTournageModalOpen={setIsTournageModalOpen}
+        onEventAdded={fetchEvents}
+      />
+
+      {/* Modal d'événement */}
+      <EventModal
+        isOpen={isEventModalOpen}
+        onOpenChange={setIsEventModalOpen}
         onEventAdded={fetchEvents}
       />
     </div>
