@@ -247,7 +247,7 @@ export default function HomePage() {
           }
         }
       }
-
+  
       const response = await authFetch(`/api/statistiques?${params.toString()}`);
       
       if (response.ok) {
