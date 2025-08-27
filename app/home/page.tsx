@@ -31,7 +31,8 @@ import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
 import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
-import { AgendaBadge, TodoBadge } from "@/components/badges";
+import { AgendaSection } from "@/components/agenda-section";
+import { TodoBadge } from "@/components/badges";
 import { FormLabel } from "@/components";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
@@ -639,46 +640,13 @@ export default function HomePage() {
             {/* Stacked sections - Full width on mobile, sidebar on desktop */}
             <div className="flex-1 space-y-4 lg:space-y-6">
               {/* Agenda Section */}
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 lg:mb-4">
-                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Agenda
-                  </h3>
-                  <AgendaDropdown
-                    onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                    onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                    onTournageSelect={() => setIsTournageModalOpen(true)}
-                  />
-                </div>
-                <div >
-                  {agendaLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-sm text-gray-500"><Spinner /></div>
-                    </div>
-                  ) : agendaEvents.length === 0 ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-sm text-gray-500">Pas de résultat</div>
-                    </div>
-                  ) : (
-                    agendaEvents.map((event, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-4 border-b border-gray-100"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-light text-primary">
-                            {event.clientName}
-                          </p>
-                          <p className="text-xs text-primary-light">
-                            {event.date}
-                          </p>
-                        </div>
-                        <AgendaBadge type={event.type} />
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              <AgendaSection
+                events={agendaEvents}
+                loading={agendaLoading}
+                onPublicationSelect={() => setIsPublicationModalOpen(true)}
+                onRendezVousSelect={() => setIsRdvModalOpen(true)}
+                onTournageSelect={() => setIsTournageModalOpen(true)}
+              />
 
               {/* To do Section */}
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
