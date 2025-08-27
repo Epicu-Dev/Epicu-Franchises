@@ -52,14 +52,18 @@ export default function HomePage() {
   // État pour le filtre de ville
   const [selectedCity, setSelectedCity] = useState<string>("tout");
 
-  // Données des villes disponibles
-  const cities = [
+  // État pour le profil utilisateur
+  const [userProfile, setUserProfile] = useState<{
+    firstname: string;
+    lastname: string;
+    villes: { id: string; ville: string }[];
+  } | null>(null);
+
+  // Données des villes disponibles - maintenant dynamiques basées sur l'utilisateur
+  const [cities, setCities] = useState([
     { key: "tout", label: "Tout" },
-    { key: "vannes", label: "Vannes" },
-    { key: "nantes", label: "Nantes" },
-    { key: "saint-brieuc", label: "Saint-Brieuc" },
     { key: "national", label: "National" },
-  ];
+  ]);
 
   // États pour les données dynamiques
   const [prospects, setProspects] = useState<any[]>([]);
@@ -72,6 +76,55 @@ export default function HomePage() {
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+
+  // Récupérer les informations du profil utilisateur
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) return;
+
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Données utilisateur reçues:', userData);
+
+          const userVilles = userData['villes'] || [];
+
+          // Transformer les villes de l'utilisateur
+          const userCities = userVilles.map((ville: any) => ({
+            key: ville.ville.toLowerCase().replace(/\s+/g, '-'),
+            label: ville.ville
+          }));
+
+          console.log('Villes transformées:', userCities);
+
+          setUserProfile({
+            firstname: userData['Prénom'] || '',
+            lastname: userData['Nom'] || '',
+            villes: userVilles
+          });
+
+          // Mettre à jour la liste des villes avec celles de l'utilisateur
+          setCities([
+            { key: "tout", label: "Tout" },
+            ...userCities,
+            { key: "national", label: "National" }
+          ]);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du profil:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Fonction pour récupérer les données
   const fetchData = async () => {
@@ -114,20 +167,25 @@ export default function HomePage() {
   const filterDataByCity = (data: any[], cityKey: string) => {
     if (cityKey === "tout") return data;
 
-    // Mapping des clés vers les noms de villes
-    const cityMapping: { [key: string]: string[] } = {
-      "vannes": ["Vannes"],
-      "nantes": ["Nantes"],
-      "saint-brieuc": ["Saint-Brieuc"],
-      "national": ["Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Lille", "Nice", "Strasbourg", "Montpellier", "Rennes"]
-    };
+    // Récupérer les villes de l'utilisateur
+    const userVilles = userProfile?.villes || [];
 
-    const targetCities = cityMapping[cityKey] || [];
+    if (cityKey === "national") {
+      // Pour "National", exclure les villes locales de l'utilisateur
+      const localVilleNames = userVilles.map(v => v.ville);
+      return data.filter(item =>
+        item.ville && !localVilleNames.some(localVille =>
+          item.ville.toLowerCase().includes(localVille.toLowerCase())
+        )
+      );
+    }
+
+    // Pour les villes locales, filtrer par la ville sélectionnée
+    const selectedCity = cities.find(c => c.key === cityKey);
+    if (!selectedCity) return data;
 
     return data.filter(item =>
-      item.ville && targetCities.some(city =>
-        item.ville.toLowerCase().includes(city.toLowerCase())
-      )
+      item.ville && item.ville.toLowerCase().includes(selectedCity.label.toLowerCase())
     );
   };
 
@@ -267,13 +325,15 @@ export default function HomePage() {
       {/* Greeting */}
       <div className="mb-4 lg:mb-6">
         <h1 className="text-4xl">
-          Re, <span className="font-semibold">Clémence</span> !
+          Re, <span className="font-semibold">{userProfile?.firstname || '...'}</span> !
         </h1>
       </div>
       <Card className="w-full rounded-2xl" shadow="none" >
         <CardBody className="p-6">
           {/* Location Filters and Add Prospect Button */}
           <div className="mb-4 lg:mb-6">
+
+
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between">
               {/* Location Filters - Design avec "Tout" séparé et villes groupées */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -291,28 +351,34 @@ export default function HomePage() {
                   Tout
                 </Button>
 
-                {/* Groupe des villes locales */}
-                <div className="flex rounded-md overflow-hidden flex-shrink-0">
-                  {["vannes", "nantes", "saint-brieuc"].map((cityKey) => {
-                    const city = cities.find(c => c.key === cityKey);
+                {/* Groupe des villes locales de l'utilisateur */}
+                {cities.filter(city => city.key !== "tout" && city.key !== "national").length > 0 && (
+                  <div className="flex rounded-md overflow-hidden flex-shrink-0">
+                    {cities.filter(city => city.key !== "tout" && city.key !== "national").map((city) => {
+                      const isSelected = selectedCity === city.key;
+                      const isUserCity = userProfile?.villes?.some(v =>
+                        v.ville.toLowerCase() === city.label.toLowerCase()
+                      );
 
-                    return (
-                      <Button
-                        key={cityKey}
-                        className={
-                          selectedCity === cityKey
-                            ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
-                        }
-                        size="sm"
-                        variant="solid"
-                        onPress={() => setSelectedCity(cityKey)}
-                      >
-                        {city?.label}
-                      </Button>
-                    );
-                  })}
-                </div>
+                      return (
+                        <Button
+                          key={city.key}
+                          className={
+                            isSelected
+                              ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                          }
+                          size="sm"
+                          variant="solid"
+                          onPress={() => setSelectedCity(city.key)}
+                          title={isUserCity ? `Ville de ${userProfile?.firstname || 'l\'utilisateur'}` : undefined}
+                        >
+                          {city.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Bouton "National" séparé */}
                 <Button

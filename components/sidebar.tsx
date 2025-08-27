@@ -31,6 +31,13 @@ import {
 
 import { useUserType } from "../contexts/user-type-context";
 
+interface UserProfile {
+  id: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+}
 
 interface SidebarProps {
   onLogout: () => void;
@@ -42,11 +49,44 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const pathname = usePathname();
   const { userType, setUserType } = useUserType();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Fermer le sidebar mobile lors du changement de route
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
+
+  // Récupérer les informations du profil utilisateur
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) return;
+
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUserProfile({
+            id: userData.id,
+            email: userData['Email EPICU'] || '',
+            firstname: userData['Prénom'] || '',
+            lastname: userData['Nom'] || '',
+            role: userData['Rôle'] || ''
+          });
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du profil:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Gérer la fermeture avec la touche Escape
   useEffect(() => {
@@ -208,10 +248,10 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Dominique Durand
+                    {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Chargement...'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userType === "admin" ? "Admin" : "Franchisé"}
+                    {userProfile?.role || 'Chargement...'}
                   </p>
                 </div>
               </div>

@@ -85,11 +85,11 @@ export default function AgendaPage() {
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
         startOfWeek.setHours(0, 0, 0, 0);
-        
+
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         endOfWeek.setHours(23, 59, 59, 999);
-        
+
         dateStart = startOfWeek.toISOString().split('T')[0];
         dateEnd = endOfWeek.toISOString().split('T')[0];
       } else {
@@ -97,7 +97,7 @@ export default function AgendaPage() {
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         endOfMonth.setHours(23, 59, 59, 999);
-        
+
         dateStart = startOfMonth.toISOString().split('T')[0];
         dateEnd = endOfMonth.toISOString().split('T')[0];
       }
@@ -119,12 +119,12 @@ export default function AgendaPage() {
       }
 
       const data = await response.json();
-      
+
       // Transformer les données de l'API en format Event
       const transformedEvents: Event[] = (data.events || []).map((apiEvent: ApiEvent) => {
         const eventDate = new Date(apiEvent.date);
         const startTime = eventDate.toTimeString().slice(0, 5);
-        
+
         // Calculer l'heure de fin (par défaut +1h)
         const endDate = new Date(eventDate);
         endDate.setHours(endDate.getHours() + 1);
@@ -161,8 +161,8 @@ export default function AgendaPage() {
       });
 
       // Filtrer par catégorie si nécessaire
-      const filteredEvents = selectedCategory === "tout" 
-        ? transformedEvents 
+      const filteredEvents = selectedCategory === "tout"
+        ? transformedEvents
         : transformedEvents.filter(event => event.category === selectedCategory);
 
       setEvents(filteredEvents);
@@ -443,7 +443,7 @@ export default function AgendaPage() {
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100">
+                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100 h-20 flex items-center justify-end">
                   {hour}:00
                 </div>
 
@@ -465,7 +465,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`min-h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                      className={`h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
                         }`}
                     >
                       {hourEvents.map((event) => (
@@ -500,22 +500,6 @@ export default function AgendaPage() {
     );
   };
 
-
-
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full">
@@ -535,26 +519,8 @@ export default function AgendaPage() {
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* En-tête avec navigation et boutons */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={handlePreviousMonth}
-                >
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </Button>
-                <span className="text-lg font-semibold">
-                  {view === "semaine"
-                    ? formatWeekRange(currentDate)
-                    : formatMonthYear(currentDate)}
-                </span>
-                <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
-                  <ChevronRightIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+          <div className="flex justify-end items-center mb-6">
+
 
             <div className="flex items-center space-x-4">
               <Button
@@ -586,19 +552,23 @@ export default function AgendaPage() {
           {/* Filtres et vues */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-4">
-              <StyledSelect
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tout">Tout</SelectItem>
-                <SelectItem key="siege">Siège</SelectItem>
-                <SelectItem key="franchises">Franchisés</SelectItem>
-                <SelectItem key="prestataires">Prestataires</SelectItem>
-              </StyledSelect>
+              <div className="flex items-center space-x-2">
+                <Button
+                  isIconOnly
+                  variant="light"
+                  onPress={handlePreviousMonth}
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </Button>
+                <span>
+                  {view === "semaine"
+                    ? formatWeekRange(currentDate)
+                    : formatMonthYear(currentDate)}
+                </span>
+                <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="flex rounded-md overflow-hidden flex-shrink-0">
@@ -633,10 +603,18 @@ export default function AgendaPage() {
           </div>
 
           {/* Contenu du calendrier */}
-          <div className="mt-6">
-            {view === "mois" && renderCalendarView()}
-            {view === "semaine" && renderWeekView()}
-          </div>
+          {
+            loading ? (
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+            ) : (
+              <div className="mt-6">
+                {view === "mois" && renderCalendarView()}
+                {view === "semaine" && renderWeekView()}
+              </div>
+            )
+          }
         </CardBody>
       </Card>
 

@@ -22,9 +22,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const fields = record.fields || {};
 
+    // Récupérer les villes liées à l'utilisateur
+    let villesEpicu: { id: string; ville: string }[] = [];
+    try {
+      const linked = fields['Ville EPICU'];
+      let linkedIds: string[] = [];
+      if (linked) {
+        if (Array.isArray(linked)) linkedIds = linked;
+        else if (typeof linked === 'string') linkedIds = [linked];
+      }
+      if (linkedIds.length > 0) {
+        const v = await base('VILLES EPICU')
+          .select({ 
+            filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, 
+            fields: ['Ville EPICU'], 
+            maxRecords: linkedIds.length 
+          })
+          .all();
+        villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
+      }
+    } catch (e) {
+      console.error('Erreur lors de la récupération des villes:', e);
+      // ignore failures to fetch villes
+    }
+
     return res.status(200).json({
       id: record.id,
       ...fields,
+      villes: villesEpicu, // Ajouter les villes résolues
     });
   } catch (error) {
     console.error('Erreur /api/auth/me :', error);
