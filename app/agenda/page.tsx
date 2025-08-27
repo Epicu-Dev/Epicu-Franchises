@@ -419,7 +419,7 @@ export default function AgendaPage() {
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
             <div className="p-2 text-center font-medium text-gray-600 text-sm" />
-            {weekDays.map((day) => (agenda
+            {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
                 className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
