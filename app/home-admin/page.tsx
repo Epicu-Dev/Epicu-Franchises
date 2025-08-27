@@ -26,7 +26,7 @@ import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
-import { AgendaDropdown } from "@/components/agenda-dropdown";
+import { AgendaSection } from "@/components/agenda-section";
 import { StyledSelect } from "@/components/styled-select";
 
 export default function HomeAdminPage() {
@@ -55,8 +55,8 @@ export default function HomeAdminPage() {
       value: "759k€",
       label: "Chiffres d'affaires global",
       icon: <ChartBarIcon className="h-6 w-6" />,
-      iconBgColor: "bg-green-100",
-      iconColor: "text-green-600",
+      iconBgColor: "bg-custom-green-stats/40",
+      iconColor: "text-custom-green-stats",
       city: "overview",
       categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
     },
@@ -64,8 +64,8 @@ export default function HomeAdminPage() {
       value: "760",
       label: "Clients signés",
       icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-pink-100",
-      iconColor: "text-pink-600",
+      iconBgColor: "bg-custom-rose/40",
+      iconColor: "text-custom-rose",
       city: "nantes",
       categories: ["FOOD", "SHOP"],
     },
@@ -74,7 +74,7 @@ export default function HomeAdminPage() {
       label: "Prospects",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
-      iconColor: "text-yellow-600",
+      iconColor: "text-yellow-400",
       city: "saint-brieuc",
       categories: ["TRAVEL", "FUN"],
     },
@@ -82,8 +82,8 @@ export default function HomeAdminPage() {
       value: "31",
       label: "Franchises",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-orange-100",
-      iconColor: "text-orange-600",
+      iconBgColor: "bg-custom-orange-food/40",
+      iconColor: "text-custom-orange-food",
       city: "overview",
       categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
     },
@@ -91,8 +91,8 @@ export default function HomeAdminPage() {
       value: "75",
       label: "Posts publiés",
       icon: <DocumentTextIcon className="h-6 w-6" />,
-      iconBgColor: "bg-blue-100",
-      iconColor: "text-blue-600",
+      iconBgColor: "bg-custom-blue-select/40",
+      iconColor: "text-custom-blue-select",
       city: "nantes",
       categories: ["BEAUTY", "FOOD"],
     },
@@ -100,8 +100,8 @@ export default function HomeAdminPage() {
       value: "35",
       label: "Prestations Studio",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-purple-100",
-      iconColor: "text-purple-600",
+      iconBgColor: "bg-custom-purple-studio/40",
+      iconColor: "text-custom-purple-studio",
       city: "saint-brieuc",
       categories: ["SHOP", "TRAVEL"],
     },
@@ -109,8 +109,8 @@ export default function HomeAdminPage() {
       value: "190k",
       label: "Abonnés",
       icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-orange-100",
-      iconColor: "text-orange-600",
+      iconBgColor: "bg-custom-green-stats/40",
+      iconColor: "text-custom-green-stats",
       city: "nantes",
       categories: ["FUN", "BEAUTY"],
     },
@@ -118,8 +118,8 @@ export default function HomeAdminPage() {
       value: "175k",
       label: "Vues",
       icon: <EyeIcon className="h-6 w-6" />,
-      iconBgColor: "bg-green-100",
-      iconColor: "text-green-600",
+      iconBgColor: "bg-custom-rose/40",
+      iconColor: "text-custom-rose",
       city: "saint-brieuc",
       categories: ["FOOD", "SHOP"],
     },
@@ -145,19 +145,16 @@ export default function HomeAdminPage() {
       clientName: "Nom client",
       date: "12.07.2025",
       type: "Tournage",
-      color: "bg-pink-100 text-pink-800",
     },
     {
       clientName: "Nom client",
       date: "12.07.2025",
       type: "Rendez-vous",
-      color: "bg-purple-100 text-purple-800",
     },
     {
       clientName: "Nom client",
       date: "12.07.2025",
       type: "Evènement",
-      color: "bg-orange-100 text-orange-800",
     },
   ];
 
@@ -171,16 +168,14 @@ export default function HomeAdminPage() {
               <CalendarIcon className="h-5 w-5 text-gray-600" />
               <div className="flex gap-2">
                 <Button
-                  className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-0"
+                  className="bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
                   size="sm"
                 >
                   Ce mois-ci
                 </Button>
                 <Button
-                  className="border-1"
-                  color='primary'
+                  className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
                   size="sm"
-                  variant="bordered"
                 >
                   Cette année
                 </Button>
@@ -209,40 +204,12 @@ export default function HomeAdminPage() {
 
             {/* Right side - Agenda Section */}
             <div className="w-80">
-              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 lg:mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Agenda
-                  </h3>
-                  <AgendaDropdown
-                    onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                    onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                    onTournageSelect={() => setIsTournageModalOpen(true)}
-                  />
-                </div>
-                <div className="space-y-3">
-                  {agendaEvents.map((event, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {event.clientName}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {event.date}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${event.color}`}
-                      >
-                        {event.type}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <AgendaSection
+                events={agendaEvents}
+                onPublicationSelect={() => setIsPublicationModalOpen(true)}
+                onRendezVousSelect={() => setIsRdvModalOpen(true)}
+                onTournageSelect={() => setIsTournageModalOpen(true)}
+              />
             </div>
           </div>
 

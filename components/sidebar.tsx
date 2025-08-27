@@ -188,8 +188,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
       {/* Sidebar */}
       <Card className={`
-        h-full w-64 bg-white dark:bg-gray-900 rounded-none 
-        fixed md:relative z-50 md:z-auto
+        h-full w-64 bg-white  rounded-none 
+        fixed md:relative z-50 md:z-auto 
         transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `} shadow="none">
@@ -258,7 +258,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           {/* Menu Section */}
           <div className="flex-1 p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-light uppercase mb-3 text-primary-light mt-5" style={{ letterSpacing: "0.2em" }}>
               MENU
             </h3>
             {filteredMenuItems.map((item) => {
@@ -267,9 +267,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
               return (
                 <button
                   key={item.key}
-                  className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
+                  className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                     ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
+                    : "hover:bg-white "
                     }`}
                   onClick={() => handleItemClick(item)}
                 >
@@ -290,8 +290,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           {/* Settings Section */}
           <div className="p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              PARAMÈTRES
+            <h3 className="text-sm font-light uppercase mb-3 mt-8 text-primary-light" style={{ letterSpacing: "0.2em" }}>
+              PARAMÈTRES  
             </h3>
             {
               settingsItems.map((item) => {
@@ -300,9 +300,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 return (
                   <button
                     key={item.key}
-                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
+                    className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
                       ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
+                      : "hover:bg-white"
                       }`}
                     onClick={() => handleItemClick(item)}
                   >

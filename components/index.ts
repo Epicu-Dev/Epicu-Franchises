@@ -40,6 +40,7 @@ export { SortableColumnHeader } from './sortable-column-header';
 
 // Composants d'agenda
 export { AgendaDropdown } from './agenda-dropdown';
+export { AgendaSection } from './agenda-section';
 
 // Utilitaires
 export * from './primitives';

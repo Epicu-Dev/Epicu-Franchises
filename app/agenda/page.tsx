@@ -528,13 +528,7 @@ export default function AgendaPage() {
 
 
             <div className="flex items-center space-x-4">
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsRdvModalOpen(true)}
-              >
-                Créer un rendez-vous
-              </Button>
+
 
               <Button
                 color='primary'
@@ -550,6 +544,14 @@ export default function AgendaPage() {
                 onPress={() => setIsPublicationModalOpen(true)}
               >
                 Ajouter une publication
+              </Button>
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsRdvModalOpen(true)}
+              >
+                Ajouter un rendez-vous
               </Button>
             </div>
           </div>
