@@ -1386,25 +1386,25 @@ export default function TestProspects() {
               </div>
               <div className="space-y-3">
                 <h5 className="font-medium">Modifier un prospect (par id)</h5>
-                <p className="text-sm text-gray-600">Collez l'id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
+                                    <p className="text-sm text-gray-600">Collez l&apos;id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Record id (rec...)</label>
-                    <Input type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} placeholder="recXXXXXXXXXXXX" />
+                    <label htmlFor="record-id" className="text-sm font-medium">Record id (rec...)</label>
+                    <Input id="record-id" type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} placeholder="recXXXXXXXXXXXX" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Champ à mettre à jour (ex: Statut)</label>
-                    <Input type="text" onChange={() => {}} placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" disabled />
+                    <label htmlFor="champ-update" className="text-sm font-medium">Champ à mettre à jour (ex: Statut)</label>
+                    <Input id="champ-update" type="text" onChange={() => {}} placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" disabled />
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Nom de l'établissement</label>
-                    <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
+                    <label htmlFor="nom-etablissement" className="text-sm font-medium">Nom de l&apos;établissement</label>
+                    <Input id="nom-etablissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Ville EPICU</label>
-                    <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                    <label htmlFor="ville-epicu" className="text-sm font-medium">Ville EPICU</label>
+                    <Input id="ville-epicu" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                    <select id="ville-select" className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
                       const id = e.target.value;
                       if (!id) { setPVille(''); setPVilleId(''); return; }
                       const sel = villesOptions.find(v => v.id === id);
@@ -1415,9 +1415,9 @@ export default function TestProspects() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Catégorie</label>
-                    <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                    <label htmlFor="categorie" className="text-sm font-medium">Catégorie</label>
+                    <Input id="categorie" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                    <select id="categorie-select" className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
                       const id = e.target.value;
                       if (!id) { setPCategorie(''); setPCategorieId(''); return; }
                       const sel = categoriesOptions.find(c => c.id === id);
@@ -1428,16 +1428,16 @@ export default function TestProspects() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Statut</label>
-                    <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
+                    <label htmlFor="statut" className="text-sm font-medium">Statut</label>
+                    <Input id="statut" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Date de relance</label>
-                    <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                    <label htmlFor="date-relance" className="text-sm font-medium">Date de relance</label>
+                    <Input id="date-relance" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Commentaires</label>
-                    <Textarea rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                    <label htmlFor="commentaires" className="text-sm font-medium">Commentaires</label>
+                    <Textarea id="commentaires" rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
                   </div>
                 </div>
                 {pUpdateError && <div className="text-red-500 text-sm">{pUpdateError}</div>}
@@ -1546,20 +1546,20 @@ export default function TestProspects() {
                       <h4 className="font-semibold text-gray-900">Créer un prospect (test)</h4>
                     </div>
                     <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L'id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
+                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L&apos;id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">SIRET</label>
-                          <Input type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} placeholder="SIRET" />
+                          <label htmlFor="siret" className="text-sm font-medium">SIRET</label>
+                          <Input id="siret" type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} placeholder="SIRET" />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Nom de l'établissement</label>
-                          <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} placeholder="Nom établissement" />
+                          <label htmlFor="nom-etablissement-create" className="text-sm font-medium">Nom de l&apos;établissement</label>
+                          <Input id="nom-etablissement-create" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} placeholder="Nom établissement" />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Ville EPICU</label>
-                          <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} placeholder="Rechercher une ville…" />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                          <label htmlFor="ville-epicu-create" className="text-sm font-medium">Ville EPICU</label>
+                          <Input id="ville-epicu-create" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} placeholder="Rechercher une ville…" />
+                          <select id="ville-select-create" className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
                             const id = e.target.value;
                             if (!id) { setPVille(''); setPVilleId(''); return; }
                             const sel = villesOptions.find(v => v.id === id);
@@ -1570,13 +1570,13 @@ export default function TestProspects() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Téléphone</label>
-                          <Input type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} placeholder="Téléphone" />
+                          <label htmlFor="telephone" className="text-sm font-medium">Téléphone</label>
+                          <Input id="telephone" type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} placeholder="Téléphone" />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Catégorie</label>
-                          <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} placeholder="Rechercher une catégorie…" />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                          <label htmlFor="categorie-create" className="text-sm font-medium">Catégorie</label>
+                          <Input id="categorie-create" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} placeholder="Rechercher une catégorie…" />
+                          <select id="categorie-select-create" className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
                             const id = e.target.value;
                             if (!id) { setPCategorie(''); setPCategorieId(''); return; }
                             const sel = categoriesOptions.find(c => c.id === id);
@@ -1587,24 +1587,24 @@ export default function TestProspects() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Statut</label>
-                          <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} placeholder="Statut" />
+                          <label htmlFor="statut-create" className="text-sm font-medium">Statut</label>
+                          <Input id="statut-create" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} placeholder="Statut" />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Date du premier contact</label>
-                          <Input type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
+                          <label htmlFor="date-premier" className="text-sm font-medium">Date du premier contact</label>
+                          <Input id="date-premier" type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Date de relance</label>
-                          <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                          <label htmlFor="date-relance-create" className="text-sm font-medium">Date de relance</label>
+                          <Input id="date-relance-create" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-2">
                           <input id="jeRencontreMain" type="checkbox" checked={pJeRencontre} onChange={(e) => setPJeRencontre(e.target.checked)} />
                           <label htmlFor="jeRencontreMain" className="text-sm">Je viens de le rencontrer</label>
                         </div>
                         <div className="flex flex-col gap-1 md:col-span-2">
-                          <label className="text-sm font-medium">Commentaires</label>
-                          <Textarea rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                          <label htmlFor="commentaires-create" className="text-sm font-medium">Commentaires</label>
+                          <Textarea id="commentaires-create" rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
                         </div>
                       </div>
                       {pCreateError && <div className="text-red-500 text-sm">{pCreateError}</div>}
