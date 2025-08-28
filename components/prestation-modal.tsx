@@ -209,7 +209,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
       onOpenChange={handleClose}
     >
       <ModalContent>
-        <ModalHeader>Nouvelle demande du studio ! 🚀</ModalHeader>
+        <ModalHeader className="flex justify-center">Nouvelle demande du studio ! 🚀</ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">

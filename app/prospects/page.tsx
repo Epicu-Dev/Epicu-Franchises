@@ -394,7 +394,7 @@ export default function ProspectsPage() {
                   input:
                     "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                   inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                 }}
                 endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
@@ -630,7 +630,7 @@ export default function ProspectsPage() {
       {/* Modal de confirmation de conversion */}
       <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
         <ModalContent>
-          <ModalHeader>Confirmer la conversion</ModalHeader>
+          <ModalHeader className="flex justify-center">Confirmer la conversion</ModalHeader>
           <ModalBody>
             <div className="space-y-4 text-primary">
               <div className="flex items-center space-x-3">
@@ -660,6 +660,8 @@ export default function ProspectsPage() {
                     <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
                     <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
                     <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
+                     {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
+                    {prospectToConvert.adresse && <p><strong>Adresse :</strong> {prospectToConvert.adresse}</p>}
                   </div>
                 </div>
               )}

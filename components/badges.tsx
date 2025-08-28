@@ -25,7 +25,7 @@ export const getCategoryBadgeColor = (category: string) => {
     } else if (categoryLower.includes('shop') || categoryLower.includes('boutique') || categoryLower.includes('magasin')) {
         return "bg-custom-purple-shop/10 text-custom-purple-shop";
     } else if (categoryLower.includes('travel') || categoryLower.includes('hôtel') || categoryLower.includes('voyage')) {
-        return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
+        return "bg-custom-green-travel/10 text-custom-green-travel";
     } else if (categoryLower.includes('fun') || categoryLower.includes('loisir') || categoryLower.includes('divertissement')) {
         return "bg-custom-green-travel/10 text-custom-green-travel";
     } else if (categoryLower.includes('beauty') || categoryLower.includes('beauté') || categoryLower.includes('esthétique')) {
@@ -62,7 +62,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-6 py-1 text-xs font-light rounded  ${getCategoryBadgeColor(category)} ${className}`}
+            className={`px-3 py-1 text-xs font-light rounded  ${getCategoryBadgeColor(category)} ${className}`}
         >
             {category}
         </span>
@@ -81,7 +81,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-6 py-1 text-xs font-light rounded ${getStatusBadgeColor(status)} ${className}`}
+            className={`px-3 py-1 text-xs font-light rounded ${getStatusBadgeColor(status)} ${className}`}
         >
             {status}
         </span>
@@ -100,7 +100,7 @@ export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
 }) => {
     return (
         <span
-            className={`px-6 py-1 text-xs font-light rounded ${getInvoiceStatusBadgeColor(status)} ${className}`}
+            className={`px-3 py-1 text-xs font-light rounded ${getInvoiceStatusBadgeColor(status)} ${className}`}
         >
             {status}
         </span>
@@ -121,7 +121,7 @@ export const Badge: React.FC<BadgeProps> = ({
     className = "",
     rounded = 'rounded'
 }) => {
-    let baseClasses = "px-2 py-1 text-xs font-light";
+    let baseClasses = "px-3 py-1 text-xs font-light";
 
     if (variant === 'category') {
         baseClasses += ` ${getCategoryBadgeColor(text)} border`;
@@ -165,7 +165,7 @@ export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
 
     return (
         <span
-            className={`px-6 py-1 rounded text-xs font-light ml-2 flex-shrink-0 ${getAgendaBadgeColor(type)} ${className}`}
+            className={`px-3 py-1 rounded text-xs font-light ml-2 flex-shrink-0 ${getAgendaBadgeColor(type)} ${className}`}
         >
             {type}
         </span>

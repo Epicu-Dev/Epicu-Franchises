@@ -319,6 +319,7 @@ export default function ProfilPage() {
                       <Input
                         classNames={{
                           input: "text-primary-light/20 placeholder:text-primary-light/20",
+                          inputWrapper: "bg-page-bg",
                         }}
                         id="identifier"
                         isReadOnly={!isEditing}
@@ -334,6 +335,7 @@ export default function ProfilPage() {
                       <Input
                         classNames={{
                           input: "text-primary-light/20 placeholder:text-primary-light/20",
+                          inputWrapper: "bg-page-bg",
                         }}
                         id="password"
                         isReadOnly={!isEditing}
@@ -351,7 +353,7 @@ export default function ProfilPage() {
                         isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
                         id="lastName"
@@ -370,7 +372,7 @@ export default function ProfilPage() {
                         isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
                         id="firstName"
@@ -389,7 +391,7 @@ export default function ProfilPage() {
                         isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
                         id="email"
@@ -409,7 +411,7 @@ export default function ProfilPage() {
                         isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
                         id="phone"
@@ -428,7 +430,7 @@ export default function ProfilPage() {
                         isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
                         id="role"

@@ -75,7 +75,7 @@ export default function ClientModal({
             onOpenChange={onOpenChange}
         >
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-1">
+                <ModalHeader className="flex justify-center">
                     Modifier le client
                 </ModalHeader>
 

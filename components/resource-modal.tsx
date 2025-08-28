@@ -50,7 +50,7 @@ export default function ResourceModal({
     <Modal isOpen={isOpen} size="lg" onClose={onClose}>
       <ModalContent>
         <form onSubmit={handleSubmit}>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex justify-center">
             {mode === "create" ? "Ajouter un document" : "Modifier le document"}
           </ModalHeader>
           <ModalBody>

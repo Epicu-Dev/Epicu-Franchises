@@ -28,6 +28,8 @@ interface Prospect {
   dateRelance: string;
   vientDeRencontrer: boolean;
   commentaire: string;
+  email?: string;
+  adresse?: string;
 }
 
 interface ProspectModalProps {
@@ -59,6 +61,8 @@ export function ProspectModal({
     dateRelance: "",
     vientDeRencontrer: false,
     commentaire: "",
+    email: "",
+    adresse: "",
   });
 
   // Initialiser le formulaire avec les données du prospect à éditer
@@ -78,6 +82,8 @@ export function ProspectModal({
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
+        email: "",
+        adresse: "",
       });
     }
     setError(null);
@@ -147,7 +153,7 @@ export function ProspectModal({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
@@ -168,6 +174,8 @@ export function ProspectModal({
         'Date de relance': newProspect.dateRelance,
         'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
         'Commentaires': newProspect.commentaire,
+        'Email': newProspect.email,
+        'Adresse': newProspect.adresse,
       };
 
 
@@ -211,6 +219,8 @@ export function ProspectModal({
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
+        email: "",
+        adresse: "",
       });
       setError(null);
       setFieldErrors({});
@@ -237,6 +247,8 @@ export function ProspectModal({
       dateRelance: "",
       vientDeRencontrer: false,
       commentaire: "",
+      email: "",
+      adresse: "",
     });
     onClose();
   };
@@ -249,7 +261,7 @@ export function ProspectModal({
       onOpenChange={handleClose}
     >
       <ModalContent>
-        <ModalHeader>
+        <ModalHeader className="flex justify-center">
           {isEditing ? 'Modifier le prospect' : 'Ajouter un nouveau prospect'}
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
@@ -432,6 +444,37 @@ export function ProspectModal({
                 }))
               }
             />
+            
+            <FormLabel htmlFor="email" isRequired={false}>
+              Email
+            </FormLabel>
+            <Input
+              id="email"
+              placeholder="contact@etablissement.fr"
+              type="email"
+              value={newProspect.email || ""}
+              onChange={(e) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  email: e.target.value,
+                }))
+              }
+            />
+            
+            <FormLabel htmlFor="adresse" isRequired={false}>
+              Adresse
+            </FormLabel>
+            <Textarea
+              id="adresse"
+              placeholder="123 Rue de l'établissement, 75001 Ville"
+              value={newProspect.adresse || ""}
+              onChange={(e) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  adresse: e.target.value,
+                }))
+              }
+            />
           </div>
         </ModalBody>
         <ModalFooter className="flex flex-col gap-3">
@@ -444,10 +487,10 @@ export function ProspectModal({
             </div>
           )}
           <div className="flex justify-end gap-2 w-full">
-            <Button 
-              className="flex-1 border-1" 
-              color='primary' 
-              isDisabled={isLoading} 
+            <Button
+              className="flex-1 border-1"
+              color='primary'
+              isDisabled={isLoading}
               variant="bordered"
               onPress={handleClose}
             >

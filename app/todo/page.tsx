@@ -429,7 +429,7 @@ export default function TodoPage() {
       {/* Modal d'ajout de tâche */}
       <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <ModalContent>
-          <ModalHeader>Ajouter une nouvelle tâche</ModalHeader>
+          <ModalHeader className="flex justify-center">Ajouter une nouvelle tâche</ModalHeader>
           <ModalBody>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -453,6 +453,9 @@ export default function TodoPage() {
                 id="name"
                 isInvalid={!!fieldErrors.name}
                 placeholder="Titre de la tâche"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.name}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -474,6 +477,9 @@ export default function TodoPage() {
                 id="dueDate"
                 isInvalid={!!fieldErrors.dueDate}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.dueDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -517,7 +523,7 @@ export default function TodoPage() {
       {/* Modal de confirmation de suppression */}
       <Modal isOpen={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <ModalContent>
-          <ModalHeader>Confirmer la suppression</ModalHeader>
+          <ModalHeader className="flex justify-center">Confirmer la suppression</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}

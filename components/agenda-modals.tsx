@@ -398,72 +398,81 @@ export function AgendaModals({
       {/* Modal Ajouter un tournage */}
       <Modal isOpen={isTournageModalOpen} onOpenChange={setIsTournageModalOpen}>
         <ModalContent>
-          <ModalHeader>Ajouter un tournage</ModalHeader>
+          <ModalHeader className="flex justify-center">Ajouter un tournage</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <FormLabel htmlFor="establishmentName" isRequired={true}>
                 Nom de l&apos;établissement
               </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors['tournage.establishmentName']}
-                id="establishmentName"
-                isInvalid={!!fieldErrors['tournage.establishmentName']}
-                placeholder="Nom de l'établissement"
-                value={newTournage.establishmentName}
-                onChange={(e) => {
-                  const value = e.target.value;
+                              <Input
+                  isRequired
+                  errorMessage={fieldErrors['tournage.establishmentName']}
+                  id="establishmentName"
+                  isInvalid={!!fieldErrors['tournage.establishmentName']}
+                  placeholder="Nom de l'établissement"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newTournage.establishmentName}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setNewTournage((prev) => ({
-                    ...prev,
-                    establishmentName: value,
-                  }));
-                  validateField('establishmentName', value, 'tournage');
-                }}
-              />
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      establishmentName: value,
+                    }));
+                    validateField('establishmentName', value, 'tournage');
+                  }}
+                />
 
 
               <FormLabel htmlFor="publicationDate" isRequired={true}>
                 Date de la publication
               </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors['tournage.publicationDate']}
-                id="publicationDate"
-                isInvalid={!!fieldErrors['tournage.publicationDate']}
-                type="date"
-                value={newTournage.publicationDate}
-                onChange={(e) => {
-                  const value = e.target.value;
+                              <Input
+                  isRequired
+                  errorMessage={fieldErrors['tournage.publicationDate']}
+                  id="publicationDate"
+                  isInvalid={!!fieldErrors['tournage.publicationDate']}
+                  type="date"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newTournage.publicationDate}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setNewTournage((prev) => ({
-                    ...prev,
-                    publicationDate: value,
-                  }));
-                  validateField('publicationDate', value, 'tournage');
-                }}
-              />
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      publicationDate: value,
+                    }));
+                    validateField('publicationDate', value, 'tournage');
+                  }}
+                />
 
               <FormLabel htmlFor="shootingDate" isRequired={true}>
                 Date du tournage
               </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors['tournage.shootingDate']}
-                id="shootingDate"
-                isInvalid={!!fieldErrors['tournage.shootingDate']}
-                type="date"
-                value={newTournage.shootingDate}
-                onChange={(e) => {
-                  const value = e.target.value;
+                              <Input
+                  isRequired
+                  errorMessage={fieldErrors['tournage.shootingDate']}
+                  id="shootingDate"
+                  isInvalid={!!fieldErrors['tournage.shootingDate']}
+                  type="date"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newTournage.shootingDate}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setNewTournage((prev) => ({
-                    ...prev,
-                    shootingDate: value,
-                  }));
-                  validateField('shootingDate', value, 'tournage');
-                }}
-              />
+                    setNewTournage((prev) => ({
+                      ...prev,
+                      shootingDate: value,
+                    }));
+                    validateField('shootingDate', value, 'tournage');
+                  }}
+                />
 
 
               <div className="space-y-2">
@@ -522,49 +531,55 @@ export function AgendaModals({
         onOpenChange={setIsPublicationModalOpen}
       >
         <ModalContent>
-          <ModalHeader>Ajouter une publication</ModalHeader>
+          <ModalHeader className="flex justify-center">Ajouter une publication</ModalHeader>
           <ModalBody className="max-h-[70vh] overflow-y-auto">
             <div className="space-y-4">
               <FormLabel htmlFor="categoryName" isRequired={true}>
                 Nom catégorie
               </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors['publication.categoryName']}
-                id="categoryName"
-                isInvalid={!!fieldErrors['publication.categoryName']}
-                placeholder="FOOD"
-                value={newPublication.categoryName}
-                onChange={(e) => {
-                  const value = e.target.value;
+                              <Input
+                  isRequired
+                  errorMessage={fieldErrors['publication.categoryName']}
+                  id="categoryName"
+                  isInvalid={!!fieldErrors['publication.categoryName']}
+                  placeholder="FOOD"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newPublication.categoryName}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setNewPublication((prev) => ({
-                    ...prev,
-                    categoryName: value,
-                  }));
-                  validateField('categoryName', value, 'publication');
-                }}
-              />
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      categoryName: value,
+                    }));
+                    validateField('categoryName', value, 'publication');
+                  }}
+                />
               <FormLabel htmlFor="establishmentName" isRequired={true}>
                 Nom établissement
               </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors['publication.establishmentName']}
-                id="establishmentName"
-                isInvalid={!!fieldErrors['publication.establishmentName']}
-                placeholder="Nom de l'établissement"
-                value={newPublication.establishmentName}
-                onChange={(e) => {
-                  const value = e.target.value;
+                              <Input
+                  isRequired
+                  errorMessage={fieldErrors['publication.establishmentName']}
+                  id="establishmentName"
+                  isInvalid={!!fieldErrors['publication.establishmentName']}
+                  placeholder="Nom de l'établissement"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newPublication.establishmentName}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setNewPublication((prev) => ({
-                    ...prev,
-                    establishmentName: value,
-                  }));
-                  validateField('establishmentName', value, 'publication');
-                }}
-              />
+                    setNewPublication((prev) => ({
+                      ...prev,
+                      establishmentName: value,
+                    }));
+                    validateField('establishmentName', value, 'publication');
+                  }}
+                />
 
               <Input
                 isRequired
@@ -592,6 +607,9 @@ export function AgendaModals({
                 id="shootingDate"
                 isInvalid={!!fieldErrors['publication.shootingDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.shootingDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -607,6 +625,9 @@ export function AgendaModals({
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     type="time"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newPublication.shootingStartTime}
                     onChange={(e) => {
                       const startTime = e.target.value;
@@ -621,6 +642,9 @@ export function AgendaModals({
                   />
                   <Input
                     type="time"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newPublication.shootingEndTime}
                     onChange={(e) =>
                       setNewPublication((prev) => ({
@@ -640,6 +664,9 @@ export function AgendaModals({
                 id="publicationDate"
                 isInvalid={!!fieldErrors['publication.publicationDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.publicationDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -658,6 +685,9 @@ export function AgendaModals({
                 <Input
                   isRequired
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newPublication.publicationStartTime}
                   onChange={(e) => {
                     const startTime = e.target.value;
@@ -673,6 +703,9 @@ export function AgendaModals({
                 <Input
                   isRequired
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newPublication.publicationEndTime}
                   onChange={(e) =>
                     setNewPublication((prev) => ({
@@ -690,6 +723,9 @@ export function AgendaModals({
                 isRequired
                 id="winner"
                 placeholder="Nom Prénom"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.winner}
                 onChange={(e) =>
                   setNewPublication((prev) => ({
@@ -737,7 +773,7 @@ export function AgendaModals({
       {/* Modal Créer un rendez-vous */}
       <Modal isOpen={isRdvModalOpen} onOpenChange={setIsRdvModalOpen}>
         <ModalContent>
-          <ModalHeader>Créer un rendez-vous</ModalHeader>
+          <ModalHeader className="flex justify-center">Créer un rendez-vous</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <FormLabel htmlFor="categoryName" isRequired={true}>
@@ -749,6 +785,9 @@ export function AgendaModals({
                 id="categoryName"
                 isInvalid={!!fieldErrors['rdv.categoryName']}
                 placeholder="FOOD"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.categoryName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -769,6 +808,9 @@ export function AgendaModals({
                 id="establishmentName"
                 isInvalid={!!fieldErrors['rdv.establishmentName']}
                 placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -790,6 +832,9 @@ export function AgendaModals({
                 id="appointmentType"
                 isInvalid={!!fieldErrors['rdv.appointmentType']}
                 placeholder="Fidélisation"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.appointmentType}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -811,6 +856,9 @@ export function AgendaModals({
                 id="appointmentDate"
                 isInvalid={!!fieldErrors['rdv.appointmentDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.appointmentDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -828,6 +876,9 @@ export function AgendaModals({
                   isRequired
                   id="startTime"
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newRdv.startTime}
                   onChange={(e) => {
                     const startTime = e.target.value;
@@ -845,6 +896,9 @@ export function AgendaModals({
                   isRequired
                   id="endTime"
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newRdv.endTime}
                   onChange={(e) =>
                     setNewRdv((prev) => ({

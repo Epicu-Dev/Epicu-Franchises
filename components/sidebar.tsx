@@ -108,7 +108,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
-    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise", "admin"] },
+
   ];
 
   // Filtrer les éléments du menu selon le rôle de l'utilisateur

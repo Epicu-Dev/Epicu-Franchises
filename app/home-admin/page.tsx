@@ -21,12 +21,9 @@ import {
   ShoppingCartIcon,
   CalendarIcon,
   DocumentTextIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardBody } from "@heroui/card";
-import { Spinner } from "@heroui/spinner";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 
 import { DashboardLayout } from "../dashboard-layout";
@@ -39,16 +36,6 @@ import { StyledSelect } from "@/components/styled-select";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-
-// Types pour les données réelles
-type AgendaEvent = {
-  id: string;
-  task: string;
-  date: string;
-  type: string;
-  description?: string;
-  collaborators?: string[];
-};
 
 export default function HomeAdminPage() {
   const { userProfile } = useUser();
@@ -75,14 +62,9 @@ export default function HomeAdminPage() {
   });
 
   // États pour les modals d'agenda
-  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
-  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
   // États pour les données dynamiques
-  const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [agendaLoading, setAgendaLoading] = useState(false);
 
   // Mettre à jour le profil utilisateur chargé
   useEffect(() => {
@@ -91,66 +73,7 @@ export default function HomeAdminPage() {
     }
   }, [userProfile, setUserProfileLoaded]);
 
-  // Fonction pour récupérer les données agenda
-  const fetchAgenda = async () => {
-    try {
-      setAgendaLoading(true);
-
-      // Récupérer l'ID du collaborateur
-      const meRes = await authFetch('/api/auth/me');
-
-      if (!meRes.ok) return;
-      const me = await meRes.json();
-      const collaboratorId = me.id as string;
-
-      // Calculer la plage de dates pour le mois sélectionné
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
-      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
-
-      // Récupérer les événements d'agenda
-      const params = new URLSearchParams();
-
-      if (collaboratorId) params.set('collaborator', collaboratorId);
-      params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
-      params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
-      params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
-
-      const eventsResponse = await authFetch(`/api/agenda?${params.toString()}`);
-
-      if (eventsResponse.ok) {
-        const eventsData = await eventsResponse.json();
-
-        setEvents(eventsData.events || []);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la récupération de l\'agenda:', error);
-      setEvents([]);
-    } finally {
-      setAgendaLoading(false);
-    }
-  };
-
-  // Effet pour charger les données au montage du composant
-  useEffect(() => {
-    fetchAgenda();
-  }, []);
-
-  // Effet pour recharger agenda quand la date change
-  useEffect(() => {
-    fetchAgenda();
-  }, [selectedDate]);
-
   // Transformation des événements pour l'affichage
-  const agendaEvents = useMemo(() => {
-    return events.slice(0, 3).map(event => ({
-      clientName: event.task || "Nom client",
-      date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
-      type: event.type === "rendez-vous" ? "Rendez-vous" :
-        event.type === "tournage" ? "Tournage" :
-          event.type === "publication" ? "Publication" : "Evènement",
-    }));
-  }, [events]);
 
   const getMetricsForPeriod = (period: "month" | "year") => {
     const monthMetrics = [
@@ -366,7 +289,7 @@ export default function HomeAdminPage() {
             </Button>
           </div>
 
-         
+
           {/* Main Layout - Metrics Grid on left, Agenda on right */}
           <div className="flex flex-row gap-6">
             {/* Left side - 4x2 Metrics Grid */}
@@ -384,17 +307,6 @@ export default function HomeAdminPage() {
                 ))}
               </div>
             </div>
-
-            {/* Right side - Agenda Section */}
-            <div className="w-80">
-              <AgendaSection
-                events={agendaEvents}
-                loading={agendaLoading}
-                onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                onTournageSelect={() => setIsTournageModalOpen(true)}
-              />
-            </div>
           </div>
 
           {/* Modal d'ajout de prospect */}
@@ -403,7 +315,7 @@ export default function HomeAdminPage() {
             onOpenChange={setIsAddProspectModalOpen}
           >
             <ModalContent>
-              <ModalHeader className="flex flex-col gap-1">
+              <ModalHeader className="flex flex-col gap-1 justify-center items-center text-center w-full">
                 Ajouter un nouveau prospect
               </ModalHeader>
               <ModalBody>
@@ -437,6 +349,9 @@ export default function HomeAdminPage() {
                     }
                   />
                   <Input
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     label="Adresse"
                     placeholder="123 Rue de la Paix, 75001 Paris"
                     value={newProspect.adresse}
@@ -524,22 +439,11 @@ export default function HomeAdminPage() {
             </ModalContent>
           </Modal>
 
-          {/* Modals d'agenda */}
-          <AgendaModals
-            isPublicationModalOpen={isPublicationModalOpen}
-            isRdvModalOpen={isRdvModalOpen}
-            isTournageModalOpen={isTournageModalOpen}
-            setIsPublicationModalOpen={setIsPublicationModalOpen}
-            setIsRdvModalOpen={setIsRdvModalOpen}
-            setIsTournageModalOpen={setIsTournageModalOpen}
-            onEventAdded={fetchAgenda}
-          />
-
           {/* Modal d'événement */}
           <EventModal
             isOpen={isEventModalOpen}
+            onEventAdded={() => { }}
             onOpenChange={setIsEventModalOpen}
-            onEventAdded={fetchAgenda}
           />
         </CardBody>
       </Card>

@@ -21,6 +21,7 @@ import {
   PencilIcon,
   Squares2X2Icon,
   XMarkIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
@@ -33,6 +34,14 @@ interface TeamMember {
   location: string;
   avatar: string;
   category: "siege" | "franchise" | "prestataire";
+  city: string;
+  firstName: string;
+  lastName: string;
+  identifier: string;
+  password: string;
+  birthDate: string;
+  personalEmail: string;
+  franchiseEmail: string;
 }
 
 interface AdminTeamMember {
@@ -58,7 +67,6 @@ interface Collaborateur {
 
 export default function EquipePage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [adminMembers, setAdminMembers] = useState<AdminTeamMember[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -163,136 +171,102 @@ export default function EquipePage() {
     try {
       setLoading(true);
 
-      if (viewMode === "grid") {
-        const params = new URLSearchParams({
-          limit: "100", // Récupérer plus de collaborateurs
-          offset: "0",
-        });
+      const params = new URLSearchParams({
+        limit: "100", // Récupérer plus de collaborateurs
+        offset: "0",
+      });
 
-        if (searchTerm) {
-          params.set('q', searchTerm);
-        }
-
-        const response = await authFetch(`/api/collaborateurs?${params}`);
-
-        if (!response.ok) {
-          throw new Error(
-            "Erreur lors de la récupération des membres de l'équipe"
-          );
-        }
-
-        const data = await response.json();
-        const collaborateurs: Collaborateur[] = data.results || [];
-
-        // Transformer les données de l'API en format TeamMember
-        const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
-          // Déterminer la catégorie basée sur les villes ou l'index
-          let category: "siege" | "franchise" | "prestataire" = "siege";
-
-          if (index >= 10 && index < 25) category = "franchise";
-          else if (index >= 25) category = "prestataire";
-
-          // Déterminer le rôle basé sur la catégorie
-          let role = "Collaborateur";
-
-          if (category === "siege") role = "Collaborateur Siège";
-          else if (category === "franchise") role = "Franchisé";
-          else if (category === "prestataire") role = "Prestataire";
-
-          // Déterminer la localisation
-          let location = "Siège";
-
-          if (category === "franchise" || category === "prestataire") {
-            location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-          }
-
-          return {
-            id: collab.id,
-            name: collab.nomComplet || `Collaborateur ${index + 1}`,
-            role,
-            location,
-            avatar: `/api/placeholder/150/150`,
-            category,
-          };
-        });
-
-        // Filtrer par catégorie si sélectionnée
-        let filteredMembers = transformedMembers;
-
-        if (selectedCategory && selectedCategory !== "tout") {
-          filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
-        }
-
-        setMembers(filteredMembers);
-      } else {
-        // Utiliser l'API des collaborateurs pour la vue tableau aussi
-        const params = new URLSearchParams({
-          limit: "100",
-          offset: "0",
-        });
-
-        if (searchTerm) {
-          params.set('q', searchTerm);
-        }
-
-        const response = await authFetch(`/api/collaborateurs?${params}`);
-
-        if (!response.ok) {
-          throw new Error(
-            "Erreur lors de la récupération des collaborateurs"
-          );
-        }
-
-        const data = await response.json();
-        const collaborateurs: Collaborateur[] = data.results || [];
-
-        // Transformer les données de l'API en format AdminTeamMember
-        const transformedAdminMembers: AdminTeamMember[] = collaborateurs.map((collab, index) => {
-          // Extraire le prénom et nom du nom complet
-          const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
-          const nameParts = nomComplet.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
-          // Déterminer la ville (première ville de la liste ou ville par défaut)
-          const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-
-          // Générer un identifiant basé sur le nom
-          const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
-
-          // Générer un mot de passe temporaire
-          const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-          // Date de naissance par défaut (peut être modifiée plus tard)
-          const birthDate = "01.01.1990";
-
-          // Générer des emails basés sur le nom et la ville
-          const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-          const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
-
-          return {
-            id: collab.id,
-            city,
-            firstName,
-            lastName,
-            identifier,
-            password,
-            birthDate,
-            personalEmail,
-            franchiseEmail,
-          };
-        });
-
-        setAdminMembers(transformedAdminMembers);
+      if (searchTerm) {
+        params.set('q', searchTerm);
       }
+
+      const response = await authFetch(`/api/collaborateurs?${params}`);
+
+      if (!response.ok) {
+        throw new Error(
+          "Erreur lors de la récupération des membres de l'équipe"
+        );
+      }
+
+      const data = await response.json();
+      const collaborateurs: Collaborateur[] = data.results || [];
+
+      // Transformer les données de l'API en format TeamMember
+      const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
+        // Déterminer la catégorie basée sur les villes ou l'index
+        let category: "siege" | "franchise" | "prestataire" = "siege";
+
+        if (index >= 10 && index < 25) category = "franchise";
+        else if (index >= 25) category = "prestataire";
+
+        // Déterminer le rôle basé sur la catégorie
+        let role = "Collaborateur";
+
+        if (category === "siege") role = "Collaborateur Siège";
+        else if (category === "franchise") role = "Franchisé";
+        else if (category === "prestataire") role = "Prestataire";
+
+        // Déterminer la localisation
+        let location = "Siège";
+
+        if (category === "franchise" || category === "prestataire") {
+          location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+        }
+
+        // Extraire le prénom et nom du nom complet
+        const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
+        const nameParts = nomComplet.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Déterminer la ville (première ville de la liste ou ville par défaut)
+        const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+
+        // Générer un identifiant basé sur le nom
+        const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
+
+        // Générer un mot de passe temporaire
+        const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+        // Date de naissance par défaut (peut être modifiée plus tard)
+        const birthDate = "01.01.1990";
+
+        // Générer des emails basés sur le nom et la ville
+        const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
+        const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+
+
+        return {
+          id: collab.id,
+          name: collab.nomComplet || `Collaborateur ${index + 1}`,
+          role,
+          location,
+          avatar: `/api/placeholder/150/150`,
+          category,
+          city,
+          firstName,
+          lastName,
+          identifier,
+          password,
+          birthDate,
+          personalEmail,
+          franchiseEmail,
+        };
+      });
+
+      // Filtrer par catégorie si sélectionnée
+      let filteredMembers = transformedMembers;
+
+      if (selectedCategory && selectedCategory !== "tout") {
+        filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+      }
+
+      setMembers(filteredMembers);
+
     } catch (error) {
       console.error('Erreur lors de la récupération des membres:', error);
       // En cas d'erreur, on garde les données existantes ou on vide la liste
-      if (viewMode === "grid") {
-        setMembers([]);
-      } else {
-        setAdminMembers([]);
-      }
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -325,6 +299,15 @@ export default function EquipePage() {
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
           <div className="flex justify-between items-center mb-6">
+            <Button
+              isIconOnly
+              className="text-gray-600 hover:text-gray-800"
+              variant="light"
+              onClick={handleViewModeToggle}
+            >
+              {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
+
+            </Button>
             {viewMode === "grid" ? (
               <Tabs
                 className="w-full pt-3"
@@ -353,7 +336,7 @@ export default function EquipePage() {
                     input:
                       "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                     inputWrapper:
-                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
                   endContent={
                     searchTerm && (
@@ -367,15 +350,14 @@ export default function EquipePage() {
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
-
               <Button
-                isIconOnly
-                className="text-gray-600 hover:text-gray-800"
-                variant="light"
-                onClick={handleViewModeToggle}
-              >
-                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => {
 
+                }}
+              >
+                Ajouter un membre
               </Button>
             </div>
           </div>
@@ -428,6 +410,7 @@ export default function EquipePage() {
                     <TableHeader>
                       <TableColumn className="font-light text-sm">Modifier</TableColumn>
                       <TableColumn className="font-light text-sm">Ville</TableColumn>
+                      <TableColumn className="font-light text-sm">Rôle</TableColumn>
                       <TableColumn className="font-light text-sm">Prénom</TableColumn>
                       <TableColumn className="font-light text-sm">Nom</TableColumn>
                       <TableColumn className="font-light text-sm">Identifiant</TableColumn>
@@ -437,7 +420,7 @@ export default function EquipePage() {
                       <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
                     </TableHeader>
                     <TableBody>
-                      {adminMembers.map((member) => (
+                      {members.map((member) => (
                         <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
                           <TableCell className="py-5 font-light">
                             <Tooltip content="Modifier">
@@ -455,6 +438,11 @@ export default function EquipePage() {
                           <TableCell className="font-light">
 
                             {member.city}
+                          </TableCell>
+                          <TableCell className="font-light">
+                            <span className="font-light">
+                              {member.role}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <span className="font-light">
@@ -509,7 +497,7 @@ export default function EquipePage() {
 
           {/* Message si aucun résultat */}
           {!loading && ((viewMode === "grid" && members.length === 0) ||
-            (viewMode === "table" && adminMembers.length === 0)) &&
+            (viewMode === "table" && members.length === 0)) &&
             searchTerm && (
               <div className="text-center py-12">
                 <div className="text-gray-500 dark:text-gray-400">
