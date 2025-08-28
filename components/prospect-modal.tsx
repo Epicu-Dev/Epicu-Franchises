@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 
@@ -21,15 +22,12 @@ interface Prospect {
   nomEtablissement: string;
   ville: string;
   telephone: string;
-  categorie: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
-  statut: "a_contacter" | "en_discussion" | "glacial";
+  categorie: string;
+  statut: string;
   datePremierRendezVous: string;
   dateRelance: string;
   vientDeRencontrer: boolean;
   commentaire: string;
-  suiviPar: string;
-  email?: string;
-  adresse?: string;
 }
 
 interface ProspectModalProps {
@@ -40,29 +38,27 @@ interface ProspectModalProps {
   isEditing?: boolean;
 }
 
-export function ProspectModal({ 
-  isOpen, 
-  onClose, 
-  onProspectAdded, 
+export function ProspectModal({
+  isOpen,
+  onClose,
+  onProspectAdded,
   editingProspect = null,
-  isEditing = false 
+  isEditing = false
 }: ProspectModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [newProspect, setNewProspect] = useState<Prospect>({
     siret: "",
     nomEtablissement: "",
     ville: "",
     telephone: "",
-    categorie: "FOOD" as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
-    statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+    categorie: "",
+    statut: "",
     datePremierRendezVous: "",
     dateRelance: "",
     vientDeRencontrer: false,
     commentaire: "",
-    suiviPar: "",
-    email: "",
-    adresse: "",
   });
 
   // Initialiser le formulaire avec les données du prospect à éditer
@@ -76,15 +72,12 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie: "FOOD" as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
-        statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+        categorie: "FOOD",
+        statut: "a_contacter",
         datePremierRendezVous: "",
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
-        suiviPar: "",
-        email: "",
-        adresse: "",
       });
     }
     setError(null);
@@ -152,28 +145,57 @@ export function ProspectModal({
 
   const handleSubmit = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+      
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+        setIsLoading(false);
+
         return;
       }
 
-      const url = isEditing && newProspect.id 
-        ? `/api/prospects/${newProspect.id}`
-        : "/api/prospects";
-      
-      const method = isEditing ? "PUT" : "POST";
+      // Adapter les données pour l'API Airtable
+      const prospectData: Record<string, any> = {
+        'SIRET': newProspect.siret,
+        "Nom de l'établissement": newProspect.nomEtablissement,
+        'Ville EPICU': newProspect.ville,
+        'Téléphone': newProspect.telephone,
+        'Catégorie': newProspect.categorie,
+        'Statut': newProspect.statut,
+        'Date du premier contact': newProspect.datePremierRendezVous,
+        'Date de relance': newProspect.dateRelance,
+        'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
+        'Commentaires': newProspect.commentaire,
+      };
+
+
+
+      let url: string;
+      let method: string;
+
+      if (isEditing && newProspect.id) {
+        // Mise à jour - utiliser l'API Airtable avec PATCH
+        url = `/api/prospects/prospects?id=${encodeURIComponent(newProspect.id)}`;
+        method = "PATCH";
+      } else {
+        // Création - utiliser l'API Airtable
+        url = "/api/prospects/prospects";
+        method = "POST";
+      }
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newProspect),
+        body: JSON.stringify(prospectData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`);
       }
 
@@ -183,22 +205,21 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie: "FOOD" as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
-        statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+        categorie: "",
+        statut: "",
         datePremierRendezVous: "",
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
-        suiviPar: "",
-        email: "",
-        adresse: "",
       });
       setError(null);
       setFieldErrors({});
+      setIsLoading(false);
       onClose();
       onProspectAdded();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setIsLoading(false);
     }
   };
 
@@ -210,15 +231,12 @@ export function ProspectModal({
       nomEtablissement: "",
       ville: "",
       telephone: "",
-      categorie: "FOOD" as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
-      statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+      categorie: "",
+      statut: "",
       datePremierRendezVous: "",
       dateRelance: "",
       vientDeRencontrer: false,
       commentaire: "",
-      suiviPar: "",
-      email: "",
-      adresse: "",
     });
     onClose();
   };
@@ -235,14 +253,6 @@ export function ProspectModal({
           {isEditing ? 'Modifier le prospect' : 'Ajouter un nouveau prospect'}
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
-              </svg>
-              {error}
-            </div>
-          )}
           <div className="space-y-4">
             <FormLabel htmlFor="siret" isRequired={true}>
               N° SIRET
@@ -262,8 +272,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.nomEtablissement}
-              isInvalid={!!fieldErrors.nomEtablissement}
               id="nomEtablissement"
+              isInvalid={!!fieldErrors.nomEtablissement}
               placeholder="Nom de l'établissement"
               value={newProspect.nomEtablissement}
               onChange={(e) => {
@@ -282,8 +292,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.ville}
-              isInvalid={!!fieldErrors.ville}
               id="ville"
+              isInvalid={!!fieldErrors.ville}
               placeholder="Paris"
               value={newProspect.ville}
               onChange={(e) => {
@@ -299,8 +309,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.telephone}
-              isInvalid={!!fieldErrors.telephone}
               id="telephone"
+              isInvalid={!!fieldErrors.telephone}
               placeholder="01 23 45 67 89"
               value={newProspect.telephone}
               onChange={(e) => {
@@ -313,29 +323,7 @@ export function ProspectModal({
                 validateField('telephone', value);
               }}
             />
-            <FormLabel htmlFor="email">
-              Email
-            </FormLabel>
-            <Input
-              id="email"
-              type="email"
-              placeholder="contact@etablissement.fr"
-              value={newProspect.email}
-              onChange={(e) =>
-                setNewProspect((prev) => ({ ...prev, email: e.target.value }))
-              }
-            />
-            <FormLabel htmlFor="adresse">
-              Adresse
-            </FormLabel>
-            <Input
-              id="adresse"
-              placeholder="123 Rue de l'établissement, 75001 Paris"
-              value={newProspect.adresse}
-              onChange={(e) =>
-                setNewProspect((prev) => ({ ...prev, adresse: e.target.value }))
-              }
-            />
+
             <FormLabel htmlFor="categorie" isRequired={true}>
               Catégorie
             </FormLabel>
@@ -346,12 +334,7 @@ export function ProspectModal({
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  categorie: Array.from(keys)[0] as
-                    | "FOOD"
-                    | "SHOP"
-                    | "TRAVEL"
-                    | "FUN"
-                    | "BEAUTY",
+                  categorie: Array.from(keys)[0] as string,
                 }))
               }
             >
@@ -371,10 +354,7 @@ export function ProspectModal({
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  statut: Array.from(keys)[0] as
-                    | "a_contacter"
-                    | "en_discussion"
-                    | "glacial",
+                  statut: Array.from(keys)[0] as string,
                 }))
               }
             >
@@ -382,30 +362,14 @@ export function ProspectModal({
               <SelectItem key="en_discussion">En discussion</SelectItem>
               <SelectItem key="glacial">Glacial</SelectItem>
             </StyledSelect>
-            <FormLabel htmlFor="suiviPar">
-              Suivi par
-            </FormLabel>
-            <StyledSelect
-              id="suiviPar"
-              selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
-              onSelectionChange={(keys) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  suiviPar: Array.from(keys)[0] as string,
-                }))
-              }
-            >
-              <SelectItem key="nom">Nom</SelectItem>
-              <SelectItem key="prenom">Prénom</SelectItem>
-            </StyledSelect>
             <FormLabel htmlFor="datePremierRendezVous" isRequired={true}>
               Date du premier rendez-vous
             </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.datePremierRendezVous}
-              isInvalid={!!fieldErrors.datePremierRendezVous}
               id="datePremierRendezVous"
+              isInvalid={!!fieldErrors.datePremierRendezVous}
               type="date"
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
@@ -424,8 +388,8 @@ export function ProspectModal({
             <Input
               isRequired
               errorMessage={fieldErrors.dateRelance}
-              isInvalid={!!fieldErrors.dateRelance}
               id="dateRelance"
+              isInvalid={!!fieldErrors.dateRelance}
               type="date"
               value={newProspect.dateRelance}
               onChange={(e) => {
@@ -470,17 +434,35 @@ export function ProspectModal({
             />
           </div>
         </ModalBody>
-        <ModalFooter className="flex justify-end gap-2">
-          <Button className="flex-1" variant="bordered" onPress={handleClose}>
-            Annuler
-          </Button>
-          <Button
-            className="bg-black text-white hover:bg-gray-900 flex-1"
-            isDisabled={Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
-            onPress={handleSubmit}
-          >
-            {isEditing ? 'Modifier' : 'Ajouter'}
-          </Button>
+        <ModalFooter className="flex flex-col gap-3">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center w-full">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
+              </svg>
+              {error}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 w-full">
+            <Button 
+              className="flex-1 border-1" 
+              color='primary' 
+              isDisabled={isLoading} 
+              variant="bordered"
+              onPress={handleClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1"
+              color='primary'
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
+              isLoading={isLoading}
+              onPress={handleSubmit}
+            >
+              {isLoading ? 'Chargement...' : (isEditing ? 'Modifier' : 'Ajouter')}
+            </Button>
+          </div>
         </ModalFooter>
       </ModalContent>
     </Modal>

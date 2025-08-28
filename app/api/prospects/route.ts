@@ -70,11 +70,13 @@ export async function GET(request: Request) {
           if (aValue instanceof Date && bValue instanceof Date) {
             return aValue.getTime() - bValue.getTime();
           }
+
           return aValue.toString().localeCompare(bValue.toString());
         } else {
           if (aValue instanceof Date && bValue instanceof Date) {
             return bValue.getTime() - aValue.getTime();
           }
+
           return bValue.toString().localeCompare(aValue.toString());
         }
       });
@@ -86,6 +88,7 @@ export async function GET(request: Request) {
 
     // Adapter la réponse selon le statut
     let responseData: any;
+
     if (statut === 'en_discussion') {
       responseData = {
         discussions: paginatedProspects,

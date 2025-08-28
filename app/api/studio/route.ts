@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 
     switch (type) {
       case 'services':
-        data = category 
+        data = category
           ? services.filter(service => service.category === category)
           : services;
         break;
@@ -172,8 +172,6 @@ export async function GET(request: NextRequest) {
       total: data.length
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des données studio:', error);
-
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des données' },
       { status: 500 }
@@ -184,7 +182,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validation des données
     if (!body.type || !body.serviceId) {
       return NextResponse.json(
@@ -208,8 +206,6 @@ export async function POST(request: NextRequest) {
       prestation: newPrestation
     });
   } catch (error) {
-    console.error('Erreur lors de la demande de prestation:', error);
-
     return NextResponse.json(
       { error: 'Erreur lors de la demande de prestation' },
       { status: 500 }

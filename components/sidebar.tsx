@@ -7,16 +7,12 @@ import { Card } from "@heroui/card";
 import { CardBody } from "@heroui/card";
 import { CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Listbox } from "@heroui/listbox";
-import { ListboxItem } from "@heroui/listbox";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import {
   HomeIcon,
   ChartBarIcon,
   UsersIcon,
   BellIcon,
   CalendarIcon,
-  CheckCircleIcon,
   DocumentTextIcon,
   UserGroupIcon,
   BuildingStorefrontIcon,
@@ -24,7 +20,6 @@ import {
   Cog6ToothIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
-  ChevronDownIcon,
   Bars3Icon,
   XMarkIcon,
   ArchiveBoxIcon,
@@ -32,9 +27,9 @@ import {
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 
-import { useUserType } from "../contexts/user-type-context";
-
-import { ThemeSwitch } from "./theme-switch";
+import { useUser } from "../contexts/user-context";
+import { useLoading } from "../contexts/loading-context";
+import { UserProfile } from "../types/user";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -44,13 +39,19 @@ interface SidebarProps {
 export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { userType, setUserType } = useUserType();
+  const { userProfile, userType, setUserType } = useUser();
+  const { setUserProfileLoaded } = useLoading();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Fermer le sidebar mobile lors du changement de route
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
+
+  // Signaler que le profil est chargé quand les données utilisateur sont disponibles
+  useEffect(() => {
+    setUserProfileLoaded(true);
+  }, [setUserProfileLoaded]);
 
   // Gérer la fermeture avec la touche Escape
   useEffect(() => {
@@ -66,31 +67,31 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   }, [isMobileOpen]);
 
   const menuItems = [
-    { key: "home", label: "Accueil", icon: Squares2X2Icon, href: "/home", showFor: ["franchise"] },
     {
       key: "home-admin",
-      label: "Accueil ",
+      label: "Accueil Admin",
       icon: HomeIcon,
       href: "/home-admin",
       showFor: ["admin"]
     },
-    { key: "data", label: "Data", icon: ChartBarIcon, href: "/data", showFor: ["franchise"] },
-    { key: "clients", label: "Clients", icon: UsersIcon, href: "/clients", showFor: ["franchise"] },
+    { key: "home", label: "Accueil", icon: Squares2X2Icon, href: "/home", showFor: ["franchise", "admin"] },
+    { key: "data", label: "Data", icon: ChartBarIcon, href: "/data", showFor: ["franchise", "admin"] },
+    { key: "clients", label: "Clients", icon: UsersIcon, href: "/clients", showFor: ["franchise", "admin"] },
     {
       key: "prospects",
       label: "Prospects",
       icon: UsersIcon,
       href: "/prospects",
-      showFor: ["franchise"]
+      showFor: ["franchise", "admin"]
     },
-    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise"] },
-    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise"] },
+    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise", "admin"] },
+    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise", "admin"] },
     {
       key: "facturation",
       label: "Facturation",
       icon: DocumentTextIcon,
       href: "/facturation",
-      showFor: ["franchise"]
+      showFor: []
     },
     { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise", "admin"] },
     {
@@ -107,11 +108,25 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
-    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise"] },
+    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise", "admin"] },
   ];
 
-  // Filtrer les éléments du menu selon le type d'utilisateur
-  const filteredMenuItems = menuItems.filter(item => item.showFor.includes(userType));
+  // Filtrer les éléments du menu selon le rôle de l'utilisateur
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!userProfile?.role) return false;
+
+    // Mapper les rôles de l'API vers les types du menu
+    const roleMapping: { [key: string]: string[] } = {
+      'Admin': ['admin'],
+      'Franchisé': ['franchise'],
+      'Collaborateur': ['franchise'],
+      // Ajouter d'autres mappings selon les rôles disponibles
+    };
+
+    const allowedTypes = roleMapping[userProfile.role] || ['franchise'];
+
+    return item.showFor.some(type => allowedTypes.includes(type));
+  });
 
   const settingsItems = [
     { key: "compte", label: "Compte", icon: Cog6ToothIcon, href: "/profil" },
@@ -137,15 +152,11 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     }
   };
 
-  const handleUserTypeChange = (type: "admin" | "franchise") => {
-    setUserType(type);
-    // Rediriger vers la page d'accueil appropriée
-    if (type === "admin") {
-      router.push("/home-admin");
-    } else {
-      router.push("/home");
-    }
-  };
+  // const handleUserTypeChange = (type: "admin" | "franchise") => {
+  //   // Cette fonction n'est plus utilisée car nous utilisons le vrai rôle de l'API
+  //   // Gardée pour compatibilité mais ne fait rien
+  //   console.log('Changement de type utilisateur désactivé - utilisation du rôle API');
+  // };
 
   return (
     <>
@@ -177,12 +188,12 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
       {/* Sidebar */}
       <Card className={`
-        h-full w-64 bg-white dark:bg-gray-900 rounded-none 
-        fixed md:relative z-50 md:z-auto
+        h-full w-64 bg-white  rounded-none 
+        fixed md:relative z-50 md:z-auto 
         transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `} shadow="none">
-        <CardBody className="p-0 h-full flex flex-col">
+        <CardBody className="p-0 h-full flex flex-col text-rimary">
           {/* Header avec bouton fermer sur mobile */}
           <div className="flex items-center justify-between p-4 md:hidden border-b border-gray-100 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Menu</h2>
@@ -212,14 +223,14 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Dominique Durand
+                    {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Utilisateur'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userType === "admin" ? "Admin" : "Franchisé"}
+                    {userProfile?.role || 'Rôle non défini'}
                   </p>
                 </div>
               </div>
-              <Dropdown>
+              {/* <Dropdown>
                 <DropdownTrigger>
                   <Button
                     isIconOnly
@@ -241,39 +252,37 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                     Franchisé
                   </DropdownItem>
                 </DropdownMenu>
-              </Dropdown>
+              </Dropdown> */}
             </div>
           </CardHeader>
 
           {/* Menu Section */}
           <div className="flex-1 p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-light uppercase mb-3 text-primary-light mt-5" style={{ letterSpacing: "0.2em" }}>
               MENU
             </h3>
-            {
-              filteredMenuItems.map((item) => {
-                const isActive = pathname === item.href;
+            {filteredMenuItems.map((item) => {
+              const isActive = pathname === item.href;
 
-                return (
-                  <button
-                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-                      }`}
-                    key={item.key}
-                    onClick={() => handleItemClick(item)}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <div className="flex-1">
+              return (
+                <button
+                  key={item.key}
+                  className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
+                    ? "bg-black text-white dark:bg-white dark:text-black shadow"
+                    : "hover:bg-white "
+                    }`}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <div className="flex-1">
 
-                      {item.label}
-                    </div>
-                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
+                    {item.label}
+                  </div>
+                  <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
 
-                  </button>
-                )
-              })
-            }
+                </button>
+              )
+            })}
 
           </div>
 
@@ -281,7 +290,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           {/* Settings Section */}
           <div className="p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-light uppercase mb-3 mt-8 text-primary-light" style={{ letterSpacing: "0.2em" }}>
               PARAMÈTRES
             </h3>
             {
@@ -290,11 +299,11 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
                 return (
                   <button
-                    className={`group rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-                      }`}
                     key={item.key}
+                    className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
+                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
+                      : "hover:bg-white"
+                      }`}
                     onClick={() => handleItemClick(item)}
                   >
                     <item.icon className="h-5 w-5" />
@@ -311,7 +320,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           </div>
           <div className="flex justify-center items-center pb-6">
-            <img src="/images/logo-e.png" width={42} height={42} alt="logo" />
+            <img alt="logo" height={42} src="/images/logo-e.png" width={42} />
           </div>
         </CardBody>
       </Card>

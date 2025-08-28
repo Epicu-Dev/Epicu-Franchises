@@ -5,7 +5,9 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
+
 import { Resource, ResourceCategory } from "../types/resource";
+
 import { FormLabel } from "./form-label";
 
 interface ResourceModalProps {
@@ -45,7 +47,7 @@ export default function ResourceModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} size="lg" onClose={onClose}>
       <ModalContent>
         <form onSubmit={handleSubmit}>
           <ModalHeader className="flex flex-col gap-1">
@@ -57,60 +59,61 @@ export default function ResourceModal({
                 Nom du document
               </FormLabel>
               <Input
-                id="title"
-                placeholder="Nom du document"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
                 isRequired
                 classNames={{
                   input: "bg-gray-50 rounded-lg",
                   inputWrapper: "bg-gray-50 rounded-lg"
                 }}
+                id="title"
+                placeholder="Nom du document"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
               />
               <FormLabel htmlFor="comment" isRequired={true}>
                 Commentaires
               </FormLabel>
               <Textarea
-                id="comment"
-                placeholder="Commentaires"
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
                 isRequired
-                minRows={3}
                 classNames={{
                   input: "bg-gray-50 rounded-lg",
                   inputWrapper: "bg-gray-50 rounded-lg"
                 }}
+                id="comment"
+                minRows={3}
+                placeholder="Commentaires"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
               />
 
               <FormLabel htmlFor="link" isRequired={true}>
                 Lien du document
               </FormLabel>
               <Input
-                id="link"
-                placeholder="url"
-                value={formData.link}
-                onChange={(e) => handleInputChange("link", e.target.value)}
                 isRequired
                 classNames={{
                   input: "bg-gray-50 rounded-lg",
                   inputWrapper: "bg-gray-50 rounded-lg"
                 }}
+                id="link"
+                placeholder="url"
+                value={formData.link}
+                onChange={(e) => handleInputChange("link", e.target.value)}
               />
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-end gap-2">
             <Button
+              className="flex-1 border-1"
+              color='primary'
               variant="bordered"
               onPress={onClose}
-              className="flex-1"
             >
               Annuler
             </Button>
             <Button
+              className="bg-black text-white hover:bg-gray-900 flex-1"
               color="primary"
               type="submit"
-              className="bg-black text-white hover:bg-gray-900 flex-1"
             >
               {mode === "create" ? "Ajouter" : "Modifier"}
             </Button>

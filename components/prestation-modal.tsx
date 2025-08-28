@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
 import {
   Modal,
@@ -12,7 +12,9 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+
 import { StyledSelect } from "./styled-select";
+import { FormLabel } from "./form-label";
 
 interface Service {
   id: string;
@@ -40,7 +42,7 @@ interface PrestationModalProps {
   services: Service[];
 }
 
-export function PrestationModal({ isOpen, onClose, onPrestationRequested, services }: PrestationModalProps) {
+export function PrestationModal({ isOpen, onClose, onPrestationRequested }: PrestationModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [prestationRequest, setPrestationRequest] = useState<PrestationRequest>({
@@ -126,7 +128,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
         }
         break;
       case 'description':
-        if (!value || !value.trim() || value.trim() === '' || value.trim() === '-') {
+        if (!value || !value.trim() || value.trim() === '') {
           errors.description = 'La description est requise';
         } else {
           delete errors.description;
@@ -135,6 +137,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
     }
 
     setFieldErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
@@ -144,6 +147,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
 
     fields.forEach(field => {
       const fieldValid = validateField(field, request[field as keyof PrestationRequest]);
+
       if (!fieldValid) isValid = false;
     });
 
@@ -155,6 +159,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
       // Validation complète avant soumission
       if (!validateAllFields(prestationRequest)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
 
@@ -215,15 +220,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             </div>
           )}
           <div className="space-y-4">
+
+            <FormLabel
+              htmlFor="nom"
+              isRequired={true}
+            >
+              Nom / Prénom
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.nom}
+              id="nom"
               isInvalid={!!fieldErrors.nom}
-              label="Nom / Prénom"
               placeholder="Nom et prénom"
               value={prestationRequest.nom}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   nom: value,
@@ -231,15 +244,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('nom', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="etablissement"
+              isRequired={true}
+            >
+              Nom de l&apos;établissement
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.etablissement}
+              id="etablissement"
               isInvalid={!!fieldErrors.etablissement}
-              label="Nom de l'établissement"
-              placeholder="Nom de l'établissement"
+              placeholder="Nom de l&apos;établissement"
               value={prestationRequest.etablissement}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   etablissement: value,
@@ -247,16 +268,24 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('etablissement', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="email"
+              isRequired={true}
+            >
+              Adresse mail
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.email}
+              id="email"
               isInvalid={!!fieldErrors.email}
-              label="Adresse mail"
-              type="email"
               placeholder="email@exemple.com"
+              type="email"
               value={prestationRequest.email}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   email: value,
@@ -264,15 +293,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('email', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="telephone"
+              isRequired={true}
+            >
+              Numéro de téléphone
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.telephone}
+              id="telephone"
               isInvalid={!!fieldErrors.telephone}
-              label="Numéro de téléphone"
               placeholder="06 00 00 00 00"
               value={prestationRequest.telephone}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   telephone: value,
@@ -280,15 +317,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('telephone', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="ville"
+              isRequired={true}
+            >
+              Ville
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.ville}
+              id="ville"
               isInvalid={!!fieldErrors.ville}
-              label="Ville"
               placeholder="Ville"
               value={prestationRequest.ville}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   ville: value,
@@ -296,8 +341,15 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('ville', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="instagram"
+              isRequired={true}
+            >
+              Instagram
+            </FormLabel>
             <Input
-              label="Instagram"
+              id="instagram"
               placeholder="URL Instagram"
               value={prestationRequest.instagram}
               onChange={(e) =>
@@ -307,14 +359,22 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 }))
               }
             />
+
+            <FormLabel
+              htmlFor="typePrestation"
+              isRequired={true}
+            >
+              Type de prestation
+            </FormLabel>
             <StyledSelect
               isRequired
               errorMessage={fieldErrors.typePrestation}
+              id="typePrestation"
               isInvalid={!!fieldErrors.typePrestation}
-              label="Type de prestation"
               selectedKeys={[prestationRequest.typePrestation]}
               onSelectionChange={(keys) => {
                 const selected = Array.from(keys)[0] as string;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   typePrestation: selected,
@@ -331,15 +391,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
               <SelectItem key="Data analyse">Data analyse</SelectItem>
               <SelectItem key="Sérigraphie et textiles">Sérigraphie et textiles</SelectItem>
             </StyledSelect>
+
+            <FormLabel
+              htmlFor="budget"
+              isRequired={true}
+            >
+              Budget client estimé
+            </FormLabel>
             <Input
               isRequired
               errorMessage={fieldErrors.budget}
+              id="budget"
               isInvalid={!!fieldErrors.budget}
-              label="Budget client estimé"
               placeholder="1500€"
               value={prestationRequest.budget}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   budget: value,
@@ -347,15 +415,23 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
                 validateField('budget', value);
               }}
             />
+
+            <FormLabel
+              htmlFor="description"
+              isRequired={true}
+            >
+              Description de la demande
+            </FormLabel>
             <Textarea
               isRequired
               errorMessage={fieldErrors.description}
+              id="description"
               isInvalid={!!fieldErrors.description}
-              label="Description de la demande"
               placeholder="Décrivez votre demande..."
               value={prestationRequest.description}
               onChange={(e) => {
                 const value = e.target.value;
+
                 setPrestationRequest((prev) => ({
                   ...prev,
                   description: value,
@@ -370,7 +446,8 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested, servic
             Annuler
           </Button>
           <Button
-            className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            className="flex-1"
+            color='primary'
             isDisabled={Object.keys(fieldErrors).length > 0}
             onPress={handleSubmit}
           >

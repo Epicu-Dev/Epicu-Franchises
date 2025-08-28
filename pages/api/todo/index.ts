@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const TABLE_NAME = 'TO DO';
@@ -9,6 +10,7 @@ function dateOnly(v?: any) {
   if (typeof v !== 'string') return v;
   // handle ISO datetimes and 'YYYY-MM-DD hh:mm' etc. Keep only YYYY-MM-DD
   const t = v.split('T')[0];
+
   return t.split(' ')[0];
 }
 
@@ -29,6 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         (req.query.user as string) ||
         null;
 
+      const statusFilter = req.query.status as string || null;
+      const searchQuery = req.query.q as string || null;
+      
+      // Paramètres de tri
+      const order = req.query.order === 'desc' ? 'desc' : 'asc';
+      const orderByReq = (req.query.orderBy as string) || "Date de création";
+
       const fields = [
         'Nom de la tâche',
         'Date de création',
@@ -39,11 +48,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Collaborateur',
       ];
 
+      // Champs autorisés pour le tri (sécurité + cohérence)
+      const allowedOrderBy = new Set([
+        'Nom de la tâche',
+        'Date de création',
+        "Date d'échéance",
+        'Statut',
+        'Type de tâche'
+      ]);
+      const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Date de création";
+
       const selectOptions: any = {
         view: VIEW_NAME,
         fields,
         pageSize: Math.min(100, offset + limit),
         maxRecords: offset + limit,
+        sort: [{ field: orderBy, direction: order }],
       };
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -73,15 +93,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const filtered = mapped.filter((it: any) => {
-        if (!collaborator) return true;
-        const coll = it.collaborators || it['Collaborateur'] || [];
-        if (Array.isArray(coll) && coll.length > 0) return coll.includes(collaborator);
-        if (typeof coll === 'string' && coll.length > 0) return coll === collaborator;
-        return false;
+        // Filtre par collaborateur
+        if (collaborator) {
+          const coll = it.collaborators || it['Collaborateur'] || [];
+
+          if (Array.isArray(coll) && coll.length > 0) {
+            if (!coll.includes(collaborator)) return false;
+          } else if (typeof coll === 'string' && coll.length > 0) {
+            if (coll !== collaborator) return false;
+          } else {
+            return false;
+          }
+        }
+
+        // Filtre par statut
+        if (statusFilter && it.status !== statusFilter) {
+          return false;
+        }
+
+        // Filtre par recherche
+        if (searchQuery) {
+          const searchLower = searchQuery.toLowerCase();
+          const nameMatch = it.name.toLowerCase().includes(searchLower);
+          const descriptionMatch = it.description && it.description.toLowerCase().includes(searchLower);
+          const typeMatch = it.type && it.type.toLowerCase().includes(searchLower);
+          
+          if (!nameMatch && !descriptionMatch && !typeMatch) {
+            return false;
+          }
+        }
+
+        return true;
       });
 
       const page = filtered.slice(offset, offset + limit);
-      res.status(200).json({ todos: page, total: filtered.length });
+
+      res.status(200).json({ 
+        todos: page, 
+        total: filtered.length,
+        pagination: {
+          limit,
+          offset,
+          orderBy,
+          order,
+          hasMore: filtered.length > offset + limit,
+          nextOffset: filtered.length > offset + limit ? offset + limit : null,
+          prevOffset: Math.max(0, offset - limit),
+        }
+      });
+
       return;
     }
 
@@ -130,6 +190,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Collaborateur (id ou tableau d’ids)
       const collPayload =
         getField(body, ['Collaborateur', 'collaborator', 'collaborateurs', 'collaborators', 'user']);
+
       if (collPayload) {
         fieldsToCreate['Collaborateur'] = Array.isArray(collPayload)
           ? collPayload
@@ -140,34 +201,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // On renvoie createdAt depuis Airtable si besoin (relecture)
       res.status(201).json({ id: created[0].id, ...fieldsToCreate });
+
       return;
     }
 
     if (req.method === 'PATCH') {
       const body = req.body || {};
       const id = (req.query.id as string) || body.id;
+
       if (!id) return res.status(400).json({ error: 'id requis' });
 
       const fieldsToUpdate: any = {};
       const name = getField(body, ['Nom de la tâche', 'nom', 'name', 'title', 'Tâche', 'tache']);
+
       if (name) fieldsToUpdate['Nom de la tâche'] = name;
 
       const due = getField(body, ["Date d'échéance", 'dueDate', 'due_date']);
+
       if (typeof due !== 'undefined') {
         if (due === null || due === '') fieldsToUpdate["Date d'échéance"] = '';
         else fieldsToUpdate["Date d'échéance"] = dateOnly(due);
       }
 
       const status = getField(body, ['Statut', 'status']);
+
       if (typeof status !== 'undefined') fieldsToUpdate['Statut'] = status;
 
       const type = getField(body, ['Type de tâche', 'type', 'taskType']);
+
       if (typeof type !== 'undefined') fieldsToUpdate['Type de tâche'] = type;
 
       const desc = getField(body, ['Description', 'description', 'desc']);
+
       if (typeof desc !== 'undefined') fieldsToUpdate['Description'] = desc;
 
       const collPayload = getField(body, ['Collaborateur', 'collaborator', 'collaborateurs', 'collaborators', 'user']);
+
       if (Object.prototype.hasOwnProperty.call(body, 'Collaborateur') || Object.prototype.hasOwnProperty.call(body, 'collaborator') || Object.prototype.hasOwnProperty.call(body, 'collaborateurs') || Object.prototype.hasOwnProperty.call(body, 'collaborators') || Object.prototype.hasOwnProperty.call(body, 'user')) {
         if (collPayload === null) fieldsToUpdate['Collaborateur'] = [];
         else if (Array.isArray(collPayload)) fieldsToUpdate['Collaborateur'] = collPayload;
@@ -178,16 +247,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
       const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
+
       res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
+
       return;
     }
 
     if (req.method === 'DELETE') {
       const id = (req.query.id as string) || req.body.id;
+
       if (!id) return res.status(400).json({ error: 'id requis' });
 
       const deleted = await base(TABLE_NAME).destroy([id]);
+
       res.status(200).json({ id: deleted[0].id });
+
       return;
     }
 

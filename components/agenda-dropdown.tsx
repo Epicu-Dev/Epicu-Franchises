@@ -39,7 +39,7 @@ export function AgendaDropdown({
       <DropdownTrigger>
         <Button
           isIconOnly
-          className="bg-black dark:bg-white text-white dark:text-black"
+          color='primary'
           size="sm"
         >
           <PlusIcon className="h-4 w-4" />

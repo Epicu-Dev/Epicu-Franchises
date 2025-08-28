@@ -9,6 +9,7 @@ export { ThemeSwitch } from './theme-switch';
 export { ProspectModal } from './prospect-modal';
 export { PrestationModal } from './prestation-modal';
 export { AgendaModals } from './agenda-modals';
+export { EventModal } from './event-modal';
 export { HelpModal } from './help-modal';
 export { default as ResourceModal } from './resource-modal';
 
@@ -40,6 +41,7 @@ export { SortableColumnHeader } from './sortable-column-header';
 
 // Composants d'agenda
 export { AgendaDropdown } from './agenda-dropdown';
+export { AgendaSection } from './agenda-section';
 
 // Utilitaires
 export * from './primitives';

@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Tabs, Tab } from '@heroui/tabs';
-import { Progress } from '@heroui/progress';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
-import { PrestationModal } from '../../components/prestation-modal';
 import { Select, SelectItem } from '@heroui/select';
 import { Input } from '@heroui/input';
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/table';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Pagination } from '@heroui/pagination';
+
+import { PrestationModal } from '../../components/prestation-modal';
+
 import { CategoryBadge, StatusBadge } from '@/components/badges';
 import { SortableColumnHeader } from '@/components';
 
@@ -46,7 +47,7 @@ interface Prestation {
   contractDate: string;
   amount: number;
   commission: number;
-  invoiceStatus: 'Payée' | 'En attente' | 'En retard';
+  invoiceStatus: 'Payée' | 'Attente' | 'En retard';
   category: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
 }
 
@@ -129,7 +130,7 @@ const defaultPrestations: Prestation[] = [
     contractDate: '15.01.2025',
     amount: 4500,
     commission: 450,
-    invoiceStatus: 'En attente',
+    invoiceStatus: 'Attente',
     category: 'FOOD'
   },
   {
@@ -170,9 +171,9 @@ const defaultPrestations: Prestation[] = [
     progress: 0,
     establishmentName: 'Fun Center',
     contractDate: '25.01.2025',
-    amount: 2200,
+    amount: 2200, // TODO: mettre à jour avec la valeur de la prestation
     commission: 220,
-    invoiceStatus: 'En attente',
+    invoiceStatus: 'Attente',
     category: 'FUN'
   }
 ];
@@ -229,10 +230,6 @@ export default function StudioPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
-  // Debug: vérifier que les services sont bien chargés
-  console.log('Services disponibles:', services);
-  console.log('Nombre de services:', services.length);
-
   const fetchData = async (type: string) => {
     try {
       setLoading(true);
@@ -258,9 +255,6 @@ export default function StudioPage() {
           setPrestations(data.data);
           break;
       }
-    } catch (error) {
-      console.error('Erreur:', error);
-      // En cas d'erreur, on garde les services par défaut
     } finally {
       setLoading(false);
     }
@@ -343,6 +337,7 @@ export default function StudioPage() {
 
         if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
         if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+
         return 0;
       });
     }
@@ -384,8 +379,8 @@ export default function StudioPage() {
             <div>
 
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onClick={handleOpenPrestationModal}
               >
                 Demander une prestation
@@ -404,17 +399,17 @@ export default function StudioPage() {
                 <>
 
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-primary px-4">
                     {services.map((service) => (
                       <div
                         key={service.id}
-                        className=" relative p-6 bg-white dark:bg-gray-800 rounded-lg hover:border  hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer "
+                        className=" relative p-2 "
                       >
                         <div className="space-y-4">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-primary">
                             {service.title}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                          <p className="text-sm font-light">
                             {service.description}
                           </p>
                         </div>
@@ -433,17 +428,17 @@ export default function StudioPage() {
                       className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
                     >
                       <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-xl font-semibold text-primary">
                           {pack.title}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm font-light">
                           {pack.description}
                         </p>
                         <div className="flex justify-between items-center">
-                          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <span className="text-lg font-semibold text-primary">
                             {pack.price}€
                           </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                          <span className="text-sm font-light">
                             {pack.duration}
                           </span>
                         </div>
@@ -466,7 +461,7 @@ export default function StudioPage() {
                       >
                         <SelectItem key="">Tous les statuts</SelectItem>
                         <SelectItem key="en_cours">En cours</SelectItem>
-                        <SelectItem key="terminee">Terminée</SelectItem>
+                        <SelectItem key="terminee">Terminé</SelectItem>
                         <SelectItem key="en_attente">En attente</SelectItem>
                       </Select>
                     </div>
@@ -496,8 +491,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="category"
                           label="Catégorie"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
 
@@ -509,8 +504,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="contractDate"
                           label="Date signature contrat"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
                       </TableColumn>
@@ -518,8 +513,8 @@ export default function StudioPage() {
                         <SortableColumnHeader
                           field="serviceTitle"
                           label="Prestation demandée"
-                          sortField={sortField}
                           sortDirection={sortDirection}
+                          sortField={sortField}
                           onSort={handleSort}
                         />
                       </TableColumn>
@@ -530,7 +525,6 @@ export default function StudioPage() {
 
                       </TableColumn>
                       <TableColumn className="font-light text-sm">Montant commission</TableColumn>
-                      <TableColumn className="font-light text-sm">Progression</TableColumn>
                     </TableHeader>
                     <TableBody>
                       {paginatedPrestations.map((prestation) => (
@@ -538,30 +532,17 @@ export default function StudioPage() {
                           <TableCell>
                             <CategoryBadge category={prestation.category} />
                           </TableCell>
-                          <TableCell className="py-5">{prestation.establishmentName}</TableCell>
-                          <TableCell>{prestation.contractDate}</TableCell>
-                          <TableCell>
+                          <TableCell className="py-5 font-light">{prestation.establishmentName}</TableCell>
+                          <TableCell className="font-light">{prestation.contractDate}</TableCell>
+                          <TableCell className="font-light">
                             {prestation.serviceTitle}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="font-light">
                             <StatusBadge status={prestation.invoiceStatus} />
                           </TableCell>
-                          <TableCell>{prestation.amount}€</TableCell>
-                          <TableCell>{prestation.commission}€</TableCell>
-                          <TableCell>
-                            {prestation.status === 'en_cours' && (
-                              <Progress
-                                className="w-20"
-                                classNames={{
-                                  track: "bg-gray-200 dark:bg-gray-700",
-                                  indicator: "bg-black dark:bg-white"
-                                }}
-                                showValueLabel={true}
-                                value={prestation.progress}
-                                size="sm"
-                              />
-                            )}
-                          </TableCell>
+                          <TableCell className="font-light">{prestation.amount}€</TableCell>
+                          <TableCell className="font-light">{prestation.commission}€</TableCell>
+
                         </TableRow>
                       ))}
                     </TableBody>
@@ -583,10 +564,6 @@ export default function StudioPage() {
                     />
                   </div>
 
-                  {/* Info sur le nombre total d'éléments */}
-                  <div className="text-center mt-4 text-sm text-gray-500">
-                    Affichage de {paginatedPrestations.length} prestation(s) sur {filteredPrestations.length} au total
-                  </div>
                 </div>
               )}
 
@@ -609,12 +586,11 @@ export default function StudioPage() {
 
       <PrestationModal
         isOpen={isPrestationModalOpen}
+        services={services}
         onClose={handleClosePrestationModal}
         onPrestationRequested={() => {
-          console.log('Prestation demandée avec succès');
           // Ici vous pouvez ajouter une logique supplémentaire si nécessaire
         }}
-        services={services}
       />
     </div>
   );

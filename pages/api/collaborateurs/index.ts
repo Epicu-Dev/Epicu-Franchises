@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const TABLE_NAME = 'COLLABORATEURS';
@@ -37,6 +38,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     // Filtre par nom (regex, insensible à la casse)
     if (q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
+
       selectOptions.filterByFormula = `REGEX_MATCH(LOWER({Nom complet}), "${pattern}")`;
     }
 
@@ -53,11 +55,13 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     );
 
     let cityNameById = new Map<string, string>();
+
     if (allCityIds.length > 0) {
       const formula = `OR(${allCityIds.map((id) => `RECORD_ID()="${id}"`).join(',')})`;
       const cityRecords = await base(CITIES_TABLE_NAME)
         .select({ fields: [CITY_NAME_FIELD], filterByFormula: formula })
         .all();
+
       cityRecords.forEach((cr: any) => {
         cityNameById.set(cr.id, cr.get(CITY_NAME_FIELD));
       });
@@ -68,6 +72,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       const villes = linkedCityIds
         .map((id) => cityNameById.get(id))
         .filter((v): v is string => Boolean(v));
+
       return {
         id: r.id, // record id du collaborateur
         nomComplet: r.get('Nom complet') || '',

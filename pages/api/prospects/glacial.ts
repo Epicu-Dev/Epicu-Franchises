@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { base } from '../constants';
 
 const VIEW_NAME = '🔴 Perdu';
@@ -43,6 +44,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
 
     const formulaParts: string[] = [];
+
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
       const qFormula =
@@ -51,20 +53,25 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
         `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
         `)`;
+
       formulaParts.push(qFormula);
     }
 
     if (categoryFilter) {
       try {
         let catName = String(categoryFilter);
+
         if (/^rec/i.test(categoryFilter)) {
           const rec = await base('Catégories').find(categoryFilter);
+
           catName = String(rec.get('Name') || rec.get('Nom') || rec.get('Titre') || catName);
         }
         const catEsc = catName.replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       } catch (e) {
         const catEsc = String(categoryFilter).replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       }
     }
@@ -72,14 +79,18 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     if (suiviFilter) {
       try {
         let suiviName = String(suiviFilter);
+
         if (/^rec/i.test(suiviFilter)) {
           const rec = await base('Collaborateurs').find(suiviFilter);
+
           suiviName = String(rec.get('Nom complet') || `${rec.get('Prénom') || ''} ${rec.get('Nom') || ''}`.trim() || suiviName);
         }
         const suEsc = suiviName.replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
       } catch (e) {
         const suEsc = String(suiviFilter).replace(/'/g, "\\'");
+
         formulaParts.push(`FIND('${suEsc}', ARRAYJOIN({Suivi par})) > 0`);
       }
     }
@@ -100,6 +111,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const suiviIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('Suivi par') || [])));
 
     let categoryNames: Record<string, string> = {};
+
     if (categoryIds.length > 0) {
       const catRecords = await base('Catégories')
         .select({
@@ -109,12 +121,14 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           maxRecords: categoryIds.length,
         })
         .all();
+
       catRecords.forEach((cat: any) => {
         categoryNames[cat.id] = cat.get('Name');
       });
     }
 
     let suiviNames: Record<string, string> = {};
+
     if (suiviIds.length > 0) {
       const collabRecords = await base('Collaborateurs')
         .select({
@@ -124,9 +138,11 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           maxRecords: suiviIds.length,
         })
         .all();
+
       collabRecords.forEach((collab: any) => {
         const prenom = collab.get('Prénom') || '';
         const nom = collab.get('Nom') || '';
+
         suiviNames[collab.id] = `${prenom} ${nom}`.trim();
       });
     }

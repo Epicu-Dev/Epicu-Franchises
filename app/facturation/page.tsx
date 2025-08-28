@@ -28,9 +28,10 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { SelectItem } from "@heroui/select";
+
 import { StyledSelect } from "@/components/styled-select";
 import { CategoryBadge, FormLabel, SortableColumnHeader } from "@/components";
-import { SelectItem } from "@heroui/select";
 
 interface Invoice {
   id: string;
@@ -68,8 +69,8 @@ export default function FacturationPage() {
     itemsPerPage: 10,
   });
   const [selectedStatus, setSelectedStatus] = useState<string>("payee");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchTerm] = useState("");
+  const [selectedCategory] = useState("");
   const [sortField, setSortField] = useState<string>("establishmentName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
@@ -141,6 +142,7 @@ export default function FacturationPage() {
           ...prev,
           siret: 'Aucun client trouvé avec ce numéro SIRET'
         }));
+
         return;
       }
 
@@ -273,6 +275,7 @@ export default function FacturationPage() {
       // Validation complète avant soumission
       if (!validateAllFields(newInvoice)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
+
         return;
       }
 
@@ -289,6 +292,7 @@ export default function FacturationPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || "Erreur lors de l'ajout de la facture");
       }
 
@@ -319,21 +323,25 @@ export default function FacturationPage() {
       // Validation côté client
       if (!newInvoice.establishmentName.trim()) {
         setError("Le nom de l'établissement est requis");
+
         return;
       }
 
       if (!newInvoice.date) {
         setError("La date est requise");
+
         return;
       }
 
       if (!newInvoice.amount || parseFloat(newInvoice.amount) <= 0) {
         setError("Le montant doit être supérieur à 0");
+
         return;
       }
 
       if (!newInvoice.serviceType) {
         setError("Le type de prestation est requis");
+
         return;
       }
 
@@ -357,6 +365,7 @@ export default function FacturationPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || "Erreur lors de la modification de la facture");
       }
 
@@ -439,7 +448,7 @@ export default function FacturationPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody>
           {/* En-tête avec onglets et bouton d'ajout */}
@@ -461,8 +470,8 @@ export default function FacturationPage() {
 
             <div>
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => {
                   setError(null);
                   setFieldErrors({});
@@ -483,8 +492,8 @@ export default function FacturationPage() {
                 <SortableColumnHeader
                   field="category"
                   label="Catégorie"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
 
@@ -493,8 +502,8 @@ export default function FacturationPage() {
                 <SortableColumnHeader
                   field="establishmentName"
                   label="Nom établissement"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -502,8 +511,8 @@ export default function FacturationPage() {
                 <SortableColumnHeader
                   field="date"
                   label="Date"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -511,8 +520,8 @@ export default function FacturationPage() {
                 <SortableColumnHeader
                   field="amount"
                   label="Montant"
-                  sortField={sortField}
                   sortDirection={sortDirection}
+                  sortField={sortField}
                   onSort={handleSort}
                 />
               </TableColumn>
@@ -604,26 +613,6 @@ export default function FacturationPage() {
               </FormLabel>
               <Input
                 isRequired
-                errorMessage={fieldErrors.siret}
-                isInvalid={!!fieldErrors.siret}
-                id="siret"
-                placeholder="Numéro de SIRET (14 chiffres)"
-                value={newInvoice.siret}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setNewInvoice((prev) => ({ ...prev, siret: value }));
-                  // Effacer l'erreur du SIRET quand l'utilisateur tape
-                  if (fieldErrors.siret) {
-                    setFieldErrors(prev => ({ ...prev, siret: "" }));
-                  }
-                  validateField('siret', value);
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value;
-                  if (value.length === 14) {
-                    searchClientBySiret(value);
-                  }
-                }}
                 endContent={
                   isSearchingClient ? (
                     <Spinner size="sm" />
@@ -631,6 +620,28 @@ export default function FacturationPage() {
                     <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
                   )
                 }
+                errorMessage={fieldErrors.siret}
+                id="siret"
+                isInvalid={!!fieldErrors.siret}
+                placeholder="Numéro de SIRET (14 chiffres)"
+                value={newInvoice.siret}
+                onBlur={(e) => {
+                  const value = e.target.value;
+
+                  if (value.length === 14) {
+                    searchClientBySiret(value);
+                  }
+                }}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setNewInvoice((prev) => ({ ...prev, siret: value }));
+                  // Effacer l'erreur du SIRET quand l'utilisateur tape
+                  if (fieldErrors.siret) {
+                    setFieldErrors(prev => ({ ...prev, siret: "" }));
+                  }
+                  validateField('siret', value);
+                }}
               />
 
               <FormLabel htmlFor="category" isRequired={true}>
@@ -639,12 +650,13 @@ export default function FacturationPage() {
               <StyledSelect
                 isRequired
                 errorMessage={fieldErrors.category}
-                isInvalid={!!fieldErrors.category}
                 id="category"
+                isInvalid={!!fieldErrors.category}
                 placeholder="Sélectionnez une catégorie"
                 selectedKeys={newInvoice.category ? [newInvoice.category] : []}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
+
                   setNewInvoice((prev) => ({
                     ...prev,
                     category: value,
@@ -663,12 +675,13 @@ export default function FacturationPage() {
               <Input
                 isRequired
                 errorMessage={fieldErrors.establishmentName}
-                isInvalid={!!fieldErrors.establishmentName}
                 id="establishmentName"
+                isInvalid={!!fieldErrors.establishmentName}
                 placeholder="Ex: L'ambiance"
                 value={newInvoice.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, establishmentName: value }));
                   validateField('establishmentName', value);
                 }}
@@ -680,12 +693,13 @@ export default function FacturationPage() {
               <StyledSelect
                 isRequired
                 errorMessage={fieldErrors.serviceType}
-                isInvalid={!!fieldErrors.serviceType}
                 id="serviceType"
+                isInvalid={!!fieldErrors.serviceType}
                 placeholder="Sélectionnez une prestation"
                 selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
+
                   setNewInvoice((prev) => ({
                     ...prev,
                     serviceType: value,
@@ -704,14 +718,15 @@ export default function FacturationPage() {
               <Input
                 isRequired
                 errorMessage={fieldErrors.amount}
-                isInvalid={!!fieldErrors.amount}
                 id="amount"
+                isInvalid={!!fieldErrors.amount}
                 placeholder="Ex: 1457.98"
                 step="0.01"
                 type="number"
                 value={newInvoice.amount}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, amount: value }));
                   validateField('amount', value);
                 }}
@@ -723,12 +738,13 @@ export default function FacturationPage() {
               <Input
                 isRequired
                 errorMessage={fieldErrors.date}
-                isInvalid={!!fieldErrors.date}
                 id="date"
+                isInvalid={!!fieldErrors.date}
                 type="date"
                 value={newInvoice.date}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, date: value }));
                   validateField('date', value);
                 }}
@@ -743,13 +759,14 @@ export default function FacturationPage() {
                 value={newInvoice.comment}
                 onChange={(e) => {
                   const value = e.target.value;
+
                   setNewInvoice((prev) => ({ ...prev, comment: value }));
                 }}
               />
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-end">
-            <Button className="flex-1" variant="bordered" onPress={() => {
+            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={() => {
               setIsAddModalOpen(false);
               setSelectedInvoice(null);
               setNewInvoice({
@@ -768,7 +785,8 @@ export default function FacturationPage() {
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
               onPress={selectedInvoice ? handleEditInvoice : handleAddInvoice}
             >

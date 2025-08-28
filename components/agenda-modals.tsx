@@ -46,7 +46,7 @@ export function AgendaModals({
   setIsRdvModalOpen,
   onEventAdded,
 }: AgendaModalsProps) {
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   // États pour les formulaires spécifiques
@@ -497,14 +497,16 @@ export function AgendaModals({
           </ModalBody>
           <ModalFooter className="flex justify-between">
             <Button
-              className="flex-1"
+              className="flex-1 border-1"
+              color='primary'
               variant="bordered"
               onPress={() => setIsTournageModalOpen(false)}
             >
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('tournage.')) || !newTournage.establishmentName || !newTournage.shootingDate || !newTournage.publicationDate}
               onPress={handleAddTournage}
             >
@@ -713,14 +715,16 @@ export function AgendaModals({
           </ModalBody>
           <ModalFooter className="flex justify-between">
             <Button
-              className="flex-1"
+              className="flex-1 border-1"
+              color='primary'
               variant="bordered"
               onPress={() => setIsPublicationModalOpen(false)}
             >
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('publication.')) || !newPublication.categoryName || !newPublication.establishmentName || !newPublication.publicationDate || !newPublication.shootingDate}
               onPress={handleAddPublication}
             >
@@ -853,11 +857,12 @@ export function AgendaModals({
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">
-            <Button className="flex-1" variant="bordered" onPress={() => setIsRdvModalOpen(false)}>
+            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={() => setIsRdvModalOpen(false)}>
               Annuler
             </Button>
             <Button
-              className="flex-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+              className="flex-1"
+              color='primary'
               isDisabled={Object.keys(fieldErrors).some(key => key.startsWith('rdv.')) || !newRdv.categoryName || !newRdv.establishmentName || !newRdv.appointmentType || !newRdv.appointmentDate}
               onPress={handleAddRdv}
             >

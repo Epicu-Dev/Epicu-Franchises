@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -13,7 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
 import {
   Modal,
   ModalContent,
@@ -21,16 +20,16 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Textarea } from "@heroui/input";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
-import { CategoryBadge } from "@/components/badges";
 
+import { CategoryBadge } from "@/components/badges";
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
@@ -68,21 +67,13 @@ interface ApiProspect {
   siret?: string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
 
 export default function ProspectsPage() {
   const [prospects, setProspects] = useState<ApiProspect[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  // Variables pour le LazyLoading
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState<number | null>(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSuiviPar, setSelectedSuiviPar] = useState("");
@@ -95,69 +86,194 @@ export default function ProspectsPage() {
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [, setViewCount] = useState<number | null>(null);
   const previousTabRef = useRef(selectedTab);
 
-  const fetchProspects = async () => {
-    console.log('fetchProspects');
+  // Variables pour les filtres
+  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+  // Récupérer la liste des collaborateurs et catégories au chargement de la page
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        // Récupérer les collaborateurs
+        const collabResponse = await fetch('/api/collaborateurs?limit=200&offset=0');
+
+        if (collabResponse.ok) {
+          const collabData = await collabResponse.json();
+
+          setCollaborateurs(collabData.results || []);
+        }
+
+        // Récupérer les catégories
+        const catResponse = await fetch('/api/categories?limit=200&offset=0');
+
+        if (catResponse.ok) {
+          const catData = await catResponse.json();
+
+          setCategories(catData.results || []);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération des filtres:', err);
+      }
+    };
+
+    fetchFilters();
+  }, []);
+
+  const fetchProspects = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      // Vérifier si l'onglet a changé et remettre la pagination à 1
-      if (previousTabRef.current !== selectedTab) {
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+      // Vérifier si l'onglet a changé et remettre les données à zéro
+      if (!isLoadMore && previousTabRef.current !== selectedTab) {
+        setProspects([]);
+        setNextOffset(0);
+        setHasMore(true);
         previousTabRef.current = selectedTab;
       }
 
-      // Construire les paramètres de requête
+      // Construire les paramètres de requête pour l'API Airtable
       const params = new URLSearchParams();
-      params.append('statut', selectedTab);
-      if (searchTerm) params.append('q', searchTerm);
-      if (selectedCategory && selectedCategory !== 'tous') params.append('categorie', selectedCategory);
-      if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.append('suiviPar', selectedSuiviPar);
-      if (sortField) params.append('orderBy', sortField);
-      if (sortDirection) params.append('order', sortDirection);
-      params.append('limit', pagination.itemsPerPage.toString());
-      params.append('offset', ((pagination.currentPage - 1) * pagination.itemsPerPage).toString());
 
-      const queryString = params.toString();
-      const url = `/api/prospects${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des prospects");
-      }
-
-      const data = await response.json();
-
-      // Adapter la réponse selon le statut
+      // Adapter les paramètres selon l'onglet sélectionné
       if (selectedTab === 'en_discussion') {
-        setProspects(data.discussions || []);
-      } else {
-        setProspects(data.prospects || []);
-      }
+        // Utiliser l'API des discussions
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/discussion?limit=20&offset=${offset}`;
 
-      setViewCount(data.viewCount ?? null);
-      setPagination(prev => ({
-        ...prev,
-        totalItems: data.totalCount || 0,
-        totalPages: Math.ceil((data.totalCount || 0) / prev.itemsPerPage)
-      }));
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+
+        const response = await fetch(fullUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des discussions");
+        }
+
+        const data = await response.json();
+
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.discussions || [])]);
+        } else {
+          setProspects(data.discussions || []);
+        }
+
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+
+      } else if (selectedTab === 'glacial') {
+        // Utiliser l'API des prospects glaciaux
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/glacial?limit=20&offset=${offset}`;
+
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+
+        const response = await fetch(fullUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects glaciaux");
+        }
+
+        const data = await response.json();
+
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+
+      } else {
+        // Onglet "À contacter" - utiliser l'API des prospects normaux
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
+
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+
+        // Ajouter le tri si spécifié
+        if (sortField) {
+          let orderByField = sortField;
+
+          // Mapper les champs de tri vers les noms Airtable
+          switch (sortField) {
+            case 'categorie':
+              orderByField = 'Catégorie';
+              break;
+            case 'dateRelance':
+              orderByField = 'Date de relance';
+              break;
+            case 'suiviPar':
+              orderByField = 'Suivi par';
+              break;
+            default:
+              orderByField = "Nom de l'établissement";
+          }
+          params.set('orderBy', orderByField);
+        }
+        if (sortDirection) params.set('order', sortDirection);
+
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+
+        const response = await fetch(fullUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects");
+        }
+
+        const data = await response.json();
+
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
-      console.log('finally');
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Fonction pour charger plus de données
+  const loadMore = () => {
+    if (hasMore && !loadingMore && nextOffset !== null) {
+      fetchProspects(true);
     }
   };
 
   useEffect(() => {
     fetchProspects();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedCategory,
     selectedSuiviPar,
@@ -196,6 +312,7 @@ export default function ProspectsPage() {
       email: prospect.email,
       adresse: prospect.adresse,
     };
+
     setEditingProspect(prospectForEdit);
     setIsProspectModalOpen(true);
   };
@@ -244,39 +361,11 @@ export default function ProspectsPage() {
       email: prospect.email,
       adresse: prospect.adresse,
     };
+
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
   };
 
-
-
-  if (loading && prospects.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <div className="text-red-500">Erreur: {error}</div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">
@@ -307,6 +396,7 @@ export default function ProspectsPage() {
                   inputWrapper:
                     "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                 }}
+                endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
                 type="text"
                 value={searchTerm}
@@ -328,12 +418,18 @@ export default function ProspectsPage() {
                   setSelectedCategory(Array.from(keys)[0] as string)
                 }
               >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="FOOD">FOOD</SelectItem>
-                <SelectItem key="SHOP">SHOP</SelectItem>
-                <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                <SelectItem key="FUN">FUN</SelectItem>
-                <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                <SelectItem key="tous">Toutes</SelectItem>
+                {categories.length > 0 ? (
+                  <>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
               </StyledSelect>
 
               <StyledSelect
@@ -345,14 +441,23 @@ export default function ProspectsPage() {
                 }
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="nom">Nom</SelectItem>
-                <SelectItem key="prenom">Prénom</SelectItem>
+                {collaborateurs.length > 0 ? (
+                  <>
+                    {collaborateurs.map((collab) => (
+                      <SelectItem key={collab.id}>
+                        {collab.nomComplet}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
               </StyledSelect>
             </div>
 
             <Button
-              className="bg-black text-white hover:bg-gray-900"
-              startContent={<PlusIcon className="h-4 w-4" />}
+              color='primary'
+              endContent={<PlusIcon className="h-4 w-4" />}
               onPress={() => {
                 setEditingProspect(null);
                 setIsProspectModalOpen(true);
@@ -362,125 +467,159 @@ export default function ProspectsPage() {
             </Button>
           </div>
 
-          {/* Table */}
-          {<Table aria-label="Tableau des prospects" shadow="none">
-            <TableHeader className="mb-4 ">
-              <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="categorie"
-                  label="Catégorie"
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                />
-
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="dateRelance"
-                  label="Date de relance"
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                />
-
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="suiviPar"
-                  label="Suivi par"
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                />
-
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-              <TableColumn className="font-light text-sm">Modifier</TableColumn>
-              <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
-            </TableHeader>
-            <TableBody className="mt-4">
-              {
-
-                loading ? (
-                  <TableRow>
-                    <TableCell className="text-center" colSpan={7}>
-                      <Spinner className="text-black dark:text-white p-20" size="lg" />
-                    </TableCell>
-                  </TableRow>
-                ) :
-                  prospects.map((prospect) => (
-                    <TableRow className="border-t border-gray-100  dark:border-gray-700" key={prospect.id}>
-                      <TableCell className="font-light py-5">
-                        {prospect.nomEtablissement}
-                      </TableCell>
-                      <TableCell className="font-light">
-                        <CategoryBadge category={prospect.categorie} />
-                      </TableCell>
-                      <TableCell className="font-light">
-                        {prospect.dateRelance
-                          ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          }).replace(/\//g, '.')
-                          : "-"
-                        }
-                      </TableCell>
-                      <TableCell className="font-light">{prospect.suiviPar}</TableCell>
-                      <TableCell className="font-light">{prospect.commentaires}</TableCell>
-                      <TableCell>
-                        <Button
-                          isIconOnly
-                          className="text-gray-600 hover:text-gray-800"
-                          size="sm"
-                          variant="light"
-                          aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
-                          onPress={() => handleEditProspect(prospect)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-light">
-                        <Button
-                          color="primary"
-                          className="bg-gray-800 text-white dark:bg-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-200 px-6"
-                          size="sm"
-                          variant="flat"
-                          onPress={() => openConvertModal(prospect)}
-                        >
-                          Convertir
-                        </Button>
+          {/* Table avec LazyLoading */}
+          {loading ? <div className="w-full">
+            <Card className="w-full" shadow="none">
+              <CardBody className="p-6">
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
+                </div>
+              </CardBody>
+            </Card>
+          </div> :
+            error ? <div className="flex justify-center items-center h-64">
+              <div className="text-red-500">Erreur: {error}</div>
+            </div> :
+              <Table
+                aria-label="Tableau des prospects"
+                bottomContent={
+                  hasMore && (
+                    <div className="flex justify-center py-4">
+                      <Button
+                        color="primary"
+                        disabled={loadingMore}
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                      >
+                        {loadingMore ? 'Chargement...' : 'Charger plus'}
+                      </Button>
+                    </div>
+                  )
+                }
+                shadow="none"
+              >
+                <TableHeader className="mb-4">
+                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="categorie"
+                      label="Catégorie"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="dateRelance"
+                      label="Date de relance"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="suiviPar"
+                      label="Suivi par"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
+                </TableHeader>
+                <TableBody className="mt-4">
+                  {prospects.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="text-center" colSpan={7}>
+                        <div className="py-20 text-gray-500">
+                          {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
+                            <div>
+                              <div className="text-lg mb-2">Aucun prospect trouvé</div>
+                              <div className="text-sm">Essayez de modifier vos filtres ou de créer un nouveau prospect</div>
+                              <Button
+                                className="mt-4"
+                                color="primary"
+                                onPress={() => {
+                                  setSearchTerm('');
+                                  setSelectedCategory('');
+                                  setSelectedSuiviPar('');
+                                }}
+                              >
+                                Réinitialiser les filtres
+                              </Button>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="text-lg mb-2">Aucun prospect disponible</div>
+                              <div className="text-sm">Commencez par ajouter votre premier prospect</div>
+                              <Button
+                                className="mt-4"
+                                color="primary"
+                                variant="flat"
+                                onPress={() => {
+                                  setEditingProspect(null);
+                                  setIsProspectModalOpen(true);
+                                }}
+                              >
+                                Ajouter un prospect
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))}
-            </TableBody>
-          </Table>}
-
-          {/* Pagination */}
-          {!loading && <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>}
-
-          {/* Info sur le nombre total d'éléments */}
-          {!loading && <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {prospects.length} prospect(s) sur{" "}
-            {pagination.totalItems} au total
-          </div>}
+                  ) : (
+                    prospects.map((prospect) => (
+                      <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
+                        <TableCell className="font-light py-5">
+                          {prospect.nomEtablissement}
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <CategoryBadge category={prospect.categorie} />
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {prospect.dateRelance
+                            ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')
+                            : "-"
+                          }
+                        </TableCell>
+                        <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                        <TableCell className="font-light">{prospect.commentaires}</TableCell>
+                        <TableCell>
+                          <Button
+                            isIconOnly
+                            aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                            className="text-gray-600 hover:text-gray-800"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleEditProspect(prospect)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-light">
+                          <Button
+                            className="px-6"
+                            color="primary"
+                            size="sm"
+                            onPress={() => openConvertModal(prospect)}
+                          >
+                            Convertir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>}
         </CardBody>
       </Card>
 
@@ -493,7 +632,7 @@ export default function ProspectsPage() {
         <ModalContent>
           <ModalHeader>Confirmer la conversion</ModalHeader>
           <ModalBody>
-            <div className="space-y-4">
+            <div className="space-y-4 text-primary">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
                   <svg className="h-12 w-12 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -501,10 +640,10 @@ export default function ProspectsPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <h3 className="text-lg font-medium">
                     Convertir ce prospect en client ?
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm mt-1">
                     Cette action va convertir <strong>{prospectToConvert?.nomEtablissement}</strong> en client.
                     Le prospect sera supprimé de la liste des prospects.
                   </p>
@@ -513,10 +652,10 @@ export default function ProspectsPage() {
 
               {prospectToConvert && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  <h4 className="text-sm font-medium mb-2">
                     Informations du prospect :
                   </h4>
-                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="space-y-1 text-sm">
                     <p><strong>Établissement :</strong> {prospectToConvert.nomEtablissement}</p>
                     <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
                     <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
@@ -528,7 +667,9 @@ export default function ProspectsPage() {
           </ModalBody>
           <ModalFooter>
             <Button
-              variant="light"
+              className="border-1"
+              color='primary'
+              variant="bordered"
               onPress={() => {
                 setIsConvertModalOpen(false);
                 setProspectToConvert(null);
@@ -537,8 +678,7 @@ export default function ProspectsPage() {
               Annuler
             </Button>
             <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-
+              color='primary'
               onPress={handleConvertToClient}
             >
               Confirmer la conversion
@@ -549,14 +689,14 @@ export default function ProspectsPage() {
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
       <ProspectModal
+        editingProspect={editingProspect}
+        isEditing={!!editingProspect}
         isOpen={isProspectModalOpen}
         onClose={() => {
           setIsProspectModalOpen(false);
           setEditingProspect(null);
         }}
         onProspectAdded={fetchProspects}
-        editingProspect={editingProspect}
-        isEditing={!!editingProspect}
       />
     </div>
   );

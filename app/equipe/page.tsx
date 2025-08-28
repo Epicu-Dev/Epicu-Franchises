@@ -14,16 +14,17 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Chip } from "@heroui/chip";
 import { Tooltip } from "@heroui/tooltip";
-import { Pagination } from "@heroui/pagination";
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
   PencilIcon,
   Squares2X2Icon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+
+import { getValidAccessToken } from "../../utils/auth";
 
 interface TeamMember {
   id: string;
@@ -46,11 +47,13 @@ interface AdminTeamMember {
   franchiseEmail: string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+
+
+// Interface pour les données de l'API collaborateurs
+interface Collaborateur {
+  id: string;
+  nomComplet: string;
+  villes: string[];
 }
 
 export default function EquipePage() {
@@ -60,14 +63,9 @@ export default function EquipePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
 
-  // Données d'exemple pour la vue tableau (admin)
+
+  // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
   const mockAdminData: AdminTeamMember[] = [
     {
       id: "1",
@@ -148,19 +146,34 @@ export default function EquipePage() {
     },
   ];
 
+  // Wrapper fetch avec authentification
+  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
+    const token = await getValidAccessToken();
+
+    if (!token) throw new Error('No access token');
+    const headers = new Headers((init?.headers as HeadersInit) || {});
+
+    headers.set('Authorization', `Bearer ${token}`);
+    const merged: RequestInit = { ...init, headers };
+
+    return fetch(input, merged);
+  };
+
   const fetchMembers = async () => {
     try {
       setLoading(true);
 
       if (viewMode === "grid") {
         const params = new URLSearchParams({
-          category: selectedCategory,
-          search: searchTerm,
-          page: "1",
-          limit: "35",
+          limit: "100", // Récupérer plus de collaborateurs
+          offset: "0",
         });
 
-        const response = await fetch(`/api/equipe?${params}`);
+        if (searchTerm) {
+          params.set('q', searchTerm);
+        }
+
+        const response = await authFetch(`/api/collaborateurs?${params}`);
 
         if (!response.ok) {
           throw new Error(
@@ -169,30 +182,116 @@ export default function EquipePage() {
         }
 
         const data = await response.json();
+        const collaborateurs: Collaborateur[] = data.results || [];
 
-        setMembers(data.members);
+        // Transformer les données de l'API en format TeamMember
+        const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
+          // Déterminer la catégorie basée sur les villes ou l'index
+          let category: "siege" | "franchise" | "prestataire" = "siege";
+
+          if (index >= 10 && index < 25) category = "franchise";
+          else if (index >= 25) category = "prestataire";
+
+          // Déterminer le rôle basé sur la catégorie
+          let role = "Collaborateur";
+
+          if (category === "siege") role = "Collaborateur Siège";
+          else if (category === "franchise") role = "Franchisé";
+          else if (category === "prestataire") role = "Prestataire";
+
+          // Déterminer la localisation
+          let location = "Siège";
+
+          if (category === "franchise" || category === "prestataire") {
+            location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+          }
+
+          return {
+            id: collab.id,
+            name: collab.nomComplet || `Collaborateur ${index + 1}`,
+            role,
+            location,
+            avatar: `/api/placeholder/150/150`,
+            category,
+          };
+        });
+
+        // Filtrer par catégorie si sélectionnée
+        let filteredMembers = transformedMembers;
+
+        if (selectedCategory && selectedCategory !== "tout") {
+          filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+        }
+
+        setMembers(filteredMembers);
       } else {
-        // Simulation d'un appel API pour la vue tableau
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Utiliser l'API des collaborateurs pour la vue tableau aussi
+        const params = new URLSearchParams({
+          limit: "100",
+          offset: "0",
+        });
 
-        // Filtrer les données selon le terme de recherche
-        const filteredData = mockAdminData.filter(
-          (member) =>
-            member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.identifier.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        if (searchTerm) {
+          params.set('q', searchTerm);
+        }
 
-        setAdminMembers(filteredData);
+        const response = await authFetch(`/api/collaborateurs?${params}`);
 
-        // Mettre à jour la pagination
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: filteredData.length,
-          totalPages: Math.ceil(filteredData.length / prev.itemsPerPage),
-          currentPage: 1,
-        }));
+        if (!response.ok) {
+          throw new Error(
+            "Erreur lors de la récupération des collaborateurs"
+          );
+        }
+
+        const data = await response.json();
+        const collaborateurs: Collaborateur[] = data.results || [];
+
+        // Transformer les données de l'API en format AdminTeamMember
+        const transformedAdminMembers: AdminTeamMember[] = collaborateurs.map((collab, index) => {
+          // Extraire le prénom et nom du nom complet
+          const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
+          const nameParts = nomComplet.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          // Déterminer la ville (première ville de la liste ou ville par défaut)
+          const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+
+          // Générer un identifiant basé sur le nom
+          const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
+
+          // Générer un mot de passe temporaire
+          const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+          // Date de naissance par défaut (peut être modifiée plus tard)
+          const birthDate = "01.01.1990";
+
+          // Générer des emails basés sur le nom et la ville
+          const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
+          const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+
+          return {
+            id: collab.id,
+            city,
+            firstName,
+            lastName,
+            identifier,
+            password,
+            birthDate,
+            personalEmail,
+            franchiseEmail,
+          };
+        });
+
+        setAdminMembers(transformedAdminMembers);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des membres:', error);
+      // En cas d'erreur, on garde les données existantes ou on vide la liste
+      if (viewMode === "grid") {
+        setMembers([]);
+      } else {
+        setAdminMembers([]);
       }
     } finally {
       setLoading(false);
@@ -219,22 +318,9 @@ export default function EquipePage() {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
   };
 
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
@@ -256,8 +342,7 @@ export default function EquipePage() {
                 <Tab key="prestataire" title="Prestataires" />
               </Tabs>
             ) : (
-              <div>
-              </div>
+              <div />
             )}
 
             <div className="flex items-center gap-4">
@@ -270,6 +355,11 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                   }}
+                  endContent={
+                    searchTerm && (
+                      <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
+                    )
+                  }
                   placeholder="Rechercher..."
                   type="text"
                   value={searchTerm}
@@ -293,148 +383,132 @@ export default function EquipePage() {
           {/* Contenu selon le mode de vue */}
           {viewMode === "grid" ? (
             // Vue grille (vue originale)
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="group relative flex flex-col items-center text-center cursor-pointer"
-                >
-                  <Avatar
-                    className="w-16 h-16 mb-3"
-                    classNames={{
-                      base: "ring-2 ring-gray-200 dark:ring-gray-700",
-                      img: "object-cover",
-                    }}
-                    name={member.name}
-                    src={member.avatar}
-                  />
-                  <h3 className="font-semibold  text-sm mb-1">
-                    {member.name}
-                  </h3>
-                  <p className="text-sm font-light ">
-                    {member.role}
-                  </p>
-                  <p className="text-xs font-light ">
-                    {member.location}
-                  </p>
-                </div>
-              ))}
-            </div>
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+              :
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="group relative flex flex-col items-center text-center cursor-pointer"
+                  >
+                    <Avatar
+                      className="w-16 h-16 mb-3"
+                      classNames={{
+                        base: "ring-2 ring-gray-200 dark:ring-gray-700",
+                        img: "object-cover",
+                      }}
+                      name={member.name}
+                      src={member.avatar}
+                    />
+                    <h3 className="font-semibold  text-sm mb-1">
+                      {member.name}
+                    </h3>
+                    <p className="text-sm font-light ">
+                      {member.role}
+                    </p>
+                    <p className="text-xs font-light ">
+                      {member.location}
+                    </p>
+                  </div>
+                ))}
+              </div>
           ) : (
             // Vue tableau (vue admin)
-            <>
-              <div className="overflow-x-auto">
-                <Table aria-label="Tableau des membres de l'équipe">
-                  <TableHeader>
-                    <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                    <TableColumn className="font-light text-sm">Ville</TableColumn>
-                    <TableColumn className="font-light text-sm">Prénom</TableColumn>
-                    <TableColumn className="font-light text-sm">Nom</TableColumn>
-                    <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                    <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
-                    <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
-                    <TableColumn className="font-light text-sm">Mail perso</TableColumn>
-                    <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
-                  </TableHeader>
-                  <TableBody>
-                    {adminMembers.map((member) => (
-                      <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
-                        <TableCell className="py-5 font-light">
-                          <Tooltip content="Modifier">
-                            <Button
-                              isIconOnly
-                              className="text-gray-600 hover:text-gray-800"
-                              size="sm"
-                              variant="light"
-                              onClick={() => handleEdit()}
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+              :
+              <>
+                <div className="overflow-x-auto">
+                  <Table aria-label="Tableau des membres de l'équipe">
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                      <TableColumn className="font-light text-sm">Ville</TableColumn>
+                      <TableColumn className="font-light text-sm">Prénom</TableColumn>
+                      <TableColumn className="font-light text-sm">Nom</TableColumn>
+                      <TableColumn className="font-light text-sm">Identifiant</TableColumn>
+                      <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
+                      <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
+                      <TableColumn className="font-light text-sm">Mail perso</TableColumn>
+                      <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
+                    </TableHeader>
+                    <TableBody>
+                      {adminMembers.map((member) => (
+                        <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
+                          <TableCell className="py-5 font-light">
+                            <Tooltip content="Modifier">
+                              <Button
+                                isIconOnly
+                                className="text-gray-600 hover:text-gray-800"
+                                size="sm"
+                                variant="light"
+                                onClick={() => handleEdit()}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </Button>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell className="font-light">
+
+                            {member.city}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.firstName}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.lastName}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.identifier}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-light">
+                            <span >
+                              {member.password}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.birthDate}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              className="font-light underline"
+                              href={`mailto:${member.personalEmail}`}
                             >
-                              <PencilIcon className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell className="font-light">
-
-                          {member.city}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.firstName}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.lastName}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.identifier}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <span >
-                            {member.password}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-light">
-                            {member.birthDate}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <a
-                            className="font-light underline"
-                            href={`mailto:${member.personalEmail}`}
-                          >
-                            {member.personalEmail}
-                          </a>
-                        </TableCell>
-                        <TableCell>
-                          <a
-                            className="font-light underline"
-                            href={`mailto:${member.franchiseEmail}`}
-                          >
-                            {member.franchiseEmail}
-                          </a>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination pour la vue tableau */}
-              <div className="flex justify-center mt-6">
-                <Pagination
-                  showControls
-                  classNames={{
-                    wrapper: "gap-2",
-                    item: "w-8 h-8 text-sm",
-                    cursor:
-                      "bg-black text-white dark:bg-white dark:text-black font-bold",
-                  }}
-                  page={pagination.currentPage}
-                  total={pagination.totalPages}
-                  onChange={(page) =>
-                    setPagination((prev) => ({ ...prev, currentPage: page }))
-                  }
-                />
-              </div>
-            </>
+                              {member.personalEmail}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              className="font-light underline"
+                              href={`mailto:${member.franchiseEmail}`}
+                            >
+                              {member.franchiseEmail}
+                            </a>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
           )}
 
-          {/* Informations sur le nombre de résultats */}
-          {((viewMode === "grid" && members.length > 0) ||
-            (viewMode === "table" && adminMembers.length > 0)) && (
-              <div className="text-center mt-4 text-sm text-gray-500">
-                {viewMode === "grid"
-                  ? `Affichage de ${members.length} membre(s)`
-                  : `Affichage de ${adminMembers.length} membre(s) sur ${pagination.totalItems} au total`}
-              </div>
-            )}
+
 
           {/* Message si aucun résultat */}
-          {((viewMode === "grid" && members.length === 0) ||
+          {!loading && ((viewMode === "grid" && members.length === 0) ||
             (viewMode === "table" && adminMembers.length === 0)) &&
             searchTerm && (
               <div className="text-center py-12">

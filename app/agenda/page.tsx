@@ -3,17 +3,16 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  Bars3Icon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
 
 import { AgendaModals } from "@/components/agenda-modals";
-import { StyledSelect } from "@/components/styled-select";
+import { EventModal } from "@/components/event-modal";
+import { getValidAccessToken } from "@/utils/auth";
 
 interface Event {
   id: string;
@@ -43,6 +42,16 @@ interface WeekDay {
   events: Event[];
 }
 
+// Interface pour les données de l'API agenda
+interface ApiEvent {
+  id: string;
+  task: string;
+  date: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+}
+
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"semaine" | "mois">("mois");
@@ -55,21 +64,58 @@ export default function AgendaPage() {
   const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
-
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Récupérer le token d'authentification
+      const token = await getValidAccessToken();
+
+      if (!token) {
+        throw new Error("Non authentifié");
+      }
+
+      // Calculer les dates de début et fin selon la vue
+      let dateStart: string;
+      let dateEnd: string;
+
+      if (view === "semaine") {
+        const startOfWeek = new Date(currentDate);
+
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        dateStart = startOfWeek.toISOString().split('T')[0];
+        dateEnd = endOfWeek.toISOString().split('T')[0];
+      } else {
+        // Vue mois
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        dateStart = startOfMonth.toISOString().split('T')[0];
+        dateEnd = endOfMonth.toISOString().split('T')[0];
+      }
+
       const params = new URLSearchParams({
-        month: (currentDate.getMonth() + 1).toString(),
-        year: currentDate.getFullYear().toString(),
-        day: currentDate.getDate().toString(),
-        view,
-        category: selectedCategory,
+        dateStart,
+        dateEnd,
+        limit: '100', // Récupérer plus d'événements pour couvrir la période
       });
 
-      const response = await fetch(`/api/agenda?${params}`);
+      const response = await fetch(`/api/agenda?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des événements");
@@ -77,7 +123,55 @@ export default function AgendaPage() {
 
       const data = await response.json();
 
-      setEvents(data.events);
+      // Transformer les données de l'API en format Event
+      const transformedEvents: Event[] = (data.events || []).map((apiEvent: ApiEvent) => {
+        const eventDate = new Date(apiEvent.date);
+        const startTime = eventDate.toTimeString().slice(0, 5);
+
+        // Calculer l'heure de fin (par défaut +1h)
+        const endDate = new Date(eventDate);
+
+        endDate.setHours(endDate.getHours() + 1);
+        const endTime = endDate.toTimeString().slice(0, 5);
+
+        // Mapper le type de l'API vers le type de l'interface
+        let mappedType: Event['type'] = "evenement";
+
+        if (apiEvent.type.toLowerCase().includes("rendez") || apiEvent.type.toLowerCase().includes("rdv")) {
+          mappedType = "rendez-vous";
+        } else if (apiEvent.type.toLowerCase().includes("tournage")) {
+          mappedType = "tournage";
+        } else if (apiEvent.type.toLowerCase().includes("publication")) {
+          mappedType = "publication";
+        }
+
+        // Déterminer la catégorie (par défaut siège)
+        let category: Event['category'] = "siege";
+
+        if (apiEvent.type.toLowerCase().includes("franchise")) {
+          category = "franchises";
+        } else if (apiEvent.type.toLowerCase().includes("prestataire")) {
+          category = "prestataires";
+        }
+
+        return {
+          id: apiEvent.id,
+          title: apiEvent.task,
+          type: mappedType,
+          date: apiEvent.date.split('T')[0], // Extraire juste la date
+          startTime,
+          endTime,
+          description: apiEvent.description,
+          category,
+        };
+      });
+
+      // Filtrer par catégorie si nécessaire
+      const filteredEvents = selectedCategory === "tout"
+        ? transformedEvents
+        : transformedEvents.filter(event => event.category === selectedCategory);
+
+      setEvents(filteredEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -115,38 +209,6 @@ export default function AgendaPage() {
 
       return newDate;
     });
-  };
-
-
-
-  const getEventTypeColor = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "primary";
-      case "tournage":
-        return "secondary";
-      case "publication":
-        return "success";
-      case "evenement":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
-
-  const getEventTypeLabel = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "Rendez-vous";
-      case "tournage":
-        return "Tournage";
-      case "publication":
-        return "Publication";
-      case "evenement":
-        return "Événement";
-      default:
-        return type;
-    }
   };
 
   const formatMonthYear = (date: Date) => {
@@ -362,12 +424,11 @@ export default function AgendaPage() {
         <div className="min-w-[800px]">
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8  mb-2">
-            <div className="p-2 text-center font-medium text-gray-600 text-sm">
-            </div>
+            <div className="p-2 text-center font-medium text-gray-600 text-sm" />
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center gap-4 flex items-center font-semibold text-custom-text-color-light"
+                className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
               >
                 <div
                   className={` w-8 h-8 flex items-center justify-center ${day.isToday
@@ -388,7 +449,7 @@ export default function AgendaPage() {
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100">
+                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100 h-20 flex items-center justify-end">
                   {hour}:00
                 </div>
 
@@ -410,7 +471,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`min-h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                      className={`h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
                         }`}
                     >
                       {hourEvents.map((event) => (
@@ -445,22 +506,6 @@ export default function AgendaPage() {
     );
   };
 
-
-
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full">
@@ -476,10 +521,50 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* En-tête avec navigation et boutons */}
+          <div className="flex justify-end items-center mb-6">
+
+
+            <div className="flex items-center space-x-4">
+
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsTournageModalOpen(true)}
+              >
+                Ajouter un tournage
+              </Button>
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsPublicationModalOpen(true)}
+              >
+                Ajouter une publication
+              </Button>
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsRdvModalOpen(true)}
+              >
+                Ajouter un rendez-vous
+              </Button>
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsEventModalOpen(true)}
+              >
+                Ajouter un évènement
+              </Button>
+            </div>
+          </div>
+
+          {/* Filtres et vues */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -490,71 +575,26 @@ export default function AgendaPage() {
                 >
                   <ChevronLeftIcon className="h-4 w-4" />
                 </Button>
-                <span className="text-lg font-semibold">
+                <span>
                   {view === "semaine"
                     ? formatWeekRange(currentDate)
                     : formatMonthYear(currentDate)}
                 </span>
-                <Button isIconOnly variant="light" aria-label="Mois suivant" onPress={handleNextMonth}>
+                <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
                   <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsRdvModalOpen(true)}
-              >
-                Créer un rendez-vous
-              </Button>
-
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsTournageModalOpen(true)}
-              >
-                Ajouter un tournage
-              </Button>
-
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsPublicationModalOpen(true)}
-              >
-                Ajouter une publication
-              </Button>
-            </div>
-          </div>
-
-          {/* Filtres et vues */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <StyledSelect
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tout">Tout</SelectItem>
-                <SelectItem key="siege">Siège</SelectItem>
-                <SelectItem key="franchises">Franchisés</SelectItem>
-                <SelectItem key="prestataires">Prestataires</SelectItem>
-              </StyledSelect>
-            </div>
-
             <div className="flex rounded-md overflow-hidden flex-shrink-0">
 
               <Button
-                color={view === "semaine" ? "primary" : "default"}
                 className={
                   view === "semaine"
                     ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
                 }
+                color={view === "semaine" ? "primary" : "default"}
                 size="sm"
                 variant="solid"
                 onPress={() => setView("semaine")}
@@ -562,12 +602,12 @@ export default function AgendaPage() {
                 Semaine
               </Button>
               <Button
-                color={view === "mois" ? "primary" : "default"}
                 className={
                   view === "mois"
                     ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
                 }
+                color={view === "mois" ? "primary" : "default"}
                 size="sm"
                 variant="solid"
                 onPress={() => setView("mois")}
@@ -578,10 +618,18 @@ export default function AgendaPage() {
           </div>
 
           {/* Contenu du calendrier */}
-          <div className="mt-6">
-            {view === "mois" && renderCalendarView()}
-            {view === "semaine" && renderWeekView()}
-          </div>
+          {
+            loading ? (
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+            ) : (
+              <div className="mt-6">
+                {view === "mois" && renderCalendarView()}
+                {view === "semaine" && renderWeekView()}
+              </div>
+            )
+          }
         </CardBody>
       </Card>
 
@@ -593,6 +641,13 @@ export default function AgendaPage() {
         setIsPublicationModalOpen={setIsPublicationModalOpen}
         setIsRdvModalOpen={setIsRdvModalOpen}
         setIsTournageModalOpen={setIsTournageModalOpen}
+        onEventAdded={fetchEvents}
+      />
+
+      {/* Modal d'événement */}
+      <EventModal
+        isOpen={isEventModalOpen}
+        onOpenChange={setIsEventModalOpen}
         onEventAdded={fetchEvents}
       />
     </div>

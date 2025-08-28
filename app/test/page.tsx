@@ -171,11 +171,14 @@ export default function TestProspects() {
     setVillesLoading(true);
     try {
       const params = new URLSearchParams();
+
       if (q) params.set('q', q);
       params.set('limit', '10');
       const res = await authFetch(`/api/villes?${params.toString()}`);
+
       if (!res.ok) return setVillesOptions([]);
       const data = await res.json();
+
       setVillesOptions(data.results || []);
     } catch (e) {
       setVillesOptions([]);
@@ -188,11 +191,14 @@ export default function TestProspects() {
     setCategoriesLoading(true);
     try {
       const params = new URLSearchParams();
+
       if (q) params.set('q', q);
       params.set('limit', '10');
       const res = await authFetch(`/api/categories?${params.toString()}`);
+
       if (!res.ok) return setCategoriesOptions([]);
       const data = await res.json();
+
       setCategoriesOptions(data.results || []);
     } catch (e) {
       setCategoriesOptions([]);
@@ -204,14 +210,16 @@ export default function TestProspects() {
   // debounce queries
   useEffect(() => {
     const t = setTimeout(() => fetchVilles(villesQuery), 250);
+
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [villesQuery]);
 
   useEffect(() => {
     const t = setTimeout(() => fetchCategories(categoriesQuery), 250);
+
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [categoriesQuery]);
 
   // when viewing prospects, prefetch defaults
@@ -220,7 +228,7 @@ export default function TestProspects() {
       fetchVilles('');
       fetchCategories('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [selected]);
 
   // ——— Agenda ———
@@ -1016,12 +1024,15 @@ export default function TestProspects() {
     setPCreateSuccess(null);
     if (!pSiret || !pNom || !pVille || !pTelephone || !pCategorie || !pStatut || !pDatePremier || !pDateRelance) {
       setPCreateError('Veuillez renseigner tous les champs requis');
+
       return;
     }
     // Validate SIRET: 14 digits (allow spaces in input)
     const siretClean = String(pSiret || '').replace(/\s+/g, '');
+
     if (!/^\d{14}$/.test(siretClean)) {
       setPCreateError('SIRET invalide — doit contenir exactement 14 chiffres');
+
       return;
     }
     setPCreating(true);
@@ -1037,6 +1048,7 @@ export default function TestProspects() {
         'Date de relance': pDateRelance,
         'Je viens de le rencontrer (bool)': Boolean(pJeRencontre),
       };
+
       if (pCommentaires) payload['Commentaires'] = pCommentaires;
 
       const res = await authFetch('/api/prospects/prospects', {
@@ -1044,11 +1056,14 @@ export default function TestProspects() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la création du prospect');
       }
       const created = await res.json();
+
       setPCreateSuccess(`Prospect créé (id: ${created.id})`);
       // reset minimal fields
       setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires('');
@@ -1067,16 +1082,20 @@ export default function TestProspects() {
     setPUpdateSuccess(null);
     if (!pEditId) {
       setPUpdateError('Record id requis');
+
       return;
     }
     setPUpdateLoading(true);
     try {
       const payload: any = {};
+
       if (pSiret) {
         const siretClean = String(pSiret).replace(/\s+/g, '');
+
         if (!/^\d{14}$/.test(siretClean)) {
           setPUpdateError('SIRET invalide — doit contenir exactement 14 chiffres');
           setPUpdateLoading(false);
+
           return;
         }
         payload['SIRET'] = siretClean;
@@ -1093,6 +1112,7 @@ export default function TestProspects() {
 
       if (Object.keys(payload).length === 0) {
         setPUpdateError('Aucun champ à mettre à jour');
+
         return;
       }
 
@@ -1101,11 +1121,14 @@ export default function TestProspects() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err?.error || 'Erreur lors de la mise à jour');
       }
       const updated = await res.json();
+
       setPUpdateSuccess(`Prospect mis à jour (id: ${updated.id})`);
       if (selected === 'prospects') loadCollection('prospects');
     } catch (err: any) {
@@ -1386,28 +1409,32 @@ export default function TestProspects() {
               </div>
               <div className="space-y-3">
                 <h5 className="font-medium">Modifier un prospect (par id)</h5>
-                <p className="text-sm text-gray-600">Collez l'id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
+                                    <p className="text-sm text-gray-600">Collez l&apos;id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Record id (rec...)</label>
-                    <Input type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} placeholder="recXXXXXXXXXXXX" />
+                    <label className="text-sm font-medium" htmlFor="record-id">Record id (rec...)</label>
+                    <Input id="record-id" placeholder="recXXXXXXXXXXXX" type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Champ à mettre à jour (ex: Statut)</label>
-                    <Input type="text" onChange={() => {}} placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" disabled />
+                    <label className="text-sm font-medium" htmlFor="champ-update">Champ à mettre à jour (ex: Statut)</label>
+                    <Input disabled id="champ-update" placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" type="text" onChange={() => {}} />
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Nom de l'établissement</label>
-                    <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
+                    <label className="text-sm font-medium" htmlFor="nom-etablissement">Nom de l&apos;établissement</label>
+                    <Input id="nom-etablissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Ville EPICU</label>
-                    <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                    <label className="text-sm font-medium" htmlFor="ville-epicu">Ville EPICU</label>
+                    <Input id="ville-epicu" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select" value={pVilleId || ''} onChange={(e) => {
                       const id = e.target.value;
-                      if (!id) { setPVille(''); setPVilleId(''); return; }
+
+                      if (!id) { setPVille(''); setPVilleId('');
+
+ return; }
                       const sel = villesOptions.find(v => v.id === id);
+
                       if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
                     }}>
                       <option value="">— Aucun —</option>
@@ -1415,12 +1442,16 @@ export default function TestProspects() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Catégorie</label>
-                    <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                    <label className="text-sm font-medium" htmlFor="categorie">Catégorie</label>
+                    <Input id="categorie" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                    <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select" value={pCategorieId || ''} onChange={(e) => {
                       const id = e.target.value;
-                      if (!id) { setPCategorie(''); setPCategorieId(''); return; }
+
+                      if (!id) { setPCategorie(''); setPCategorieId('');
+
+ return; }
                       const sel = categoriesOptions.find(c => c.id === id);
+
                       if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
                     }}>
                       <option value="">— Aucun —</option>
@@ -1428,22 +1459,22 @@ export default function TestProspects() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Statut</label>
-                    <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
+                    <label className="text-sm font-medium" htmlFor="statut">Statut</label>
+                    <Input id="statut" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Date de relance</label>
-                    <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                    <label className="text-sm font-medium" htmlFor="date-relance">Date de relance</label>
+                    <Input id="date-relance" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Commentaires</label>
-                    <Textarea rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                    <label className="text-sm font-medium" htmlFor="commentaires">Commentaires</label>
+                    <Textarea id="commentaires" rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
                   </div>
                 </div>
                 {pUpdateError && <div className="text-red-500 text-sm">{pUpdateError}</div>}
                 {pUpdateSuccess && <div className="text-emerald-600 text-sm">{pUpdateSuccess}</div>}
                 <div className="flex gap-2 pt-2">
-                  <Button onClick={() => updateProspect()} disabled={pUpdateLoading}>{pUpdateLoading ? 'Mise à jour…' : 'Mettre à jour le prospect'}</Button>
+                  <Button disabled={pUpdateLoading} onClick={() => updateProspect()}>{pUpdateLoading ? 'Mise à jour…' : 'Mettre à jour le prospect'}</Button>
                   <Button variant="ghost" onClick={() => { setPEditId(''); setPUpdateError(null); setPUpdateSuccess(null); }}>Annuler</Button>
                 </div>
               </div>
@@ -1546,23 +1577,27 @@ export default function TestProspects() {
                       <h4 className="font-semibold text-gray-900">Créer un prospect (test)</h4>
                     </div>
                     <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L'id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
+                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L&apos;id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">SIRET</label>
-                          <Input type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} placeholder="SIRET" />
+                          <label className="text-sm font-medium" htmlFor="siret">SIRET</label>
+                          <Input id="siret" placeholder="SIRET" type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Nom de l'établissement</label>
-                          <Input type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} placeholder="Nom établissement" />
+                          <label className="text-sm font-medium" htmlFor="nom-etablissement-create">Nom de l&apos;établissement</label>
+                          <Input id="nom-etablissement-create" placeholder="Nom établissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Ville EPICU</label>
-                          <Input type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} placeholder="Rechercher une ville…" />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pVilleId || ''} onChange={(e) => {
+                          <label className="text-sm font-medium" htmlFor="ville-epicu-create">Ville EPICU</label>
+                          <Input id="ville-epicu-create" placeholder="Rechercher une ville…" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                          <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select-create" value={pVilleId || ''} onChange={(e) => {
                             const id = e.target.value;
-                            if (!id) { setPVille(''); setPVilleId(''); return; }
+
+                            if (!id) { setPVille(''); setPVilleId('');
+
+ return; }
                             const sel = villesOptions.find(v => v.id === id);
+
                             if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
                           }}>
                             <option value="">— Aucun —</option>
@@ -1570,16 +1605,20 @@ export default function TestProspects() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Téléphone</label>
-                          <Input type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} placeholder="Téléphone" />
+                          <label className="text-sm font-medium" htmlFor="telephone">Téléphone</label>
+                          <Input id="telephone" placeholder="Téléphone" type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Catégorie</label>
-                          <Input type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} placeholder="Rechercher une catégorie…" />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" value={pCategorieId || ''} onChange={(e) => {
+                          <label className="text-sm font-medium" htmlFor="categorie-create">Catégorie</label>
+                          <Input id="categorie-create" placeholder="Rechercher une catégorie…" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                          <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select-create" value={pCategorieId || ''} onChange={(e) => {
                             const id = e.target.value;
-                            if (!id) { setPCategorie(''); setPCategorieId(''); return; }
+
+                            if (!id) { setPCategorie(''); setPCategorieId('');
+
+ return; }
                             const sel = categoriesOptions.find(c => c.id === id);
+
                             if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
                           }}>
                             <option value="">— Aucun —</option>
@@ -1587,30 +1626,30 @@ export default function TestProspects() {
                           </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Statut</label>
-                          <Input type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} placeholder="Statut" />
+                          <label className="text-sm font-medium" htmlFor="statut-create">Statut</label>
+                          <Input id="statut-create" placeholder="Statut" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Date du premier contact</label>
-                          <Input type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
+                          <label className="text-sm font-medium" htmlFor="date-premier">Date du premier contact</label>
+                          <Input id="date-premier" type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium">Date de relance</label>
-                          <Input type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                          <label className="text-sm font-medium" htmlFor="date-relance-create">Date de relance</label>
+                          <Input id="date-relance-create" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-2">
-                          <input id="jeRencontreMain" type="checkbox" checked={pJeRencontre} onChange={(e) => setPJeRencontre(e.target.checked)} />
-                          <label htmlFor="jeRencontreMain" className="text-sm">Je viens de le rencontrer</label>
+                          <input checked={pJeRencontre} id="jeRencontreMain" type="checkbox" onChange={(e) => setPJeRencontre(e.target.checked)} />
+                          <label className="text-sm" htmlFor="jeRencontreMain">Je viens de le rencontrer</label>
                         </div>
                         <div className="flex flex-col gap-1 md:col-span-2">
-                          <label className="text-sm font-medium">Commentaires</label>
-                          <Textarea rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                          <label className="text-sm font-medium" htmlFor="commentaires-create">Commentaires</label>
+                          <Textarea id="commentaires-create" rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
                         </div>
                       </div>
                       {pCreateError && <div className="text-red-500 text-sm">{pCreateError}</div>}
                       {pCreateSuccess && <div className="text-emerald-600 text-sm">{pCreateSuccess}</div>}
                       <div className="flex gap-2 pt-2">
-                        <Button onClick={() => createProspect()} disabled={pCreating}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
+                        <Button disabled={pCreating} onClick={() => createProspect()}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
                         <Button variant="ghost" onClick={() => { setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
                       </div>
                     </div>

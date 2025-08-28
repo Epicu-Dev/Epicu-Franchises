@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Input } from '@heroui/input';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-import { ThemeSwitch } from './theme-switch';
 
 export function Header() {
   const router = useRouter();

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardBody } from "@heroui/card";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -14,6 +14,7 @@ import {
 import { Tabs, Tab } from "@heroui/tabs";
 
 import { DashboardLayout } from "../dashboard-layout";
+
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components/sortable-column-header";
 import { useSortableTable } from "@/hooks/use-sortable-table";
@@ -111,7 +112,7 @@ export default function DataPage() {
 
   return (
     <DashboardLayout>
-      <div className="">
+      <div className="text-primary">
         <Card className="w-full" shadow="none">
           <CardBody className="space-y-6">
             {/* Tabs */}
@@ -156,8 +157,8 @@ export default function DataPage() {
                       <SortableColumnHeader
                         field="month"
                         label="Mois"
-                        sortField={sortField}
                         sortDirection={sortDirection}
+                        sortField={sortField}
                         onSort={handleSort}
                       />
                     </TableColumn>
@@ -170,8 +171,8 @@ export default function DataPage() {
                       <SortableColumnHeader
                         field="publishedPosts"
                         label="Posts publiés"
-                        sortField={sortField}
                         sortDirection={sortDirection}
+                        sortField={sortField}
                         onSort={handleSort}
                       />
                     </TableColumn>

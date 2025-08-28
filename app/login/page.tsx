@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 
 import MessageAlert from "@/components/message-alert";
 import { FormLabel } from "@/components/form-label";
+import { isUserLoggedIn } from "@/utils/auth";
 
 export default function LoginPage() {
   const [identifiant, setIdentifiant] = useState("");
@@ -15,6 +16,13 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"error" | "success" | "info">("error");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Vérifier si l'utilisateur est déjà connecté et le rediriger
+  useEffect(() => {
+    if (isUserLoggedIn()) {
+      router.push("/home");
+    }
+  }, [router]);
 
   // Appel de préchauffage Airtable en arrière-plan dès l'arrivée sur la page
   useEffect(() => {
@@ -90,7 +98,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex text-primary">
       {/* Left Side - Background Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div
@@ -102,23 +110,23 @@ export default function LoginPage() {
         {/* Logo Epicu en bas à gauche */}
         <div className="absolute bottom-8 left-8">
           <img
-            src="/images/logo.png"
             alt="Logo Epicu"
             className="h-30 w-auto "
+            src="/images/logo.png"
           />
         </div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-6">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-page-bg px-6 ">
         <div className="w-full max-w-md">
           {/* Login Card */}
           <div className="bg-white rounded-3xl shadow-lg shadow-gray-100 p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              <h1 className="text-3xl font-bold mb-2 ">
                 Bienvenue !
               </h1>
-              <p className="text-gray-600 text-sm pl-8 pr-8 font-light">
+              <p className=" text-sm pl-8 pr-8 font-light">
                 Votre réseau réuni ici pour vous aider à prendre les meilleures
                 décisions
               </p>
@@ -165,8 +173,8 @@ export default function LoginPage() {
               </div>
 
               <Button
-                className="w-full bg-gray-800 text-white hover:bg-gray-700"
-                color="default"
+                className="w-full "
+                color="primary"
                 isLoading={isLoading}
                 size="lg"
                 type="submit"
