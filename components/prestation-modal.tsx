@@ -233,6 +233,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               id="nom"
               isInvalid={!!fieldErrors.nom}
               placeholder="Nom et prénom"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.nom}
               onChange={(e) => {
                 const value = e.target.value;
@@ -257,6 +260,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               id="etablissement"
               isInvalid={!!fieldErrors.etablissement}
               placeholder="Nom de l&apos;établissement"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.etablissement}
               onChange={(e) => {
                 const value = e.target.value;
@@ -282,6 +288,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               isInvalid={!!fieldErrors.email}
               placeholder="email@exemple.com"
               type="email"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.email}
               onChange={(e) => {
                 const value = e.target.value;
@@ -306,6 +315,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               id="telephone"
               isInvalid={!!fieldErrors.telephone}
               placeholder="06 00 00 00 00"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.telephone}
               onChange={(e) => {
                 const value = e.target.value;
@@ -330,6 +342,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               id="ville"
               isInvalid={!!fieldErrors.ville}
               placeholder="Ville"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.ville}
               onChange={(e) => {
                 const value = e.target.value;
@@ -351,6 +366,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
             <Input
               id="instagram"
               placeholder="URL Instagram"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.instagram}
               onChange={(e) =>
                 setPrestationRequest((prev) => ({
@@ -404,6 +422,9 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
               id="budget"
               isInvalid={!!fieldErrors.budget}
               placeholder="1500€"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={prestationRequest.budget}
               onChange={(e) => {
                 const value = e.target.value;

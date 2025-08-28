@@ -624,6 +624,9 @@ export default function FacturationPage() {
                 id="siret"
                 isInvalid={!!fieldErrors.siret}
                 placeholder="Numéro de SIRET (14 chiffres)"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newInvoice.siret}
                 onBlur={(e) => {
                   const value = e.target.value;
@@ -678,6 +681,9 @@ export default function FacturationPage() {
                 id="establishmentName"
                 isInvalid={!!fieldErrors.establishmentName}
                 placeholder="Ex: L'ambiance"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newInvoice.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -723,6 +729,9 @@ export default function FacturationPage() {
                 placeholder="Ex: 1457.98"
                 step="0.01"
                 type="number"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newInvoice.amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -741,6 +750,9 @@ export default function FacturationPage() {
                 id="date"
                 isInvalid={!!fieldErrors.date}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newInvoice.date}
                 onChange={(e) => {
                   const value = e.target.value;

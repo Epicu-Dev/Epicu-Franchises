@@ -277,7 +277,7 @@ export default function ClientsPage() {
                     input:
                       "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                     inputWrapper:
-                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
                   endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                   placeholder="Rechercher..."

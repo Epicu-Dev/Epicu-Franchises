@@ -735,6 +735,9 @@ export default function HomePage() {
                 isRequired
                 id="mission"
                 placeholder="Titre de la tâche"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.mission}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNewTodo((prev) => ({ ...prev, mission: e.target.value }))
@@ -746,6 +749,9 @@ export default function HomePage() {
               <Input
                 id="deadline"
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.deadline}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))

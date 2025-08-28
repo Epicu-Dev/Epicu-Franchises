@@ -453,6 +453,9 @@ export default function TodoPage() {
                 id="name"
                 isInvalid={!!fieldErrors.name}
                 placeholder="Titre de la tâche"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.name}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -474,6 +477,9 @@ export default function TodoPage() {
                 id="dueDate"
                 isInvalid={!!fieldErrors.dueDate}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTodo.dueDate}
                 onChange={(e) => {
                   const value = e.target.value;

@@ -410,6 +410,9 @@ export function AgendaModals({
                 id="establishmentName"
                 isInvalid={!!fieldErrors['tournage.establishmentName']}
                 placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTournage.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -432,6 +435,9 @@ export function AgendaModals({
                 id="publicationDate"
                 isInvalid={!!fieldErrors['tournage.publicationDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTournage.publicationDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -453,6 +459,9 @@ export function AgendaModals({
                 id="shootingDate"
                 isInvalid={!!fieldErrors['tournage.shootingDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newTournage.shootingDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -534,6 +543,9 @@ export function AgendaModals({
                 id="categoryName"
                 isInvalid={!!fieldErrors['publication.categoryName']}
                 placeholder="FOOD"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.categoryName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -554,6 +566,9 @@ export function AgendaModals({
                 id="establishmentName"
                 isInvalid={!!fieldErrors['publication.establishmentName']}
                 placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -572,6 +587,9 @@ export function AgendaModals({
                 id="publicationDate"
                 isInvalid={!!fieldErrors['publication.publicationDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.publicationDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -592,6 +610,9 @@ export function AgendaModals({
                 id="shootingDate"
                 isInvalid={!!fieldErrors['publication.shootingDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.shootingDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -607,6 +628,9 @@ export function AgendaModals({
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     type="time"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newPublication.shootingStartTime}
                     onChange={(e) => {
                       const startTime = e.target.value;
@@ -621,6 +645,9 @@ export function AgendaModals({
                   />
                   <Input
                     type="time"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newPublication.shootingEndTime}
                     onChange={(e) =>
                       setNewPublication((prev) => ({
@@ -640,6 +667,9 @@ export function AgendaModals({
                 id="publicationDate"
                 isInvalid={!!fieldErrors['publication.publicationDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.publicationDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -658,6 +688,9 @@ export function AgendaModals({
                 <Input
                   isRequired
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newPublication.publicationStartTime}
                   onChange={(e) => {
                     const startTime = e.target.value;
@@ -673,6 +706,9 @@ export function AgendaModals({
                 <Input
                   isRequired
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newPublication.publicationEndTime}
                   onChange={(e) =>
                     setNewPublication((prev) => ({
@@ -690,6 +726,9 @@ export function AgendaModals({
                 isRequired
                 id="winner"
                 placeholder="Nom Prénom"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newPublication.winner}
                 onChange={(e) =>
                   setNewPublication((prev) => ({
@@ -749,6 +788,9 @@ export function AgendaModals({
                 id="categoryName"
                 isInvalid={!!fieldErrors['rdv.categoryName']}
                 placeholder="FOOD"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.categoryName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -769,6 +811,9 @@ export function AgendaModals({
                 id="establishmentName"
                 isInvalid={!!fieldErrors['rdv.establishmentName']}
                 placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.establishmentName}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -790,6 +835,9 @@ export function AgendaModals({
                 id="appointmentType"
                 isInvalid={!!fieldErrors['rdv.appointmentType']}
                 placeholder="Fidélisation"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.appointmentType}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -811,6 +859,9 @@ export function AgendaModals({
                 id="appointmentDate"
                 isInvalid={!!fieldErrors['rdv.appointmentDate']}
                 type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 value={newRdv.appointmentDate}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -828,6 +879,9 @@ export function AgendaModals({
                   isRequired
                   id="startTime"
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newRdv.startTime}
                   onChange={(e) => {
                     const startTime = e.target.value;
@@ -845,6 +899,9 @@ export function AgendaModals({
                   isRequired
                   id="endTime"
                   type="time"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={newRdv.endTime}
                   onChange={(e) =>
                     setNewRdv((prev) => ({

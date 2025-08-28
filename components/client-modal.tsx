@@ -96,6 +96,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="raisonSociale"
                                     placeholder="Nom de l'établissement"
@@ -115,6 +116,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="ville"
                                     placeholder="Paris"
@@ -169,6 +171,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="telephone"
                                     placeholder="01 23 45 67 89"
@@ -188,6 +191,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="email"
                                     placeholder="contact@etablissement.fr"
@@ -208,6 +212,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="numeroSiret"
                                     placeholder="12345678901234"
@@ -255,6 +260,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="dateSignatureContrat"
                                     type="date"
@@ -283,6 +289,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="datePublicationContenu"
                                     type="date"
@@ -304,6 +311,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="datePublicationFacture"
                                     type="date"
@@ -357,6 +365,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantFactureContenu"
                                     placeholder="1750€"
@@ -378,6 +387,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantPaye"
                                     placeholder="750€"
@@ -397,6 +407,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="dateReglementFacture"
                                     type="date"
@@ -418,6 +429,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="restantDu"
                                     placeholder="1750€"
@@ -437,6 +449,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantSponsorisation"
                                     placeholder="1750€"
@@ -458,6 +471,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantAddition"
                                     placeholder="1750€"
@@ -524,6 +538,7 @@ export default function ClientModal({
                                     classNames={{
                                         label: "text-sm font-medium",
                                         input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantCadeau"
                                     placeholder="150€"

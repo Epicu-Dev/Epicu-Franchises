@@ -147,7 +147,7 @@ export function ProspectModal({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Validation complète avant soumission
       if (!validateAllFields(newProspect)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
@@ -248,7 +248,7 @@ export function ProspectModal({
       size="2xl"
       onOpenChange={handleClose}
     >
-      <ModalContent>
+      <ModalContent className="text-primary">
         <ModalHeader>
           {isEditing ? 'Modifier le prospect' : 'Ajouter un nouveau prospect'}
         </ModalHeader>
@@ -261,6 +261,9 @@ export function ProspectModal({
               isRequired
               id="siret"
               placeholder="12345678901234"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.siret}
               onChange={(e) =>
                 setNewProspect((prev) => ({ ...prev, siret: e.target.value }))
@@ -270,6 +273,9 @@ export function ProspectModal({
               Nom établissement
             </FormLabel>
             <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               isRequired
               errorMessage={fieldErrors.nomEtablissement}
               id="nomEtablissement"
@@ -295,6 +301,9 @@ export function ProspectModal({
               id="ville"
               isInvalid={!!fieldErrors.ville}
               placeholder="Paris"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.ville}
               onChange={(e) => {
                 const value = e.target.value;
@@ -312,6 +321,9 @@ export function ProspectModal({
               id="telephone"
               isInvalid={!!fieldErrors.telephone}
               placeholder="01 23 45 67 89"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.telephone}
               onChange={(e) => {
                 const value = e.target.value;
@@ -371,6 +383,9 @@ export function ProspectModal({
               id="datePremierRendezVous"
               isInvalid={!!fieldErrors.datePremierRendezVous}
               type="date"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
                 const value = e.target.value;
@@ -391,6 +406,9 @@ export function ProspectModal({
               id="dateRelance"
               isInvalid={!!fieldErrors.dateRelance}
               type="date"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.dateRelance}
               onChange={(e) => {
                 const value = e.target.value;
@@ -424,6 +442,9 @@ export function ProspectModal({
             <Textarea
               id="commentaire"
               placeholder="..."
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               value={newProspect.commentaire}
               onChange={(e) =>
                 setNewProspect((prev) => ({
@@ -444,10 +465,10 @@ export function ProspectModal({
             </div>
           )}
           <div className="flex justify-end gap-2 w-full">
-            <Button 
-              className="flex-1 border-1" 
-              color='primary' 
-              isDisabled={isLoading} 
+            <Button
+              className="flex-1 border-1"
+              color='primary'
+              isDisabled={isLoading}
               variant="bordered"
               onPress={handleClose}
             >

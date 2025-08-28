@@ -202,6 +202,9 @@ export function EventModal({
                             id="eventName"
                             isInvalid={!!fieldErrors['eventName']}
                             placeholder="Nom de l'événement"
+                            classNames={{
+                                inputWrapper: "bg-page-bg",
+                            }}
                             value={newEvent.eventName}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -270,6 +273,9 @@ export function EventModal({
                             id="eventDate"
                             isInvalid={!!fieldErrors['eventDate']}
                             type="date"
+                            classNames={{
+                                inputWrapper: "bg-page-bg",
+                            }}
                             value={newEvent.eventDate}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -285,6 +291,9 @@ export function EventModal({
                             <Input
                                 isRequired
                                 type="time"
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
                                 value={newEvent.startTime}
                                 onChange={(e) => {
                                     const startTime = e.target.value;
@@ -299,6 +308,9 @@ export function EventModal({
                             <Input
                                 isRequired
                                 type="time"
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
                                 value={newEvent.endTime}
                                 onChange={(e) =>
                                     setNewEvent((prev) => ({

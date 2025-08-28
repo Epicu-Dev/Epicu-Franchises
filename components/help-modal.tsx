@@ -135,6 +135,9 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
                   isRequired
                   id="objet"
                   placeholder="Ex: Accès WordPress, Problème de facturation..."
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={formData.objet}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, objet: e.target.value }))
@@ -152,6 +155,9 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
                   maxRows={8}
                   minRows={4}
                   placeholder="Décrivez votre problème en détail..."
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   value={formData.commentaires}
                   onChange={(e) =>
                     setFormData((prev) => ({

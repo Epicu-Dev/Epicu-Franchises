@@ -411,6 +411,9 @@ export default function HomeAdminPage() {
                   <Input
                     label="Nom de l'établissement"
                     placeholder="Entrez le nom de l'établissement"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newProspect.nomEtablissement}
                     onChange={(e) =>
                       setNewProspect({
@@ -423,6 +426,9 @@ export default function HomeAdminPage() {
                     label="Email"
                     placeholder="email@exemple.com"
                     type="email"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newProspect.email}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, email: e.target.value })
@@ -431,6 +437,9 @@ export default function HomeAdminPage() {
                   <Input
                     label="Téléphone"
                     placeholder="+33 1 23 45 67 89"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newProspect.telephone}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, telephone: e.target.value })
@@ -439,6 +448,9 @@ export default function HomeAdminPage() {
                   <Input
                     label="Adresse"
                     placeholder="123 Rue de la Paix, 75001 Paris"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={newProspect.adresse}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, adresse: e.target.value })

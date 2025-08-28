@@ -61,8 +61,7 @@ export default function ResourceModal({
               <Input
                 isRequired
                 classNames={{
-                  input: "bg-gray-50 rounded-lg",
-                  inputWrapper: "bg-gray-50 rounded-lg"
+                  inputWrapper: "bg-page-bg"
                 }}
                 id="title"
                 placeholder="Nom du document"
@@ -75,8 +74,7 @@ export default function ResourceModal({
               <Textarea
                 isRequired
                 classNames={{
-                  input: "bg-gray-50 rounded-lg",
-                  inputWrapper: "bg-gray-50 rounded-lg"
+                  inputWrapper: "bg-page-bg"
                 }}
                 id="comment"
                 minRows={3}
@@ -91,8 +89,7 @@ export default function ResourceModal({
               <Input
                 isRequired
                 classNames={{
-                  input: "bg-gray-50 rounded-lg",
-                  inputWrapper: "bg-gray-50 rounded-lg"
+                  inputWrapper: "bg-page-bg"
                 }}
                 id="link"
                 placeholder="url"

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Input } from '@heroui/input';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Divider } from '@heroui/divider';
 
 
 export function Header() {
@@ -15,28 +16,28 @@ export function Header() {
 
   return (
     <div className="w-full">
-      
+
       {/* Main Header Section */}
       <div className="w-full bg-page-bg dark:bg-gray-900 px-6 py-4 flex justify-end items-center gap-4 ">
         {/* Search Bar */}
         <div className="relative">
           <Input
-            className="w-64 pr-4 pl-10"
+            className="w-64 pl-10"
             classNames={{
               input: "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-              inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800"
+              inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg"
             }}
             placeholder="Rechercher..."
-            startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
+            startContent={<MagnifyingGlassIcon className="w-5 h-5" />}
             type="text"
           />
         </div>
-        
+
         {/* Theme Switch */}
-        {/* <ThemeSwitch /> */}
-        
+        <Divider orientation="vertical" className="h-10" />
+
         {/* User Profile Picture */}
-        <button 
+        <button
           className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleProfileClick}
         >
