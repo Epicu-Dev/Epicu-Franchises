@@ -91,7 +91,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       label: "Facturation",
       icon: DocumentTextIcon,
       href: "/facturation",
-      showFor: []
+      showFor: ["franchise", "admin"]
     },
     { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise", "admin"] },
     {

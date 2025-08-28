@@ -398,11 +398,13 @@ export default function ProspectsPage() {
                 }}
                 endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
+                startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
+
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+             
             </div>
           </div>
 

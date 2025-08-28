@@ -370,16 +370,6 @@ export default function HomePage() {
     );
   };
 
-  // Calcul des métriques filtrées
-  const filteredProspects = useMemo(() =>
-    filterDataByCity(prospects, selectedCity),
-    [prospects, selectedCity]
-  );
-
-  const filteredClients = useMemo(() =>
-    filterDataByCity(clients, selectedCity),
-    [clients, selectedCity]
-  );
 
   const filteredEvents = useMemo(() =>
     filterDataByCity(events, selectedCity),
@@ -396,7 +386,7 @@ export default function HomePage() {
   //   return `${Math.round((convertedClients / totalProspects) * 100)}%`;
   // }, [filteredProspects, filteredClients]);
 
-  const metrics = [
+  const allMetrics = [
     {
       value: statisticsLoading ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
       label: "Nombre d'abonnés",
@@ -426,6 +416,11 @@ export default function HomePage() {
       iconColor: "text-custom-orange-food",
     },
   ];
+
+  // Filtrer les métriques selon la ville sélectionnée
+  const metrics = selectedCity === "national" 
+    ? allMetrics.filter(metric => metric.label !== "Prospects signés")
+    : allMetrics;
 
   // Transformation des événements filtrés pour l'affichage
   const agendaEvents = useMemo(() => {

@@ -476,11 +476,12 @@ export default function StudioPage() {
                             "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
                         }}
                         placeholder="Rechercher..."
+                        startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
+
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
-                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                     </div>
                   </div>
 
