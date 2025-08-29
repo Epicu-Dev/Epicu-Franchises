@@ -134,6 +134,9 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
                 <Input
                   isRequired
                   id="objet"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   placeholder="Ex: Accès WordPress, Problème de facturation..."
                   classNames={{
                     inputWrapper: "bg-page-bg",
@@ -154,6 +157,9 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
                   id="commentaires"
                   maxRows={8}
                   minRows={4}
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   placeholder="Décrivez votre problème en détail..."
                   classNames={{
                     inputWrapper: "bg-page-bg",

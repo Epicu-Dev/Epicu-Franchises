@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Input } from '@heroui/input';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { Divider } from '@heroui/divider';
 
 
 export function Header() {
@@ -22,19 +21,19 @@ export function Header() {
         {/* Search Bar */}
         <div className="relative">
           <Input
-            className="w-64 pl-10"
+            className="w-64 pr-4 pl-10"
             classNames={{
               input: "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
               inputWrapper: "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg"
             }}
             placeholder="Rechercher..."
-            startContent={<MagnifyingGlassIcon className="w-5 h-5" />}
             type="text"
+            startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
           />
         </div>
 
         {/* Theme Switch */}
-        <Divider orientation="vertical" className="h-10" />
+        {/* <ThemeSwitch /> */}
 
         {/* User Profile Picture */}
         <button

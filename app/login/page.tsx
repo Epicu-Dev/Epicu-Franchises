@@ -67,6 +67,20 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("expiresAtAccess", data.expiresAtAccess);
         localStorage.setItem("expiresAtRefresh", data.expiresAtRefresh);
+        
+        // Stocker les données utilisateur pour éviter le problème de "utilisateur inconnu"
+        localStorage.setItem("userProfile", JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          firstname: data.user.firstname,
+          lastname: data.user.lastname,
+          role: data.user.role,
+          villes: data.user.villes,
+          telephone: "",
+          identifier: ""
+        }));
+        localStorage.setItem("userProfileCacheTime", Date.now().toString());
+        
         showMessageWithType("Connexion réussie ! Redirection...", "success");
         setTimeout(() => {
           router.push("/home");

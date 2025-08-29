@@ -50,7 +50,7 @@ export default function ResourceModal({
     <Modal isOpen={isOpen} size="lg" onClose={onClose}>
       <ModalContent>
         <form onSubmit={handleSubmit}>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex justify-center">
             {mode === "create" ? "Ajouter un document" : "Modifier le document"}
           </ModalHeader>
           <ModalBody>
@@ -61,7 +61,7 @@ export default function ResourceModal({
               <Input
                 isRequired
                 classNames={{
-                  inputWrapper: "bg-page-bg"
+                  inputWrapper: "bg-page-bg",
                 }}
                 id="title"
                 placeholder="Nom du document"
@@ -74,7 +74,7 @@ export default function ResourceModal({
               <Textarea
                 isRequired
                 classNames={{
-                  inputWrapper: "bg-page-bg"
+                  inputWrapper: "bg-page-bg",
                 }}
                 id="comment"
                 minRows={3}
@@ -89,7 +89,7 @@ export default function ResourceModal({
               <Input
                 isRequired
                 classNames={{
-                  inputWrapper: "bg-page-bg"
+                  inputWrapper: "bg-page-bg",
                 }}
                 id="link"
                 placeholder="url"

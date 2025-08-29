@@ -28,6 +28,8 @@ interface Prospect {
   dateRelance: string;
   vientDeRencontrer: boolean;
   commentaire: string;
+  email?: string;
+  adresse?: string;
 }
 
 interface ProspectModalProps {
@@ -59,6 +61,8 @@ export function ProspectModal({
     dateRelance: "",
     vientDeRencontrer: false,
     commentaire: "",
+    email: "",
+    adresse: "",
   });
 
   // Initialiser le formulaire avec les données du prospect à éditer
@@ -78,6 +82,8 @@ export function ProspectModal({
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
+        email: "",
+        adresse: "",
       });
     }
     setError(null);
@@ -168,6 +174,8 @@ export function ProspectModal({
         'Date de relance': newProspect.dateRelance,
         'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
         'Commentaires': newProspect.commentaire,
+        'Email': newProspect.email,
+        'Adresse': newProspect.adresse,
       };
 
 
@@ -211,6 +219,8 @@ export function ProspectModal({
         dateRelance: "",
         vientDeRencontrer: false,
         commentaire: "",
+        email: "",
+        adresse: "",
       });
       setError(null);
       setFieldErrors({});
@@ -237,6 +247,8 @@ export function ProspectModal({
       dateRelance: "",
       vientDeRencontrer: false,
       commentaire: "",
+      email: "",
+      adresse: "",
     });
     onClose();
   };
@@ -248,8 +260,8 @@ export function ProspectModal({
       size="2xl"
       onOpenChange={handleClose}
     >
-      <ModalContent className="text-primary">
-        <ModalHeader>
+      <ModalContent>
+        <ModalHeader className="flex justify-center">
           {isEditing ? 'Modifier le prospect' : 'Ajouter un nouveau prospect'}
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
@@ -260,10 +272,10 @@ export function ProspectModal({
             <Input
               isRequired
               id="siret"
-              placeholder="12345678901234"
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
+              placeholder="12345678901234"
               value={newProspect.siret}
               onChange={(e) =>
                 setNewProspect((prev) => ({ ...prev, siret: e.target.value }))
@@ -273,10 +285,10 @@ export function ProspectModal({
               Nom établissement
             </FormLabel>
             <Input
+              isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              isRequired
               errorMessage={fieldErrors.nomEtablissement}
               id="nomEtablissement"
               isInvalid={!!fieldErrors.nomEtablissement}
@@ -297,13 +309,13 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.ville}
               id="ville"
               isInvalid={!!fieldErrors.ville}
               placeholder="Paris"
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
               value={newProspect.ville}
               onChange={(e) => {
                 const value = e.target.value;
@@ -317,13 +329,13 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.telephone}
               id="telephone"
               isInvalid={!!fieldErrors.telephone}
               placeholder="01 23 45 67 89"
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
               value={newProspect.telephone}
               onChange={(e) => {
                 const value = e.target.value;
@@ -379,13 +391,13 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.datePremierRendezVous}
               id="datePremierRendezVous"
               isInvalid={!!fieldErrors.datePremierRendezVous}
               type="date"
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
               value={newProspect.datePremierRendezVous}
               onChange={(e) => {
                 const value = e.target.value;
@@ -402,13 +414,13 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.dateRelance}
               id="dateRelance"
               isInvalid={!!fieldErrors.dateRelance}
               type="date"
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
               value={newProspect.dateRelance}
               onChange={(e) => {
                 const value = e.target.value;
@@ -441,15 +453,52 @@ export function ProspectModal({
             </FormLabel>
             <Textarea
               id="commentaire"
-              placeholder="..."
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
+              placeholder="..."
               value={newProspect.commentaire}
               onChange={(e) =>
                 setNewProspect((prev) => ({
                   ...prev,
                   commentaire: e.target.value,
+                }))
+              }
+            />
+
+            <FormLabel htmlFor="email" isRequired={false}>
+              Email
+            </FormLabel>
+            <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              id="email"
+              placeholder="contact@etablissement.fr"
+              type="email"
+              value={newProspect.email || ""}
+              onChange={(e) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  email: e.target.value,
+                }))
+              }
+            />
+
+            <FormLabel htmlFor="adresse" isRequired={false}>
+              Adresse
+            </FormLabel>
+            <Textarea
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              id="adresse"
+              placeholder="123 Rue de l'établissement, 75001 Ville"
+              value={newProspect.adresse || ""}
+              onChange={(e) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  adresse: e.target.value,
                 }))
               }
             />

@@ -61,9 +61,6 @@ export default function AgendaPage() {
   const [error, setError] = useState<string | null>(null);
 
   // États pour les différents modals
-  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
-  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const fetchEvents = async () => {
     try {
@@ -385,12 +382,12 @@ export default function AgendaPage() {
                   <div
                     key={event.id}
                     className={`text-xs p-1 rounded ${event.type === "rendez-vous"
-                      ? "bg-blue-100 text-blue-800"
+                      ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                       : event.type === "tournage"
-                        ? "bg-pink-100 text-pink-800"
+                        ? "bg-custom-rose/14 text-custom-rose"
                         : event.type === "publication"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-orange-100 text-orange-800"
+                          ? "bg-custom-blue-pub/14 text-custom-blue-pub"
+                          : "bg-custom-orange-event/14 text-custom-orange-event"
                       }`}
                     title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                   >
@@ -478,12 +475,12 @@ export default function AgendaPage() {
                         <div
                           key={event.id}
                           className={`text-xs p-1 rounded mb-1 ${event.type === "rendez-vous"
-                            ? "bg-blue-100 text-blue-800"
+                            ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                             : event.type === "tournage"
-                              ? "bg-pink-100 text-pink-800"
+                              ? "bg-custom-rose/14 text-custom-rose"
                               : event.type === "publication"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-orange-100 text-orange-800"
+                                ? "bg-custom-blue-pub/14 text-custom-blue-pub"
+                                : "bg-custom-orange-event/14 text-custom-orange-event"
                             }`}
                           title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                         >
@@ -534,29 +531,6 @@ export default function AgendaPage() {
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsTournageModalOpen(true)}
-              >
-                Ajouter un tournage
-              </Button>
-
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsPublicationModalOpen(true)}
-              >
-                Ajouter une publication
-              </Button>
-
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsRdvModalOpen(true)}
-              >
-                Ajouter un rendez-vous
-              </Button>
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
                 onPress={() => setIsEventModalOpen(true)}
               >
                 Ajouter un évènement
@@ -586,35 +560,7 @@ export default function AgendaPage() {
               </div>
             </div>
 
-            <div className="flex rounded-md overflow-hidden flex-shrink-0">
 
-              <Button
-                className={
-                  view === "semaine"
-                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
-                }
-                color={view === "semaine" ? "primary" : "default"}
-                size="sm"
-                variant="solid"
-                onPress={() => setView("semaine")}
-              >
-                Semaine
-              </Button>
-              <Button
-                className={
-                  view === "mois"
-                    ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
-                }
-                color={view === "mois" ? "primary" : "default"}
-                size="sm"
-                variant="solid"
-                onPress={() => setView("mois")}
-              >
-                Mois
-              </Button>
-            </div>
           </div>
 
           {/* Contenu du calendrier */}
@@ -632,17 +578,6 @@ export default function AgendaPage() {
           }
         </CardBody>
       </Card>
-
-      {/* Modals d'agenda */}
-      <AgendaModals
-        isPublicationModalOpen={isPublicationModalOpen}
-        isRdvModalOpen={isRdvModalOpen}
-        isTournageModalOpen={isTournageModalOpen}
-        setIsPublicationModalOpen={setIsPublicationModalOpen}
-        setIsRdvModalOpen={setIsRdvModalOpen}
-        setIsTournageModalOpen={setIsTournageModalOpen}
-        onEventAdded={fetchEvents}
-      />
 
       {/* Modal d'événement */}
       <EventModal

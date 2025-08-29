@@ -74,7 +74,7 @@ export default function TodoPage() {
 
       if (searchTerm) params.set('q', searchTerm);
       if (selectedStatut && selectedStatut !== 'tous') params.set('status', selectedStatut);
-      
+
       // Ajouter les paramètres de tri
       if (sortField) {
         params.set('orderBy', sortField);
@@ -369,14 +369,7 @@ export default function TodoPage() {
 
                   </TableColumn>
                   <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="Statut"
-                      label="État"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-
+                    État
                   </TableColumn>
                   <TableColumn className="font-light text-sm">Actions</TableColumn>
                 </TableHeader>
@@ -429,7 +422,7 @@ export default function TodoPage() {
       {/* Modal d'ajout de tâche */}
       <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <ModalContent>
-          <ModalHeader>Ajouter une nouvelle tâche</ModalHeader>
+          <ModalHeader className="flex justify-center">Ajouter une nouvelle tâche</ModalHeader>
           <ModalBody>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -523,7 +516,7 @@ export default function TodoPage() {
       {/* Modal de confirmation de suppression */}
       <Modal isOpen={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <ModalContent>
-          <ModalHeader>Confirmer la suppression</ModalHeader>
+          <ModalHeader className="flex justify-center">Confirmer la suppression</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}

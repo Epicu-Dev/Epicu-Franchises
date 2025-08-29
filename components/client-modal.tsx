@@ -75,7 +75,7 @@ export default function ClientModal({
             onOpenChange={onOpenChange}
         >
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-1">
+                <ModalHeader className="flex justify-center">
                     Modifier le client
                 </ModalHeader>
 
@@ -94,8 +94,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="raisonSociale"
@@ -114,8 +112,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="ville"
@@ -133,9 +129,6 @@ export default function ClientModal({
                                 </FormLabel>
                                 <StyledSelect
                                     isRequired
-                                    classNames={{
-                                        label: "text-sm font-medium",
-                                    }}
                                     id="categorie"
                                     placeholder="Sélectionner une catégorie"
                                     selectedKeys={
@@ -169,8 +162,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="telephone"
@@ -189,8 +180,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="email"
@@ -210,8 +199,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="numeroSiret"
@@ -258,8 +245,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="dateSignatureContrat"
@@ -287,8 +272,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="datePublicationContenu"
@@ -309,8 +292,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="datePublicationFacture"
@@ -329,9 +310,6 @@ export default function ClientModal({
                                     Statut du paiement
                                 </FormLabel>
                                 <StyledSelect
-                                    classNames={{
-                                        label: "text-sm font-medium",
-                                    }}
                                     id="statutPaiementContenu"
                                     selectedKeys={
                                         editingClient.statutPaiementContenu
@@ -363,8 +341,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantFactureContenu"
@@ -385,8 +361,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantPaye"
@@ -405,8 +379,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="dateReglementFacture"
@@ -427,8 +399,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="restantDu"
@@ -447,8 +417,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantSponsorisation"
@@ -469,8 +437,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantAddition"
@@ -494,7 +460,7 @@ export default function ClientModal({
 
                                 <Textarea
                                     classNames={{
-                                        input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="commentaire"
                                     minRows={4}
@@ -515,7 +481,7 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Textarea
                                     classNames={{
-                                        input: "text-sm",
+                                        inputWrapper: "bg-page-bg",
                                     }}
                                     id="commentaireCadeauGerant"
                                     minRows={4}
@@ -536,8 +502,6 @@ export default function ClientModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        label: "text-sm font-medium",
-                                        input: "text-sm",
                                         inputWrapper: "bg-page-bg",
                                     }}
                                     id="montantCadeau"

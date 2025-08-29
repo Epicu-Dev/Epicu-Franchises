@@ -12,6 +12,7 @@ export { AgendaModals } from './agenda-modals';
 export { EventModal } from './event-modal';
 export { HelpModal } from './help-modal';
 export { default as ResourceModal } from './resource-modal';
+export { FranchiseTeamModal } from './franchise-team-modal';
 
 // Composants de badges
 export { 

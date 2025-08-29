@@ -190,7 +190,7 @@ export function EventModal({
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
             <ModalContent>
-                <ModalHeader>Ajouter un événement</ModalHeader>
+                <ModalHeader className="flex justify-center">Ajouter un événement</ModalHeader>
                 <ModalBody>
                     <div className="space-y-4">
                         <FormLabel htmlFor="eventName" isRequired={false}>

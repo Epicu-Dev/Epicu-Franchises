@@ -91,7 +91,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       label: "Facturation",
       icon: DocumentTextIcon,
       href: "/facturation",
-      showFor: ["franchise", "admin"]
+      showFor: ["admin", "franchise"]
     },
     { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise", "admin"] },
     {
@@ -108,12 +108,15 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
-    { key: "tirage", label: "Tirage au sort", icon: CubeIcon, href: "/tirage", showFor: ["franchise", "admin"] },
+
   ];
 
   // Filtrer les éléments du menu selon le rôle de l'utilisateur
   const filteredMenuItems = menuItems.filter(item => {
-    if (!userProfile?.role) return false;
+    if (!userProfile?.role) {
+      // Si pas de rôle défini, afficher un menu par défaut (franchise)
+      return item.showFor.includes('franchise');
+    }
 
     // Mapper les rôles de l'API vers les types du menu
     const roleMapping: { [key: string]: string[] } = {
@@ -223,10 +226,10 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Utilisateur'}
+                    {userProfile ? `${userProfile.firstname || 'Prénom'} ${userProfile.lastname || 'Nom'}` : 'Chargement...'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userProfile?.role || 'Rôle non défini'}
+                    {userProfile?.role || 'Chargement du rôle...'}
                   </p>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Tabs, Tab } from '@heroui/tabs';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { ArrowUpRightIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 import { Select, SelectItem } from '@heroui/select';
 import { Input } from '@heroui/input';
@@ -56,50 +56,56 @@ const defaultServices: Service[] = [
   {
     id: '1',
     title: 'Graphisme',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
+    description: 'Passionnée par les tendances visuelles, Marie imagine des identités graphiques uniques ! Logos, menus, affiches, plaquettes... un univers de A à Z !',
     category: 'design'
   },
   {
     id: '2',
-    title: 'Motion Design',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
-    category: 'animation'
-  },
-  {
-    id: '3',
-    title: 'Photos / Vidéos',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
-    category: 'media'
-  },
-  {
-    id: '4',
-    title: 'Dev web',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
+    title: 'Développement web',
+    description: 'Experte en UX/UI design, Louise conçoit des sites web élégants, ergonomiques et sur-mesure ! Esthétique et performance au rendez-vous !',
     category: 'development'
   },
   {
-    id: '5',
-    title: 'Référencement SEO',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
-    category: 'marketing'
-  },
-  {
-    id: '6',
+    id: '3',
     title: 'Community management',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
+    description: 'Créatives, Fanny et Valentine gèrent votre présence en ligne ! Elles transforment votre communauté en clientèle fidèle !',
     category: 'social'
   },
   {
+    id: '4',
+    title: 'Référencement SEO',
+    description: 'Émilien booste durablement votre visibilité en vous aidant à remonter en première page Google ! Stratégie SEO sur-mesure : audit, conseil & rédaction optimisée !',
+    category: 'marketing'
+  },
+  {
+    id: '5',
+    title: 'Shooting photos',
+    description: 'Caroline capture l\'âme de votre univers à travers des photos haut de gamme !',
+    category: 'media'
+  },
+  {
+    id: '6',
+    title: 'Vidéos & montages',
+    description: 'Quentin révèle la personnalité de votre lieu avec des vidéos lifestyle chaleureuses et authentiques !',
+    category: 'media'
+  },
+  {
     id: '7',
-    title: 'Data Analyse',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
-    category: 'analytics'
+    title: 'Motion Design',
+    description: 'Spécialiste de l\'animation et du storytelling, Pierre donne vie à vos idées avec des vidéos animées dynamiques et engageantes !',
+    category: 'animation'
   },
   {
     id: '8',
     title: 'Sérigraphie & Textiles',
-    description: 'Logo, identité visuelle, packaging, supports... Donnez vie à votre marque avec des créations graphiques uniques et cohérentes.',
+    description: 'Pour du merchandising à ton image ! Thomas crée des pièces textiles personnalisées (tote-bags, t-shirts, sweats...) avec des impressions artisanales de qualité !',
     category: 'printing'
+  },
+  {
+    id: '9',
+    title: 'Data Analyse',
+    description: 'Le roi de l\'automatisation et de l\'optimisation ! Walter crée, structure, connecte et fluidifie tous vos outils digitaux (CRM, formulaires, plateformes...) !',
+    category: 'analytics'
   }
 ];
 
@@ -361,8 +367,8 @@ export default function StudioPage() {
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
           {/* Onglets et bouton d'action sur la même ligne */}
-          <div className="flex justify-between items-center mb-6">
-            <Tabs
+          <div className="flex justify-end items-center mb-6">
+            {/* <Tabs
               className="w-full pt-3"
               classNames={{
                 cursor: "w-[50px]  left-[12px] h-1   rounded",
@@ -373,11 +379,20 @@ export default function StudioPage() {
               onSelectionChange={(key) => handleTabChange(key as string)}
             >
               <Tab key="prestations" title="Liste des prestations" />
-              <Tab key="packs" title="Les packs" />
-              <Tab key="en_cours" title="Mes prestations en cours" />
-            </Tabs>
-            <div>
+            </Tabs> */}
 
+            <div className='flex gap-4'>
+              <Button
+                className="border-1"
+                color='primary'
+                variant="bordered"
+                onPress={() => {
+                  window.open('https://drive.google.com/drive/folders/1MWGa91M_ybpGBG4XuFiyv-GuREZX7Fjk?usp=share_link', '_blank');
+                }}
+                endContent={<ArrowUpRightIcon className="h-4 w-4" />}
+              >
+                Accéder au drive
+              </Button>
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
@@ -399,7 +414,7 @@ export default function StudioPage() {
                 <>
 
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-primary px-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-primary px-4">
                     {services.map((service) => (
                       <div
                         key={service.id}
@@ -476,12 +491,12 @@ export default function StudioPage() {
                             "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                         }}
                         placeholder="Rechercher..."
-                        startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
-
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                       />
+
                     </div>
                   </div>
 

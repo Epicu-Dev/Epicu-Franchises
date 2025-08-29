@@ -58,12 +58,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
       const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Date de création";
 
+      // Tri par défaut : toujours trier par Statut en ASC
+      const defaultSort = { field: 'Statut', direction: 'asc' as const };
+      
+      // Si un autre tri est demandé, l'ajouter en plus du tri par défaut
+      const additionalSort = orderBy !== 'Statut' ? { field: orderBy, direction: order } : null;
+      
+      const sortArray = additionalSort 
+        ? [defaultSort, additionalSort]
+        : [defaultSort];
+
       const selectOptions: any = {
         view: VIEW_NAME,
         fields,
         pageSize: Math.min(100, offset + limit),
         maxRecords: offset + limit,
-        sort: [{ field: orderBy, direction: order }],
+        sort: sortArray,
       };
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -139,6 +149,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           hasMore: filtered.length > offset + limit,
           nextOffset: filtered.length > offset + limit ? offset + limit : null,
           prevOffset: Math.max(0, offset - limit),
+        },
+        sorting: {
+          defaultSort: 'Statut (ASC)',
+          additionalSort: additionalSort ? `${orderBy} (${order.toUpperCase()})` : null,
+          appliedSorts: sortArray.map(s => `${s.field} (${s.direction.toUpperCase()})`)
         }
       });
 

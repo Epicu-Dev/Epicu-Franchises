@@ -21,10 +21,14 @@ import {
   PencilIcon,
   Squares2X2Icon,
   XMarkIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
 import { getValidAccessToken } from "../../utils/auth";
+import { TeamMemberModal } from "../../components/team-member-modal";
+import { FranchiseTeamModal } from "../../components/franchise-team-modal";
+import { useUser } from "../../contexts/user-context";
 
 interface TeamMember {
   id: string;
@@ -33,6 +37,20 @@ interface TeamMember {
   location: string;
   avatar: string;
   category: "siege" | "franchise" | "prestataire";
+  city: string;
+  firstName: string;
+  lastName: string;
+  identifier: string;
+  password: string;
+  birthDate: string;
+  personalEmail: string;
+  franchiseEmail: string;
+  phone: string;
+  postalAddress: string;
+  siret: string;
+  dipSignatureDate: string;
+  franchiseContractSignatureDate: string;
+  trainingCertificateSignatureDate: string;
 }
 
 interface AdminTeamMember {
@@ -45,6 +63,12 @@ interface AdminTeamMember {
   birthDate: string;
   personalEmail: string;
   franchiseEmail: string;
+  phone: string;
+  postalAddress: string;
+  siret: string;
+  dipSignatureDate: string;
+  franchiseContractSignatureDate: string;
+  trainingCertificateSignatureDate: string;
 }
 
 
@@ -57,12 +81,15 @@ interface Collaborateur {
 }
 
 export default function EquipePage() {
+  const { userProfile, userType } = useUser();
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [adminMembers, setAdminMembers] = useState<AdminTeamMember[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFranchiseTeamModalOpen, setIsFranchiseTeamModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
 
   // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
@@ -77,6 +104,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "2",
@@ -88,6 +121,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "3",
@@ -99,6 +138,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "4",
@@ -110,6 +155,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "5",
@@ -121,6 +172,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "6",
@@ -132,6 +189,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "7",
@@ -143,6 +206,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
   ];
 
@@ -163,136 +232,115 @@ export default function EquipePage() {
     try {
       setLoading(true);
 
-      if (viewMode === "grid") {
-        const params = new URLSearchParams({
-          limit: "100", // Récupérer plus de collaborateurs
-          offset: "0",
-        });
+      const params = new URLSearchParams({
+        limit: "100", // Récupérer plus de collaborateurs
+        offset: "0",
+      });
 
-        if (searchTerm) {
-          params.set('q', searchTerm);
-        }
-
-        const response = await authFetch(`/api/collaborateurs?${params}`);
-
-        if (!response.ok) {
-          throw new Error(
-            "Erreur lors de la récupération des membres de l'équipe"
-          );
-        }
-
-        const data = await response.json();
-        const collaborateurs: Collaborateur[] = data.results || [];
-
-        // Transformer les données de l'API en format TeamMember
-        const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
-          // Déterminer la catégorie basée sur les villes ou l'index
-          let category: "siege" | "franchise" | "prestataire" = "siege";
-
-          if (index >= 10 && index < 25) category = "franchise";
-          else if (index >= 25) category = "prestataire";
-
-          // Déterminer le rôle basé sur la catégorie
-          let role = "Collaborateur";
-
-          if (category === "siege") role = "Collaborateur Siège";
-          else if (category === "franchise") role = "Franchisé";
-          else if (category === "prestataire") role = "Prestataire";
-
-          // Déterminer la localisation
-          let location = "Siège";
-
-          if (category === "franchise" || category === "prestataire") {
-            location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-          }
-
-          return {
-            id: collab.id,
-            name: collab.nomComplet || `Collaborateur ${index + 1}`,
-            role,
-            location,
-            avatar: `/api/placeholder/150/150`,
-            category,
-          };
-        });
-
-        // Filtrer par catégorie si sélectionnée
-        let filteredMembers = transformedMembers;
-
-        if (selectedCategory && selectedCategory !== "tout") {
-          filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
-        }
-
-        setMembers(filteredMembers);
-      } else {
-        // Utiliser l'API des collaborateurs pour la vue tableau aussi
-        const params = new URLSearchParams({
-          limit: "100",
-          offset: "0",
-        });
-
-        if (searchTerm) {
-          params.set('q', searchTerm);
-        }
-
-        const response = await authFetch(`/api/collaborateurs?${params}`);
-
-        if (!response.ok) {
-          throw new Error(
-            "Erreur lors de la récupération des collaborateurs"
-          );
-        }
-
-        const data = await response.json();
-        const collaborateurs: Collaborateur[] = data.results || [];
-
-        // Transformer les données de l'API en format AdminTeamMember
-        const transformedAdminMembers: AdminTeamMember[] = collaborateurs.map((collab, index) => {
-          // Extraire le prénom et nom du nom complet
-          const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
-          const nameParts = nomComplet.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
-          // Déterminer la ville (première ville de la liste ou ville par défaut)
-          const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-
-          // Générer un identifiant basé sur le nom
-          const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
-
-          // Générer un mot de passe temporaire
-          const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-          // Date de naissance par défaut (peut être modifiée plus tard)
-          const birthDate = "01.01.1990";
-
-          // Générer des emails basés sur le nom et la ville
-          const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-          const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
-
-          return {
-            id: collab.id,
-            city,
-            firstName,
-            lastName,
-            identifier,
-            password,
-            birthDate,
-            personalEmail,
-            franchiseEmail,
-          };
-        });
-
-        setAdminMembers(transformedAdminMembers);
+      if (searchTerm) {
+        params.set('q', searchTerm);
       }
+
+      const response = await authFetch(`/api/collaborateurs?${params}`);
+
+      if (!response.ok) {
+        throw new Error(
+          "Erreur lors de la récupération des membres de l'équipe"
+        );
+      }
+
+      const data = await response.json();
+      const collaborateurs: Collaborateur[] = data.results || [];
+
+      // Transformer les données de l'API en format TeamMember
+      const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
+        // Déterminer la catégorie basée sur les villes ou l'index
+        let category: "siege" | "franchise" | "prestataire" = "siege";
+
+        if (index >= 10 && index < 25) category = "franchise";
+        else if (index >= 25) category = "prestataire";
+
+        // Déterminer le rôle basé sur la catégorie
+        let role = "Collaborateur";
+
+        if (category === "siege") role = "Collaborateur Siège";
+        else if (category === "franchise") role = "Franchisé";
+        else if (category === "prestataire") role = "Prestataire";
+
+        // Déterminer la localisation
+        let location = "Siège";
+
+        if (category === "franchise" || category === "prestataire") {
+          location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+        }
+
+        // Extraire le prénom et nom du nom complet
+        const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
+        const nameParts = nomComplet.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        // Déterminer la ville (première ville de la liste ou ville par défaut)
+        const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+
+        // Générer un identifiant basé sur le nom
+        const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
+
+        // Générer un mot de passe temporaire
+        const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+        // Date de naissance par défaut (peut être modifiée plus tard)
+        const birthDate = "01.01.1990";
+
+        // Générer des emails basés sur le nom et la ville
+        const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
+        const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+
+        // Générer des données pour les nouveaux champs
+        const phone = "0648596769"; // Téléphone par défaut
+        const postalAddress = "1 place de Mairie, Tourcoing"; // Adresse par défaut
+        const siret = "87450934562398"; // SIRET par défaut
+        const dipSignatureDate = "12.07.2024"; // Date signature DIP par défaut
+        const franchiseContractSignatureDate = "02.12.2024"; // Date signature contrat par défaut
+        const trainingCertificateSignatureDate = "02.12.2024"; // Date signature attestation par défaut
+
+        return {
+          id: collab.id,
+          name: collab.nomComplet || `Collaborateur ${index + 1}`,
+          role,
+          location,
+          avatar: `/api/placeholder/150/150`,
+          category,
+          city,
+          firstName,
+          lastName,
+          identifier,
+          password,
+          birthDate,
+          personalEmail,
+          franchiseEmail,
+          phone,
+          postalAddress,
+          siret,
+          dipSignatureDate,
+          franchiseContractSignatureDate,
+          trainingCertificateSignatureDate,
+        };
+      });
+
+      // Filtrer par catégorie si sélectionnée
+      let filteredMembers = transformedMembers;
+
+      if (selectedCategory && selectedCategory !== "tout") {
+        filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+      }
+
+      setMembers(filteredMembers);
+
     } catch (error) {
       console.error('Erreur lors de la récupération des membres:', error);
       // En cas d'erreur, on garde les données existantes ou on vide la liste
-      if (viewMode === "grid") {
-        setMembers([]);
-      } else {
-        setAdminMembers([]);
-      }
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -310,12 +358,52 @@ export default function EquipePage() {
     setSearchTerm(value);
   };
 
+  // Fonction pour déterminer si l'utilisateur est admin
+  const isAdmin = () => {
+    // Vérifier d'abord le userType (admin/franchise)
+    if (userType === "admin") return true;
+
+    // Vérifier aussi le rôle dans le profil utilisateur
+    if (userProfile?.role) {
+      const role = userProfile.role.toLowerCase();
+      return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
+    }
+
+    return false;
+  };
+
   const handleViewModeToggle = () => {
-    setViewMode(viewMode === "grid" ? "table" : "grid");
+    // Seuls les admins peuvent passer en vue tableau
+    if (isAdmin()) {
+      setViewMode(viewMode === "grid" ? "table" : "grid");
+    }
   };
 
   const handleEdit = () => {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
+  };
+
+  const handleAddMember = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleMemberAdded = () => {
+    // Rafraîchir la liste des membres
+    fetchMembers();
+  };
+
+  const handleMemberClick = (member: TeamMember) => {
+    setSelectedMember(member);
+    setIsFranchiseTeamModalOpen(true);
+  };
+
+  const handleFranchiseTeamModalClose = () => {
+    setIsFranchiseTeamModalOpen(false);
+    setSelectedMember(null);
   };
 
 
@@ -325,6 +413,21 @@ export default function EquipePage() {
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
           <div className="flex justify-between items-center mb-6">
+            {/* Bouton de changement de vue - visible uniquement pour les admins */}
+            {isAdmin() && (
+              <Button
+                isIconOnly
+                className="text-gray-600 hover:text-gray-800"
+                variant="light"
+                onClick={handleViewModeToggle}
+              >
+                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
+              </Button>
+            )}
+
+            {/* Espaceur si pas de bouton de vue */}
+            {!isAdmin() && <div />}
+
             {viewMode === "grid" ? (
               <Tabs
                 className="w-full pt-3"
@@ -355,36 +458,35 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   endContent={
                     searchTerm && (
                       <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
                     )
                   }
                   placeholder="Rechercher..."
-                  startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
-
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                 />
-               
               </div>
 
-              <Button
-                isIconOnly
-                className="text-gray-600 hover:text-gray-800"
-                variant="light"
-                onClick={handleViewModeToggle}
-              >
-                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
-
-              </Button>
+              {/* Bouton "Ajouter un membre" - visible uniquement pour les admins */}
+              {isAdmin() && (
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={handleAddMember}
+                >
+                  Ajouter un membre
+                </Button>
+              )}
             </div>
           </div>
 
           {/* Contenu selon le mode de vue */}
           {viewMode === "grid" ? (
-            // Vue grille (vue originale)
+            // Vue grille (vue originale) - accessible à tous
             loading ?
               <div className="flex justify-center items-center h-64">
                 <Spinner className="text-black dark:text-white" size="lg" />
@@ -394,7 +496,12 @@ export default function EquipePage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="group relative flex flex-col items-center text-center cursor-pointer"
+                    className="group relative flex flex-col items-center text-center cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => handleMemberClick(member)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
                   >
                     <Avatar
                       className="w-16 h-16 mb-3"
@@ -418,100 +525,156 @@ export default function EquipePage() {
                 ))}
               </div>
           ) : (
-            // Vue tableau (vue admin)
-            loading ?
-              <div className="flex justify-center items-center h-64">
-                <Spinner className="text-black dark:text-white" size="lg" />
-              </div>
-              :
-              <>
-                <div className="overflow-x-auto">
-                  <Table aria-label="Tableau des membres de l'équipe">
-                    <TableHeader>
-                      <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                      <TableColumn className="font-light text-sm">Ville</TableColumn>
-                      <TableColumn className="font-light text-sm">Prénom</TableColumn>
-                      <TableColumn className="font-light text-sm">Nom</TableColumn>
-                      <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                      <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
-                      <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
-                      <TableColumn className="font-light text-sm">Mail perso</TableColumn>
-                      <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
-                    </TableHeader>
-                    <TableBody>
-                      {adminMembers.map((member) => (
-                        <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
-                          <TableCell className="py-5 font-light">
-                            <Tooltip content="Modifier">
-                              <Button
-                                isIconOnly
-                                className="text-gray-600 hover:text-gray-800"
-                                size="sm"
-                                variant="light"
-                                onClick={() => handleEdit()}
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell className="font-light">
-
-                            {member.city}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.firstName}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.lastName}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.identifier}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-light">
-                            <span >
-                              {member.password}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.birthDate}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <a
-                              className="font-light underline"
-                              href={`mailto:${member.personalEmail}`}
-                            >
-                              {member.personalEmail}
-                            </a>
-                          </TableCell>
-                          <TableCell>
-                            <a
-                              className="font-light underline"
-                              href={`mailto:${member.franchiseEmail}`}
-                            >
-                              {member.franchiseEmail}
-                            </a>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+            // Vue tableau (vue admin) - accessible uniquement aux admins
+            isAdmin() ? (
+              loading ?
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
                 </div>
-              </>
+                :
+                <>
+                  <div className="overflow-x-auto">
+                    <Table aria-label="Tableau des membres de l'équipe">
+                      <TableHeader>
+                        <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                        <TableColumn className="font-light text-sm">Ville</TableColumn>
+                        <TableColumn className="font-light text-sm">Rôle</TableColumn>
+                        <TableColumn className="font-light text-sm">Prénom</TableColumn>
+                        <TableColumn className="font-light text-sm">Nom</TableColumn>
+                        <TableColumn className="font-light text-sm">Identifiant</TableColumn>
+                        <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
+                        <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
+                        <TableColumn className="font-light text-sm">Mail perso</TableColumn>
+                        <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
+                        <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+                        <TableColumn className="font-light text-sm">Adresse postale</TableColumn>
+                        <TableColumn className="font-light text-sm">SIRET</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature du DIP</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature du contrat de franchise</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature de l&apos;attestation de formation initiale</TableColumn>
+                      </TableHeader>
+                      <TableBody>
+                        {members.map((member) => (
+                          <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
+                            <TableCell className="py-5 font-light">
+                              <Tooltip content="Modifier">
+                                <Button
+                                  isIconOnly
+                                  className="text-gray-600 hover:text-gray-800"
+                                  size="sm"
+                                  variant="light"
+                                  onClick={() => handleEdit()}
+                                >
+                                  <PencilIcon className="h-4 w-4" />
+                                </Button>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell className="font-light">
+                              {member.city}
+                            </TableCell>
+                            <TableCell className="font-light">
+                              <span className="font-light">
+                                {member.role}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.firstName}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.lastName}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.identifier}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-light">
+                              <span >
+                                {member.password}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.birthDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <a
+                                className="font-light underline"
+                                href={`mailto:${member.personalEmail}`}
+                              >
+                                {member.personalEmail}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <a
+                                className="font-light underline"
+                                href={`mailto:${member.franchiseEmail}`}
+                              >
+                                {member.franchiseEmail}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.phone}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.postalAddress}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.siret}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.dipSignatureDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.franchiseContractSignatureDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.trainingCertificateSignatureDate}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+            ) : (
+              // Si l'utilisateur n'est pas admin mais est en vue tableau, on le remet en vue grille
+              <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Accès non autorisé à cette vue
+                  </p>
+                  <Button
+                    color="primary"
+                    onClick={() => setViewMode("grid")}
+                  >
+                    Retour à la vue grille
+                  </Button>
+                </div>
+              </div>
+            )
           )}
-
-
 
           {/* Message si aucun résultat */}
           {!loading && ((viewMode === "grid" && members.length === 0) ||
-            (viewMode === "table" && adminMembers.length === 0)) &&
+            (viewMode === "table" && members.length === 0)) &&
             searchTerm && (
               <div className="text-center py-12">
                 <div className="text-gray-500 dark:text-gray-400">
@@ -521,6 +684,23 @@ export default function EquipePage() {
             )}
         </CardBody>
       </Card>
+
+      {/* Modal pour ajouter/modifier un membre - visible uniquement pour les admins */}
+      {isAdmin() && (
+        <TeamMemberModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onMemberAdded={handleMemberAdded}
+          isEditing={false}
+        />
+      )}
+
+      {/* Modal pour afficher l'équipe du franchisé */}
+      <FranchiseTeamModal
+        isOpen={isFranchiseTeamModalOpen}
+        onClose={handleFranchiseTeamModalClose}
+        selectedMember={selectedMember}
+      />
     </div>
   );
 }

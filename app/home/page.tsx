@@ -66,7 +66,7 @@ export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
     today(getLocalTimeZone())
   );
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onClose } = useDisclosure();
   const {
     isOpen: isAddTodoModalOpen,
     onOpen: onAddTodoModalOpen,
@@ -126,7 +126,7 @@ export default function HomePage() {
         ...userCities,
         { key: "national", label: "National" }
       ]);
-      
+
       // Signal que le profil est chargé
       setUserProfileLoaded(true);
     }
@@ -141,8 +141,6 @@ export default function HomePage() {
       const meRes = await authFetch('/api/auth/me');
 
       if (!meRes.ok) return;
-      const me = await meRes.json();
-      const collaboratorId = me.id as string;
 
       // Calculer la plage de dates pour le mois sélectionné
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
@@ -152,7 +150,6 @@ export default function HomePage() {
       // Récupérer les événements d'agenda
       const params = new URLSearchParams();
 
-      if (collaboratorId) params.set('collaborator', collaboratorId);
       params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
       params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
       params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
@@ -172,17 +169,15 @@ export default function HomePage() {
     }
   };
 
-    // Fonction pour récupérer les données todo
+  // Fonction pour récupérer les données todo
   const fetchTodos = async () => {
     try {
       setTodoLoading(true);
-      
+
       // Récupérer l'ID du collaborateur
       const meRes = await authFetch('/api/auth/me');
 
       if (!meRes.ok) return;
-      const me = await meRes.json();
-      const collaboratorId = me.id as string;
 
       // Calculer la plage de dates pour le mois sélectionné
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
@@ -192,7 +187,6 @@ export default function HomePage() {
       // Récupérer les todos
       const params = new URLSearchParams();
 
-      if (collaboratorId) params.set('collaborator', collaboratorId);
       params.set('limit', '10'); // Limiter à 10 todos pour l'affichage
 
       const todosResponse = await authFetch(`/api/todo?${params.toString()}`);
@@ -203,7 +197,7 @@ export default function HomePage() {
         // Filtrer les todos côté client pour la plage de dates
         const filteredTodos = todosData.todos?.filter((todo: TodoItem) => {
           if (!todo.dueDate) return true; // Inclure les todos sans date d'échéance
-          
+
           const todoDate = new Date(todo.dueDate);
 
           return todoDate >= startOfMonth && todoDate <= endOfMonth;
@@ -223,22 +217,20 @@ export default function HomePage() {
   const fetchStatistics = async () => {
     try {
       setStatisticsLoading(true);
-      
+
       // Calculer la plage de dates pour le mois sélectionné
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
       const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
-      
+
       // Construire les paramètres de requête
       const params = new URLSearchParams();
       params.set('q', monthYear); // Rechercher par mois-année
-      
+
       // Ajouter le filtre de ville si nécessaire
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
           // Pour "National", exclure les villes locales de l'utilisateur
-          const userVilles = userProfile?.villes || [];
-          const localVilleNames = userVilles.map(v => v.ville);
-          
+
           // On ne peut pas exclure directement, on filtrera côté client
         } else {
           // Pour une ville spécifique
@@ -248,26 +240,26 @@ export default function HomePage() {
           }
         }
       }
-  
+
       const response = await authFetch(`/api/statistiques?${params.toString()}`);
-      
+
       if (response.ok) {
         const data = await response.json();
-        
+
         // Traiter les données selon le filtre de ville
         let filteredData = data.statistiques || [];
-        
+
         if (selectedCity === "national") {
           // Exclure les villes locales de l'utilisateur
           const userVilles = userProfile?.villes || [];
           const localVilleNames = userVilles.map(v => v.ville);
-          filteredData = filteredData.filter((item: any) => 
-            !localVilleNames.some(localVille => 
+          filteredData = filteredData.filter((item: any) =>
+            !localVilleNames.some(localVille =>
               item.villeEpicu && item.villeEpicu.toLowerCase().includes(localVille.toLowerCase())
             )
           );
         }
-        
+
         // Calculer les totaux
         const totals = filteredData.reduce((acc: any, item: any) => {
           acc.prospectsSignes += parseInt(item.prospectsSignesDsLeMois) || 0;
@@ -276,7 +268,7 @@ export default function HomePage() {
           acc.vues += parseInt(item.totalVues) || 0;
           return acc;
         }, { prospectsSignes: 0, tauxConversion: 0, abonnes: 0, vues: 0 });
-        
+
         // Calculer la moyenne du taux de conversion
         const avgTauxConversion = filteredData.length > 0 ? totals.tauxConversion / filteredData.length : 0;
 
@@ -342,40 +334,6 @@ export default function HomePage() {
     fetchStatistics();
   }, [selectedCity]);
 
-  // Fonction pour filtrer les données par ville
-  const filterDataByCity = (data: any[], cityKey: string) => {
-    if (cityKey === "tout") return data;
-
-    // Récupérer les villes de l'utilisateur
-    const userVilles = userProfile?.villes || [];
-
-    if (cityKey === "national") {
-      // Pour "National", exclure les villes locales de l'utilisateur
-      const localVilleNames = userVilles.map(v => v.ville);
-
-      return data.filter(item =>
-        item.ville && !localVilleNames.some(localVille =>
-          item.ville.toLowerCase().includes(localVille.toLowerCase())
-        )
-      );
-    }
-
-    // Pour les villes locales, filtrer par la ville sélectionnée
-    const selectedCity = cities.find(c => c.key === cityKey);
-
-    if (!selectedCity) return data;
-
-    return data.filter(item =>
-      item.ville && item.ville.toLowerCase().includes(selectedCity.label.toLowerCase())
-    );
-  };
-
-
-  const filteredEvents = useMemo(() =>
-    filterDataByCity(events, selectedCity),
-    [events, selectedCity]
-  );
-
   // Calcul du taux de conversion (maintenant géré par l'API statistiques)
   // const conversionRate = useMemo(() => {
   //   const totalProspects = filteredProspects.length;
@@ -386,7 +344,7 @@ export default function HomePage() {
   //   return `${Math.round((convertedClients / totalProspects) * 100)}%`;
   // }, [filteredProspects, filteredClients]);
 
-  const allMetrics = [
+  const metrics = [
     {
       value: statisticsLoading ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
       label: "Nombre d'abonnés",
@@ -417,21 +375,16 @@ export default function HomePage() {
     },
   ];
 
-  // Filtrer les métriques selon la ville sélectionnée
-  const metrics = selectedCity === "national" 
-    ? allMetrics.filter(metric => metric.label !== "Prospects signés")
-    : allMetrics;
-
   // Transformation des événements filtrés pour l'affichage
   const agendaEvents = useMemo(() => {
-    return filteredEvents.slice(0, 3).map(event => ({
+    return events.slice(0, 3).map(event => ({
       clientName: event.task || "Nom client",
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
       type: event.type === "rendez-vous" ? "Rendez-vous" :
         event.type === "tournage" ? "Tournage" :
           event.type === "publication" ? "Publication" : "Evènement",
     }));
-  }, [filteredEvents]);
+  }, [events]);
 
   // Transformation des todos pour l'affichage
   const displayTodoItems = useMemo(() => {
@@ -699,7 +652,7 @@ export default function HomePage() {
       {/* Calendar Modal */}
       <Modal isOpen={isOpen} placement="center" onClose={onClose}>
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex justify-center">
             Sélectionner une date
           </ModalHeader>
           <ModalBody>
@@ -723,7 +676,7 @@ export default function HomePage() {
         onClose={onAddTodoModalClose}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex justify-center">
             Ajouter une nouvelle tâche
           </ModalHeader>
           <ModalBody>

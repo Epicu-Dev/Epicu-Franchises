@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { SelectItem } from "@heroui/select";
 import {
@@ -14,83 +14,75 @@ import {
 import { Tabs, Tab } from "@heroui/tabs";
 
 import { DashboardLayout } from "../dashboard-layout";
+import { useUser } from "@/contexts/user-context";
 
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components/sortable-column-header";
 import { useSortableTable } from "@/hooks/use-sortable-table";
 
 export default function DataPage() {
+  const { userProfile, isLoading } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCategory, setSelectedCategory] = useState("");
 
-  const allTableData = [
-    {
-      month: "Janvier",
-      revenue: "12.600€",
-      conversionRate: "92%",
-      signedClients: "12",
-      prospectsMet: "2",
-      newProspects: "32",
-      publishedPosts: "6",
-      city: "nantes",
-      categories: ["FOOD", "SHOP"],
-    },
-    {
-      month: "Février",
-      revenue: "15.200€",
-      conversionRate: "85%",
-      signedClients: "8",
-      prospectsMet: "3",
-      newProspects: "28",
-      publishedPosts: "8",
-      city: "saint-brieuc",
-      categories: ["TRAVEL", "FUN"],
-    },
-    {
-      month: "Mars",
-      revenue: "18.400€",
-      conversionRate: "95%",
-      signedClients: "15",
-      prospectsMet: "1",
-      newProspects: "35",
-      publishedPosts: "7",
-      city: "nantes",
-      categories: ["BEAUTY", "FOOD"],
-    },
-    {
-      month: "Avril",
-      revenue: "14.800€",
-      conversionRate: "88%",
-      signedClients: "10",
-      prospectsMet: "4",
-      newProspects: "30",
-      publishedPosts: "5",
-      city: "saint-brieuc",
-      categories: ["SHOP", "TRAVEL"],
-    },
-    {
-      month: "Mai",
-      revenue: "16.900€",
-      conversionRate: "91%",
-      signedClients: "13",
-      prospectsMet: "2",
-      newProspects: "38",
-      publishedPosts: "9",
-      city: "nantes",
-      categories: ["FUN", "BEAUTY"],
-    },
-    {
-      month: "Juin",
-      revenue: "13.300€",
-      conversionRate: "89%",
-      signedClients: "11",
-      prospectsMet: "3",
-      newProspects: "29",
-      publishedPosts: "6",
-      city: "saint-brieuc",
-      categories: ["FOOD", "SHOP"],
-    },
-  ];
+  // Générer des données de test basées sur les vraies villes de l'utilisateur
+  const generateTableData = () => {
+    if (!userProfile?.villes || userProfile.villes.length === 0) {
+      return [];
+    }
+
+    const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin"];
+    const categories = ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"];
+    
+    return months.map((month, index) => {
+      // Alterner entre les villes de l'utilisateur
+      const cityIndex = index % userProfile.villes.length;
+      const city = userProfile.villes[cityIndex];
+      
+      // Générer des données réalistes
+      const revenue = Math.floor(Math.random() * 8000 + 10000) + "€";
+      const conversionRate = Math.floor(Math.random() * 15 + 80) + "%";
+      const signedClients = Math.floor(Math.random() * 8 + 8).toString();
+      const prospectsMet = Math.floor(Math.random() * 4 + 1).toString();
+      const newProspects = Math.floor(Math.random() * 10 + 25).toString();
+      const publishedPosts = Math.floor(Math.random() * 4 + 5).toString();
+      
+      // Générer le nombre d'abonnés par catégorie
+      const foodSubscribers = Math.floor(Math.random() * 2000 + 1000).toString();
+      const shopSubscribers = Math.floor(Math.random() * 20000 + 10000).toString();
+      const travelSubscribers = Math.floor(Math.random() * 3000 + 2000).toString();
+      const funSubscribers = Math.floor(Math.random() * 500 + 100).toString();
+      const beautySubscribers = Math.floor(Math.random() * 1500 + 1000).toString();
+      
+      // Générer le montant des cadeaux offerts
+      const giftsAmount = Math.floor(Math.random() * 3000 + 1000) + "€";
+      
+      // Sélectionner 2 catégories aléatoires
+      const selectedCategories = categories
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 2);
+
+      return {
+        month,
+        revenue,
+        conversionRate,
+        signedClients,
+        prospectsMet,
+        newProspects,
+        publishedPosts,
+        foodSubscribers,
+        shopSubscribers,
+        travelSubscribers,
+        funSubscribers,
+        beautySubscribers,
+        giftsAmount,
+        city: city.ville.toLowerCase().replace(/\s+/g, '-'),
+        cityName: city.ville,
+        categories: selectedCategories,
+      };
+    });
+  };
+
+  const allTableData = generateTableData();
 
   // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
   const filteredData = allTableData.filter((row) => {
@@ -99,16 +91,45 @@ export default function DataPage() {
       return false;
     }
 
-    // Filtre par catégorie
-    if (selectedCategory && selectedCategory !== "all" && !row.categories.includes(selectedCategory)) {
-      return false;
-    }
-
     return true;
   });
 
   // Utiliser le hook de tri réutilisable
   const { sortField, sortDirection, handleSort, sortedData } = useSortableTable(filteredData);
+
+  // Réinitialiser l'onglet actif quand les villes changent
+  useEffect(() => {
+    if (userProfile?.villes && userProfile.villes.length > 0) {
+      setActiveTab("overview");
+    }
+  }, [userProfile?.villes]);
+
+  // Afficher un message de chargement
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-primary">Chargement des données...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Afficher un message si l'utilisateur n'a pas de villes assignées
+  if (!userProfile?.villes || userProfile.villes.length === 0) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center text-primary">
+            <p className="text-lg mb-2">Aucune ville assignée</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Contactez votre administrateur pour vous assigner des villes.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -127,26 +148,13 @@ export default function DataPage() {
               onSelectionChange={(key) => setActiveTab(key as string)}
             >
               <Tab key="overview" title="Vue d'ensemble" />
-              <Tab key="nantes" title="Nantes" />
-              <Tab key="saint-brieuc" title="Saint-Brieuc" />
+              {userProfile.villes.map((city) => (
+                <Tab 
+                  key={city.ville.toLowerCase().replace(/\s+/g, '-')} 
+                  title={city.ville} 
+                />
+              ))}
             </Tabs>
-
-            {/* Filter */}
-            <StyledSelect
-              className="w-40 pl-4"
-              placeholder="Catégorie"
-              selectedKeys={selectedCategory ? [selectedCategory] : []}
-              onSelectionChange={(keys) =>
-                setSelectedCategory(Array.from(keys)[0] as string)
-              }
-            >
-              <SelectItem key="tous">Tous</SelectItem>
-              <SelectItem key="FOOD">Food</SelectItem>
-              <SelectItem key="SHOP">Shop</SelectItem>
-              <SelectItem key="TRAVEL">Travel</SelectItem>
-              <SelectItem key="FUN">Fun</SelectItem>
-              <SelectItem key="BEAUTY">Beauty</SelectItem>
-            </StyledSelect>
 
             {/* Data Table */}
             <Card className=" dark:bg-gray-900" shadow="none">
@@ -176,6 +184,12 @@ export default function DataPage() {
                         onSort={handleSort}
                       />
                     </TableColumn>
+                    <TableColumn className="font-light text-sm">Nombre abonnés food</TableColumn>
+                    <TableColumn className="font-light text-sm">Nombre abonnés shop</TableColumn>
+                    <TableColumn className="font-light text-sm">Nombre abonnés travel</TableColumn>
+                    <TableColumn className="font-light text-sm">Nombre abonnés fun</TableColumn>
+                    <TableColumn className="font-light text-sm">Nombre abonnés beauty</TableColumn>
+                    <TableColumn className="font-light text-sm">Montant des cadeaux offerts</TableColumn>
                   </TableHeader>
                   <TableBody  className="mt-30">
                     {sortedData.map((row, index) => (
@@ -193,6 +207,12 @@ export default function DataPage() {
                         <TableCell className="font-light text-sm">{row.prospectsMet}</TableCell>
                         <TableCell className="font-light text-sm">{row.newProspects}</TableCell>
                         <TableCell className="font-light text-sm">{row.publishedPosts}</TableCell>
+                        <TableCell className="font-light text-sm">{row.foodSubscribers}</TableCell>
+                        <TableCell className="font-light text-sm">{row.shopSubscribers}</TableCell>
+                        <TableCell className="font-light text-sm">{row.travelSubscribers}</TableCell>
+                        <TableCell className="font-light text-sm">{row.funSubscribers}</TableCell>
+                        <TableCell className="font-light text-sm">{row.beautySubscribers}</TableCell>
+                        <TableCell className="font-light text-sm">{row.giftsAmount}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

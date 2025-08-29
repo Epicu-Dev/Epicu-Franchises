@@ -33,6 +33,7 @@ import { CategoryBadge } from "@/components/badges";
 import { ProspectModal } from "@/components/prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
+import { useUser } from "@/contexts/user-context";
 
 interface Prospect {
   id: string;
@@ -69,6 +70,7 @@ interface ApiProspect {
 
 
 export default function ProspectsPage() {
+  const { userProfile } = useUser();
   const [prospects, setProspects] = useState<ApiProspect[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
@@ -90,7 +92,7 @@ export default function ProspectsPage() {
   const previousTabRef = useRef(selectedTab);
 
   // Variables pour les filtres
-  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string }[]>([]);
+  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string; villes?: string[] }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   // Récupérer la liste des collaborateurs et catégories au chargement de la page
@@ -102,8 +104,22 @@ export default function ProspectsPage() {
 
         if (collabResponse.ok) {
           const collabData = await collabResponse.json();
+          let allCollaborateurs = collabData.results || [];
 
-          setCollaborateurs(collabData.results || []);
+          // Filtrer les collaborateurs selon les villes de l'utilisateur connecté
+          if (userProfile?.villes && userProfile.villes.length > 0) {
+            const userVilles = userProfile.villes.map(v => v.ville);
+            allCollaborateurs = allCollaborateurs.filter((collab: any) => {
+              // Si le collaborateur a des villes, vérifier qu'il y a au moins une intersection
+              if (collab.villes && collab.villes.length > 0) {
+                return collab.villes.some((ville: string) => userVilles.includes(ville));
+              }
+              // Si le collaborateur n'a pas de villes spécifiées, l'inclure (probablement un admin)
+              return true;
+            });
+          }
+
+          setCollaborateurs(allCollaborateurs);
         }
 
         // Récupérer les catégories
@@ -120,7 +136,7 @@ export default function ProspectsPage() {
     };
 
     fetchFilters();
-  }, []);
+  }, [userProfile?.villes]);
 
   const fetchProspects = async (isLoadMore = false) => {
     try {
@@ -390,6 +406,7 @@ export default function ProspectsPage() {
             <div className="relative">
               <Input
                 className="w-64 pr-4 pl-10"
+                startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                 classNames={{
                   input:
                     "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
@@ -398,13 +415,10 @@ export default function ProspectsPage() {
                 }}
                 endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
-                startContent={<MagnifyingGlassIcon className="h-5 w-5 cursor-pointer" />}
-
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-             
             </div>
           </div>
 
@@ -502,6 +516,10 @@ export default function ProspectsPage() {
               >
                 <TableHeader className="mb-4">
                   <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">SIRET</TableColumn>
+                  <TableColumn className="font-light text-sm">Ville</TableColumn>
+                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+                  <TableColumn className="font-light text-sm">Date premier rendez-vous</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="categorie"
@@ -529,6 +547,9 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
+                  <TableColumn className="font-light text-sm">Vient de rencontrer</TableColumn>
+                  <TableColumn className="font-light text-sm">Email</TableColumn>
+                  <TableColumn className="font-light text-sm">Adresse</TableColumn>
                   <TableColumn className="font-light text-sm">Commentaire</TableColumn>
                   <TableColumn className="font-light text-sm">Modifier</TableColumn>
                   <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
@@ -536,7 +557,7 @@ export default function ProspectsPage() {
                 <TableBody className="mt-4">
                   {prospects.length === 0 ? (
                     <TableRow>
-                      <TableCell className="text-center" colSpan={7}>
+                      <TableCell className="text-center" colSpan={14}>
                         <div className="py-20 text-gray-500">
                           {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
                             <div>
@@ -580,6 +601,19 @@ export default function ProspectsPage() {
                         <TableCell className="font-light py-5">
                           {prospect.nomEtablissement}
                         </TableCell>
+                        <TableCell className="font-light">{prospect.siret}</TableCell>
+                        <TableCell className="font-light">{prospect.ville}</TableCell>
+                        <TableCell className="font-light">{prospect.telephone}</TableCell>
+                        <TableCell className="font-light">
+                          {prospect.datePremierRendezVous
+                            ? new Date(prospect.datePremierRendezVous).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')
+                            : "-"
+                          }
+                        </TableCell>
                         <TableCell className="font-light">
                           <CategoryBadge category={prospect.categorie} />
                         </TableCell>
@@ -594,6 +628,9 @@ export default function ProspectsPage() {
                           }
                         </TableCell>
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                        <TableCell className="font-light">{prospect.vientDeRencontrer ? 'Oui' : 'Non'}</TableCell>
+                        <TableCell className="font-light">{prospect.email}</TableCell>
+                        <TableCell className="font-light">{prospect.adresse}</TableCell>
                         <TableCell className="font-light">{prospect.commentaires}</TableCell>
                         <TableCell>
                           <Button
@@ -632,7 +669,7 @@ export default function ProspectsPage() {
       {/* Modal de confirmation de conversion */}
       <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
         <ModalContent>
-          <ModalHeader>Confirmer la conversion</ModalHeader>
+          <ModalHeader className="flex justify-center">Confirmer la conversion</ModalHeader>
           <ModalBody>
             <div className="space-y-4 text-primary">
               <div className="flex items-center space-x-3">
@@ -662,6 +699,8 @@ export default function ProspectsPage() {
                     <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
                     <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
                     <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
+                     {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
+                    {prospectToConvert.adresse && <p><strong>Adresse :</strong> {prospectToConvert.adresse}</p>}
                   </div>
                 </div>
               )}

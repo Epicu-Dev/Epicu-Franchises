@@ -9,7 +9,8 @@ export function StyledSelect({ children, ...props }: StyledSelectProps) {
         <Select
             {...props}
             classNames={{
-                base: " rounded",
+                base: "bg-page-bg rounded",
+                mainWrapper: "bg-page-bg",
             }}
             listboxProps={{
                 itemClasses: {
