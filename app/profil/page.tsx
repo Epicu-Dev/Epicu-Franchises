@@ -247,7 +247,7 @@ export default function ProfilPage() {
         <CardBody className="p-6">
           {/* Onglets */}
           <Tabs
-            className="w-full pt-3 mb-6"
+            className="w-full pt-3 mb-2"
             classNames={{
               cursor: "w-[50px]  left-[12px] h-1   rounded",
               tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
@@ -282,7 +282,7 @@ export default function ProfilPage() {
             <div>
               {/* Contenu des onglets */}
               {activeTab === 'informations' && (
-                <div className="space-y-6">
+                <div className="space-y-10 p-4">
                   {/* En-tête du profil */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -299,14 +299,7 @@ export default function ProfilPage() {
                         <p className="text-gray-600 dark:text-gray-400">{userProfile.role}</p>
                       </div>
                     </div>
-                    <Button
-                      className='text-base'
-                      startContent={<PencilSquareIcon className="h-6 w-6" />}
-                      variant='light'
-                      onPress={() => setIsEditing(!isEditing)}
-                    >
-                      Modifier
-                    </Button>
+
                   </div>
 
                   {/* Formulaire d'informations */}
@@ -314,7 +307,7 @@ export default function ProfilPage() {
                     <div className="space-y-4 text-primary-light/20">
 
                       <FormLabel htmlFor="identifier" isRequired={false}>
-                        Identifiant
+                        Email de connexion
                       </FormLabel>
                       <Input
                         classNames={{
@@ -323,7 +316,7 @@ export default function ProfilPage() {
                         }}
                         id="identifier"
                         isReadOnly={!isEditing}
-                        placeholder="Identifiant"
+                        placeholder="Email de connexion"
                         value={userProfile.identifier || ''}
                       />
                     </div>
@@ -338,7 +331,6 @@ export default function ProfilPage() {
                           inputWrapper: "bg-page-bg",
                         }}
                         id="password"
-                        isReadOnly={!isEditing}
                         placeholder="••••••••"
                         type="password"
                       />
@@ -421,24 +413,6 @@ export default function ProfilPage() {
                       />
                     </div>
 
-                    <div className="space-y-4">
-
-                      <FormLabel htmlFor="role" isRequired={true}>
-                        Rôle
-                      </FormLabel>
-                      <Input
-                        isRequired
-                        classNames={{
-                          input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                          label: "text-gray-700 dark:text-gray-300 font-medium"
-                        }}
-                        id="role"
-                        isReadOnly={!isEditing}
-                        placeholder="Rôle"
-                        value={userProfile.role}
-                      />
-                    </div>
                   </div>
 
                   {/* Bouton de sauvegarde */}
@@ -457,7 +431,7 @@ export default function ProfilPage() {
 
               {activeTab === 'factures' && (
                 <div className="space-y-4">
-                  <Table aria-label="Tableau des factures" shadow="none">
+                  <Table  aria-label="Tableau des factures" shadow="none">
                     <TableHeader>
                       <TableColumn className="font-light text-sm">
                         <SortableColumnHeader

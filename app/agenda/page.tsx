@@ -382,12 +382,12 @@ export default function AgendaPage() {
                   <div
                     key={event.id}
                     className={`text-xs p-1 rounded ${event.type === "rendez-vous"
-                      ? "bg-blue-100 text-blue-800"
+                      ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                       : event.type === "tournage"
-                        ? "bg-pink-100 text-pink-800"
+                        ? "bg-custom-rose/14 text-custom-rose"
                         : event.type === "publication"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-orange-100 text-orange-800"
+                          ? "bg-custom-blue-pub/14 text-custom-blue-pub"
+                          : "bg-custom-orange-event/14 text-custom-orange-event"
                       }`}
                     title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                   >
@@ -475,12 +475,12 @@ export default function AgendaPage() {
                         <div
                           key={event.id}
                           className={`text-xs p-1 rounded mb-1 ${event.type === "rendez-vous"
-                            ? "bg-blue-100 text-blue-800"
+                            ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                             : event.type === "tournage"
-                              ? "bg-pink-100 text-pink-800"
+                              ? "bg-custom-rose/14 text-custom-rose"
                               : event.type === "publication"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-orange-100 text-orange-800"
+                                ? "bg-custom-blue-pub/14 text-custom-blue-pub"
+                                : "bg-custom-orange-event/14 text-custom-orange-event"
                             }`}
                           title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
                         >
