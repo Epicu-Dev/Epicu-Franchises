@@ -151,7 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const prospects = pageRecords.map((record: any) => {
+  const prospects = pageRecords.map((record: any) => {
       const catIds = record.get('Catégorie') || [];
       const catName = Array.isArray(catIds) && catIds.length > 0
         ? (categoryNames[catIds[0]] || catIds[0])
@@ -163,6 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : '';
 
       return {
+        id: record.id,
         nomEtablissement: record.get("Nom de l'établissement"),
         categorie: catName,
         ville: record.get('Ville'),
