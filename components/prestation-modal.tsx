@@ -442,7 +442,12 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={handleClose}>
+          <Button
+            color='primary'
+
+            className="flex-1 border border-1"
+            variant="bordered"
+            onPress={handleClose}>
             Annuler
           </Button>
           <Button
