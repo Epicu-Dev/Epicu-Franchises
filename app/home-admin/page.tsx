@@ -363,9 +363,6 @@ export default function HomeAdminPage() {
                     }}
                     label="Adresse"
                     placeholder="123 Rue de la Paix, 75001 Paris"
-                    classNames={{
-                      inputWrapper: "bg-page-bg",
-                    }}
                     value={newProspect.adresse}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, adresse: e.target.value })
