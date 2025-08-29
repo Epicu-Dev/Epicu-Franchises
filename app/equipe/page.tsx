@@ -27,6 +27,7 @@ import { Spinner } from "@heroui/spinner";
 
 import { getValidAccessToken } from "../../utils/auth";
 import { TeamMemberModal } from "../../components/team-member-modal";
+import { useUser } from "../../contexts/user-context";
 
 interface TeamMember {
   id: string;
@@ -79,6 +80,7 @@ interface Collaborateur {
 }
 
 export default function EquipePage() {
+  const { userProfile, userType } = useUser();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [searchTerm, setSearchTerm] = useState("");
@@ -353,8 +355,25 @@ export default function EquipePage() {
     setSearchTerm(value);
   };
 
+  // Fonction pour déterminer si l'utilisateur est admin
+  const isAdmin = () => {
+    // Vérifier d'abord le userType (admin/franchise)
+    if (userType === "admin") return true;
+    
+    // Vérifier aussi le rôle dans le profil utilisateur
+    if (userProfile?.role) {
+      const role = userProfile.role.toLowerCase();
+      return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
+    }
+    
+    return false;
+  };
+
   const handleViewModeToggle = () => {
-    setViewMode(viewMode === "grid" ? "table" : "grid");
+    // Seuls les admins peuvent passer en vue tableau
+    if (isAdmin()) {
+      setViewMode(viewMode === "grid" ? "table" : "grid");
+    }
   };
 
   const handleEdit = () => {
@@ -381,15 +400,21 @@ export default function EquipePage() {
         <CardBody className="p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
           <div className="flex justify-between items-center mb-6">
-            <Button
-              isIconOnly
-              className="text-gray-600 hover:text-gray-800"
-              variant="light"
-              onClick={handleViewModeToggle}
-            >
-              {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
+            {/* Bouton de changement de vue - visible uniquement pour les admins */}
+            {isAdmin() && (
+              <Button
+                isIconOnly
+                className="text-gray-600 hover:text-gray-800"
+                variant="light"
+                onClick={handleViewModeToggle}
+              >
+                {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
+              </Button>
+            )}
+            
+            {/* Espaceur si pas de bouton de vue */}
+            {!isAdmin() && <div />}
 
-            </Button>
             {viewMode === "grid" ? (
               <Tabs
                 className="w-full pt-3"
@@ -432,19 +457,23 @@ export default function EquipePage() {
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={handleAddMember}
-              >
-                Ajouter un membre
-              </Button>
+              
+              {/* Bouton "Ajouter un membre" - visible uniquement pour les admins */}
+              {isAdmin() && (
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={handleAddMember}
+                >
+                  Ajouter un membre
+                </Button>
+              )}
             </div>
           </div>
 
           {/* Contenu selon le mode de vue */}
           {viewMode === "grid" ? (
-            // Vue grille (vue originale)
+            // Vue grille (vue originale) - accessible à tous
             loading ?
               <div className="flex justify-center items-center h-64">
                 <Spinner className="text-black dark:text-white" size="lg" />
@@ -478,137 +507,152 @@ export default function EquipePage() {
                 ))}
               </div>
           ) : (
-            // Vue tableau (vue admin)
-            loading ?
-              <div className="flex justify-center items-center h-64">
-                <Spinner className="text-black dark:text-white" size="lg" />
-              </div>
-              :
-              <>
-                <div className="overflow-x-auto">
-                  <Table aria-label="Tableau des membres de l'équipe">
-                    <TableHeader>
-                      <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                      <TableColumn className="font-light text-sm">Ville</TableColumn>
-                      <TableColumn className="font-light text-sm">Rôle</TableColumn>
-                      <TableColumn className="font-light text-sm">Prénom</TableColumn>
-                      <TableColumn className="font-light text-sm">Nom</TableColumn>
-                      <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                      <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
-                      <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
-                      <TableColumn className="font-light text-sm">Mail perso</TableColumn>
-                      <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
-                      <TableColumn className="font-light text-sm">Téléphone</TableColumn>
-                      <TableColumn className="font-light text-sm">Adresse postale</TableColumn>
-                      <TableColumn className="font-light text-sm">SIRET</TableColumn>
-                      <TableColumn className="font-light text-sm">Date signature du DIP</TableColumn>
-                      <TableColumn className="font-light text-sm">Date signature du contrat de franchise</TableColumn>
-                      <TableColumn className="font-light text-sm">Date signature de l&apos;attestation de formation initiale</TableColumn>
-                    </TableHeader>
-                    <TableBody>
-                      {members.map((member) => (
-                        <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
-                          <TableCell className="py-5 font-light">
-                            <Tooltip content="Modifier">
-                              <Button
-                                isIconOnly
-                                className="text-gray-600 hover:text-gray-800"
-                                size="sm"
-                                variant="light"
-                                onClick={() => handleEdit()}
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell className="font-light">
-                            {member.city}
-                          </TableCell>
-                          <TableCell className="font-light">
-                            <span className="font-light">
-                              {member.role}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.firstName}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.lastName}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.identifier}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-light">
-                            <span >
-                              {member.password}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.birthDate}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <a
-                              className="font-light underline"
-                              href={`mailto:${member.personalEmail}`}
-                            >
-                              {member.personalEmail}
-                            </a>
-                          </TableCell>
-                          <TableCell>
-                            <a
-                              className="font-light underline"
-                              href={`mailto:${member.franchiseEmail}`}
-                            >
-                              {member.franchiseEmail}
-                            </a>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.phone}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.postalAddress}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.siret}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.dipSignatureDate}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.franchiseContractSignatureDate}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-light">
-                              {member.trainingCertificateSignatureDate}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+            // Vue tableau (vue admin) - accessible uniquement aux admins
+            isAdmin() ? (
+              loading ?
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
                 </div>
-              </>
+                :
+                <>
+                  <div className="overflow-x-auto">
+                    <Table aria-label="Tableau des membres de l'équipe">
+                      <TableHeader>
+                        <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                        <TableColumn className="font-light text-sm">Ville</TableColumn>
+                        <TableColumn className="font-light text-sm">Rôle</TableColumn>
+                        <TableColumn className="font-light text-sm">Prénom</TableColumn>
+                        <TableColumn className="font-light text-sm">Nom</TableColumn>
+                        <TableColumn className="font-light text-sm">Identifiant</TableColumn>
+                        <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
+                        <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
+                        <TableColumn className="font-light text-sm">Mail perso</TableColumn>
+                        <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
+                        <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+                        <TableColumn className="font-light text-sm">Adresse postale</TableColumn>
+                        <TableColumn className="font-light text-sm">SIRET</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature du DIP</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature du contrat de franchise</TableColumn>
+                        <TableColumn className="font-light text-sm">Date signature de l&apos;attestation de formation initiale</TableColumn>
+                      </TableHeader>
+                      <TableBody>
+                        {members.map((member) => (
+                          <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
+                            <TableCell className="py-5 font-light">
+                              <Tooltip content="Modifier">
+                                <Button
+                                  isIconOnly
+                                  className="text-gray-600 hover:text-gray-800"
+                                  size="sm"
+                                  variant="light"
+                                  onClick={() => handleEdit()}
+                                >
+                                  <PencilIcon className="h-4 w-4" />
+                                </Button>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell className="font-light">
+                              {member.city}
+                            </TableCell>
+                            <TableCell className="font-light">
+                              <span className="font-light">
+                                {member.role}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.firstName}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.lastName}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.identifier}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-light">
+                              <span >
+                                {member.password}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.birthDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <a
+                                className="font-light underline"
+                                href={`mailto:${member.personalEmail}`}
+                              >
+                                {member.personalEmail}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <a
+                                className="font-light underline"
+                                href={`mailto:${member.franchiseEmail}`}
+                              >
+                                {member.franchiseEmail}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.phone}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.postalAddress}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.siret}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.dipSignatureDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.franchiseContractSignatureDate}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-light">
+                                {member.trainingCertificateSignatureDate}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+            ) : (
+              // Si l'utilisateur n'est pas admin mais est en vue tableau, on le remet en vue grille
+              <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Accès non autorisé à cette vue
+                  </p>
+                  <Button
+                    color="primary"
+                    onClick={() => setViewMode("grid")}
+                  >
+                    Retour à la vue grille
+                  </Button>
+                </div>
+              </div>
+            )
           )}
-
-
 
           {/* Message si aucun résultat */}
           {!loading && ((viewMode === "grid" && members.length === 0) ||
@@ -623,13 +667,15 @@ export default function EquipePage() {
         </CardBody>
       </Card>
 
-      {/* Modal pour ajouter/modifier un membre */}
-      <TeamMemberModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onMemberAdded={handleMemberAdded}
-        isEditing={false}
-      />
+      {/* Modal pour ajouter/modifier un membre - visible uniquement pour les admins */}
+      {isAdmin() && (
+        <TeamMemberModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onMemberAdded={handleMemberAdded}
+          isEditing={false}
+        />
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 import { SelectItem } from "@heroui/select";
@@ -51,6 +52,9 @@ interface Client {
   ville?: string;
   categorie?: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
   numeroSiret?: string;
+  email?: string;
+  telephone?: string;
+  adresse?: string;
 }
 
 interface PaginationInfo {
@@ -88,7 +92,13 @@ export default function FacturationPage() {
     comment: "",
     siret: "",
   });
+  
+  // Nouveaux états pour la recherche de client
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
   const [isSearchingClient, setIsSearchingClient] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientSearchResults, setShowClientSearchResults] = useState(false);
 
   const fetchInvoices = async () => {
     try {
@@ -122,52 +132,65 @@ export default function FacturationPage() {
     }
   };
 
-  const searchClientBySiret = async (siret: string) => {
-    if (!siret || siret.length < 14) return;
+  const searchClients = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setClientSearchResults([]);
+      setShowClientSearchResults(false);
+      return;
+    }
 
     try {
       setIsSearchingClient(true);
       setError(null);
 
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ siret }),
-      });
+      const response = await fetch(`/api/clients?q=${encodeURIComponent(searchTerm)}&limit=10`);
 
       if (!response.ok) {
-        setFieldErrors(prev => ({
-          ...prev,
-          siret: 'Aucun client trouvé avec ce numéro SIRET'
-        }));
-
-        return;
+        throw new Error("Erreur lors de la recherche de clients");
       }
 
-      const client: Client = await response.json();
-
-      // Pré-remplir les champs avec les informations du client
-      setNewInvoice(prev => ({
-        ...prev,
-        establishmentName: client.nomEtablissement,
-        category: client.categorie?.toLowerCase() || "shop",
-        siret: siret,
-      }));
-
-      // Effacer les erreurs de validation
-      setFieldErrors(prev => ({
-        ...prev,
-        establishmentName: "",
-        siret: "",
-      }));
-
+      const data = await response.json();
+      setClientSearchResults(data.clients || []);
+      setShowClientSearchResults(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setIsSearchingClient(false);
     }
+  };
+
+  const selectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearchTerm(client.nomEtablissement);
+    setShowClientSearchResults(false);
+    
+    // Pré-remplir les champs avec les informations du client
+    setNewInvoice(prev => ({
+      ...prev,
+      establishmentName: client.nomEtablissement,
+      category: client.categorie?.toLowerCase() || "shop",
+      siret: client.numeroSiret || "",
+    }));
+
+    // Effacer les erreurs de validation
+    setFieldErrors(prev => ({
+      ...prev,
+      establishmentName: "",
+      siret: "",
+    }));
+  };
+
+  const clearSelectedClient = () => {
+    setSelectedClient(null);
+    setClientSearchTerm("");
+    setNewInvoice(prev => ({
+      ...prev,
+      establishmentName: "",
+      category: "shop",
+      siret: "",
+    }));
+    setClientSearchResults([]);
+    setShowClientSearchResults(false);
   };
 
   const openEditModal = (invoice: Invoice) => {
@@ -186,6 +209,8 @@ export default function FacturationPage() {
     setSelectedInvoice(invoice);
     setError(null);
     setFieldErrors({});
+    setSelectedClient(null);
+    setClientSearchTerm("");
     setIsAddModalOpen(true);
   };
 
@@ -199,6 +224,17 @@ export default function FacturationPage() {
     sortField,
     sortDirection,
   ]);
+
+  // Recherche de clients avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (clientSearchTerm) {
+        searchClients(clientSearchTerm);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [clientSearchTerm]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -310,6 +346,8 @@ export default function FacturationPage() {
       setSelectedInvoice(null);
       setError(null);
       setFieldErrors({});
+      setSelectedClient(null);
+      setClientSearchTerm("");
       fetchInvoices();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -383,6 +421,8 @@ export default function FacturationPage() {
       });
       setError(null);
       setFieldErrors({});
+      setSelectedClient(null);
+      setClientSearchTerm("");
       fetchInvoices();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -475,6 +515,8 @@ export default function FacturationPage() {
                 onPress={() => {
                   setError(null);
                   setFieldErrors({});
+                  setSelectedClient(null);
+                  setClientSearchTerm("");
                   setIsAddModalOpen(true);
                 }}
               >
@@ -482,8 +524,6 @@ export default function FacturationPage() {
               </Button>
             </div>
           </div>
-
-
 
           {/* Tableau des factures */}
           <Table aria-label="Tableau des factures" shadow="none">
@@ -608,173 +648,252 @@ export default function FacturationPage() {
               </div>
             )}
             <div className="space-y-4">
-              <FormLabel htmlFor="siret" isRequired={true}>
-                Client
-              </FormLabel>
-              <Input
-                isRequired
-                endContent={
-                  isSearchingClient ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-                  )
-                }
-                errorMessage={fieldErrors.siret}
-                id="siret"
-                isInvalid={!!fieldErrors.siret}
-                placeholder="Numéro de SIRET (14 chiffres)"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
+              {/* Recherche de client */}
+              <div className="relative">
+                <FormLabel htmlFor="clientSearch" isRequired={true}>
+                  Rechercher un client
+                </FormLabel>
+                <Input
+                  isRequired
+                  endContent={
+                    isSearchingClient ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                    )
+                  }
+                  id="clientSearch"
+                  placeholder="Rechercher par nom, email, téléphone..."
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={clientSearchTerm}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setClientSearchTerm(value);
+                    if (!value) {
+                      clearSelectedClient();
+                    }
+                  }}
+                  onFocus={() => {
+                    if (clientSearchTerm && clientSearchResults.length > 0) {
+                      setShowClientSearchResults(true);
+                    }
+                  }}
+                />
+                
+                {/* Résultats de recherche */}
+                {showClientSearchResults && clientSearchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {clientSearchResults.map((client) => (
+                      <div
+                        key={client.id}
+                        className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                        onClick={() => selectClient(client)}
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {client.nomEtablissement}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          {client.raisonSociale}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {client.ville && `${client.ville} • `}
+                          {client.email && `${client.email} • `}
+                          {client.telephone && client.telephone}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Encart d'informations du client sélectionné */}
+              {selectedClient && (
+                <div className="bg-page-bg border  rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-medium">
+                      Client sélectionné
+                    </h4>
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="light"
+                      className="text-primary-light"
+                      onPress={clearSelectedClient}
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-primary-light">Établissement:</span>
+                      <span >
+                        {selectedClient.nomEtablissement}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-primary-light">Raison sociale:</span>
+                      <span >
+                        {selectedClient.raisonSociale}
+                      </span>
+                    </div>
+                    {selectedClient.ville && (
+                      <div className="flex justify-between">
+                        <span className="text-primary-light">Ville:</span>
+                        <span >
+                          {selectedClient.ville}
+                        </span>
+                      </div>
+                    )}
+                    {selectedClient.email && (
+                      <div className="flex justify-between">
+                        <span className="text-primary-light">Email:</span>
+                        <span >
+                          {selectedClient.email}
+                        </span>
+                      </div>
+                    )}
+                    {selectedClient.telephone && (
+                      <div className="flex justify-between">
+                        <span className="text-primary-light">Téléphone:</span>
+                        <span >
+                          {selectedClient.telephone}
+                        </span>
+                      </div>
+                    )}
+                    {selectedClient.numeroSiret && (
+                      <div className="flex justify-between">
+                        <span className="text-primary-light">SIRET:</span>
+                        <span >
+                          {selectedClient.numeroSiret}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SIRET (caché mais nécessaire pour la validation) */}
+              <input
+                type="hidden"
                 value={newInvoice.siret}
-                onBlur={(e) => {
-                  const value = e.target.value;
-
-                  if (value.length === 14) {
-                    searchClientBySiret(value);
-                  }
-                }}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewInvoice((prev) => ({ ...prev, siret: value }));
-                  // Effacer l'erreur du SIRET quand l'utilisateur tape
-                  if (fieldErrors.siret) {
-                    setFieldErrors(prev => ({ ...prev, siret: "" }));
-                  }
-                  validateField('siret', value);
-                }}
+                onChange={(e) => setNewInvoice(prev => ({ ...prev, siret: e.target.value }))}
               />
 
-              <FormLabel htmlFor="category" isRequired={true}>
-                Catégorie
-              </FormLabel>
-              <StyledSelect
-                isRequired
-                errorMessage={fieldErrors.category}
-                id="category"
-                isInvalid={!!fieldErrors.category}
-                placeholder="Sélectionnez une catégorie"
-                selectedKeys={newInvoice.category ? [newInvoice.category] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-
-                  setNewInvoice((prev) => ({
-                    ...prev,
-                    category: value,
-                  }));
-                  validateField('category', value);
-                }}
-              >
-                <SelectItem key="shop">Shop</SelectItem>
-                <SelectItem key="restaurant">Restaurant</SelectItem>
-                <SelectItem key="service">Service</SelectItem>
-              </StyledSelect>
-
-              <FormLabel htmlFor="establishmentName" isRequired={true}>
-                Nom de l&apos;établissement
-              </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors.establishmentName}
-                id="establishmentName"
-                isInvalid={!!fieldErrors.establishmentName}
-                placeholder="Ex: L'ambiance"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
+              {/* Nom d'établissement (caché mais nécessaire pour la validation) */}
+              <input
+                type="hidden"
                 value={newInvoice.establishmentName}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewInvoice((prev) => ({ ...prev, establishmentName: value }));
-                  validateField('establishmentName', value);
-                }}
+                onChange={(e) => setNewInvoice(prev => ({ ...prev, establishmentName: e.target.value }))}
               />
 
-              <FormLabel htmlFor="serviceType" isRequired={true}>
-                Prestation
-              </FormLabel>
-              <StyledSelect
-                isRequired
-                errorMessage={fieldErrors.serviceType}
-                id="serviceType"
-                isInvalid={!!fieldErrors.serviceType}
-                placeholder="Sélectionnez une prestation"
-                selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-
-                  setNewInvoice((prev) => ({
-                    ...prev,
-                    serviceType: value,
-                  }));
-                  validateField('serviceType', value);
-                }}
-              >
-                <SelectItem key="creation_contenu">Création de contenu</SelectItem>
-                <SelectItem key="publication">Publication</SelectItem>
-                <SelectItem key="studio">Studio</SelectItem>
-              </StyledSelect>
-
-              <FormLabel htmlFor="amount" isRequired={true}>
-                Montant
-              </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors.amount}
-                id="amount"
-                isInvalid={!!fieldErrors.amount}
-                placeholder="Ex: 1457.98"
-                step="0.01"
-                type="number"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newInvoice.amount}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setNewInvoice((prev) => ({ ...prev, amount: value }));
-                  validateField('amount', value);
-                }}
+              {/* Catégorie (cachée mais nécessaire pour la validation) */}
+              <input
+                type="hidden"
+                value={newInvoice.category}
+                onChange={(e) => setNewInvoice(prev => ({ ...prev, category: e.target.value }))}
               />
 
-              <FormLabel htmlFor="date" isRequired={true}>
-                Date du paiement
-              </FormLabel>
-              <Input
-                isRequired
-                errorMessage={fieldErrors.date}
-                id="date"
-                isInvalid={!!fieldErrors.date}
-                type="date"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newInvoice.date}
-                onChange={(e) => {
-                  const value = e.target.value;
+              {/* Affichage conditionnel des champs de facturation */}
+              {selectedClient && (
+                <>
+                  <FormLabel htmlFor="serviceType" isRequired={true}>
+                    Prestation
+                  </FormLabel>
+                  <StyledSelect
+                    isRequired
+                    errorMessage={fieldErrors.serviceType}
+                    id="serviceType"
+                    isInvalid={!!fieldErrors.serviceType}
+                    placeholder="Sélectionnez une prestation"
+                    selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0] as string;
 
-                  setNewInvoice((prev) => ({ ...prev, date: value }));
-                  validateField('date', value);
-                }}
-              />
+                      setNewInvoice((prev) => ({
+                        ...prev,
+                        serviceType: value,
+                      }));
+                      validateField('serviceType', value);
+                    }}
+                  >
+                    <SelectItem key="creation_contenu">Création de contenu</SelectItem>
+                    <SelectItem key="publication">Publication</SelectItem>
+                    <SelectItem key="studio">Studio</SelectItem>
+                  </StyledSelect>
 
-              <FormLabel htmlFor="comment" isRequired={false}>
-                Commentaire
-              </FormLabel>
-              <Textarea
-                id="comment"
-                placeholder="Commentaires sur la facture..."
-                value={newInvoice.comment}
-                onChange={(e) => {
-                  const value = e.target.value;
+                  <FormLabel htmlFor="amount" isRequired={true}>
+                    Montant
+                  </FormLabel>
+                  <Input
+                    isRequired
+                    errorMessage={fieldErrors.amount}
+                    id="amount"
+                    isInvalid={!!fieldErrors.amount}
+                    placeholder="Ex: 1457.98"
+                    step="0.01"
+                    type="number"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
+                    value={newInvoice.amount}
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                  setNewInvoice((prev) => ({ ...prev, comment: value }));
-                }}
-              />
+                      setNewInvoice((prev) => ({ ...prev, amount: value }));
+                      validateField('amount', value);
+                    }}
+                  />
+
+                  <FormLabel htmlFor="date" isRequired={true}>
+                    Date du paiement
+                  </FormLabel>
+                  <Input
+                    isRequired
+                    errorMessage={fieldErrors.date}
+                    id="date"
+                    isInvalid={!!fieldErrors.date}
+                    type="date"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
+                    value={newInvoice.date}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      setNewInvoice((prev) => ({ ...prev, date: value }));
+                      validateField('date', value);
+                    }}
+                  />
+
+                  <FormLabel htmlFor="comment" isRequired={false}>
+                    Commentaire
+                  </FormLabel>
+                  <Textarea
+                    id="comment"
+                    placeholder="Commentaires sur la facture..."
+                    value={newInvoice.comment}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      setNewInvoice((prev) => ({ ...prev, comment: value }));
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Message d'instruction si aucun client n'est sélectionné */}
+              {!selectedClient && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-lg font-medium mb-2">
+                    Sélectionnez un client pour continuer
+                  </div>
+                  <div className="text-sm">
+                    Utilisez la recherche ci-dessus pour trouver et sélectionner un client
+                  </div>
+                </div>
+              )}
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-end">
@@ -793,6 +912,8 @@ export default function FacturationPage() {
               });
               setFieldErrors({});
               setError(null);
+              setSelectedClient(null);
+              setClientSearchTerm("");
             }}>
               Annuler
             </Button>
