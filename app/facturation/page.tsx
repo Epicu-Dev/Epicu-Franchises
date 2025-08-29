@@ -872,6 +872,9 @@ export default function FacturationPage() {
                   </FormLabel>
                   <Textarea
                     id="comment"
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     placeholder="Commentaires sur la facture..."
                     value={newInvoice.comment}
                     onChange={(e) => {

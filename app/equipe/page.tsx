@@ -27,6 +27,7 @@ import { Spinner } from "@heroui/spinner";
 
 import { getValidAccessToken } from "../../utils/auth";
 import { TeamMemberModal } from "../../components/team-member-modal";
+import { FranchiseTeamModal } from "../../components/franchise-team-modal";
 import { useUser } from "../../contexts/user-context";
 
 interface TeamMember {
@@ -87,6 +88,8 @@ export default function EquipePage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFranchiseTeamModalOpen, setIsFranchiseTeamModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
 
   // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
@@ -359,13 +362,13 @@ export default function EquipePage() {
   const isAdmin = () => {
     // Vérifier d'abord le userType (admin/franchise)
     if (userType === "admin") return true;
-    
+
     // Vérifier aussi le rôle dans le profil utilisateur
     if (userProfile?.role) {
       const role = userProfile.role.toLowerCase();
       return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
     }
-    
+
     return false;
   };
 
@@ -393,6 +396,16 @@ export default function EquipePage() {
     fetchMembers();
   };
 
+  const handleMemberClick = (member: TeamMember) => {
+    setSelectedMember(member);
+    setIsFranchiseTeamModalOpen(true);
+  };
+
+  const handleFranchiseTeamModalClose = () => {
+    setIsFranchiseTeamModalOpen(false);
+    setSelectedMember(null);
+  };
+
 
   return (
     <div className="w-full text-primary">
@@ -411,7 +424,7 @@ export default function EquipePage() {
                 {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
               </Button>
             )}
-            
+
             {/* Espaceur si pas de bouton de vue */}
             {!isAdmin() && <div />}
 
@@ -445,6 +458,7 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   endContent={
                     searchTerm && (
                       <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
@@ -455,9 +469,8 @@ export default function EquipePage() {
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                 />
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
-              
+
               {/* Bouton "Ajouter un membre" - visible uniquement pour les admins */}
               {isAdmin() && (
                 <Button
@@ -483,7 +496,12 @@ export default function EquipePage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="group relative flex flex-col items-center text-center cursor-pointer"
+                    className="group relative flex flex-col items-center text-center cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => handleMemberClick(member)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
                   >
                     <Avatar
                       className="w-16 h-16 mb-3"
@@ -676,6 +694,13 @@ export default function EquipePage() {
           isEditing={false}
         />
       )}
+
+      {/* Modal pour afficher l'équipe du franchisé */}
+      <FranchiseTeamModal
+        isOpen={isFranchiseTeamModalOpen}
+        onClose={handleFranchiseTeamModalClose}
+        selectedMember={selectedMember}
+      />
     </div>
   );
 }

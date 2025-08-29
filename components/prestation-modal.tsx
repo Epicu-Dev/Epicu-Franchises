@@ -451,7 +451,7 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
             isDisabled={Object.keys(fieldErrors).length > 0}
             onPress={handleSubmit}
           >
-            Envoyer la demande
+            Envoyer
           </Button>
         </ModalFooter>
       </ModalContent>

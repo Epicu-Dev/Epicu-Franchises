@@ -191,7 +191,7 @@ export function TeamMemberModal({
   const handleCategoryChange = (category: string) => {
     let role = "Collaborateur Siège";
     let location = "Siège";
-    
+
     if (category === "franchise") {
       role = "Franchisé";
       location = newMember.city || "Ville non définie";
@@ -327,8 +327,8 @@ export function TeamMemberModal({
               value={newMember.firstName}
               onChange={(e) => {
                 const value = e.target.value;
-                setNewMember((prev) => ({ 
-                  ...prev, 
+                setNewMember((prev) => ({
+                  ...prev,
                   firstName: value,
                   name: `${value} ${prev.lastName}`.trim()
                 }));
@@ -348,8 +348,8 @@ export function TeamMemberModal({
               value={newMember.lastName}
               onChange={(e) => {
                 const value = e.target.value;
-                setNewMember((prev) => ({ 
-                  ...prev, 
+                setNewMember((prev) => ({
+                  ...prev,
                   lastName: value,
                   name: `${prev.firstName} ${value}`.trim()
                 }));
@@ -369,8 +369,8 @@ export function TeamMemberModal({
               value={newMember.city}
               onChange={(e) => {
                 const value = e.target.value;
-                setNewMember((prev) => ({ 
-                  ...prev, 
+                setNewMember((prev) => ({
+                  ...prev,
                   city: value,
                   location: prev.category === "siege" ? "Siège" : value
                 }));
@@ -472,6 +472,9 @@ export function TeamMemberModal({
               id="birthDate"
               type="date"
               value={newMember.birthDate}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, birthDate: e.target.value }));
               }}
@@ -484,6 +487,9 @@ export function TeamMemberModal({
               id="identifier"
               placeholder="p.nom"
               value={newMember.identifier}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, identifier: e.target.value }));
               }}
@@ -496,6 +502,9 @@ export function TeamMemberModal({
               id="dipSignatureDate"
               type="date"
               value={newMember.dipSignatureDate}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, dipSignatureDate: e.target.value }));
               }}
@@ -508,6 +517,9 @@ export function TeamMemberModal({
               id="franchiseContractSignatureDate"
               type="date"
               value={newMember.franchiseContractSignatureDate}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, franchiseContractSignatureDate: e.target.value }));
               }}
@@ -520,6 +532,9 @@ export function TeamMemberModal({
               id="trainingCertificateSignatureDate"
               type="date"
               value={newMember.trainingCertificateSignatureDate}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, trainingCertificateSignatureDate: e.target.value }));
               }}
@@ -532,6 +547,9 @@ export function TeamMemberModal({
               id="password"
               placeholder="Généré automatiquement"
               value={newMember.password}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, password: e.target.value }));
               }}
@@ -544,6 +562,9 @@ export function TeamMemberModal({
               id="postalAddress"
               placeholder="123 Rue de l'établissement, 75001 Ville"
               value={newMember.postalAddress}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               onChange={(e) => {
                 setNewMember((prev) => ({ ...prev, postalAddress: e.target.value }));
               }}

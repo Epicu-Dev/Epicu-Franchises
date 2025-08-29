@@ -29,6 +29,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (savedUserType && (savedUserType === "admin" || savedUserType === "franchise")) {
       setUserTypeState(savedUserType);
     }
+    
+    // Charger immédiatement le profil utilisateur depuis le localStorage
+    const cachedProfile = localStorage.getItem('userProfile');
+    if (cachedProfile) {
+      try {
+        const parsed = JSON.parse(cachedProfile);
+        setUserProfile(parsed);
+        // Ne pas marquer comme chargé pour permettre la mise à jour via l'API
+      } catch (e) {
+        console.error('Erreur lors du parsing du profil en cache:', e);
+      }
+    }
+    
     setIsLoaded(true);
   }, []);
 
@@ -106,6 +119,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error);
       setError(error instanceof Error ? error.message : 'Erreur inconnue');
+      
+      // En cas d'erreur, on garde les données en cache si elles existent
+      const cachedProfile = localStorage.getItem('userProfile');
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile);
+          setUserProfile(parsed);
+        } catch (e) {
+          // Cache invalide, on ne fait rien
+        }
+      }
     } finally {
       setIsLoading(false);
     }

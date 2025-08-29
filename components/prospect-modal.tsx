@@ -272,6 +272,9 @@ export function ProspectModal({
             <Input
               isRequired
               id="siret"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               placeholder="12345678901234"
               value={newProspect.siret}
               onChange={(e) =>
@@ -283,6 +286,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.nomEtablissement}
               id="nomEtablissement"
               isInvalid={!!fieldErrors.nomEtablissement}
@@ -303,6 +309,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.ville}
               id="ville"
               isInvalid={!!fieldErrors.ville}
@@ -320,6 +329,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.telephone}
               id="telephone"
               isInvalid={!!fieldErrors.telephone}
@@ -379,6 +391,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.datePremierRendezVous}
               id="datePremierRendezVous"
               isInvalid={!!fieldErrors.datePremierRendezVous}
@@ -399,6 +414,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               errorMessage={fieldErrors.dateRelance}
               id="dateRelance"
               isInvalid={!!fieldErrors.dateRelance}
@@ -435,6 +453,9 @@ export function ProspectModal({
             </FormLabel>
             <Textarea
               id="commentaire"
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               placeholder="..."
               value={newProspect.commentaire}
               onChange={(e) =>
@@ -444,11 +465,14 @@ export function ProspectModal({
                 }))
               }
             />
-            
+
             <FormLabel htmlFor="email" isRequired={false}>
               Email
             </FormLabel>
             <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               id="email"
               placeholder="contact@etablissement.fr"
               type="email"
@@ -460,11 +484,14 @@ export function ProspectModal({
                 }))
               }
             />
-            
+
             <FormLabel htmlFor="adresse" isRequired={false}>
               Adresse
             </FormLabel>
             <Textarea
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               id="adresse"
               placeholder="123 Rue de l'établissement, 75001 Ville"
               value={newProspect.adresse || ""}

@@ -390,6 +390,7 @@ export default function ProspectsPage() {
             <div className="relative">
               <Input
                 className="w-64 pr-4 pl-10"
+                startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                 classNames={{
                   input:
                     "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
@@ -402,7 +403,6 @@ export default function ProspectsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
 

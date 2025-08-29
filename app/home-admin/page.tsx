@@ -395,6 +395,9 @@ export default function HomeAdminPage() {
                     <SelectItem key="glacial">Glacial</SelectItem>
                   </StyledSelect>
                   <Textarea
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     label="Commentaire"
                     placeholder="Ajoutez un commentaire sur ce prospect..."
                     value={newProspect.commentaire}

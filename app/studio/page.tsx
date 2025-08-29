@@ -494,8 +494,9 @@ export default function StudioPage() {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                       />
-                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+
                     </div>
                   </div>
 
