@@ -24,6 +24,18 @@ type Client = {
   commentaire?: string;
 };
 
+// Invoice type (facturation)
+type Invoice = {
+  id: string;
+  category: string;
+  establishmentName: string;
+  date: string;
+  amount: number;
+  serviceType: string;
+  status: 'payee' | 'en_attente' | 'retard' | string;
+  comment?: string;
+};
+
 type Collaborateur = {
   id: string;                // record id du collaborateur
   nomComplet: string;        // "Nom complet"
@@ -167,6 +179,158 @@ export default function TestProspects() {
 
   const [selected, setSelected] = useState<string | null>('categories');
 
+  // Factures (test)
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState<boolean>(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
+  // Establishment selector for testing endpoint
+  const [estSelectedId, setEstSelectedId] = useState<string>('');
+  const [estSearchQuery, setEstSearchQuery] = useState<string>('');
+  const [estLoadingList, setEstLoadingList] = useState<boolean>(false);
+
+  const fetchInvoices = async (opts?: { page?: number; limit?: number; status?: string }) => {
+    setInvoicesLoading(true);
+    setInvoicesError(null);
+    try {
+
+      // determine target endpoint: app-route `/api/facturation` supports status query,
+      // but there are also legacy pages endpoints per status: /api/facturation/payee, /attente, /retard
+      const page = String(opts?.page ?? 1);
+      const limit = String(opts?.limit ?? 20);
+
+      // If caller did not provide a status, call the legacy "payee" endpoint by default
+      const providedStatus = opts?.status;
+      let url = '';
+
+      if (providedStatus == null || providedStatus === '') {
+        const params = new URLSearchParams();
+        params.set('limit', limit);
+        url = `/api/facturation/payee?${params.toString()}`;
+      } else {
+        const rawStatus = String(providedStatus);
+        // normalize (remove diacritics and spaces)
+        const normalize = (s: string) => s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '').toLowerCase() : s.replace(/\s+/g, '').toLowerCase();
+        const st = normalize(rawStatus);
+
+        if (st.includes('pay') || st === 'payee') {
+          const params = new URLSearchParams();
+          params.set('limit', limit);
+          url = `/api/facturation/payee?${params.toString()}`;
+        } else if (st.includes('attent') || st === 'enattente') {
+          const params = new URLSearchParams();
+          params.set('limit', limit);
+          url = `/api/facturation/attente?${params.toString()}`;
+        } else if (st.includes('retard')) {
+          const params = new URLSearchParams();
+          params.set('limit', limit);
+          url = `/api/facturation/retard?${params.toString()}`;
+        } else {
+          const params = new URLSearchParams();
+          params.set('page', page);
+          params.set('limit', limit);
+          params.set('status', rawStatus);
+          url = `/api/facturation?${params.toString()}`;
+        }
+      }
+
+      const res = await authFetch(url);
+
+      if (!res.ok) {
+        // surface a clearer message from server when possible
+        let text = `Erreur récupération factures (status ${res.status})`;
+        try { const j = await res.json(); if (j?.error) text = j.error; } catch {}
+        throw new Error(text);
+      }
+
+      const data = await res.json();
+
+      // backend may return different shapes depending on which API is hit.
+      const items: any[] = data.invoices || data.results || [];
+
+      const normalized: Invoice[] = items.map((it: any) => ({
+        id: it.id || it.recordId || String(it.ID || it.Id || ''),
+        category: it.category || it.Catégorie || it.categorie || '',
+        establishmentName: it.establishmentName || it.establishment || it["Nom de l'établissement"] || it.nomEtablissement || '',
+        date: it.date || it.Date || '',
+        amount: typeof it.amount === 'number' ? it.amount : (it.amount ?? it['Montant total net'] ?? it.montant ?? 0),
+        serviceType: it.serviceType || it['Type de prestation'] || it.typePrestation || '',
+        status: it.status || it.statut || it['Statut facture'] || '',
+        comment: it.comment || it.commentaire || it.Commentaire || '',
+      } as Invoice));
+
+      setInvoices(normalized);
+    } catch (err: any) {
+      setInvoicesError(err?.message || 'Erreur');
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
+  // Fetch list of establishments for the select (without changing `selected`)
+  const fetchEstablishmentsList = async () => {
+    setEstLoadingList(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('limit', '200');
+      const res = await authFetch(`/api/clients/clients?${params.toString()}`);
+
+      if (!res.ok) return setClients([]);
+      const data = await res.json();
+
+      // populate shared clients state so other panels can reuse it
+      setClients(data.clients || []);
+    } catch (e) {
+      setClients([]);
+    } finally {
+      setEstLoadingList(false);
+    }
+  };
+
+  // Fetch invoices for a specific establishment id using the new endpoint
+  const fetchInvoicesForEstablishment = async (estId: string, q = '', limit = 50) => {
+    if (!estId) {
+      setInvoicesError('Aucun établissement sélectionné');
+      return;
+    }
+
+    setInvoicesLoading(true);
+    setInvoicesError(null);
+    try {
+      const params = new URLSearchParams();
+      params.set('id', estId);
+      if (q) params.set('q', q);
+      params.set('limit', String(limit));
+
+      const res = await authFetch(`/api/facturation/etablissement?${params.toString()}`);
+
+      if (!res.ok) {
+        let text = `Erreur récupération factures (status ${res.status})`;
+        try { const j = await res.json(); if (j?.error) text = j.error; } catch {}
+        throw new Error(text);
+      }
+
+      const data = await res.json();
+      const items: any[] = data.invoices || data.results || [];
+
+      const normalized: Invoice[] = items.map((it: any) => ({
+        id: it.id || it.recordId || String(it.ID || it.Id || ''),
+        category: it.category || it.Catégorie || it.categorie || '',
+        establishmentName: it.establishmentName || it.establishment || it["Nom de l'établissement"] || it.nomEtablissement || '',
+        date: it.date || it.Date || '',
+        amount: typeof it.amount === 'number' ? it.amount : (it.amount ?? it['Montant total net'] ?? it.montant ?? 0),
+        serviceType: it.serviceType || it['Type de prestation'] || it.typePrestation || '',
+        status: it.status || it.statut || it['Statut facture'] || '',
+        comment: it.comment || it.commentaire || it.Commentaire || '',
+      } as Invoice));
+
+      setInvoices(normalized);
+    } catch (err: any) {
+      setInvoicesError(err?.message || 'Erreur');
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
   // fetch villes / categories helper (placed after `selected` declaration)
   const fetchVilles = async (q = '') => {
     setVillesLoading(true);
@@ -232,6 +396,13 @@ export default function TestProspects() {
      
   }, [selected]);
 
+  // fetch invoices when user selects the factures collection
+  useEffect(() => {
+    if (selected === 'factures') {
+      fetchInvoices();
+    }
+  }, [selected]);
+
   // ——— Agenda ———
   const [agendaStart, setAgendaStart] = useState<string>(() => {
     const now = new Date();
@@ -242,8 +413,8 @@ export default function TestProspects() {
   const [agendaEnd, setAgendaEnd] = useState<string | null>(null);
   const [agendaLimit, setAgendaLimit] = useState<number>(50);
   const [agendaOffset, setAgendaOffset] = useState<number>(0);
-  const [agendaEvents, setAgendaEvents] = useState<{ id: string; description?: string; date: string; task?: string; type?: string }[]>([]);
   const [agendaLoading, setAgendaLoading] = useState<boolean>(false);
+  const [agendaEvents, setAgendaEvents] = useState<{ id: string; description?: string; date: string; task?: string; type?: string }[]>([]);
 
   // Form agenda
   const [newDate, setNewDate] = useState<string>(() => new Date().toISOString().slice(0,16));
@@ -1362,6 +1533,7 @@ export default function TestProspects() {
                 { key: 'glacial', label: 'Prospects Glaciaux' },
                 { key: 'prospects', label: 'Prospects' },
                 { key: 'discussion', label: 'En Discussion' },
+                { key: 'factures', label: 'Factures' },
                 { key: 'villes', label: 'Villes Epicu' },
                 { key: 'categories', label: 'Catégories' },
                 { key: 'clients', label: 'Clients' },
@@ -1652,6 +1824,70 @@ export default function TestProspects() {
             </div>
           )}
           {!loading && !error && selected === 'clients' && renderClientsTable(clients)}
+          {!loading && !error && selected === 'factures' && (
+            <div className="space-y-4">
+              {/* Test form: select établissement + recherche (placed on top of the list) */}
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="text-sm font-medium">Établissement</label>
+                    <select className="w-full border rounded-xl px-3 py-2" value={estSelectedId} onChange={(e) => setEstSelectedId(e.target.value)} onFocus={() => { if (clients.length === 0) fetchEstablishmentsList(); }}>
+                      <option value="">— Sélectionner —</option>
+                      {clients.map(c => <option key={c.nomEtablissement || (c as any).id} value={(c as any).id}>{c.nomEtablissement || c.raisonSociale || (c as any).id}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Recherche</label>
+                    <Input placeholder="Recherche texte (catégorie / nom)" value={estSearchQuery} onChange={(e) => setEstSearchQuery(e.target.value)} />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => fetchInvoicesForEstablishment(estSelectedId, estSearchQuery)}>{invoicesLoading ? 'Chargement…' : 'Rechercher'}</Button>
+                    <Button variant="ghost" onClick={() => { setEstSelectedId(''); setEstSearchQuery(''); setInvoices([]); }}>{'Réinitialiser'}</Button>
+                  </div>
+                </div>
+              </div>
+
+              <h2 className="text-xl font-semibold">Factures</h2>
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                {invoicesLoading && <div>Chargement des factures</div>}
+                {invoicesError && <div className="text-red-600">{invoicesError}</div>}
+                {!invoicesLoading && invoices.length === 0 && <div>Aucune facture</div>}
+                {!invoicesLoading && invoices.length > 0 && (
+                  <div className="overflow-auto rounded-xl border">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Etablissement</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Catégorie</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Montant</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Statut</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Type</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoices.map(inv => (
+                          <tr key={inv.id} className="odd:bg-white even:bg-gray-50">
+                            <td className="px-3 py-2 text-sm">{inv.date}</td>
+                            <td className="px-3 py-2 text-sm">{inv.establishmentName}</td>
+                            <td className="px-3 py-2 text-sm">{inv.category}</td>
+                            <td className="px-3 py-2 text-sm">{inv.amount}</td>
+                            <td className="px-3 py-2 text-sm">{inv.status}</td>
+                            <td className="px-3 py-2 text-sm">{inv.serviceType}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="pt-3 flex gap-2">
+                  <Button onClick={() => fetchInvoices()}>Rafraîchir</Button>
+                </div>
+              </div>
+            </div>
+          )}
           {!loading && !error && selected === 'villes' && renderVillesList(villes, villesHasMore)}
           {!loading && !error && selected === 'categories' && (
             <div className="space-y-3">

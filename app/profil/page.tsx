@@ -243,7 +243,7 @@ export default function ProfilPage() {
 
   return (
     <div className="w-full text-primary">
-      <Card className="w-full bg-white shadow-none">
+      <Card className="w-full bg-white shadow-none text-primary">
         <CardBody className="p-6">
           {/* Onglets */}
           <Tabs
@@ -259,10 +259,6 @@ export default function ProfilPage() {
             <Tab
               key="informations"
               title="Mes informations"
-            />
-            <Tab
-              key="factures"
-              title="Mes factures Epicu"
             />
             <Tab
               key="documents"
@@ -284,8 +280,8 @@ export default function ProfilPage() {
               {activeTab === 'informations' && (
                 <div className="space-y-10 p-4">
                   {/* En-tête du profil */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-between text-primary">
+                    <div className="flex items-center space-x-8">
                       <Avatar
                         className="w-20 h-20"
                         name={`${userProfile.firstname} ${userProfile.lastname}`}
@@ -293,10 +289,10 @@ export default function ProfilPage() {
                         src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
                       />
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                        <h2 className="text-2xl font-semibold">
                           {userProfile.firstname} {userProfile.lastname}
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400">{userProfile.role}</p>
+                        <p className='font-light'>{userProfile.role}</p>
                       </div>
                     </div>
 
@@ -431,7 +427,7 @@ export default function ProfilPage() {
 
               {activeTab === 'factures' && (
                 <div className="space-y-4">
-                  <Table  aria-label="Tableau des factures" shadow="none">
+                  <Table aria-label="Tableau des factures" shadow="none">
                     <TableHeader>
                       <TableColumn className="font-light text-sm">
                         <SortableColumnHeader
