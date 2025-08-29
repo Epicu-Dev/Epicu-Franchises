@@ -24,6 +24,9 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Suivi par',
       'Commentaires',
       'Date de relance',
+      'Téléphone',
+      'Email',
+      'Adresse',
     ];
     const allowedOrderBy = new Set([...fields]);
     const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
@@ -171,6 +174,9 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         suiviPar,
         commentaires: record.get('Commentaires'),
         dateRelance: record.get('Date de relance'),
+        telephone: record.get('Téléphone'),
+        email: record.get('Email'),
+        adresse: record.get('Adresse'),
       };
     });
 

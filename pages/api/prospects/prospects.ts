@@ -85,6 +85,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Date de prise de contact',
         'Commentaires',
         'Date de relance',
+        'Téléphone',
+        'Email',
+        'Adresse',
       ];
 
       const allowedOrderBy = new Set(fields);
@@ -171,11 +174,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nomEtablissement: record.get("Nom de l'établissement"),
           categorie: catName,
           ville: record.get('Ville'),
-          telephone: record.get('Téléphone') || null,
+          telephone: record.get('Téléphone'),
           suiviPar,
           datePriseContact: record.get('Date de prise de contact'),
           commentaires: record.get('Commentaires'),
           dateRelance: record.get('Date de relance'),
+          email: record.get('Email'),
+          adresse: record.get('Adresse'),
         };
       });
 
