@@ -1830,16 +1830,16 @@ export default function TestProspects() {
               <div className="bg-white border rounded-2xl shadow-sm p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                   <div>
-                    <label className="text-sm font-medium">Établissement</label>
-                    <select className="w-full border rounded-xl px-3 py-2" value={estSelectedId} onChange={(e) => setEstSelectedId(e.target.value)} onFocus={() => { if (clients.length === 0) fetchEstablishmentsList(); }}>
+                    <label htmlFor="establishment-select" className="text-sm font-medium">Établissement</label>
+                    <select id="establishment-select" className="w-full border rounded-xl px-3 py-2" value={estSelectedId} onChange={(e) => setEstSelectedId(e.target.value)} onFocus={() => { if (clients.length === 0) fetchEstablishmentsList(); }}>
                       <option value="">— Sélectionner —</option>
                       {clients.map(c => <option key={c.nomEtablissement || (c as any).id} value={(c as any).id}>{c.nomEtablissement || c.raisonSociale || (c as any).id}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Recherche</label>
-                    <Input placeholder="Recherche texte (catégorie / nom)" value={estSearchQuery} onChange={(e) => setEstSearchQuery(e.target.value)} />
+                    <label htmlFor="search-input" className="text-sm font-medium">Recherche</label>
+                    <Input id="search-input" placeholder="Recherche texte (catégorie / nom)" value={estSearchQuery} onChange={(e) => setEstSearchQuery(e.target.value)} />
                   </div>
 
                   <div className="flex items-center gap-2">
