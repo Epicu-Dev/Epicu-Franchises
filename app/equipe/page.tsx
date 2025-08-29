@@ -417,7 +417,6 @@ export default function EquipePage() {
             {isAdmin() && (
               <Button
                 isIconOnly
-                className="text-gray-600 hover:text-gray-800"
                 variant="light"
                 onClick={handleViewModeToggle}
               >
@@ -560,7 +559,6 @@ export default function EquipePage() {
                               <Tooltip content="Modifier">
                                 <Button
                                   isIconOnly
-                                  className="text-gray-600 hover:text-gray-800"
                                   size="sm"
                                   variant="light"
                                   onClick={() => handleEdit()}

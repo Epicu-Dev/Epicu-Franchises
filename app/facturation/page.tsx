@@ -588,7 +588,6 @@ export default function FacturationPage() {
                   <TableCell className="font-light">
                     <Button
                       isIconOnly
-                      className="text-gray-600 hover:text-gray-800"
                       size="sm"
                       variant="light"
                       onPress={() => openEditModal(invoice)}
