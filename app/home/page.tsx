@@ -334,42 +334,6 @@ export default function HomePage() {
     fetchStatistics();
   }, [selectedCity]);
 
-  // Fonction pour filtrer les données par ville
-  const filterDataByCity = (data: any[], cityKey: string) => {
-    if (cityKey === "tout") return data;
-
-    // Récupérer les villes de l'utilisateur
-    const userVilles = userProfile?.villes || [];
-
-    if (cityKey === "national") {
-      // Pour "National", exclure les villes locales de l'utilisateur
-      const localVilleNames = userVilles.map(v => v.ville);
-
-      return data.filter(item =>
-        item.ville && !localVilleNames.some(localVille =>
-          item.ville.toLowerCase().includes(localVille.toLowerCase())
-        )
-      );
-    }
-
-    // Pour les villes locales, filtrer par la ville sélectionnée
-    const selectedCity = cities.find(c => c.key === cityKey);
-
-    if (!selectedCity) return data;
-
-    return data.filter(item =>
-      item.ville && item.ville.toLowerCase().includes(selectedCity.label.toLowerCase())
-    );
-  };
-
-  // Calcul des métriques filtrées
-
-
-  const filteredEvents = useMemo(() =>
-    filterDataByCity(events, selectedCity),
-    [events, selectedCity]
-  );
-
   // Calcul du taux de conversion (maintenant géré par l'API statistiques)
   // const conversionRate = useMemo(() => {
   //   const totalProspects = filteredProspects.length;
@@ -413,14 +377,14 @@ export default function HomePage() {
 
   // Transformation des événements filtrés pour l'affichage
   const agendaEvents = useMemo(() => {
-    return filteredEvents.slice(0, 3).map(event => ({
+    return events.slice(0, 3).map(event => ({
       clientName: event.task || "Nom client",
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
       type: event.type === "rendez-vous" ? "Rendez-vous" :
         event.type === "tournage" ? "Tournage" :
           event.type === "publication" ? "Publication" : "Evènement",
     }));
-  }, [filteredEvents]);
+  }, [events]);
 
   // Transformation des todos pour l'affichage
   const displayTodoItems = useMemo(() => {

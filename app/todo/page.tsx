@@ -74,7 +74,7 @@ export default function TodoPage() {
 
       if (searchTerm) params.set('q', searchTerm);
       if (selectedStatut && selectedStatut !== 'tous') params.set('status', selectedStatut);
-      
+
       // Ajouter les paramètres de tri
       if (sortField) {
         params.set('orderBy', sortField);
@@ -369,14 +369,7 @@ export default function TodoPage() {
 
                   </TableColumn>
                   <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="Statut"
-                      label="État"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-
+                    État
                   </TableColumn>
                   <TableColumn className="font-light text-sm">Actions</TableColumn>
                 </TableHeader>

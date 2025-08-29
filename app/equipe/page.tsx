@@ -26,6 +26,7 @@ import {
 import { Spinner } from "@heroui/spinner";
 
 import { getValidAccessToken } from "../../utils/auth";
+import { TeamMemberModal } from "../../components/team-member-modal";
 
 interface TeamMember {
   id: string;
@@ -42,6 +43,12 @@ interface TeamMember {
   birthDate: string;
   personalEmail: string;
   franchiseEmail: string;
+  phone: string;
+  postalAddress: string;
+  siret: string;
+  dipSignatureDate: string;
+  franchiseContractSignatureDate: string;
+  trainingCertificateSignatureDate: string;
 }
 
 interface AdminTeamMember {
@@ -54,6 +61,12 @@ interface AdminTeamMember {
   birthDate: string;
   personalEmail: string;
   franchiseEmail: string;
+  phone: string;
+  postalAddress: string;
+  siret: string;
+  dipSignatureDate: string;
+  franchiseContractSignatureDate: string;
+  trainingCertificateSignatureDate: string;
 }
 
 
@@ -71,6 +84,7 @@ export default function EquipePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
@@ -85,6 +99,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "2",
@@ -96,6 +116,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "3",
@@ -107,6 +133,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "4",
@@ -118,6 +150,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "5",
@@ -129,6 +167,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "6",
@@ -140,6 +184,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
     {
       id: "7",
@@ -151,6 +201,12 @@ export default function EquipePage() {
       birthDate: "04.04.1998",
       personalEmail: "sylvain.binouz@gmail.com",
       franchiseEmail: "saint-malo@epicu.fr",
+      phone: "0648596769",
+      postalAddress: "1 place de Mairie, Tourcoing",
+      siret: "87450934562398",
+      dipSignatureDate: "12.07.2024",
+      franchiseContractSignatureDate: "02.12.2024",
+      trainingCertificateSignatureDate: "02.12.2024",
     },
   ];
 
@@ -235,6 +291,13 @@ export default function EquipePage() {
         const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
         const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
 
+        // Générer des données pour les nouveaux champs
+        const phone = "0648596769"; // Téléphone par défaut
+        const postalAddress = "1 place de Mairie, Tourcoing"; // Adresse par défaut
+        const siret = "87450934562398"; // SIRET par défaut
+        const dipSignatureDate = "12.07.2024"; // Date signature DIP par défaut
+        const franchiseContractSignatureDate = "02.12.2024"; // Date signature contrat par défaut
+        const trainingCertificateSignatureDate = "02.12.2024"; // Date signature attestation par défaut
 
         return {
           id: collab.id,
@@ -251,6 +314,12 @@ export default function EquipePage() {
           birthDate,
           personalEmail,
           franchiseEmail,
+          phone,
+          postalAddress,
+          siret,
+          dipSignatureDate,
+          franchiseContractSignatureDate,
+          trainingCertificateSignatureDate,
         };
       });
 
@@ -290,6 +359,19 @@ export default function EquipePage() {
 
   const handleEdit = () => {
     // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
+  };
+
+  const handleAddMember = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleMemberAdded = () => {
+    // Rafraîchir la liste des membres
+    fetchMembers();
   };
 
 
@@ -353,9 +435,7 @@ export default function EquipePage() {
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => {
-
-                }}
+                onPress={handleAddMember}
               >
                 Ajouter un membre
               </Button>
@@ -418,6 +498,12 @@ export default function EquipePage() {
                       <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
                       <TableColumn className="font-light text-sm">Mail perso</TableColumn>
                       <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
+                      <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+                      <TableColumn className="font-light text-sm">Adresse postale</TableColumn>
+                      <TableColumn className="font-light text-sm">SIRET</TableColumn>
+                      <TableColumn className="font-light text-sm">Date signature du DIP</TableColumn>
+                      <TableColumn className="font-light text-sm">Date signature du contrat de franchise</TableColumn>
+                      <TableColumn className="font-light text-sm">Date signature de l&apos;attestation de formation initiale</TableColumn>
                     </TableHeader>
                     <TableBody>
                       {members.map((member) => (
@@ -436,7 +522,6 @@ export default function EquipePage() {
                             </Tooltip>
                           </TableCell>
                           <TableCell className="font-light">
-
                             {member.city}
                           </TableCell>
                           <TableCell className="font-light">
@@ -485,6 +570,36 @@ export default function EquipePage() {
                               {member.franchiseEmail}
                             </a>
                           </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.phone}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.postalAddress}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.siret}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.dipSignatureDate}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.franchiseContractSignatureDate}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-light">
+                              {member.trainingCertificateSignatureDate}
+                            </span>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -507,6 +622,14 @@ export default function EquipePage() {
             )}
         </CardBody>
       </Card>
+
+      {/* Modal pour ajouter/modifier un membre */}
+      <TeamMemberModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onMemberAdded={handleMemberAdded}
+        isEditing={false}
+      />
     </div>
   );
 }
