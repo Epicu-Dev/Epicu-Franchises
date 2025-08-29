@@ -9,7 +9,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
     const limitRaw = parseInt((req.query.limit as string) || '50', 10);
     const offsetRaw = parseInt((req.query.offset as string) || '0', 10);
-    const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw)); // Airtable pageSize max 100
+    const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw));
     const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
 
     const order = req.query.order === 'desc' ? 'desc' : 'asc';
@@ -34,7 +34,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Moyen de contact',
       'Pages Insta',
       'Ville EPICU',
-      // 'Commentaire',
+      'Commentaires',
     ];
 
     const allowedOrderBy = new Set([
@@ -57,7 +57,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     // Construire la formule de filtrage
     let filterFormulas: string[] = [];
-    
+
     if (q && q.trim().length > 0) {
       const pattern = escapeForAirtableRegex(q.trim());
 
@@ -73,7 +73,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         `)`
       );
     }
-    
+
     if (category && category.trim().length > 0) {
       try {
         let catName = String(category);
@@ -92,11 +92,11 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         filterFormulas.push(`FIND('${catEsc}', ARRAYJOIN({Catégorie})) > 0`);
       }
     }
-    
+
     // Appliquer les filtres si il y en a
     if (filterFormulas.length > 0) {
-      selectOptions.filterByFormula = filterFormulas.length === 1 
-        ? filterFormulas[0] 
+      selectOptions.filterByFormula = filterFormulas.length === 1
+        ? filterFormulas[0]
         : `AND(${filterFormulas.join(', ')})`;
     }
 
@@ -150,7 +150,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         pagesInsta: record.get('Pages Insta'),
         villeEpicu: record.get('Ville EPICU'),
         dateSignature: 'waiting', // conservé comme dans ton code
-        commentaire: "", // conservé comme dans ton code
+        commentaire: record.get('Commentaires')
       };
     });
 
