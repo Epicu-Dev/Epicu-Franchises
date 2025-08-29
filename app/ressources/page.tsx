@@ -244,7 +244,7 @@ export default function RessourcesPage() {
         </CardHeader>
 
         <CardBody >
-          <Table aria-label="Table des ressources" shadow="none">
+          <Table aria-label="Table des ressources" shadow="none" >
             <TableHeader>
               <TableColumn className="font-light text-sm">Objet</TableColumn>
               <TableColumn className="font-light text-sm">Commentaires</TableColumn>

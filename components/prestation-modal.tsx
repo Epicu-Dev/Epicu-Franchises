@@ -46,15 +46,15 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [prestationRequest, setPrestationRequest] = useState<PrestationRequest>({
-    nom: "Dominique Dupont",
-    etablissement: "Le concept",
-    email: "dominique.dupont@leconcept.com",
-    telephone: "06 00 00 00 00",
-    ville: "Nantes",
-    instagram: "url",
-    typePrestation: "Graphisme",
-    budget: "1500€",
-    description: "-"
+    nom: "",
+    etablissement: "",
+    email: "",
+    telephone: "",
+    ville: "",
+    instagram: "",
+    typePrestation: "",
+    budget: "",
+    description: ""
   });
 
   // Validation initiale au chargement
@@ -165,15 +165,15 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
 
       // Réinitialiser le formulaire et fermer le modal
       setPrestationRequest({
-        nom: "Dominique Dupont",
-        etablissement: "Le concept",
-        email: "dominique.dupont@leconcept.com",
-        telephone: "06 00 00 00 00",
-        ville: "Nantes",
-        instagram: "url",
-        typePrestation: "Graphisme",
-        budget: "1500€",
-        description: "-"
+        nom: "",
+        etablissement: "",
+        email: "",
+        telephone: "",
+        ville: "",
+        instagram: "",
+        typePrestation: "",
+        budget: "",
+        description: ""
       });
       setError(null);
       setFieldErrors({});
@@ -188,15 +188,15 @@ export function PrestationModal({ isOpen, onClose, onPrestationRequested }: Pres
     setError(null);
     setFieldErrors({});
     setPrestationRequest({
-      nom: "Dominique Dupont",
-      etablissement: "Le concept",
-      email: "dominique.dupont@leconcept.com",
-      telephone: "06 00 00 00 00",
-      ville: "Nantes",
-      instagram: "url",
-      typePrestation: "Graphisme",
-      budget: "1500€",
-      description: "-"
+      nom: "",
+      etablissement: "",
+      email: "",
+      telephone: "",
+      ville: "",
+      instagram: "",
+      typePrestation: "",
+      budget: "",
+      description: ""
     });
     onClose();
   };

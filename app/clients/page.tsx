@@ -362,8 +362,6 @@ export default function ClientsPage() {
                   className="w-64 pr-4 pl-10"
                   startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   classNames={{
-                    input:
-                      "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
