@@ -122,7 +122,6 @@ export default function TestProspects() {
   const [collaboratorSearch, setCollaboratorSearch] = useState<string>('');
 
   // --- Prospects creation / edit (test hooks)
-  const [pSiret, setPSiret] = useState<string>('');
   const [pNom, setPNom] = useState<string>('');
   const [pVille, setPVille] = useState<string>('');
   const [pVilleId, setPVilleId] = useState<string>('');
@@ -130,15 +129,17 @@ export default function TestProspects() {
   const [villesQuery, setVillesQuery] = useState<string>('');
   const [villesLoading, setVillesLoading] = useState<boolean>(false);
   const [pTelephone, setPTelephone] = useState<string>('');
+  const [pEmail, setPEmail] = useState<string>('');
+  const [pSuivi, setPSuivi] = useState<string>('');
   const [pCategorie, setPCategorie] = useState<string>('');
   const [pCategorieId, setPCategorieId] = useState<string>('');
   const [categoriesOptions, setCategoriesOptions] = useState<{ id: string; name: string }[]>([]);
   const [categoriesQuery, setCategoriesQuery] = useState<string>('');
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
-  const [pStatut, setPStatut] = useState<string>('');
+  // Etat du prospect removed
   const [pDatePremier, setPDatePremier] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [pDatePrise, setPDatePrise] = useState<string>('');
   const [pDateRelance, setPDateRelance] = useState<string>('');
-  const [pJeRencontre, setPJeRencontre] = useState<boolean>(false);
   const [pCommentaires, setPCommentaires] = useState<string>('');
   const [pCreating, setPCreating] = useState<boolean>(false);
   const [pCreateError, setPCreateError] = useState<string | null>(null);
@@ -814,6 +815,7 @@ export default function TestProspects() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Nom établissement</th>
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date de prise</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Catégorie</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Ville</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Suivi par...</th>
@@ -825,6 +827,7 @@ export default function TestProspects() {
             {data.map((p, idx) => (
               <tr key={idx} className="odd:bg-white even:bg-gray-50">
                 <td className="px-3 py-2 text-sm">{p.nomEtablissement}</td>
+                <td className="px-3 py-2 text-sm">{(p as any).datePriseContact ? new Date((p as any).datePriseContact).toLocaleDateString() : '-'}</td>
                 <td className="px-3 py-2 text-sm">{p.categorie}</td>
                 <td className="px-3 py-2 text-sm">{p.ville || '-'}</td>
                 <td className="px-3 py-2 text-sm">{p.suiviPar || '-'}</td>
@@ -1022,32 +1025,27 @@ export default function TestProspects() {
   const createProspect = async () => {
     setPCreateError(null);
     setPCreateSuccess(null);
-    if (!pSiret || !pNom || !pVille || !pTelephone || !pCategorie || !pStatut || !pDatePremier || !pDateRelance) {
+  if (!pNom || !pVille || !pTelephone || !pCategorie || !pDatePremier || !pDateRelance) {
       setPCreateError('Veuillez renseigner tous les champs requis');
-
-      return;
-    }
-    // Validate SIRET: 14 digits (allow spaces in input)
-    const siretClean = String(pSiret || '').replace(/\s+/g, '');
-
-    if (!/^\d{14}$/.test(siretClean)) {
-      setPCreateError('SIRET invalide — doit contenir exactement 14 chiffres');
 
       return;
     }
     setPCreating(true);
     try {
       const payload: any = {
-        'SIRET': siretClean,
         "Nom de l'établissement": pNom,
         'Ville EPICU': pVille,
         'Téléphone': pTelephone,
         'Catégorie': pCategorie,
-        'Statut': pStatut,
-        'Date du premier contact': pDatePremier,
+  // 'Etat du prospect' removed
+  'Date du premier contact': pDatePremier,
+  'Date de prise de contact': pDatePrise,
         'Date de relance': pDateRelance,
-        'Je viens de le rencontrer (bool)': Boolean(pJeRencontre),
       };
+
+      // optional fields
+      if (pEmail) payload['Email'] = pEmail;
+      if (pSuivi) payload['Suivi par'] = [pSuivi];
 
       if (pCommentaires) payload['Commentaires'] = pCommentaires;
 
@@ -1065,8 +1063,8 @@ export default function TestProspects() {
       const created = await res.json();
 
       setPCreateSuccess(`Prospect créé (id: ${created.id})`);
-      // reset minimal fields
-      setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires('');
+  // reset minimal fields
+  setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDatePrise(''); setPDateRelance(''); setPCommentaires('');
       // refresh list if showing prospects
       if (selected === 'prospects') loadCollection('prospects');
     } catch (err: any) {
@@ -1089,25 +1087,15 @@ export default function TestProspects() {
     try {
       const payload: any = {};
 
-      if (pSiret) {
-        const siretClean = String(pSiret).replace(/\s+/g, '');
-
-        if (!/^\d{14}$/.test(siretClean)) {
-          setPUpdateError('SIRET invalide — doit contenir exactement 14 chiffres');
-          setPUpdateLoading(false);
-
-          return;
-        }
-        payload['SIRET'] = siretClean;
-      }
       if (pNom) payload["Nom de l'établissement"] = pNom;
       if (pVille) payload['Ville EPICU'] = pVille;
       if (pTelephone) payload['Téléphone'] = pTelephone;
+  if (pEmail) payload['Email'] = pEmail;
+  if (pSuivi) payload['Suivi par'] = [pSuivi];
       if (pCategorie) payload['Catégorie'] = pCategorie;
-      if (pStatut) payload['Statut'] = pStatut;
       if (pDatePremier) payload['Date du premier contact'] = pDatePremier;
+  if (pDatePrise) payload['Date de prise de contact'] = pDatePrise;
       if (pDateRelance) payload['Date de relance'] = pDateRelance;
-      if (typeof pJeRencontre === 'boolean') payload['Je viens de le rencontrer (bool)'] = Boolean(pJeRencontre);
       if (pCommentaires) payload['Commentaires'] = pCommentaires;
 
       if (Object.keys(payload).length === 0) {
@@ -1458,10 +1446,7 @@ export default function TestProspects() {
                       {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="statut">Statut</label>
-                    <Input id="statut" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
-                  </div>
+                  {/* Etat du prospect removed */}
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-medium" htmlFor="date-relance">Date de relance</label>
                     <Input id="date-relance" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
@@ -1579,10 +1564,7 @@ export default function TestProspects() {
                     <div className="space-y-3">
                       <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L&apos;id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="siret">SIRET</label>
-                          <Input id="siret" placeholder="SIRET" type="text" value={pSiret} onChange={(e) => setPSiret(e.target.value)} />
-                        </div>
+                        {/* SIRET removed from API - field omitted */}
                         <div className="flex flex-col gap-1">
                           <label className="text-sm font-medium" htmlFor="nom-etablissement-create">Nom de l&apos;établissement</label>
                           <Input id="nom-etablissement-create" placeholder="Nom établissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
@@ -1609,6 +1591,17 @@ export default function TestProspects() {
                           <Input id="telephone" placeholder="Téléphone" type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium" htmlFor="email">Email</label>
+                          <Input id="email" placeholder="Email" type="email" value={pEmail} onChange={(e) => setPEmail(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium" htmlFor="suivi-par">Suivi par</label>
+                          <select id="suivi-par" className="w-full border rounded-xl px-3 py-2" value={pSuivi || ''} onChange={(e) => setPSuivi(e.target.value || '')}>
+                            <option value="">— Aucun —</option>
+                            {collaborateurs.map(c => <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
                           <label className="text-sm font-medium" htmlFor="categorie-create">Catégorie</label>
                           <Input id="categorie-create" placeholder="Rechercher une catégorie…" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
                           <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select-create" value={pCategorieId || ''} onChange={(e) => {
@@ -1625,22 +1618,20 @@ export default function TestProspects() {
                             {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="statut-create">Statut</label>
-                          <Input id="statut-create" placeholder="Statut" type="text" value={pStatut} onChange={(e) => setPStatut(e.target.value)} />
-                        </div>
+                        {/* Etat du prospect removed */}
                         <div className="flex flex-col gap-1">
                           <label className="text-sm font-medium" htmlFor="date-premier">Date du premier contact</label>
                           <Input id="date-premier" type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-1">
+                          <label className="text-sm font-medium" htmlFor="date-prise">Date de prise de contact</label>
+                          <Input id="date-prise" type="date" value={pDatePrise} onChange={(e) => setPDatePrise(e.target.value)} />
+                        </div>
+                        <div className="flex flex-col gap-1">
                           <label className="text-sm font-medium" htmlFor="date-relance-create">Date de relance</label>
                           <Input id="date-relance-create" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <input checked={pJeRencontre} id="jeRencontreMain" type="checkbox" onChange={(e) => setPJeRencontre(e.target.checked)} />
-                          <label className="text-sm" htmlFor="jeRencontreMain">Je viens de le rencontrer</label>
-                        </div>
+                        {/* 'Je viens de le rencontrer' removed from API and UI */}
                         <div className="flex flex-col gap-1 md:col-span-2">
                           <label className="text-sm font-medium" htmlFor="commentaires-create">Commentaires</label>
                           <Textarea id="commentaires-create" rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
@@ -1650,7 +1641,7 @@ export default function TestProspects() {
                       {pCreateSuccess && <div className="text-emerald-600 text-sm">{pCreateSuccess}</div>}
                       <div className="flex gap-2 pt-2">
                         <Button disabled={pCreating} onClick={() => createProspect()}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
-                        <Button variant="ghost" onClick={() => { setPSiret(''); setPNom(''); setPVille(''); setPTelephone(''); setPCategorie(''); setPStatut(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPJeRencontre(false); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
+                        <Button variant="ghost" onClick={() => { setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
                       </div>
                     </div>
                   </div>
