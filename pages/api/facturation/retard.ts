@@ -6,7 +6,7 @@ const CATEGORIES_TABLE = 'CATÉGORIES';
 
 // Convertit toute valeur Airtable (string / objet {name} / array) en texte
 const toText = (v: any): string => {
-  if (v == null) return '';
+  if (v == null || v === undefined) return '';
   if (Array.isArray(v)) return v.map(toText).join(' ');
   if (typeof v === 'object') return toText((v as any).name ?? JSON.stringify(v));
   return String(v);
@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const q = (req.query.q as string) || '';
-    const limit = Math.max(1, Math.min(200, parseInt((req.query.limit as string) || '100', 10)));
+    const limit = Math.max(1, Math.min(200, parseInt((req.query.limit as string) || '20', 10)));
+    const offset = Math.max(0, parseInt((req.query.offset as string) || '0', 10));
 
     const selectOptions: any = {
       view: 'Toutes les factures',
@@ -47,8 +48,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const clientIds = new Set<string>();
     const categoryIds = new Set<string>();
     records.forEach((r: any) => {
-      (r.get('Client') || []).forEach((id: string) => clientIds.add(id));
-      (r.get('Catégorie') || []).forEach((id: string) => categoryIds.add(id));
+      const clients = r.get('Client');
+      const categories = r.get('Catégorie');
+      
+      if (clients && Array.isArray(clients)) {
+        clients.forEach((id: string) => {
+          if (id && typeof id === 'string') clientIds.add(id);
+        });
+      }
+      
+      if (categories && Array.isArray(categories)) {
+        categories.forEach((id: string) => {
+          if (id && typeof id === 'string') categoryIds.add(id);
+        });
+      }
     });
 
     // 3) Résolution des noms d'établissements
@@ -88,9 +101,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const clientRef: string[] = r.get('Client') || [];
       const clientId = Array.isArray(clientRef) && clientRef.length > 0 ? clientRef[0] : null;
 
-      const catsRef: string[] = r.get('Catégorie') || [];
-      const catsNames = catsRef.map(id => categoryNames[id]).filter(Boolean);
-      const categorieText = catsNames.length ? catsNames.join(' / ') : null;
+      const catsRef = r.get('Catégorie');
+      let categorieText = 'Non catégorisé';
+      
+      if (catsRef && Array.isArray(catsRef) && catsRef.length > 0) {
+        const catsNames = catsRef.map(id => categoryNames[id]).filter(Boolean);
+        categorieText = catsNames.length ? catsNames.join(' / ') : 'Non catégorisé';
+      }
 
       return {
         id: r.id,
@@ -114,12 +131,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const nq = normalize(q);
     const filtered = q
       ? filteredByStatut.filter(r =>
-        normalize(r.nomEtablissement).includes(nq) ||
-        normalize(r.categorie).includes(nq)
+        (r.nomEtablissement && normalize(r.nomEtablissement).includes(nq)) ||
+        (r.categorie && normalize(r.categorie).includes(nq))
       )
       : filteredByStatut;
 
-    return res.status(200).json({ invoices: filtered.slice(0, limit) });
+    // Appliquer l'offset et la limite pour la pagination
+    const paginatedInvoices = filtered.slice(offset, offset + limit);
+    
+    return res.status(200).json({ invoices: paginatedInvoices });
   } catch (error: any) {
     console.error('facturation/en_retard error:', error?.message || error);
     return res.status(500).json({ error: 'Internal error', details: error?.message || String(error) });

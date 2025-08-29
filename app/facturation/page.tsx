@@ -36,13 +36,13 @@ import { CategoryBadge, FormLabel, SortableColumnHeader } from "@/components";
 
 interface Invoice {
   id: string;
-  category: string;
-  establishmentName: string;
+  categorie: string;
+  nomEtablissement: string;
   date: string;
-  amount: number;
-  serviceType: string;
-  status: "payee" | "en_attente" | "retard";
-  comment?: string;
+  montant: number;
+  typePrestation: string;
+  statut: string;
+  commentaire?: string;
 }
 
 interface Client {
@@ -58,20 +58,25 @@ interface Client {
 }
 
 interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+  hasMore: boolean;
+  nextOffset: number | null;
+  limit: number;
+  offset: number;
 }
 
 export default function FacturationPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
+    hasMore: true,
+    nextOffset: 0,
+    limit: 20,
+    offset: 0,
   });
+
+  // Variables pour le LazyLoading
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState<number | null>(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("payee");
   const [searchTerm] = useState("");
   const [selectedCategory] = useState("");
@@ -88,11 +93,11 @@ export default function FacturationPage() {
     date: new Date().toISOString().split('T')[0], // Date d'aujourd'hui par défaut
     amount: "",
     serviceType: "",
-    status: "en_attente" as Invoice["status"],
+    status: "en_attente",
     comment: "",
     siret: "",
   });
-  
+
   // Nouveaux états pour la recherche de client
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
@@ -100,19 +105,22 @@ export default function FacturationPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
+      const offset = isLoadMore ? (nextOffset || 0) : 0;
+
       const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
+        limit: '20',
         status: selectedStatus,
-        search: searchTerm,
-        category: selectedCategory,
-        sortBy: sortField,
-        sortOrder: sortDirection,
+        q: searchTerm,
+        offset: offset.toString(),
       });
 
       const response = await fetch(`/api/facturation?${params}`);
@@ -123,12 +131,28 @@ export default function FacturationPage() {
 
       const data = await response.json();
 
-      setInvoices(data.invoices);
+      if (isLoadMore) {
+        setInvoices(prev => [...prev, ...(data.invoices || [])]);
+      } else {
+        setInvoices(data.invoices || []);
+      }
+
+      // Mettre à jour la pagination pour le LazyLoading
+      setHasMore(data.pagination?.hasMore || false);
+      setNextOffset(data.pagination?.nextOffset || null);
       setPagination(data.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Fonction pour charger plus de données
+  const loadMore = () => {
+    if (hasMore && !loadingMore && nextOffset !== null) {
+      fetchInvoices(true);
     }
   };
 
@@ -163,7 +187,7 @@ export default function FacturationPage() {
     setSelectedClient(client);
     setClientSearchTerm(client.nomEtablissement);
     setShowClientSearchResults(false);
-    
+
     // Pré-remplir les champs avec les informations du client
     setNewInvoice(prev => ({
       ...prev,
@@ -196,13 +220,13 @@ export default function FacturationPage() {
   const openEditModal = (invoice: Invoice) => {
     // Pré-remplir le formulaire avec les données de la facture existante
     setNewInvoice({
-      category: invoice.category,
-      establishmentName: invoice.establishmentName,
+      category: invoice.categorie,
+      establishmentName: invoice.nomEtablissement,
       date: invoice.date,
-      amount: invoice.amount.toString(),
-      serviceType: invoice.serviceType,
-      status: invoice.status,
-      comment: invoice.comment || "",
+      amount: invoice.montant.toString(),
+      serviceType: invoice.typePrestation,
+      status: invoice.statut,
+      comment: invoice.commentaire || "",
       siret: "", // On ne peut pas récupérer le SIRET depuis la facture
     });
 
@@ -214,15 +238,19 @@ export default function FacturationPage() {
     setIsAddModalOpen(true);
   };
 
+  // Réinitialiser la pagination quand on change d'onglet
+  const handleTabChange = (key: React.Key) => {
+    setSelectedStatus(key.toString());
+    setInvoices([]);
+    setNextOffset(0);
+    setHasMore(true);
+  };
+
   useEffect(() => {
     fetchInvoices();
   }, [
-    pagination.currentPage,
     selectedStatus,
     searchTerm,
-    selectedCategory,
-    sortField,
-    sortDirection,
   ]);
 
   // Recherche de clients avec debounce
@@ -459,20 +487,6 @@ export default function FacturationPage() {
     }
   };
 
-  if (loading && invoices.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="w-full">
@@ -501,7 +515,7 @@ export default function FacturationPage() {
               }}
               selectedKey={selectedStatus}
               variant="underlined"
-              onSelectionChange={(key) => setSelectedStatus(key as string)}
+              onSelectionChange={handleTabChange}
             >
               <Tab key="payee" title="Payée" />
               <Tab key="en_attente" title="En attente" />
@@ -525,109 +539,104 @@ export default function FacturationPage() {
             </div>
           </div>
 
-          {/* Tableau des factures */}
-          <Table aria-label="Tableau des factures" shadow="none">
-            <TableHeader>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="category"
-                  label="Catégorie"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
+          {loading ? <div className="flex justify-center items-center h-64">
+            <Spinner className="text-black dark:text-white" size="lg" />
+          </div> :
+            <div>
+              {/* Tableau des factures */}
+              <Table aria-label="Tableau des factures" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="category"
+                      label="Catégorie"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
 
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="establishmentName"
-                  label="Nom établissement"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="date"
-                  label="Date"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                <SortableColumnHeader
-                  field="amount"
-                  label="Montant"
-                  sortDirection={sortDirection}
-                  sortField={sortField}
-                  onSort={handleSort}
-                />
-              </TableColumn>
-              <TableColumn className="font-light text-sm">
-                Type de prestation
-              </TableColumn>
-              <TableColumn className="font-light text-sm">Modifier</TableColumn>
-              <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
-                  <TableCell>
-                    <CategoryBadge category={invoice.category} />
-                  </TableCell>
-                  <TableCell className="font-light py-5">
-                    {invoice.establishmentName}
-                  </TableCell>
-                  <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>
-                  <TableCell className="font-light">
-                    {formatAmount(invoice.amount)}
-                  </TableCell>
-                  <TableCell className="font-light">{getServiceTypeLabel(invoice.serviceType)}</TableCell>
-                  <TableCell className="font-light">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      onPress={() => openEditModal(invoice)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell className="font-light">
-                    <span className="text-sm text-gray-500">
-                      {invoice.comment || "commentaires"}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="establishmentName"
+                      label="Nom établissement"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="date"
+                      label="Date"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="amount"
+                      label="Montant"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    Type de prestation
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
+                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((invoice) => (
+                    <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
+                      <TableCell>
+                        <CategoryBadge category={invoice.categorie} />
+                      </TableCell>
+                      <TableCell className="font-light py-5">
+                        {invoice.nomEtablissement}
+                      </TableCell>
+                      <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>
+                      <TableCell className="font-light">
+                        {formatAmount(invoice.montant)}
+                      </TableCell>
+                      <TableCell className="font-light">{getServiceTypeLabel(invoice.typePrestation)}</TableCell>
+                      <TableCell className="font-light">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={() => openEditModal(invoice)}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-light">
+                        <span className="text-sm text-gray-500">
+                          {invoice.commentaire || "commentaires"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>
-
-          {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {invoices.length} facture(s) sur{" "}
-            {pagination.totalItems} au total
-          </div>
+              {/* Bouton "Charger plus" */}
+              {hasMore && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    color="primary"
+                    disabled={loadingMore}
+                    isLoading={loadingMore}
+                    onPress={loadMore}
+                  >
+                    {loadingMore ? 'Chargement...' : 'Charger plus'}
+                  </Button>
+                </div>
+              )}
+            </div>}
         </CardBody>
       </Card>
 
@@ -680,7 +689,7 @@ export default function FacturationPage() {
                     }
                   }}
                 />
-                
+
                 {/* Résultats de recherche */}
                 {showClientSearchResults && clientSearchResults.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -689,6 +698,9 @@ export default function FacturationPage() {
                         key={client.id}
                         className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
                         onClick={() => selectClient(client)}
+                        onKeyDown={(e) => e.key === 'Enter' && selectClient(client)}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div className="font-medium text-gray-900 dark:text-white">
                           {client.nomEtablissement}

@@ -261,10 +261,6 @@ export default function ProfilPage() {
               title="Mes informations"
             />
             <Tab
-              key="factures"
-              title="Mes factures Epicu"
-            />
-            <Tab
               key="documents"
               title="Mes documents"
             />

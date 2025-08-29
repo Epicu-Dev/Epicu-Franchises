@@ -22,6 +22,7 @@ import {
 } from "@heroui/modal";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
+  ArrowRightIcon,
   MagnifyingGlassIcon,
   PencilIcon,
   PlusIcon,
@@ -515,6 +516,9 @@ export default function ProspectsPage() {
                 shadow="none"
               >
                 <TableHeader className="mb-4">
+                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
+                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
+
                   <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
                   <TableColumn className="font-light text-sm">SIRET</TableColumn>
                   <TableColumn className="font-light text-sm">Ville</TableColumn>
@@ -551,8 +555,6 @@ export default function ProspectsPage() {
                   <TableColumn className="font-light text-sm">Email</TableColumn>
                   <TableColumn className="font-light text-sm">Adresse</TableColumn>
                   <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
                 </TableHeader>
                 <TableBody className="mt-4">
                   {prospects.length === 0 ? (
@@ -597,7 +599,32 @@ export default function ProspectsPage() {
                     </TableRow>
                   ) : (
                     prospects.map((prospect) => (
+
                       <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
+                        <TableCell className="font-light">
+                          <Button
+                            className="px-6 border-1"
+                            color="primary"
+                            variant="bordered"
+                            size="sm"
+                            endContent={<ArrowRightIcon></ArrowRightIcon>}
+                            onPress={() => openConvertModal(prospect)}
+                          >
+                            Convertir
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            isIconOnly
+                            aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                            className="text-gray-600 hover:text-gray-800"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleEditProspect(prospect)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                         <TableCell className="font-light py-5">
                           {prospect.nomEtablissement}
                         </TableCell>
@@ -632,28 +659,8 @@ export default function ProspectsPage() {
                         <TableCell className="font-light">{prospect.email}</TableCell>
                         <TableCell className="font-light">{prospect.adresse}</TableCell>
                         <TableCell className="font-light">{prospect.commentaires}</TableCell>
-                        <TableCell>
-                          <Button
-                            isIconOnly
-                            aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
-                            className="text-gray-600 hover:text-gray-800"
-                            size="sm"
-                            variant="light"
-                            onPress={() => handleEditProspect(prospect)}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <Button
-                            className="px-6"
-                            color="primary"
-                            size="sm"
-                            onPress={() => openConvertModal(prospect)}
-                          >
-                            Convertir
-                          </Button>
-                        </TableCell>
+
+
                       </TableRow>
                     ))
                   )}
@@ -699,7 +706,7 @@ export default function ProspectsPage() {
                     <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
                     <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
                     <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
-                     {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
+                    {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
                     {prospectToConvert.adresse && <p><strong>Adresse :</strong> {prospectToConvert.adresse}</p>}
                   </div>
                 </div>
