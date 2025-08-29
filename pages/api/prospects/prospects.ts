@@ -196,33 +196,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const body = req.body || {};
         const nom = body["Nom de l'établissement"];
-        const villeRaw = body['Ville EPICU'];
-        const telephone = body['Téléphone'];
-        const categorieRaw = body['Catégorie'];
-        const datePrise = body['Date de prise de contact'];
-        const dateRelance = body['Date de relance'];
-        const commentaires = body['Commentaires'];
-        const email = body['Email'];
-        const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'];
+        const villeRaw = body['Ville EPICU'] || body['Ville'] || body.ville;
+        const telephone = body['Téléphone'] || body.telephone || null;
+        const categorieRaw = body['Catégorie'] || body.categorie || null;
+        const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
+        const dateRelance = body['Date de relance'] || body.dateRelance || null;
+        const commentaires = body['Commentaires'] || body.commentaires || null;
+        const email = body['Email'] || body.email || null;
+        const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'] || body.suivi || null;
 
-        const missing: string[] = [];
-        if (!nom) missing.push("Nom de l'établissement");
-        if (!villeRaw) missing.push('Ville EPICU');
-        if (!telephone) missing.push('Téléphone');
-        if (!categorieRaw) missing.push('Catégorie');
-        if (!dateRelance) missing.push('Date de relance');
-        if (missing.length > 0) return res.status(400).json({ error: 'Champs requis manquants', missing });
+        // Only require the establishment name like GET is tolerant
+        if (!nom) return res.status(400).json({ error: `Missing required field: Nom de l'établissement` });
 
         const fieldsToCreate: any = {};
         fieldsToCreate["Nom de l'établissement"] = nom;
-        fieldsToCreate['Téléphone'] = telephone;
+        if (telephone) fieldsToCreate['Téléphone'] = telephone;
         if (email) fieldsToCreate['Email'] = email;
         if (datePrise) fieldsToCreate['Date de prise de contact'] = datePrise;
-        fieldsToCreate['Date de relance'] = dateRelance;
+        if (dateRelance) fieldsToCreate['Date de relance'] = dateRelance;
         if (commentaires) fieldsToCreate['Commentaires'] = commentaires;
 
-        const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
-        if (villeId) fieldsToCreate['Ville'] = [villeId];
+        if (villeRaw) {
+          const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
+          if (villeId) fieldsToCreate['Ville'] = [villeId];
+        }
 
         const catIds = await resolveCategoryIds(categorieRaw);
         if (catIds.length > 0) fieldsToCreate['Catégorie'] = catIds;
@@ -231,7 +228,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (suiviIds.length > 0) fieldsToCreate['Suivi par'] = suiviIds;
 
         const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
-        return res.status(201).json({ id: created[0].id, fields: created[0].fields });
+        const createdId = created[0].id;
+
+        // Fetch the created record and return it in the same shape as GET
+        const record = await base(TABLE_NAME).find(createdId);
+
+        // resolve category & suivi names
+        const catIdsOnRecord = record.get('Catégorie') || [];
+        const suiviIdsOnRecord = record.get('Suivi par') || [];
+
+        const categoryNames: Record<string, string> = {};
+        if (Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0) {
+          const catRecords = await base('Catégories').select({ filterByFormula: `OR(${catIdsOnRecord.map((id: string) => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Name'], maxRecords: catIdsOnRecord.length }).all();
+          catRecords.forEach((c: any) => { categoryNames[c.id] = c.get('Name'); });
+        }
+
+        const suiviNames: Record<string, string> = {};
+        if (Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0) {
+          const collabRecords = await base('Collaborateurs').select({ filterByFormula: `OR(${suiviIdsOnRecord.map((id: string) => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Prénom', 'Nom'], maxRecords: suiviIdsOnRecord.length }).all();
+          collabRecords.forEach((c: any) => { suiviNames[c.id] = `${c.get('Prénom') || ''} ${c.get('Nom') || ''}`.trim(); });
+        }
+
+        const catName = Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0 ? (categoryNames[catIdsOnRecord[0]] || catIdsOnRecord[0]) : '';
+        const spName = Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0 ? (suiviNames[suiviIdsOnRecord[0]] || suiviIdsOnRecord[0]) : '';
+
+        const prospect = {
+          id: record.id,
+          nomEtablissement: record.get("Nom de l'établissement"),
+          categorie: catName,
+          ville: record.get('Ville'),
+          telephone: record.get('Téléphone'),
+          suiviPar: spName,
+          datePriseContact: record.get('Date de prise de contact'),
+          commentaires: record.get('Commentaires'),
+          dateRelance: record.get('Date de relance'),
+          email: record.get('Email'),
+          adresse: record.get('Adresse'),
+        };
+
+        return res.status(201).json({ prospect });
       } catch (err: any) {
         console.error('prospects POST error', err);
         return res.status(500).json({ error: 'Erreur création prospect', details: err?.message || String(err) });

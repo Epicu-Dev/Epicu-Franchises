@@ -93,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return {
           id: r.id,
           name,
-          createdAt,   // fourni par Airtable (champ calculé)
+          createdAt,
           dueDate,
           status,
           type,
