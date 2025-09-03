@@ -217,7 +217,7 @@ export default function FacturationPage() {
     setShowClientSearchResults(false);
   };
 
-  const openEditModal = (invoice: Invoice) => {
+  const openEditModal = async (invoice: Invoice) => {
     // Pré-remplir le formulaire avec les données de la facture existante
     setNewInvoice({
       category: invoice.categorie,
@@ -227,15 +227,47 @@ export default function FacturationPage() {
       serviceType: invoice.typePrestation,
       status: invoice.statut,
       comment: invoice.commentaire || "",
-      siret: "", // On ne peut pas récupérer le SIRET depuis la facture
+      siret: "", // Sera rempli automatiquement si le client est trouvé
     });
 
     setSelectedInvoice(invoice);
     setError(null);
     setFieldErrors({});
     setSelectedClient(null);
-    setClientSearchTerm("");
+    setClientSearchTerm(invoice.nomEtablissement);
     setIsAddModalOpen(true);
+
+    // Rechercher automatiquement le client correspondant à cette facture
+    try {
+      const response = await fetch(`/api/clients?q=${encodeURIComponent(invoice.nomEtablissement)}&limit=10`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const clients = data.clients || [];
+        
+        // Trouver le client exact correspondant au nom d'établissement
+        const matchingClient = clients.find((client: Client) => 
+          client.nomEtablissement.toLowerCase() === invoice.nomEtablissement.toLowerCase()
+        );
+        
+        if (matchingClient) {
+          // Sélectionner automatiquement le client trouvé
+          setSelectedClient(matchingClient);
+          setClientSearchTerm(matchingClient.nomEtablissement);
+          
+          // Mettre à jour les informations cachées avec les données du client
+          setNewInvoice(prev => ({
+            ...prev,
+            establishmentName: matchingClient.nomEtablissement,
+            category: matchingClient.categorie?.toLowerCase() || prev.category,
+            siret: matchingClient.numeroSiret || "",
+          }));
+        }
+      }
+    } catch (err) {
+      // En cas d'erreur, on continue sans pré-charger le client
+      console.warn("Impossible de charger les informations du client:", err);
+    }
   };
 
   // Réinitialiser la pagination quand on change d'onglet

@@ -17,6 +17,22 @@ import { Switch } from "@heroui/switch";
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 
+interface Prospect {
+    id?: string;
+    siret: string;
+    nomEtablissement: string;
+    ville: string;
+    telephone: string;
+    categorie: string;
+    statut: string;
+    datePremierRendezVous: string;
+    dateRelance: string;
+    vientDeRencontrer: boolean;
+    commentaire: string;
+    email?: string;
+    adresse?: string;
+}
+
 interface Client {
     id: string;
     raisonSociale: string;
@@ -46,27 +62,27 @@ interface Client {
     statut?: "actif" | "inactif" | "prospect";
 }
 
-interface ClientModalProps {
+interface ConvertProspectModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
+    prospect: Prospect | null;
     editingClient: Client | null;
     setEditingClient: React.Dispatch<React.SetStateAction<Client | null>>;
-    categories: Array<{ id: string, name: string }>;
     onUpdateClient: () => Promise<void>;
     isLoading: boolean;
     error: string | null;
 }
 
-export default function ClientModal({
+export default function ConvertProspectModal({
     isOpen,
     onOpenChange,
+    prospect,
     editingClient,
     setEditingClient,
-    categories,
     onUpdateClient,
     isLoading,
     error
-}: ClientModalProps) {
+}: ConvertProspectModalProps) {
     return (
         <Modal
             isOpen={isOpen}
@@ -76,11 +92,11 @@ export default function ClientModal({
         >
             <ModalContent>
                 <ModalHeader className="flex justify-center">
-                    Modifier le client
+                    Convertir le prospect en client
                 </ModalHeader>
 
-                <ModalBody className="max-h-[70vh] overflow-y-auto">
-                    {editingClient && (
+                                <ModalBody className="max-h-[70vh] overflow-y-auto">
+                    {prospect && editingClient && (
                         <div className="space-y-6">
                             {/* Informations générales */}
                             <div className="space-y-4">
@@ -93,17 +109,13 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Input
                                     isRequired
+                                    isReadOnly
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     id="nomEtablissement"
                                     placeholder="Nom de l'établissement"
                                     value={editingClient.nomEtablissement}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, nomEtablissement: e.target.value } : null
-                                        )
-                                    }
                                 />
 
                                 <FormLabel htmlFor="ville" isRequired={true}>
@@ -111,17 +123,13 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Input
                                     isRequired
+                                    isReadOnly
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     id="ville"
                                     placeholder="Paris"
                                     value={editingClient.ville || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, ville: e.target.value } : null
-                                        )
-                                    }
                                 />
 
                                 <FormLabel htmlFor="categorie" isRequired={true}>
@@ -129,31 +137,16 @@ export default function ClientModal({
                                 </FormLabel>
                                 <StyledSelect
                                     isRequired
+                                    isDisabled
                                     id="categorie"
                                     placeholder="Sélectionner une catégorie"
                                     selectedKeys={
                                         editingClient.categorie ? [editingClient.categorie] : []
                                     }
-                                    onSelectionChange={(keys) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? {
-                                                    ...editingClient,
-                                                    categorie: Array.from(keys)[0] as string,
-                                                }
-                                                : null
-                                        )
-                                    }
                                 >
-                                    {categories.length > 0 ? (
-                                        categories.map((category) => (
-                                            <SelectItem key={category.name}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))
-                                    ) : (
-                                        <SelectItem key="loading">Chargement...</SelectItem>
-                                    )}
+                                    <SelectItem key={editingClient.categorie}>
+                                        {editingClient.categorie}
+                                    </SelectItem>
                                 </StyledSelect>
 
                                 <FormLabel htmlFor="telephone" isRequired={true}>
@@ -161,17 +154,13 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Input
                                     isRequired
+                                    isReadOnly
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     id="telephone"
                                     placeholder="01 23 45 67 89"
                                     value={editingClient.telephone || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, telephone: e.target.value } : null
-                                        )
-                                    }
                                 />
 
                                 <FormLabel htmlFor="email" isRequired={true}>
@@ -179,18 +168,14 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Input
                                     isRequired
+                                    isReadOnly
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     id="email"
                                     placeholder="contact@etablissement.fr"
                                     type="email"
                                     value={editingClient.email || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, email: e.target.value } : null
-                                        )
-                                    }
                                 />
 
                                 <FormLabel htmlFor="numeroSiret" isRequired={true}>
@@ -198,38 +183,26 @@ export default function ClientModal({
                                 </FormLabel>
                                 <Input
                                     isRequired
+                                    isReadOnly
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     id="numeroSiret"
                                     placeholder="12345678901234"
                                     value={editingClient.numeroSiret || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, numeroSiret: e.target.value } : null
-                                        )
-                                    }
                                 />
-                            </div>
 
-                            {/* Commentaire */}
-                            <div className="space-y-4">
                                 <FormLabel htmlFor="commentaire" isRequired={false}>
                                     Commentaire
                                 </FormLabel>
-
                                 <Textarea
+                                    isReadOnly
                                     classNames={{
-                                        input: "text-sm",
+                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
                                     }}
                                     minRows={3}
                                     placeholder="..."
                                     value={editingClient.commentaire || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, commentaire: e.target.value } : null
-                                        )
-                                    }
                                 />
                             </div>
 
@@ -452,27 +425,7 @@ export default function ClientModal({
                                 />
                             </div>
 
-                            {/* Commentaire */}
-                            <div className="space-y-4">
-                                <FormLabel htmlFor="commentaire" isRequired={false}>
-                                    Commentaire
-                                </FormLabel>
 
-                                <Textarea
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="commentaire"
-                                    minRows={4}
-                                    placeholder="..."
-                                    value={editingClient.commentaire || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, commentaire: e.target.value } : null
-                                        )
-                                    }
-                                />
-                            </div>
 
                             {/* Cadeau du gérant pour le jeu concours */}
                             <div className="space-y-4">

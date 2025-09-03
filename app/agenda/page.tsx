@@ -10,9 +10,10 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 
-import { AgendaModals } from "@/components/agenda-modals";
-import { EventModal } from "@/components/event-modal";
+import { GoogleCalendarSync } from "@/components/google-calendar-sync";
+import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { getValidAccessToken } from "@/utils/auth";
+import { GoogleCalendarEvent } from "@/types/googleCalendar";
 
 interface Event {
   id: string;
@@ -24,6 +25,8 @@ interface Event {
   location?: string;
   description?: string;
   category: "siege" | "franchises" | "prestataires";
+  isGoogleEvent?: boolean; // Marqueur pour identifier les événements Google Calendar
+  htmlLink?: string; // Lien vers l'événement dans Google Calendar
 }
 
 interface CalendarDay {
@@ -54,18 +57,108 @@ interface ApiEvent {
 
 export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"semaine" | "mois">("mois");
-  const [selectedCategory, setSelectedCategory] = useState<string>("tout");
+  const [view] = useState<"semaine" | "mois">("mois");
+  const [selectedCategory] = useState<string>("tout");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // États pour les différents modals
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  // États pour la modal unifiée
+  const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
+  const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
+  // Gestionnaires pour Google Calendar
+  const handleGoogleEventsFetched = (events: GoogleCalendarEvent[]) => {
+    setGoogleEvents(events);
+  };
+
+  const handleGoogleEventCreated = (event: GoogleCalendarEvent) => {
+    // Ajouter l'événement créé à la liste locale
+    setGoogleEvents(prev => [event, ...prev]);
+  };
+
+  // Fonctions pour ouvrir les modals avec le bon type
+  const openModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
+    setCurrentEventType(type);
+    setIsUnifiedModalOpen(true);
+  };
+
+  // Fonction pour connecter à Google Calendar
+  const connectToGoogleCalendar = async () => {
+    try {
+      const response = await fetch('/api/google-calendar/auth');
+
+      if (response.ok) {
+        const { authUrl } = await response.json();
+
+        window.location.href = authUrl;
+      }
+    } catch (error) {
+      // Erreur lors de la connexion
+      setError('Erreur lors de la connexion à Google Calendar');
+    }
+  };
+
+  // Vérifier le statut de Google Calendar
+  const checkGoogleCalendarStatus = async () => {
+    try {
+      const response = await fetch('/api/google-calendar/status');
+
+      if (response.ok) {
+        const status = await response.json();
+
+        setIsGoogleConnected(status.isConnected);
+      } else {
+        setIsGoogleConnected(false);
+      }
+    } catch (error) {
+      // Erreur lors de la vérification du statut
+      setIsGoogleConnected(false);
+    }
+  };
+
+  // Fonction pour transformer les événements Google Calendar en format compatible
+  const transformGoogleEvents = (googleEvents: GoogleCalendarEvent[]): Event[] => {
+    return googleEvents.map((googleEvent) => {
+      const startDate = googleEvent.start.dateTime 
+        ? new Date(googleEvent.start.dateTime)
+        : googleEvent.start.date 
+          ? new Date(googleEvent.start.date)
+          : new Date();
+      
+      const endDate = googleEvent.end.dateTime 
+        ? new Date(googleEvent.end.dateTime)
+        : googleEvent.end.date 
+          ? new Date(googleEvent.end.date)
+          : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
+
+      const startTime = startDate.toTimeString().slice(0, 5);
+      const endTime = endDate.toTimeString().slice(0, 5);
+
+      return {
+        id: `google-${googleEvent.id || Date.now()}`,
+        title: googleEvent.summary,
+        type: "evenement" as Event['type'], // Type par défaut pour Google Calendar
+        date: startDate.toISOString().split('T')[0],
+        startTime,
+        endTime,
+        location: googleEvent.location,
+        description: googleEvent.description,
+        category: "siege" as Event['category'], // Catégorie par défaut
+        isGoogleEvent: true, // Marqueur pour identifier les événements Google Calendar
+        htmlLink: googleEvent.htmlLink,
+      };
+    });
+  };
+
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Vérifier d'abord le statut Google Calendar
+      await checkGoogleCalendarStatus();
 
       // Récupérer le token d'authentification
       const token = await getValidAccessToken();
@@ -272,8 +365,14 @@ export default function AgendaPage() {
     const days: CalendarDay[] = [];
     const currentDate = new Date(startDate);
 
+    // Transformer les événements Google Calendar
+    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
+    
+    // Combiner les événements locaux et Google Calendar
+    const allEvents = [...events, ...transformedGoogleEvents];
+
     while (currentDate <= lastDay || days.length < 42) {
-      const dayEvents = events.filter((event) => {
+      const dayEvents = allEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -309,12 +408,18 @@ export default function AgendaPage() {
       "Dimanche",
     ];
 
+    // Transformer les événements Google Calendar
+    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
+    
+    // Combiner les événements locaux et Google Calendar
+    const allEvents = [...events, ...transformedGoogleEvents];
+
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startOfWeek);
 
       currentDate.setDate(startOfWeek.getDate() + i);
 
-      const dayEvents = events.filter((event) => {
+      const dayEvents = allEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -381,17 +486,35 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded ${event.type === "rendez-vous"
+                    className={`text-xs p-1 rounded cursor-pointer ${event.type === "rendez-vous"
                       ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                       : event.type === "tournage"
                         ? "bg-custom-rose/14 text-custom-rose"
                         : event.type === "publication"
                           ? "bg-custom-blue-pub/14 text-custom-blue-pub"
                           : "bg-custom-orange-event/14 text-custom-orange-event"
-                      }`}
-                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
+                      } ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
+                    role={event.isGoogleEvent ? "button" : undefined}
+                    tabIndex={event.isGoogleEvent ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        window.open(event.htmlLink, '_blank');
+                      }
+                    }}
+                    onClick={() => {
+                      if (event.isGoogleEvent && event.htmlLink) {
+                        window.open(event.htmlLink, '_blank');
+                      }
+                    }}
                   >
-                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="font-medium truncate flex items-center gap-1">
+                      {event.title}
+                      {event.isGoogleEvent && (
+                        <span className="text-blue-600 text-[10px]">GC</span>
+                      )}
+                    </div>
                     {event.startTime && (
                       <div className="text-xs opacity-75">
                         {event.startTime}
@@ -402,6 +525,9 @@ export default function AgendaPage() {
                 {day.events.length > 3 && (
                   <div className="text-xs text-gray-500">
                     +{day.events.length - 3} autres
+                    {day.events.some(e => e.isGoogleEvent) && (
+                      <span className="text-blue-600 ml-1">• GC</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -474,17 +600,35 @@ export default function AgendaPage() {
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 ${event.type === "rendez-vous"
+                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${event.type === "rendez-vous"
                             ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
                             : event.type === "tournage"
                               ? "bg-custom-rose/14 text-custom-rose"
                               : event.type === "publication"
                                 ? "bg-custom-blue-pub/14 text-custom-blue-pub"
                                 : "bg-custom-orange-event/14 text-custom-orange-event"
-                            }`}
-                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
+                            } ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
+                          role={event.isGoogleEvent ? "button" : undefined}
+                          tabIndex={event.isGoogleEvent ? 0 : undefined}
+                          onKeyDown={(e) => {
+                            if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              window.open(event.htmlLink, '_blank');
+                            }
+                          }}
+                          onClick={() => {
+                            if (event.isGoogleEvent && event.htmlLink) {
+                              window.open(event.htmlLink, '_blank');
+                            }
+                          }}
                         >
-                          <div className="font-medium truncate">{event.title}</div>
+                          <div className="font-medium truncate flex items-center gap-1">
+                            {event.title}
+                            {event.isGoogleEvent && (
+                              <span className="text-blue-600 text-[10px]">GC</span>
+                            )}
+                          </div>
                           {event.startTime && event.endTime && (
                             <div className="text-xs opacity-75 mt-0.5">
                               {event.startTime} - {event.endTime}
@@ -502,6 +646,31 @@ export default function AgendaPage() {
       </div>
     );
   };
+
+  // Afficher le message d'invitation si Google Calendar n'est pas connecté
+  if (isGoogleConnected === false) {
+    return (
+      <div className="w-full">
+        <Card className="w-full" shadow="none">
+          <CardBody className="p-6">
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="text-lg mb-2">Google Calendar non connecté</div>
+                <div className="text-sm mb-4">Connectez-vous à Google Calendar pour avoir accès à l&apos;agenda</div>
+                <Button
+                  className="mt-4"
+                  color="primary"
+                  onPress={connectToGoogleCalendar}
+                >
+                  Se connecter à Google Calendar
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -521,22 +690,65 @@ export default function AgendaPage() {
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
+
           {/* En-tête avec navigation et boutons */}
           <div className="flex justify-end items-center mb-6">
 
 
             <div className="flex items-center space-x-4">
 
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => openModal("tournage")}
+              >
+                Ajouter un tournage
+              </Button>
 
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsEventModalOpen(true)}
+                onPress={() => openModal("publication")}
+              >
+                Ajouter une publication
+              </Button>
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => openModal("rendez-vous")}
+              >
+                Ajouter un rendez-vous
+              </Button>
+
+              <Button
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => openModal("evenement")}
               >
                 Ajouter un évènement
               </Button>
+
+              <Button
+                color='secondary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => openModal("google-calendar")}
+              >
+                Google Calendar
+              </Button>
             </div>
           </div>
+          {/* Synchronisation Google Calendar - seulement si connecté */}
+          {isGoogleConnected && (
+            <GoogleCalendarSync
+              onEventsFetched={handleGoogleEventsFetched}
+              onEventCreated={handleGoogleEventCreated}
+            />
+          )}
+
+
+         
+
 
           {/* Filtres et vues */}
           <div className="flex justify-between items-center mb-6">
@@ -559,9 +771,8 @@ export default function AgendaPage() {
                 </Button>
               </div>
             </div>
-
-
           </div>
+
 
           {/* Contenu du calendrier */}
           {
@@ -579,10 +790,12 @@ export default function AgendaPage() {
         </CardBody>
       </Card>
 
-      {/* Modal d'événement */}
-      <EventModal
-        isOpen={isEventModalOpen}
-        onOpenChange={setIsEventModalOpen}
+      {/* Modal unifiée pour tous les types d'événements */}
+      <UnifiedEventModal
+        isOpen={isUnifiedModalOpen}
+        onOpenChange={setIsUnifiedModalOpen}
+        eventType={currentEventType}
+        onEventCreated={handleGoogleEventCreated}
         onEventAdded={fetchEvents}
       />
     </div>

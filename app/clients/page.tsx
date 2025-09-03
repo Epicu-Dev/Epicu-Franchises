@@ -391,305 +391,302 @@ export default function ClientsPage() {
             error ? <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
             </div> :
-              <Table aria-label="Tableau des clients" bottomContent={
-                hasMore && (
-                  <div className="flex justify-center py-4">
-                    <Button
-                      color="primary"
-                      disabled={loadingMore}
-                      isLoading={loadingMore}
-                      onPress={loadMore}
-                    >
-                      {loadingMore ? 'Chargement...' : 'Charger plus'}
-                    </Button>
-                  </div>
-                )
-              }
-                shadow="none"
-              >
-                <TableHeader>
 
-                  {/* Autres colonnes selon la sélection et le mode RDV */}
-                  {(isRdvMode ? rdvColumnConfig : columnConfig)
-                    .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
-                    .map((column) => {
-                      if (column.sortable) {
-                        return (
-                          <TableColumn key={column.key} className="font-light text-sm">
-                            <SortableColumnHeader
-                              field={column.field!}
-                              label={column.label}
-                              sortDirection={sortDirection}
-                              sortField={sortField}
-                              onSort={handleSort}
-                            />
-                          </TableColumn>
-                        );
-                      }
+              clients.length === 0 ?
+                <div className="py-20 text-gray-500 flex justify-center flex-col items-center">
+                  <div className="text-lg mb-2">Aucun client trouvé</div>
+                  <div className="text-sm">Essayez de modifier vos filtres</div>
+                  <Button
+                    className="mt-4"
+                    color="primary"
+                    onPress={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('tous');
+                      setSelectedCategoryId('');
+                    }}
+                  >
+                    Réinitialiser les filtres
+                  </Button>
 
-                      return (
-                        <TableColumn key={column.key} className="font-light text-sm">
-                          {column.label}
-                        </TableColumn>
-                      );
-                    })}
-                </TableHeader>
-                <TableBody className="mt-4">
-                  {clients.length === 0 ? (
-                    <TableRow>
-                      <TableCell className="text-center" colSpan={visibleColumns.size === 0 ? (isRdvMode ? rdvColumnConfig.length + 1 : columnConfig.length + 1) : visibleColumns.size + 1}>
-                        <div className="py-20 text-gray-500">
-                          <div>
-                            <div className="text-lg mb-2">Aucun client trouvé</div>
-                            <div className="text-sm">Essayez de modifier vos filtres</div>
-                            <Button
-                              className="mt-4"
-                              color="primary"
-                              onPress={() => {
-                                setSearchTerm('');
-                                setSelectedCategory('tous');
-                                setSelectedCategoryId('');
-                              }}
-                            >
-                              Réinitialiser les filtres
-                            </Button>
-                          </div>
+                </div> :
+                <Table aria-label="Tableau des clients" bottomContent={
+                  hasMore && (
+                    <div className="flex justify-center py-4">
+                      <Button
+                        color="primary"
+                        disabled={loadingMore}
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                      >
+                        {loadingMore ? 'Chargement...' : 'Charger plus'}
+                      </Button>
+                    </div>
+                  )
+                }
+                  shadow="none"
+                >
+                  <TableHeader>
 
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    clients.map((client, index) => (
-                      <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
-                        {(() => {
-                          const cells: JSX.Element[] = [];
+                    {/* Autres colonnes selon la sélection et le mode RDV */}
+                    {
 
-                          // Cellule Modifier toujours visible en premier
-                          const hasFactures = client.FACTURES && client.FACTURES.length > 0;
-                          cells.push(
-                            <TableCell key="modifier" className="font-light">
-                              <div className="relative">
-                                <Button
-                                  isIconOnly
-                                  aria-label={hasFactures ? `Client ${client.raisonSociale} lié à la facturation - Modification désactivée` : `Modifier le client ${client.raisonSociale}`}
-                                  className={hasFactures ? "text-gray-&ÀÀ cursor-not-allowed" : "text-gray-600 hover:text-gray-800"}
-                                  size="sm"
-                                  variant="light"
-                                  onPress={() => {
-                                    if (hasFactures) {
-                                      showWarning(`Le client ${client.raisonSociale} est lié à une facture et ne peut plus être modifié.`);
-                                    } else {
-                                      handleEditClient(client);
-                                    }
-                                  }}
-                                >
-                                  <PencilIcon className="h-4 w-4" />
-                                </Button>
-                                {hasFactures && (
-                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    Client lié à la facturation
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
+                      (isRdvMode ? rdvColumnConfig : columnConfig)
+                        .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                        .map((column) => {
+                          if (column.sortable) {
+                            return (
+                              <TableColumn key={column.key} className="font-light text-sm">
+                                <SortableColumnHeader
+                                  field={column.field!}
+                                  label={column.label}
+                                  sortDirection={sortDirection}
+                                  sortField={sortField}
+                                  onSort={handleSort}
+                                />
+                              </TableColumn>
+                            );
+                          }
+
+                          return (
+                            <TableColumn key={column.key} className="font-light text-sm">
+                              {column.label}
+                            </TableColumn>
                           );
+                        })}
+                  </TableHeader>
+                  <TableBody className="mt-4">
+                    {(
+                      clients.map((client, index) => (
+                        <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
+                          {(() => {
+                            const cells: JSX.Element[] = [];
 
-                          // Autres cellules selon la sélection et le mode RDV
-                          (isRdvMode ? rdvColumnConfig : columnConfig)
-                            .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
-                            .forEach((column) => {
-                              switch (column.key) {
-                                case 'categorie':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light py-5">
-                                      <CategoryBadge category={client.categorie || ""} />
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'nomEtablissement':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.nomEtablissement}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'raisonSociale':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.raisonSociale}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'ville':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.ville}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'telephone':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.telephone}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'email':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.email}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'numeroSiret':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.numeroSiret}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'dateSignatureContrat':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.dateSignatureContrat
-                                        ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                          year: 'numeric'
-                                        }).replace(/\//g, '.')
-                                        : "-"
+                            // Cellule Modifier toujours visible en premier
+                            const hasFactures = client.FACTURES && client.FACTURES.length > 0;
+                            cells.push(
+                              <TableCell key="modifier" className="font-light">
+                                <div className="relative">
+                                  <Button
+                                    isIconOnly
+                                    aria-label={hasFactures ? `Client ${client.raisonSociale} lié à la facturation - Modification désactivée` : `Modifier le client ${client.raisonSociale}`}
+                                    className={hasFactures ? "text-gray-&ÀÀ cursor-not-allowed" : "text-gray-600 hover:text-gray-800"}
+                                    size="sm"
+                                    variant="light"
+                                    onPress={() => {
+                                      if (hasFactures) {
+                                        showWarning(`Le client ${client.raisonSociale} est lié à une facture et ne peut plus être modifié.`);
+                                      } else {
+                                        handleEditClient(client);
                                       }
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'datePublicationContenu':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.datePublicationContenu
-                                        ? new Date(client.datePublicationContenu).toLocaleDateString('fr-FR', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                          year: 'numeric'
-                                        }).replace(/\//g, '.')
-                                        : "-"
-                                      }
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'datePublicationFacture':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.datePublicationFacture
-                                        ? new Date(client.datePublicationFacture).toLocaleDateString('fr-FR', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                          year: 'numeric'
-                                        }).replace(/\//g, '.')
-                                        : "-"
-                                      }
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'statutPaiementContenu':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      <StatusBadge status={client.statutPaiementContenu || "En attente"} />
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'montantFactureContenu':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.montantFactureContenu}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'montantPaye':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.montantPaye}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'restantDu':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.restantDu}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'montantSponsorisation':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.montantSponsorisation}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'montantAddition':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.montantAddition}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'montantCadeau':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.montantCadeau}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'tirageAuSort':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.tirageAuSort ? "Oui" : "Non"}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'commentaire':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.commentaire || "-"}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'commentaireCadeauGerant':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.commentaireCadeauGerant || "-"}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'nombreVues':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.nombreVues || "-"}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'nombreAbonnes':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.nombreAbonnes || "-"}
-                                    </TableCell>
-                                  );
-                                  break;
-                                case 'faitGagnes':
-                                  cells.push(
-                                    <TableCell key={column.key} className="font-light">
-                                      {client.faitGagnes || "-"}
-                                    </TableCell>
-                                  );
-                                  break;
-                              }
-                            });
-                          return cells;
-                        })()}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>}
+                                    }}
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                  </Button>
+                                  {hasFactures && (
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                      Client lié à la facturation
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+
+                            // Autres cellules selon la sélection et le mode RDV
+                            (isRdvMode ? rdvColumnConfig : columnConfig)
+                              .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                              .forEach((column) => {
+                                switch (column.key) {
+                                  case 'categorie':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light py-5">
+                                        <CategoryBadge category={client.categorie || ""} />
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nomEtablissement':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.nomEtablissement}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'raisonSociale':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.raisonSociale}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'ville':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.ville}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'telephone':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.telephone}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'email':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.email}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'numeroSiret':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.numeroSiret}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'dateSignatureContrat':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.dateSignatureContrat
+                                          ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          }).replace(/\//g, '.')
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'datePublicationContenu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.datePublicationContenu
+                                          ? new Date(client.datePublicationContenu).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          }).replace(/\//g, '.')
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'datePublicationFacture':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.datePublicationFacture
+                                          ? new Date(client.datePublicationFacture).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          }).replace(/\//g, '.')
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'statutPaiementContenu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        <StatusBadge status={client.statutPaiementContenu || "En attente"} />
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantFactureContenu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.montantFactureContenu}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantPaye':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.montantPaye}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'restantDu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.restantDu}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantSponsorisation':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.montantSponsorisation}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantAddition':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.montantAddition}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantCadeau':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.montantCadeau}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'tirageAuSort':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.tirageAuSort ? "Oui" : "Non"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'commentaire':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.commentaire || "-"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'commentaireCadeauGerant':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.commentaireCadeauGerant || "-"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreVues':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.nombreVues || "-"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreAbonnes':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.nombreAbonnes || "-"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'faitGagnes':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.faitGagnes || "-"}
+                                      </TableCell>
+                                    );
+                                    break;
+                                }
+                              });
+                            return cells;
+                          })()}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>}
 
 
         </CardBody>

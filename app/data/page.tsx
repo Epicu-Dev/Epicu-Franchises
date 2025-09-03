@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
-import { SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -12,17 +11,30 @@ import {
   TableCell,
 } from "@heroui/table";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Button } from "@heroui/button";
+import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/24/outline";
 
 import { DashboardLayout } from "../dashboard-layout";
 import { useUser } from "@/contexts/user-context";
-
-import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components/sortable-column-header";
+import { SubscribersEditModal } from "@/components";
 import { useSortableTable } from "@/hooks/use-sortable-table";
+
+interface SubscribersData {
+  foodSubscribers: string;
+  shopSubscribers: string;
+  travelSubscribers: string;
+  funSubscribers: string;
+  beautySubscribers: string;
+}
 
 export default function DataPage() {
   const { userProfile, isLoading } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
   // Générer des données de test basées sur les vraies villes de l'utilisateur
   const generateTableData = () => {
@@ -30,14 +42,32 @@ export default function DataPage() {
       return [];
     }
 
-    const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin"];
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth(); // 0-based (0 = Janvier)
+    const year = parseInt(selectedYear);
+
+    const allMonths = [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ];
+
+    // Si c'est l'année actuelle, ne montrer que les mois passés et actuel
+    let months = allMonths;
+
+    if (year === currentYear) {
+      months = allMonths.slice(0, currentMonth + 1);
+    }
+
+    // Trier par ordre décroissant (plus récent en premier)
+    months = [...months].reverse();
+
     const categories = ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"];
-    
+
     return months.map((month, index) => {
       // Alterner entre les villes de l'utilisateur
       const cityIndex = index % userProfile.villes.length;
       const city = userProfile.villes[cityIndex];
-      
+
       // Générer des données réalistes
       const revenue = Math.floor(Math.random() * 8000 + 10000) + "€";
       const conversionRate = Math.floor(Math.random() * 15 + 80) + "%";
@@ -45,17 +75,17 @@ export default function DataPage() {
       const prospectsMet = Math.floor(Math.random() * 4 + 1).toString();
       const newProspects = Math.floor(Math.random() * 10 + 25).toString();
       const publishedPosts = Math.floor(Math.random() * 4 + 5).toString();
-      
+
       // Générer le nombre d'abonnés par catégorie
       const foodSubscribers = Math.floor(Math.random() * 2000 + 1000).toString();
       const shopSubscribers = Math.floor(Math.random() * 20000 + 10000).toString();
       const travelSubscribers = Math.floor(Math.random() * 3000 + 2000).toString();
       const funSubscribers = Math.floor(Math.random() * 500 + 100).toString();
       const beautySubscribers = Math.floor(Math.random() * 1500 + 1000).toString();
-      
+
       // Générer le montant des cadeaux offerts
       const giftsAmount = Math.floor(Math.random() * 3000 + 1000) + "€";
-      
+
       // Sélectionner 2 catégories aléatoires
       const selectedCategories = categories
         .sort(() => 0.5 - Math.random())
@@ -82,7 +112,14 @@ export default function DataPage() {
     });
   };
 
-  const allTableData = generateTableData();
+  // Initialiser les données du tableau au chargement
+  useEffect(() => {
+    const data = generateTableData();
+
+    setTableData(data);
+  }, [userProfile?.villes, selectedYear]);
+
+  const allTableData = tableData;
 
   // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
   const filteredData = allTableData.filter((row) => {
@@ -96,6 +133,60 @@ export default function DataPage() {
 
   // Utiliser le hook de tri réutilisable
   const { sortField, sortDirection, handleSort, sortedData } = useSortableTable(filteredData);
+
+  // Fonction pour ouvrir le modal d'édition
+  const handleEditSubscribers = (rowIndex: number) => {
+    const actualIndex = allTableData.findIndex(row =>
+      sortedData.findIndex(sortedRow => sortedRow === row) === rowIndex
+    );
+
+    setEditingRowIndex(actualIndex);
+    setEditModalOpen(true);
+  };
+
+  // Fonction pour sauvegarder les modifications
+  const handleSaveSubscribers = (newData: SubscribersData) => {
+    if (editingRowIndex !== null) {
+      const updatedData = [...tableData];
+
+      updatedData[editingRowIndex] = {
+        ...updatedData[editingRowIndex],
+        ...newData
+      };
+      setTableData(updatedData);
+    }
+    setEditModalOpen(false);
+    setEditingRowIndex(null);
+  };
+
+  // Fonction pour fermer le modal
+  const handleCloseModal = () => {
+    setEditModalOpen(false);
+    setEditingRowIndex(null);
+  };
+
+  // Obtenir les données actuelles pour le modal
+  const getCurrentSubscribersData = (): SubscribersData => {
+    if (editingRowIndex !== null && tableData[editingRowIndex]) {
+      const row = tableData[editingRowIndex];
+
+      return {
+        foodSubscribers: row.foodSubscribers,
+        shopSubscribers: row.shopSubscribers,
+        travelSubscribers: row.travelSubscribers,
+        funSubscribers: row.funSubscribers,
+        beautySubscribers: row.beautySubscribers,
+      };
+    }
+
+    return {
+      foodSubscribers: "",
+      shopSubscribers: "",
+      travelSubscribers: "",
+      funSubscribers: "",
+      beautySubscribers: "",
+    };
+  };
 
   // Réinitialiser l'onglet actif quand les villes changent
   useEffect(() => {
@@ -135,7 +226,7 @@ export default function DataPage() {
     <DashboardLayout>
       <div className="text-primary">
         <Card className="w-full" shadow="none">
-          <CardBody className="space-y-6">
+          <CardBody className="space-y-4">
             {/* Tabs */}
             <Tabs
               className="w-full pt-3"
@@ -149,18 +240,57 @@ export default function DataPage() {
             >
               <Tab key="overview" title="Vue d'ensemble" />
               {userProfile.villes.map((city) => (
-                <Tab 
-                  key={city.ville.toLowerCase().replace(/\s+/g, '-')} 
-                  title={city.ville} 
+                <Tab
+                  key={city.ville.toLowerCase().replace(/\s+/g, '-')}
+                  title={city.ville}
                 />
               ))}
             </Tabs>
 
+            {/* Navigation d'année */}
+            <div className="flex items-center justify-start gap-2 lg:gap-4 ">
+              <Button
+                isIconOnly
+                className="text-gray-600"
+                size="sm"
+                variant="light"
+                onPress={() => {
+                  const currentYear = parseInt(selectedYear);
+
+                  setSelectedYear((currentYear - 1).toString());
+                }}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+
+              {selectedYear}
+
+              <Button
+                isIconOnly
+                className="text-gray-600"
+                size="sm"
+                variant="light"
+                onPress={() => {
+                  const currentYear = parseInt(selectedYear);
+                  const maxYear = new Date().getFullYear();
+
+                  if (currentYear < maxYear) {
+                    setSelectedYear((currentYear + 1).toString());
+                  }
+                }}
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
+
             {/* Data Table */}
-            <Card className=" dark:bg-gray-900" shadow="none">
+            <Card  shadow="none">
               <CardBody className="p-0">
                 <Table aria-label="Data table">
                   <TableHeader>
+                    <TableColumn className="font-light text-sm w-20">
+                      Actions
+                    </TableColumn>
                     <TableColumn className="font-light text-sm">
                       <SortableColumnHeader
                         field="month"
@@ -191,9 +321,20 @@ export default function DataPage() {
                     <TableColumn className="font-light text-sm">Nombre abonnés beauty</TableColumn>
                     <TableColumn className="font-light text-sm">Montant des cadeaux offerts</TableColumn>
                   </TableHeader>
-                  <TableBody  className="mt-30">
+                  <TableBody className="mt-30">
                     {sortedData.map((row, index) => (
                       <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700 ">
+                        <TableCell className="py-5">
+                          <Button
+                            className="min-w-0 px-2 h-8"
+                            color="primary"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleEditSubscribers(index)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                         <TableCell className="font-light text-sm py-5">
                           {row.month}
                         </TableCell>
@@ -221,6 +362,15 @@ export default function DataPage() {
             </Card>
           </CardBody>
         </Card>
+
+        {/* Modal d'édition des abonnés */}
+        <SubscribersEditModal
+          initialData={getCurrentSubscribersData()}
+          isOpen={editModalOpen}
+          month={editingRowIndex !== null && tableData[editingRowIndex] ? tableData[editingRowIndex].month : ""}
+          onClose={handleCloseModal}
+          onSave={handleSaveSubscribers}
+        />
       </div>
     </DashboardLayout>
   );

@@ -211,6 +211,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             </Button>
           </div>
 
+
+
           {/* User Profile Section */}
           <CardHeader className="p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
@@ -229,7 +231,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                     {userProfile ? `${userProfile.firstname || 'Prénom'} ${userProfile.lastname || 'Nom'}` : 'Chargement...'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userProfile?.role || 'Chargement du rôle...'}
+                    {userProfile?.role ? userProfile.role : 'Rôle non défini'}
                   </p>
                 </div>
               </div>

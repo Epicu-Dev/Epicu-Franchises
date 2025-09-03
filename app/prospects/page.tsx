@@ -13,13 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/modal";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
   ArrowRightIcon,
@@ -32,6 +25,7 @@ import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge } from "@/components/badges";
 import { ProspectModal } from "@/components/prospect-modal";
+import ConvertProspectModal from "@/components/convert-prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
 import { useUser } from "@/contexts/user-context";
@@ -87,9 +81,12 @@ export default function ProspectsPage() {
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [isLoadingConvert, setIsLoadingConvert] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [, setViewCount] = useState<number | null>(null);
+
   const previousTabRef = useRef(selectedTab);
 
   // Variables pour les filtres
@@ -132,7 +129,7 @@ export default function ProspectsPage() {
           setCategories(catData.results || []);
         }
       } catch (err) {
-        console.error('Erreur lors de la récupération des filtres:', err);
+        // console.error('Erreur lors de la récupération des filtres:', err);
       }
     };
 
@@ -335,28 +332,50 @@ export default function ProspectsPage() {
   };
 
   const handleConvertToClient = async () => {
-    if (!prospectToConvert) return;
+    if (!prospectToConvert || !editingClient) return;
 
     try {
+      setIsLoadingConvert(true);
+      setConvertError(null);
+
+      // Préparer les données du client pour l'API
+      const clientData = {
+        ...editingClient,
+        // S'assurer que les données du prospect sont bien transmises
+        nomEtablissement: prospectToConvert.nomEtablissement,
+        ville: prospectToConvert.ville,
+        telephone: prospectToConvert.telephone,
+        categorie: prospectToConvert.categorie,
+        email: prospectToConvert.email,
+        numeroSiret: prospectToConvert.siret,
+        commentaire: prospectToConvert.commentaire,
+        adresse: prospectToConvert.adresse,
+      };
+
       const response = await fetch(`/api/prospects/${prospectToConvert.id}/convert`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify(clientData),
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la conversion en client");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la conversion en client");
       }
 
       // Fermer le modal et réinitialiser
       setIsConvertModalOpen(false);
       setProspectToConvert(null);
+      setEditingClient(null);
 
       // Recharger les prospects
       fetchProspects();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setConvertError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoadingConvert(false);
     }
   };
 
@@ -379,7 +398,39 @@ export default function ProspectsPage() {
       adresse: prospect.adresse,
     };
 
+    // Initialiser les données du client avec les données du prospect
+    const clientData = {
+      id: '',
+      raisonSociale: prospect.nomEtablissement,
+      ville: prospect.ville,
+      categorie: prospect.categorie,
+      telephone: prospect.telephone || '',
+      nomEtablissement: prospect.nomEtablissement,
+      email: prospect.email || '',
+      numeroSiret: prospect.siret || '',
+      dateSignatureContrat: '',
+      datePublicationContenu: '',
+      datePublicationFacture: '',
+      statutPaiementContenu: 'En attente' as const,
+      montantFactureContenu: '',
+      montantPaye: '',
+      dateReglementFacture: '',
+      restantDu: '',
+      montantSponsorisation: '',
+      montantAddition: '',
+      factureContenu: '',
+      facturePublication: '',
+      commentaire: prospect.commentaires,
+      commentaireCadeauGerant: '',
+      montantCadeau: '',
+      tirageAuSort: false,
+      adresse: prospect.adresse,
+      statut: 'actif' as const,
+    };
+
     setProspectToConvert(prospectForConvert);
+    setEditingClient(clientData);
+    setConvertError(null);
     setIsConvertModalOpen(true);
   };
 
@@ -607,7 +658,7 @@ export default function ProspectsPage() {
                             color="primary"
                             variant="bordered"
                             size="sm"
-                            endContent={<ArrowRightIcon></ArrowRightIcon>}
+                            endContent={<ArrowRightIcon />}
                             onPress={() => openConvertModal(prospect)}
                           >
                             Convertir
@@ -673,67 +724,24 @@ export default function ProspectsPage() {
 
 
 
-      {/* Modal de confirmation de conversion */}
-      <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
-        <ModalContent>
-          <ModalHeader className="flex justify-center">Confirmer la conversion</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4 text-primary">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <svg className="h-12 w-12 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium">
-                    Convertir ce prospect en client ?
-                  </h3>
-                  <p className="text-sm mt-1">
-                    Cette action va convertir <strong>{prospectToConvert?.nomEtablissement}</strong> en client.
-                    Le prospect sera supprimé de la liste des prospects.
-                  </p>
-                </div>
-              </div>
-
-              {prospectToConvert && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium mb-2">
-                    Informations du prospect :
-                  </h4>
-                  <div className="space-y-1 text-sm">
-                    <p><strong>Établissement :</strong> {prospectToConvert.nomEtablissement}</p>
-                    <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
-                    <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
-                    <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
-                    {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
-                    {prospectToConvert.adresse && <p><strong>Adresse :</strong> {prospectToConvert.adresse}</p>}
-                  </div>
-                </div>
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className="border-1"
-              color='primary'
-              variant="bordered"
-              onPress={() => {
-                setIsConvertModalOpen(false);
-                setProspectToConvert(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              color='primary'
-              onPress={handleConvertToClient}
-            >
-              Confirmer la conversion
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Modal de conversion de prospect en client */}
+      <ConvertProspectModal
+        error={convertError}
+        editingClient={editingClient}
+        isLoading={isLoadingConvert}
+        isOpen={isConvertModalOpen}
+        prospect={prospectToConvert}
+        setEditingClient={setEditingClient}
+        onOpenChange={(open) => {
+          setIsConvertModalOpen(open);
+          if (!open) {
+            setProspectToConvert(null);
+            setEditingClient(null);
+            setConvertError(null);
+          }
+        }}
+        onUpdateClient={handleConvertToClient}
+      />
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
       <ProspectModal

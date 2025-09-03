@@ -13,6 +13,8 @@ export { EventModal } from './event-modal';
 export { HelpModal } from './help-modal';
 export { default as ResourceModal } from './resource-modal';
 export { FranchiseTeamModal } from './franchise-team-modal';
+export { UnifiedEventModal } from './unified-event-modal';
+export { SubscribersEditModal } from './subscribers-edit-modal';
 
 // Composants de badges
 export { 

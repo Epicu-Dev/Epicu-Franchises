@@ -13,6 +13,8 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 
+import { useUser } from "../contexts/user-context";
+
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 
@@ -47,6 +49,7 @@ export function ProspectModal({
   editingProspect = null,
   isEditing = false
 }: ProspectModalProps) {
+  const { userProfile } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -270,8 +273,8 @@ export function ProspectModal({
               N° SIRET
             </FormLabel>
             <Input
-              isRequired
               id="siret"
+              isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
@@ -305,25 +308,28 @@ export function ProspectModal({
               }}
             />
             <FormLabel htmlFor="ville" isRequired={true}>
-              Ville
+              Ville EPICU
             </FormLabel>
-            <Input
-              isRequired
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              errorMessage={fieldErrors.ville}
+            <StyledSelect
               id="ville"
+              isRequired
+              errorMessage={fieldErrors.ville}
               isInvalid={!!fieldErrors.ville}
-              placeholder="Paris"
-              value={newProspect.ville}
-              onChange={(e) => {
-                const value = e.target.value;
+              placeholder="Sélectionner une ville"
+              selectedKeys={newProspect.ville ? [newProspect.ville] : []}
+              onSelectionChange={(keys) => {
+                const selectedVille = Array.from(keys)[0] as string;
 
-                setNewProspect((prev) => ({ ...prev, ville: value }));
-                validateField('ville', value);
+                setNewProspect((prev) => ({ ...prev, ville: selectedVille }));
+                validateField('ville', selectedVille);
               }}
-            />
+            >
+              {userProfile?.villes?.map((ville) => (
+                <SelectItem key={ville.ville}>
+                  {ville.ville}
+                </SelectItem>
+              )) || []}
+            </StyledSelect>
             <FormLabel htmlFor="telephone" isRequired={true}>
               Téléphone
             </FormLabel>
@@ -452,10 +458,10 @@ export function ProspectModal({
               Commentaire
             </FormLabel>
             <Textarea
-              id="commentaire"
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
+              id="commentaire"
               placeholder="..."
               value={newProspect.commentaire}
               onChange={(e) =>

@@ -129,6 +129,12 @@ export default function HomePage() {
 
       // Signal que le profil est chargé
       setUserProfileLoaded(true);
+    } else {
+      // Si pas de profil, utiliser des villes par défaut
+      setCities([
+        { key: "tout", label: "Tout" },
+        { key: "national", label: "National" }
+      ]);
     }
   }, [userProfile, setUserProfileLoaded]);
 
