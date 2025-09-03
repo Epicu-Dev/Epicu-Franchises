@@ -15,6 +15,7 @@ export { default as ResourceModal } from './resource-modal';
 export { FranchiseTeamModal } from './franchise-team-modal';
 export { UnifiedEventModal } from './unified-event-modal';
 export { SubscribersEditModal } from './subscribers-edit-modal';
+export { default as InvoiceModal } from './invoice-modal';
 
 // Composants de badges
 export { 

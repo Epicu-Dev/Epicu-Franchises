@@ -180,12 +180,11 @@ export const getTodoStatutLabel = (statut: string) => {
     switch (statut) {
         case "À faire":
             return "Pas commencé";
-        case "En cours":
-            return "En cours";
-        case "Validée":
-            return "Validée";
-        case "Annulée":
-            return "Annulée";
+        case "En attente":
+            return "En attente";
+        case "Terminé":
+            return "Terminé";
+
         default:
             return statut;
     }
@@ -196,11 +195,9 @@ export const getTodoStatutBadgeClass = (statut: string) => {
     switch (statut) {
         case "Terminé":
             return "bg-custom-green-success/10 text-custom-green-success";
-        case "En cours":
-            return "bg-blue-100 text-blue-800";
-        case "Annulée":
-            return "bg-red-100 text-red-800";
         case "En attente":
+            return "bg-blue-100 text-blue-800";
+        case "Terminé":
             return "bg-gray-100 text-gray-800";
         default:
             return "bg-gray-50 text-gray-700 border-gray-200";

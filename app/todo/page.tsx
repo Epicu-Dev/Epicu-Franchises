@@ -21,23 +21,14 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Checkbox } from "@heroui/checkbox";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
 import { TodoBadge } from "../../components/badges";
 
 import { FormLabel, SortableColumnHeader } from "@/components";
+import { Todo } from "@/types/todo";
 
-interface Todo {
-  id: string;
-  name: string;              // Nom de la tâche
-  createdAt: string;         // Date de création (ISO)
-  dueDate?: string;          // Date d'échéance (ISO | '')
-  status: string;            // Statut
-  type: string;              // Type de tâche
-  description?: string;      // Description
-  collaborators?: string[];  // Linked ids
-}
 
 
 
@@ -53,13 +44,23 @@ export default function TodoPage() {
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
+  const [todoToEdit, setTodoToEdit] = useState<Todo | null>(null);
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [isDeletingTodo, setIsDeletingTodo] = useState(false);
+  const [isEditingTodo, setIsEditingTodo] = useState(false);
 
   const [newTodo, setNewTodo] = useState({
     name: "",
     dueDate: "",
+    status: "À faire", // Ajout du statut par défaut
+  });
+
+  const [editTodo, setEditTodo] = useState({
+    name: "",
+    dueDate: "",
+    status: "",
   });
 
   const fetchTodos = async () => {
@@ -135,6 +136,13 @@ export default function TodoPage() {
           delete errors.dueDate;
         }
         break;
+      case 'status':
+        if (!value) {
+          errors.status = 'Le statut est requis';
+        } else {
+          delete errors.status;
+        }
+        break;
     }
 
     setFieldErrors(errors);
@@ -143,7 +151,7 @@ export default function TodoPage() {
   };
 
   const validateAllFields = (todo: any) => {
-    const fields = ['name', 'dueDate'];
+    const fields = ['name', 'dueDate', 'status'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -171,7 +179,7 @@ export default function TodoPage() {
       const payload: { [key: string]: string } = {
         'Nom de la tâche': newTodo.name,
         'Date de création': new Date().toISOString(),
-        'Statut': 'À faire',
+        'Statut': newTodo.status,
         'Type de tâche': 'Client',
       };
 
@@ -197,6 +205,7 @@ export default function TodoPage() {
       setNewTodo({
         name: "",
         dueDate: "",
+        status: "À faire",
       });
       setIsAddModalOpen(false);
       setError(null);
@@ -252,46 +261,70 @@ export default function TodoPage() {
     }
   };
 
-  const handleStatusChange = async (
-    todoId: string,
-    newStatus: string
-  ) => {
-    try {
-      // Optimistic update - mettre à jour l'état local immédiatement
-      setTodos((prevTodos) =>
-        prevTodos.map((todo) =>
-          todo.id === todoId ? { ...todo, status: newStatus } : todo
-        )
-      );
+  const openEditModal = (todo: Todo) => {
+    setTodoToEdit(todo);
+    setEditTodo({
+      name: todo.name,
+      dueDate: todo.dueDate || "",
+      status: todo.status,
+    });
+    setError(null);
+    setFieldErrors({});
+    setIsEditModalOpen(true);
+  };
 
-      const response = await fetch(`/api/todo?id=${todoId}`, {
+  const handleEditTodo = async () => {
+    if (!todoToEdit) return;
+
+    try {
+      setIsEditingTodo(true);
+      setError(null);
+
+      // Validation complète avant soumission
+      if (!validateAllFields(editTodo)) {
+        setError("Veuillez corriger les erreurs dans le formulaire");
+        setIsEditingTodo(false);
+        return;
+      }
+
+      const payload: { [key: string]: string } = {
+        'Nom de la tâche': editTodo.name,
+        'Statut': editTodo.status,
+      };
+
+      if (editTodo.dueDate) {
+        payload["Date d'échéance"] = editTodo.dueDate;
+      }
+
+      const response = await fetch(`/api/todo?id=${todoToEdit.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ Statut: newStatus }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la modification du statut");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la modification de la tâche");
       }
 
-      // Pas besoin de recharger toutes les tâches, l'état local est déjà à jour
+      // Fermer le modal et réinitialiser
+      setIsEditModalOpen(false);
+      setTodoToEdit(null);
+      setError(null);
+      setFieldErrors({});
+
+      // Recharger les tâches
+      fetchTodos();
     } catch (err) {
-      // En cas d'erreur, remettre l'état précédent
-      setTodos((prevTodos) =>
-        prevTodos.map((todo) =>
-          todo.id === todoId
-            ? {
-              ...todo,
-              status: todo.status === "Terminé" ? "À faire" : "Terminé",
-            }
-            : todo
-        )
-      );
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsEditingTodo(false);
     }
   };
+
+
 
 
   if (error) {
@@ -326,6 +359,7 @@ export default function TodoPage() {
                 <SelectItem key="tous">Tous</SelectItem>
                 <SelectItem key="À faire">Pas commencé</SelectItem>
                 <SelectItem key="Terminé">Terminé</SelectItem>
+                <SelectItem key="En attente">En attente</SelectItem>
               </Select>
 
             </div>
@@ -355,6 +389,9 @@ export default function TodoPage() {
               <Table aria-label="Tableau des tâches" shadow="none">
                 <TableHeader>
                   <TableColumn className="font-light text-sm">
+                    <></>
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
 
                     Tâches
                   </TableColumn>
@@ -377,17 +414,17 @@ export default function TodoPage() {
                   {todos.map((todo) => (
                     <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
                       <TableCell className="font-light py-5">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={() => openEditModal(todo)}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-light py-5">
                         <div className="flex items-center gap-2">
-                          <Checkbox
-                            className="text-black"
-                            isDisabled={todo.status === "Annulée"}
-                            isSelected={todo.status === "Terminé"}
-                            onValueChange={(checked) => {
-                              const newStatus = checked ? "Terminé" : "À faire";
-
-                              handleStatusChange(todo.id, newStatus);
-                            }}
-                          />
                           <span>{todo.name}</span>
                         </div>
                       </TableCell>
@@ -402,14 +439,17 @@ export default function TodoPage() {
                         <TodoBadge status={todo.status} />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => openDeleteConfirmation(todo)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-2">
+
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => openDeleteConfirmation(todo)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -484,6 +524,29 @@ export default function TodoPage() {
                   validateField('dueDate', value);
                 }}
               />
+
+              <FormLabel
+                htmlFor="status"
+                isRequired={true}
+              >
+                Statut
+              </FormLabel>
+              <Select
+                isRequired
+                errorMessage={fieldErrors.status}
+                id="status"
+                isInvalid={!!fieldErrors.status}
+                selectedKeys={newTodo.status ? [newTodo.status] : []}
+                onSelectionChange={(keys) => {
+                  const selectedStatus = Array.from(keys)[0] as string;
+                  setNewTodo((prev) => ({ ...prev, status: selectedStatus }));
+                  validateField('status', selectedStatus);
+                }}
+              >
+                <SelectItem key="À faire">Pas commencé</SelectItem>
+                <SelectItem key="Terminé">Terminé</SelectItem>
+                <SelectItem key="En attente">En attente</SelectItem>
+              </Select>
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">
@@ -497,7 +560,7 @@ export default function TodoPage() {
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.name || !newTodo.dueDate || isAddingTodo}
+              isDisabled={Object.keys(fieldErrors).length > 0 || !newTodo.name || !newTodo.dueDate || !newTodo.status || isAddingTodo}
               onPress={handleAddTodo}
             >
               {isAddingTodo ? (
@@ -546,6 +609,120 @@ export default function TodoPage() {
                 </div>
               ) : (
                 "Supprimer"
+              )}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal d'édition de tâche */}
+      <Modal isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <ModalContent>
+          <ModalHeader className="flex justify-center">Modifier la tâche</ModalHeader>
+          <ModalBody>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+            <div className="space-y-4">
+              <FormLabel
+                htmlFor="edit-name"
+                isRequired={true}
+              >
+                Titre
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors.name}
+                id="edit-name"
+                isInvalid={!!fieldErrors.name}
+                placeholder="Titre de la tâche"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={editTodo.name}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEditTodo((prev) => ({ ...prev, name: value }));
+                  validateField('name', value);
+                }}
+              />
+
+              <FormLabel
+                htmlFor="edit-dueDate"
+                isRequired={true}
+              >
+                Date d&apos;échéance
+              </FormLabel>
+              <Input
+                isRequired
+                errorMessage={fieldErrors.dueDate}
+                id="edit-dueDate"
+                isInvalid={!!fieldErrors.dueDate}
+                type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={editTodo.dueDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEditTodo((prev) => ({
+                    ...prev,
+                    dueDate: value,
+                  }));
+                  validateField('dueDate', value);
+                }}
+              />
+
+              <FormLabel
+                htmlFor="edit-status"
+                isRequired={true}
+              >
+                Statut
+              </FormLabel>
+              <Select
+                isRequired
+                errorMessage={fieldErrors.status}
+                id="edit-status"
+                isInvalid={!!fieldErrors.status}
+                selectedKeys={editTodo.status ? [editTodo.status] : []}
+                onSelectionChange={(keys) => {
+                  const selectedStatus = Array.from(keys)[0] as string;
+                  setEditTodo((prev) => ({ ...prev, status: selectedStatus }));
+                  validateField('status', selectedStatus);
+                }}
+              >
+                <SelectItem key="À faire">Pas commencé</SelectItem>
+                <SelectItem key="Terminé">Terminé</SelectItem>
+                <SelectItem key="En attente">En attente</SelectItem>
+              </Select>
+            </div>
+          </ModalBody>
+          <ModalFooter className="flex justify-between">
+            <Button className="flex-1 border-1"
+              color='primary'
+              isDisabled={isEditingTodo}
+              variant="bordered"
+              onPress={() => setIsEditModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              className="flex-1"
+              color='primary'
+              isDisabled={Object.keys(fieldErrors).length > 0 || !editTodo.name || !editTodo.dueDate || !editTodo.status || isEditingTodo}
+              onPress={handleEditTodo}
+            >
+              {isEditingTodo ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  Modification en cours...
+                </div>
+              ) : (
+                "Modifier"
               )}
             </Button>
           </ModalFooter>
