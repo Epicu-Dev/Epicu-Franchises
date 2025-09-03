@@ -38,12 +38,14 @@ export function ProspectModal({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string; villes?: string[] }[]>([]);
   const [newProspect, setNewProspect] = useState<Prospect>({
     id: "",
     nomEtablissement: "",
     ville: "",
     telephone: "",
-    categorie: "FOOD",
+    categorie1: "FOOD",
+    categorie2: undefined,
     statut: "a_contacter",
     datePriseContact: "",
     dateRelance: "",
@@ -64,7 +66,8 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie: "FOOD",
+        categorie1: "FOOD",
+        categorie2: undefined,
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
@@ -77,6 +80,40 @@ export function ProspectModal({
     setError(null);
     setFieldErrors({});
   }, [isEditing, editingProspect, isOpen]);
+
+  // Récupérer la liste des collaborateurs au chargement du modal
+  useEffect(() => {
+    const fetchCollaborateurs = async () => {
+      try {
+        const response = await fetch('/api/collaborateurs?limit=200&offset=0');
+        if (response.ok) {
+          const data = await response.json();
+          let allCollaborateurs = data.results || [];
+
+          // Filtrer les collaborateurs selon les villes de l'utilisateur connecté
+          if (userProfile?.villes && userProfile.villes.length > 0) {
+            const userVilles = userProfile.villes.map(v => v.ville);
+            allCollaborateurs = allCollaborateurs.filter((collab: any) => {
+              // Si le collaborateur a des villes, vérifier qu'il y a au moins une intersection
+              if (collab.villes && collab.villes.length > 0) {
+                return collab.villes.some((ville: string) => userVilles.includes(ville));
+              }
+              // Si le collaborateur n'a pas de villes spécifiées, l'inclure (probablement un admin)
+              return true;
+            });
+          }
+
+          setCollaborateurs(allCollaborateurs);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération des collaborateurs:', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchCollaborateurs();
+    }
+  }, [isOpen, userProfile?.villes]);
 
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
@@ -105,7 +142,7 @@ export function ProspectModal({
         break;
       case 'datePriseContact':
         if (!value) {
-          errors.datePriseContact = 'La date du premier contact est requise';
+          errors.datePriseContact = 'La date de prise de contact est requise';
         } else {
           delete errors.datePriseContact;
         }
@@ -155,9 +192,10 @@ export function ProspectModal({
         "Nom de l'établissement": newProspect.nomEtablissement,
         'Ville EPICU': newProspect.ville,
         'Téléphone': newProspect.telephone,
-        'Catégorie': newProspect.categorie,
+        'Catégorie 1': newProspect.categorie1,
+        'Catégorie 2': newProspect.categorie2,
         'Statut': newProspect.statut,
-        'Date du premier contact': newProspect.datePriseContact,
+        'Date de prise de contact': newProspect.datePriseContact,
         'Date de relance': newProspect.dateRelance,
         'Commentaires': newProspect.commentaires,
         'Email': newProspect.email,
@@ -199,7 +237,8 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie: "FOOD",
+        categorie1: "FOOD",
+        categorie2: undefined,
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
@@ -227,7 +266,8 @@ export function ProspectModal({
       nomEtablissement: "",
       ville: "",
       telephone: "",
-      categorie: "FOOD",
+      categorie1: "FOOD",
+      categorie2: undefined,
       statut: "a_contacter",
       datePriseContact: "",
       dateRelance: "",
@@ -252,7 +292,48 @@ export function ProspectModal({
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4">
-            
+            <FormLabel htmlFor="categorie" isRequired={true}>
+              Catégorie 1
+            </FormLabel>
+            <StyledSelect
+              isRequired
+              id="categorie1"
+              selectedKeys={[newProspect.categorie1]}
+              onSelectionChange={(keys) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  categorie1: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
+                }))
+              }
+            >
+              <SelectItem key="FOOD">FOOD</SelectItem>
+              <SelectItem key="SHOP">SHOP</SelectItem>
+              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+              <SelectItem key="FUN">FUN</SelectItem>
+              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+            </StyledSelect>
+            <FormLabel htmlFor="categorie" isRequired={false}>
+              Catégorie 2
+            </FormLabel>
+            <StyledSelect
+
+              id="categorie2"
+              selectedKeys={[newProspect.categorie2 || ""]}
+              onSelectionChange={(keys) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  categorie2: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | undefined,
+                }))
+              }
+            >
+              <SelectItem key="">Aucune</SelectItem>
+              <SelectItem key="FOOD">FOOD</SelectItem>
+              <SelectItem key="SHOP">SHOP</SelectItem>
+              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+              <SelectItem key="FUN">FUN</SelectItem>
+              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+            </StyledSelect>
+
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>
@@ -276,8 +357,34 @@ export function ProspectModal({
                 validateField('nomEtablissement', value);
               }}
             />
+
+            <FormLabel htmlFor="suiviPar" isRequired={true}>
+              Suivi par
+            </FormLabel>
+            <StyledSelect
+              id="suiviPar"
+              placeholder="Sélectionner un suivi"
+              selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
+              onSelectionChange={(keys) => {
+                const selectedSuiviPar = Array.from(keys)[0] as string;
+                setNewProspect((prev) => ({ ...prev, suiviPar: selectedSuiviPar }));
+              }}
+            >
+              {collaborateurs.length > 0 ? (
+                <>
+                  {collaborateurs.map((collab) => (
+                    <SelectItem key={collab.id}>
+                      {collab.nomComplet}
+                    </SelectItem>
+                  ))}
+                </>
+              ) : (
+                <SelectItem key="loading">Chargement...</SelectItem>
+              )}
+            </StyledSelect>
+
             <FormLabel htmlFor="ville" isRequired={true}>
-              Ville EPICU
+              Ville
             </FormLabel>
             <StyledSelect
               id="ville"
@@ -323,46 +430,28 @@ export function ProspectModal({
               }}
             />
 
-            <FormLabel htmlFor="categorie" isRequired={true}>
-              Catégorie
+            <FormLabel htmlFor="email" isRequired={true}>
+              Mail
             </FormLabel>
-            <StyledSelect
-              isRequired
-              id="categorie"
-              selectedKeys={[newProspect.categorie]}
-              onSelectionChange={(keys) =>
+            <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              id="email"
+              placeholder="contact@etablissement.fr"
+              type="email"
+              value={newProspect.email || ""}
+              onChange={(e) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  categorie: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
+                  email: e.target.value,
                 }))
               }
-            >
-              <SelectItem key="FOOD">FOOD</SelectItem>
-              <SelectItem key="SHOP">SHOP</SelectItem>
-              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-              <SelectItem key="FUN">FUN</SelectItem>
-              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-            </StyledSelect>
-            <FormLabel htmlFor="statut" isRequired={true}>
-              Statut
-            </FormLabel>
-            <StyledSelect
-              isRequired
-              id="statut"
-              selectedKeys={[newProspect.statut]}
-              onSelectionChange={(keys) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  statut: Array.from(keys)[0] as "a_contacter" | "en_discussion" | "glacial",
-                }))
-              }
-            >
-              <SelectItem key="a_contacter">À contacter</SelectItem>
-              <SelectItem key="en_discussion">En discussion</SelectItem>
-              <SelectItem key="glacial">Glacial</SelectItem>
-            </StyledSelect>
+            />
+
+
             <FormLabel htmlFor="datePriseContact" isRequired={true}>
-              Date du premier contact
+              Date de prise de contact
             </FormLabel>
             <Input
               isRequired
@@ -384,11 +473,10 @@ export function ProspectModal({
                 validateField('datePriseContact', value);
               }}
             />
-            <FormLabel htmlFor="dateRelance" isRequired={true}>
+            <FormLabel htmlFor="dateRelance" isRequired={false}>
               Date de la relance
             </FormLabel>
             <Input
-              isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
@@ -407,7 +495,26 @@ export function ProspectModal({
                 validateField('dateRelance', value);
               }}
             />
-            
+
+            <FormLabel htmlFor="statut" isRequired={true}>
+              Etat du prospect
+            </FormLabel>
+            <StyledSelect
+              isRequired
+              id="statut"
+              selectedKeys={[newProspect.statut]}
+              onSelectionChange={(keys) =>
+                setNewProspect((prev) => ({
+                  ...prev,
+                  statut: Array.from(keys)[0] as "a_contacter" | "en_discussion" | "glacial",
+                }))
+              }
+            >
+              <SelectItem key="a_contacter">À contacter</SelectItem>
+              <SelectItem key="en_discussion">En discussion</SelectItem>
+              <SelectItem key="glacial">Glacial</SelectItem>
+            </StyledSelect>
+
             <FormLabel htmlFor="commentaires" isRequired={false}>
               Commentaire
             </FormLabel>
@@ -426,42 +533,6 @@ export function ProspectModal({
               }
             />
 
-            <FormLabel htmlFor="email" isRequired={false}>
-              Email
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="email"
-              placeholder="contact@etablissement.fr"
-              type="email"
-              value={newProspect.email || ""}
-              onChange={(e) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  email: e.target.value,
-                }))
-              }
-            />
-
-            <FormLabel htmlFor="adresse" isRequired={false}>
-              Adresse
-            </FormLabel>
-            <Textarea
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="adresse"
-              placeholder="123 Rue de l'établissement, 75001 Ville"
-              value={newProspect.adresse || ""}
-              onChange={(e) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  adresse: e.target.value,
-                }))
-              }
-            />
           </div>
         </ModalBody>
         <ModalFooter className="flex flex-col gap-3">

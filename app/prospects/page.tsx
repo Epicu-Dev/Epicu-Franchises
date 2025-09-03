@@ -282,7 +282,8 @@ export default function ProspectsPage() {
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
-      categorie: prospect.categorie as any,
+      categorie1: prospect.categorie1 as any,
+      categorie2: prospect.categorie2 as any,
       statut: selectedTab as any,
       datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
@@ -310,7 +311,8 @@ export default function ProspectsPage() {
         nomEtablissement: prospectToConvert.nomEtablissement,
         ville: prospectToConvert.ville,
         telephone: prospectToConvert.telephone,
-        categorie: prospectToConvert.categorie,
+        categorie1: prospectToConvert.categorie1,
+        categorie2: prospectToConvert.categorie2,
         email: prospectToConvert.email,
         commentaires: prospectToConvert.commentaires,
         adresse: prospectToConvert.adresse,
@@ -350,7 +352,8 @@ export default function ProspectsPage() {
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
-      categorie: prospect.categorie as any,
+      categorie1: prospect.categorie1 as any,
+      categorie2: prospect.categorie2 as any,
       statut: selectedTab as any,
       datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
@@ -365,7 +368,8 @@ export default function ProspectsPage() {
       id: '',
       raisonSociale: prospect.nomEtablissement,
       ville: prospect.ville,
-      categorie: prospect.categorie,
+      categorie1: prospect.categorie1,
+      categorie2: prospect.categorie2,
       telephone: prospect.telephone || '',
       nomEtablissement: prospect.nomEtablissement,
       email: prospect.email || '',
@@ -530,11 +534,6 @@ export default function ProspectsPage() {
                 <TableHeader className="mb-4">
                   <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
                   <TableColumn className="font-light text-sm">Modifier</TableColumn>
-
-                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-                  <TableColumn className="font-light text-sm">Ville</TableColumn>
-                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
-                  <TableColumn className="font-light text-sm">Date premier contact</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="categorie"
@@ -544,6 +543,9 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
+                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">Date premier contact</TableColumn>
+
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="dateRelance"
@@ -562,8 +564,11 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
-                  <TableColumn className="font-light text-sm">Email</TableColumn>
-                  <TableColumn className="font-light text-sm">Adresse</TableColumn>
+                  <TableColumn className="font-light text-sm">Ville</TableColumn>
+
+                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+
+                  <TableColumn className="font-light text-sm">Mail</TableColumn>
                   <TableColumn className="font-light text-sm">Commentaire</TableColumn>
                 </TableHeader>
                 <TableBody className="mt-4">
@@ -635,11 +640,19 @@ export default function ProspectsPage() {
                             <PencilIcon className="h-4 w-4" />
                           </Button>
                         </TableCell>
+                        <TableCell className="font-light">
+                          <CategoryBadge category={prospect.categorie1} />
+                          {
+                            prospect.categorie2 && (
+                              <CategoryBadge className="ml-2" category={prospect.categorie2} />
+                            )
+                          }
+
+                        </TableCell>
+
                         <TableCell className="font-light py-5">
                           {prospect.nomEtablissement}
                         </TableCell>
-                        <TableCell className="font-light">{prospect.ville}</TableCell>
-                        <TableCell className="font-light">{prospect.telephone}</TableCell>
                         <TableCell className="font-light">
                           {prospect.datePriseContact
                             ? new Date(prospect.datePriseContact).toLocaleDateString('fr-FR', {
@@ -649,9 +662,6 @@ export default function ProspectsPage() {
                             }).replace(/\//g, '.')
                             : "-"
                           }
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <CategoryBadge category={prospect.categorie} />
                         </TableCell>
                         <TableCell className="font-light">
                           {prospect.dateRelance
@@ -664,8 +674,12 @@ export default function ProspectsPage() {
                           }
                         </TableCell>
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+
+                        <TableCell className="font-light">{prospect.ville}</TableCell>
+                        <TableCell className="font-light">{prospect.telephone}</TableCell>
+
+
                         <TableCell className="font-light">{prospect.email}</TableCell>
-                        <TableCell className="font-light">{prospect.adresse}</TableCell>
                         <TableCell className="font-light">{prospect.commentaires}</TableCell>
 
 

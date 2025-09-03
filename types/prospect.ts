@@ -3,7 +3,8 @@ export interface Prospect {
     nomEtablissement: string;
     ville: string;
     telephone: string;
-    categorie: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
+    categorie1: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
+    categorie2?: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | undefined;
     statut: "a_contacter" | "en_discussion" | "glacial";
     datePriseContact: string;
     dateRelance: string;
