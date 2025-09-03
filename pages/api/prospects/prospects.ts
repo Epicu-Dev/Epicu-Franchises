@@ -200,7 +200,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const telephone = body['Téléphone'] || body.telephone || null;
         const categorieRaw = body['Catégorie'] || body.categorie || null;
         const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
-        const dateRelance = body['Date de relance'] || body.dateRelance || null;
         const commentaires = body['Commentaires'] || body.commentaires || null;
         const email = body['Email'] || body.email || null;
         const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'] || body.suivi || null;
@@ -213,7 +212,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (telephone) fieldsToCreate['Téléphone'] = telephone;
         if (email) fieldsToCreate['Email'] = email;
         if (datePrise) fieldsToCreate['Date de prise de contact'] = datePrise;
-        if (dateRelance) fieldsToCreate['Date de relance'] = dateRelance;
         if (commentaires) fieldsToCreate['Commentaires'] = commentaires;
 
         if (villeRaw) {
@@ -261,7 +259,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           suiviPar: spName,
           datePriseContact: record.get('Date de prise de contact'),
           commentaires: record.get('Commentaires'),
-          dateRelance: record.get('Date de relance'),
           email: record.get('Email'),
           adresse: record.get('Adresse'),
         };
@@ -283,7 +280,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (Object.prototype.hasOwnProperty.call(body, "Nom de l'établissement")) fieldsToUpdate["Nom de l'établissement"] = body["Nom de l'établissement"];
         if (Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fieldsToUpdate['Téléphone'] = body['Téléphone'];
         if (Object.prototype.hasOwnProperty.call(body, 'Date de prise de contact')) fieldsToUpdate['Date de prise de contact'] = body['Date de prise de contact'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) fieldsToUpdate['Date de relance'] = body['Date de relance'];
         if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
         if (Object.prototype.hasOwnProperty.call(body, 'Email')) fieldsToUpdate['Email'] = body['Email'];
 

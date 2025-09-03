@@ -185,6 +185,19 @@ export default function TestProspects() {
   const [statLoading, setStatLoading] = useState<boolean>(false);
   const [statError, setStatError] = useState<string | null>(null);
 
+  // Liens importants (ressources)
+  const [linksResult, setLinksResult] = useState<any>(null);
+  const [linksLoading, setLinksLoading] = useState<boolean>(false);
+  const [linksError, setLinksError] = useState<string | null>(null);
+  // Canva & Matériel (ressources)
+  const [canvaResult, setCanvaResult] = useState<any>(null);
+  const [canvaLoading, setCanvaLoading] = useState<boolean>(false);
+  const [canvaError, setCanvaError] = useState<string | null>(null);
+
+  const [materielResult, setMaterielResult] = useState<any>(null);
+  const [materielLoading, setMaterielLoading] = useState<boolean>(false);
+  const [materielError, setMaterielError] = useState<string | null>(null);
+
   // Factures (test)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState<boolean>(false);
@@ -840,6 +853,70 @@ export default function TestProspects() {
           const data = await res.json();
 
           setCategories(data.results || []);
+          break;
+        }
+        case 'link-importants': {
+          // fetch Liens importants
+          setLinksResult(null);
+          setLinksLoading(true);
+          setLinksError(null);
+          try {
+            const params = new URLSearchParams();
+            if (q) params.set('q', q);
+            params.set('limit', String(PAGE_SIZE));
+            params.set('offset', '0');
+            const url = `/api/ressources/link-importants?${params.toString()}`;
+            const res = await authFetch(url);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error || `Erreur ${res.status}`);
+            setLinksResult(data);
+          } catch (e: any) {
+            setLinksError(e?.message || 'Erreur');
+          } finally {
+            setLinksLoading(false);
+          }
+          break;
+        }
+        case 'canva': {
+          setCanvaResult(null);
+          setCanvaLoading(true);
+          setCanvaError(null);
+          try {
+            const params = new URLSearchParams();
+            if (q) params.set('q', q);
+            params.set('limit', String(PAGE_SIZE));
+            params.set('offset', '0');
+            const url = `/api/ressources/canva?${params.toString()}`;
+            const res = await authFetch(url);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error || `Erreur ${res.status}`);
+            setCanvaResult(data);
+          } catch (e: any) {
+            setCanvaError(e?.message || 'Erreur');
+          } finally {
+            setCanvaLoading(false);
+          }
+          break;
+        }
+        case 'materiel': {
+          setMaterielResult(null);
+          setMaterielLoading(true);
+          setMaterielError(null);
+          try {
+            const params = new URLSearchParams();
+            if (q) params.set('q', q);
+            params.set('limit', String(PAGE_SIZE));
+            params.set('offset', '0');
+            const url = `/api/ressources/materiel?${params.toString()}`;
+            const res = await authFetch(url);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error || `Erreur ${res.status}`);
+            setMaterielResult(data);
+          } catch (e: any) {
+            setMaterielError(e?.message || 'Erreur');
+          } finally {
+            setMaterielLoading(false);
+          }
           break;
         }
         case 'villes': {
@@ -1543,6 +1620,9 @@ export default function TestProspects() {
                 { key: 'statistiques', label: 'Statistiques' },
                 { key: 'villes', label: 'Villes Epicu' },
                 { key: 'categories', label: 'Catégories' },
+                { key: 'link-importants', label: 'Liens importants' },
+                { key: 'canva', label: 'Ressources Canva' },
+                { key: 'materiel', label: 'Matériel' },
                 { key: 'clients', label: 'Clients' },
                 { key: 'collaborateurs', label: 'Collaborateurs' },
                 { key: 'agenda', label: 'Agenda' },
@@ -1743,6 +1823,124 @@ export default function TestProspects() {
                   <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(statResult, null, 2)}</pre>
                 )}
                 {!statLoading && !statError && !statResult && <div>Aucun résultat</div>}
+              </div>
+            </div>
+          )}
+          {!loading && !error && selected === 'link-importants' && (
+            <div className="space-y-4">
+              <Card title="Liens importants — Test">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Recherche (texte)</label>
+                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  </div>
+                </div>
+                <div className="pt-3 flex gap-2">
+                  <Button onClick={async () => {
+                    try {
+                      setLinksLoading(true); setLinksError(null); setLinksResult(null);
+                      const params = new URLSearchParams();
+                      if (searchQuery) params.set('q', searchQuery);
+                      params.set('limit', String(PAGE_SIZE));
+                      const res = await authFetch(`/api/ressources/link-importants?${params.toString()}`);
+                      const json = await res.json();
+                      if (!res.ok) {
+                        setLinksError(json?.error || `Erreur ${res.status}`);
+                        setLinksResult(null);
+                      } else {
+                        setLinksResult(json);
+                      }
+                    } catch (e: any) {
+                      setLinksError(e?.message || String(e));
+                      setLinksResult(null);
+                    } finally { setLinksLoading(false); }
+                  }}>{linksLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setLinksResult(null); setLinksError(null); }}>{'Réinitialiser'}</Button>
+                </div>
+              </Card>
+
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold mb-2">Résultat Liens importants</h3>
+                {linksLoading && <div>Chargement…</div>}
+                {linksError && <div className="text-red-600">{linksError}</div>}
+                {!linksLoading && !linksError && linksResult && (
+                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(linksResult, null, 2)}</pre>
+                )}
+                {!linksLoading && !linksError && !linksResult && <div>Aucun résultat</div>}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && selected === 'canva' && (
+            <div className="space-y-4">
+              <Card title="Ressources Canva — Test">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Recherche (texte)</label>
+                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  </div>
+                </div>
+                <div className="pt-3 flex gap-2">
+                  <Button onClick={async () => {
+                    try {
+                      setCanvaLoading(true); setCanvaError(null); setCanvaResult(null);
+                      const params = new URLSearchParams();
+                      if (searchQuery) params.set('q', searchQuery);
+                      params.set('limit', String(PAGE_SIZE));
+                      const res = await authFetch(`/api/ressources/canva?${params.toString()}`);
+                      const json = await res.json();
+                      if (!res.ok) { setCanvaError(json?.error || `Erreur ${res.status}`); setCanvaResult(null); } else { setCanvaResult(json); }
+                    } catch (e: any) { setCanvaError(e?.message || String(e)); setCanvaResult(null); } finally { setCanvaLoading(false); }
+                  }}>{canvaLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setCanvaResult(null); setCanvaError(null); }}>{'Réinitialiser'}</Button>
+                </div>
+              </Card>
+
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold mb-2">Résultat Ressources Canva</h3>
+                {canvaLoading && <div>Chargement…</div>}
+                {canvaError && <div className="text-red-600">{canvaError}</div>}
+                {!canvaLoading && !canvaError && canvaResult && (
+                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(canvaResult, null, 2)}</pre>
+                )}
+                {!canvaLoading && !canvaError && !canvaResult && <div>Aucun résultat</div>}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && selected === 'materiel' && (
+            <div className="space-y-4">
+              <Card title="Matériel — Test">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Recherche (texte)</label>
+                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  </div>
+                </div>
+                <div className="pt-3 flex gap-2">
+                  <Button onClick={async () => {
+                    try {
+                      setMaterielLoading(true); setMaterielError(null); setMaterielResult(null);
+                      const params = new URLSearchParams();
+                      if (searchQuery) params.set('q', searchQuery);
+                      params.set('limit', String(PAGE_SIZE));
+                      const res = await authFetch(`/api/ressources/materiel?${params.toString()}`);
+                      const json = await res.json();
+                      if (!res.ok) { setMaterielError(json?.error || `Erreur ${res.status}`); setMaterielResult(null); } else { setMaterielResult(json); }
+                    } catch (e: any) { setMaterielError(e?.message || String(e)); setMaterielResult(null); } finally { setMaterielLoading(false); }
+                  }}>{materielLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setMaterielResult(null); setMaterielError(null); }}>{'Réinitialiser'}</Button>
+                </div>
+              </Card>
+
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold mb-2">Résultat Matériel</h3>
+                {materielLoading && <div>Chargement…</div>}
+                {materielError && <div className="text-red-600">{materielError}</div>}
+                {!materielLoading && !materielError && materielResult && (
+                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(materielResult, null, 2)}</pre>
+                )}
+                {!materielLoading && !materielError && !materielResult && <div>Aucun résultat</div>}
               </div>
             </div>
           )}
