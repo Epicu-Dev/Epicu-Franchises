@@ -178,6 +178,12 @@ export default function TestProspects() {
   const [collabHasMore, setCollabHasMore] = useState<boolean>(false);
 
   const [selected, setSelected] = useState<string | null>('categories');
+  // --- Statistiques test state
+  const [dateStat, setDateStat] = useState<string>('09-2025');
+  const [selectedVilleIdStat, setSelectedVilleIdStat] = useState<string>('');
+  const [statResult, setStatResult] = useState<any>(null);
+  const [statLoading, setStatLoading] = useState<boolean>(false);
+  const [statError, setStatError] = useState<string | null>(null);
 
   // Factures (test)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -1534,6 +1540,7 @@ export default function TestProspects() {
                 { key: 'prospects', label: 'Prospects' },
                 { key: 'discussion', label: 'En Discussion' },
                 { key: 'factures', label: 'Factures' },
+                { key: 'statistiques', label: 'Statistiques' },
                 { key: 'villes', label: 'Villes Epicu' },
                 { key: 'categories', label: 'Catégories' },
                 { key: 'clients', label: 'Clients' },
@@ -1637,6 +1644,7 @@ export default function TestProspects() {
               </div>
             </div>
           </div>
+          
         </aside>
 
         {/* ————————————————— Contenu ————————————————— */}
@@ -1687,6 +1695,55 @@ export default function TestProspects() {
               </Card>
 
               {renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
+            </div>
+          )}
+          {!loading && !error && selected === 'statistiques' && (
+            <div className="space-y-4">
+              <Card title="Statistiques mensuelles — Test">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Date (mm-yyyy)</label>
+                    <Input type="text" value={dateStat} onChange={(e) => setDateStat(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Ville EPICU (record id) — laisser vide pour "all"</label>
+                    <select className="w-full border rounded-xl px-3 py-2" value={selectedVilleIdStat} onChange={(e) => setSelectedVilleIdStat(e.target.value)}>
+                      <option value="">— all —</option>
+                      {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville} — {v.id}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="pt-3 flex gap-2">
+                  <Button onClick={async () => {
+                    try {
+                      setStatLoading(true); setStatError(null); setStatResult(null);
+                      const villeQ = selectedVilleIdStat || 'all';
+                      const res = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeQ)}&date=${encodeURIComponent(dateStat)}`);
+                      const json = await res.json();
+                      if (!res.ok) {
+                        setStatError(json?.error || `Erreur ${res.status}`);
+                        setStatResult(null);
+                      } else {
+                        setStatResult(json);
+                      }
+                    } catch (e: any) {
+                      setStatError(e?.message || String(e));
+                      setStatResult(null);
+                    } finally { setStatLoading(false); }
+                  }}>{statLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                  <Button variant="ghost" onClick={() => { setDateStat('09-2025'); setSelectedVilleIdStat(''); setStatResult(null); setStatError(null); }}>Réinitialiser</Button>
+                </div>
+              </Card>
+
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold mb-2">Résultat</h3>
+                {statLoading && <div>Chargement…</div>}
+                {statError && <div className="text-red-600">{statError}</div>}
+                {!statLoading && !statError && statResult && (
+                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(statResult, null, 2)}</pre>
+                )}
+                {!statLoading && !statError && !statResult && <div>Aucun résultat</div>}
+              </div>
             </div>
           )}
           {/* Prospects & Glacial filters: reuse same controls when showing those lists */}
