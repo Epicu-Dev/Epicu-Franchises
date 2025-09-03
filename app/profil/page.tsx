@@ -232,7 +232,7 @@ export default function ProfilPage() {
       <Card className="w-full bg-white shadow-none text-primary">
         <CardBody className="p-6">
           {/* Onglets */}
-          <Tabs
+          {/* <Tabs
             className="w-full pt-3 mb-2"
             classNames={{
               cursor: "w-[50px]  left-[12px] h-1   rounded",
@@ -254,7 +254,7 @@ export default function ProfilPage() {
               key="historique"
               title="Historique"
             />
-          </Tabs>
+          </Tabs> */}
 
           {loading || !userProfile ? (
             <div className="flex justify-center items-center h-64">

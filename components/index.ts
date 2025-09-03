@@ -16,6 +16,8 @@ export { FranchiseTeamModal } from './franchise-team-modal';
 export { UnifiedEventModal } from './unified-event-modal';
 export { SubscribersEditModal } from './subscribers-edit-modal';
 export { default as InvoiceModal } from './invoice-modal';
+export { default as PublicationModal } from './publication-modal';
+export { default as PublicationDetails } from './publication-details';
 
 // Composants de badges
 export { 

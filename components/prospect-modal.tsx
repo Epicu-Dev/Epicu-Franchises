@@ -18,6 +18,7 @@ import { useUser } from "../contexts/user-context";
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 import { Prospect } from "@/types/prospect";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface ProspectModalProps {
   isOpen: boolean;
@@ -335,7 +336,7 @@ export function ProspectModal({
                   <SelectItem key="BEAUTY">BEAUTY</SelectItem>
                 </StyledSelect>
               </div>
-            ) : <Button color='primary' onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie</Button>}
+            ) : <Button endContent={<PlusIcon className="h-4 w-4" />} color='primary' variant="bordered" className="border-1" onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie (Optionnel)</Button>}
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>

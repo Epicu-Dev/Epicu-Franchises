@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { SelectItem } from "@heroui/select";
@@ -10,13 +11,14 @@ import {
     ModalBody,
     ModalFooter,
 } from "@heroui/modal";
-import { Textarea } from "@heroui/input";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import { Switch } from "@heroui/switch";
 
-import { FormLabel } from "@/components";
+import { ChevronRightIcon, PlusIcon } from "@heroicons/react/24/outline";
+
+import PublicationModal from "./publication-modal";
+
+import { FormLabel, CategoryBadge } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
-import { Client } from "@/types/client";
+import { Client, Publication } from "@/types/client";
 
 interface ClientModalProps {
     isOpen: boolean;
@@ -39,6 +41,70 @@ export default function ClientModal({
     isLoading,
     error
 }: ClientModalProps) {
+    const [isPublicationModalOpen, setIsPublicationModalOpen] = React.useState(false);
+    const [publications, setPublications] = React.useState<Publication[]>(editingClient?.publications || []);
+    const [editingPublication, setEditingPublication] = React.useState<Publication | null>(null);
+
+    // Fonction de validation des champs requis
+    const validateRequiredFields = () => {
+        if (!editingClient) return false;
+        
+        const requiredFields = [
+            'categorie',
+            'nomEtablissement',
+            'raisonSociale',
+            'siret',
+            'ville',
+            'telephone',
+            'email',
+            'dateSignatureContrat'
+        ];
+
+        return requiredFields.every(field => {
+            const value = editingClient[field as keyof Client];
+
+            return value !== "" && value !== null && value !== undefined;
+        });
+    };
+
+    // Mettre à jour les publications quand editingClient change
+    React.useEffect(() => {
+        setPublications(editingClient?.publications || []);
+    }, [editingClient]);
+
+    const handleAddPublication = (publication: Omit<Publication, 'id'>) => {
+        const newPublication: Publication = {
+            ...publication,
+            id: Date.now().toString() // Générer un ID temporaire
+        };
+
+        setPublications([...publications, newPublication]);
+
+        // Mettre à jour le client avec la nouvelle publication
+        if (editingClient) {
+            setEditingClient({
+                ...editingClient,
+                publications: [...publications, newPublication]
+            });
+        }
+    };
+
+    const handleUpdatePublication = (updatedPublication: Publication) => {
+        const updatedPublications = publications.map(pub => 
+            pub.id === updatedPublication.id ? updatedPublication : pub
+        );
+
+        setPublications(updatedPublications);
+
+        // Mettre à jour le client avec la publication modifiée
+        if (editingClient) {
+            setEditingClient({
+                ...editingClient,
+                publications: updatedPublications
+            });
+        }
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -54,448 +120,231 @@ export default function ClientModal({
                 <ModalBody className="max-h-[70vh] overflow-y-auto">
                     {editingClient && (
                         <div className="space-y-6">
-                            {/* Informations générales */}
+                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                                Informations générales
+                            </h3>
+                            <FormLabel htmlFor="categorie" isRequired={true}>
+                                Catégorie
+                            </FormLabel>
+                            <StyledSelect
+                                isRequired
+                                id="categorie"
+                                placeholder="Sélectionner une catégorie"
+                                selectedKeys={
+                                    editingClient.categorie ? [editingClient.categorie] : []
+                                }
+                                onSelectionChange={(keys) =>
+                                    setEditingClient(
+                                        editingClient
+                                            ? {
+                                                ...editingClient,
+                                                categorie: Array.from(keys)[0] as string,
+                                            }
+                                            : null
+                                    )
+                                }
+                            >
+                                {categories.length > 0 ? (
+                                    categories.map((category) => (
+                                        <SelectItem key={category.name}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))
+                                ) : (
+                                    <SelectItem key="loading">Chargement...</SelectItem>
+                                )}
+                            </StyledSelect>
+
+                            <FormLabel htmlFor="nomEtablissement" isRequired={true}>
+                                Nom établissement
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="nomEtablissement"
+                                placeholder="Nom de l'établissement"
+                                value={editingClient.nomEtablissement}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, nomEtablissement: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="raisonSociale" isRequired={true}>
+                                Raison sociale
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="raisonSociale"
+                                placeholder="Raison sociale"
+                                value={editingClient.raisonSociale || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, raisonSociale: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="numeroSiret" isRequired={true}>
+                                Numéro de SIRET
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="numeroSiret"
+                                placeholder="12345678901234"
+                                value={editingClient.siret || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, siret: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="ville" isRequired={true}>
+                                Ville
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="ville"
+                                placeholder="Paris"
+                                value={editingClient.ville || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, ville: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="telephone" isRequired={true}>
+                                Téléphone
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="telephone"
+                                placeholder="01 23 45 67 89"
+                                value={editingClient.telephone || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, telephone: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="email" isRequired={true}>
+                                Mail
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="email"
+                                placeholder="contact@etablissement.fr"
+                                type="email"
+                                value={editingClient.email || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, email: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
+                                Date de signature du contrat
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                }}
+                                id="dateSignatureContrat"
+                                type="date"
+                                value={editingClient.dateSignatureContrat || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient
+                                            ? { ...editingClient, dateSignatureContrat: e.target.value }
+                                            : null
+                                    )
+                                }
+                            />
+
+                            {/* Publications */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    Informations générales
+                                    Publications
                                 </h3>
 
-                                <FormLabel htmlFor="nomEtablissement" isRequired={true}>
-                                    Nom établissement
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="nomEtablissement"
-                                    placeholder="Nom de l'établissement"
-                                    value={editingClient.nomEtablissement}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, nomEtablissement: e.target.value } : null
-                                        )
-                                    }
-                                />
+                                {/* Liste des publications existantes */}
+                                {publications.map((publication, index) => (
+                                    <div 
+                                        key={publication.id} 
+                                        className="bg-page-bg p-4 rounded-lg flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => {
+                                            // Ouvrir le modal d'édition de publication
+                                            setEditingPublication(publication);
+                                            setIsPublicationModalOpen(true);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setEditingPublication(publication);
+                                                setIsPublicationModalOpen(true);
+                                            }
+                                        }}
+                                    >
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                                    Publication {index + 1}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                                                <div>Date de publication: {new Date(publication.datePublication).toLocaleDateString('fr-FR')}</div>
+                                                <div className="mt-1 flex items-center">
+                                                    <span>Catégorie:</span>
+                                                    <CategoryBadge 
+                                                        category={editingClient.categorie} 
+                                                        className="ml-2"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ChevronRightIcon className="w-5 h-5 " />
+                                    </div>
+                                ))}
 
-                                <FormLabel htmlFor="ville" isRequired={true}>
-                                    Ville
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="ville"
-                                    placeholder="Paris"
-                                    value={editingClient.ville || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, ville: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="categorie" isRequired={true}>
-                                    Catégorie
-                                </FormLabel>
-                                <StyledSelect
-                                    isRequired
-                                    id="categorie"
-                                    placeholder="Sélectionner une catégorie"
-                                    selectedKeys={
-                                        editingClient.categorie ? [editingClient.categorie] : []
-                                    }
-                                    onSelectionChange={(keys) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? {
-                                                    ...editingClient,
-                                                    categorie: Array.from(keys)[0] as string,
-                                                }
-                                                : null
-                                        )
-                                    }
-                                >
-                                    {categories.length > 0 ? (
-                                        categories.map((category) => (
-                                            <SelectItem key={category.name}>
-                                                {category.name}
-                                            </SelectItem>
-                                        ))
-                                    ) : (
-                                        <SelectItem key="loading">Chargement...</SelectItem>
-                                    )}
-                                </StyledSelect>
-
-                                <FormLabel htmlFor="telephone" isRequired={true}>
-                                    Téléphone
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="telephone"
-                                    placeholder="01 23 45 67 89"
-                                    value={editingClient.telephone || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, telephone: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="email" isRequired={true}>
-                                    Mail
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="email"
-                                    placeholder="contact@etablissement.fr"
-                                    type="email"
-                                    value={editingClient.email || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, email: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="numeroSiret" isRequired={true}>
-                                    Numéro de SIRET
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="numeroSiret"
-                                    placeholder="12345678901234"
-                                    value={editingClient.siret || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, siret: e.target.value } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            {/* Commentaire */}
-                            <div className="space-y-4">
-                                <FormLabel htmlFor="commentaire" isRequired={false}>
-                                    Commentaire
-                                </FormLabel>
-
-                                <Textarea
-                                    classNames={{
-                                        input: "text-sm",
-                                    }}
-                                    minRows={3}
-                                    placeholder="..."
-                                    value={editingClient.commentaire || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, commentaire: e.target.value } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            {/* Prestations */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    Prestations
-                                </h3>
-
-                                <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
-                                    Date de signature du contrat
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="dateSignatureContrat"
-                                    type="date"
-                                    value={editingClient.dateSignatureContrat || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, dateSignatureContrat: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
+                                {/* Bouton pour ajouter une publication */}
                                 <Button
-                                    color='primary'
-                                    endContent={<ArrowDownTrayIcon className="w-4 h-4" />}
+                                    className="border-1"
+                                    color="primary"
+                                    variant="bordered"
+                                    onPress={() => {
+                                        setEditingPublication(null);
+                                        setIsPublicationModalOpen(true);
+                                    }}
                                 >
-                                    Télécharger
+                                   
+                                    Ajouter une publication
+                                    <PlusIcon className="w-5 h-5 mr-2" />
                                 </Button>
-
-                                <FormLabel htmlFor="datePublicationContenu" isRequired={true}>
-                                    Date de publication
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="datePublicationContenu"
-                                    type="date"
-                                    value={editingClient.datePublicationContenu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, datePublicationContenu: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="datePublicationFacture" isRequired={true}>
-                                    Date d&apos;envoie facture création de contenu
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="datePublicationFacture"
-                                    type="date"
-                                    value={editingClient.datePublicationFacture || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, datePublicationFacture: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="statutPaiementContenu" isRequired={true}>
-                                    Statut du paiement
-                                </FormLabel>
-                                <StyledSelect
-                                    id="statutPaiementContenu"
-                                    selectedKeys={
-                                        editingClient.statutPaiementContenu
-                                            ? [editingClient.statutPaiementContenu]
-                                            : []
-                                    }
-                                    onSelectionChange={(keys) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? {
-                                                    ...editingClient,
-                                                    statutPaiementContenu: Array.from(keys)[0] as
-                                                        | "Payée"
-                                                        | "En attente"
-                                                        | "En retard",
-                                                }
-                                                : null
-                                        )
-                                    }
-                                >
-                                    <SelectItem key="Payée">Payée</SelectItem>
-                                    <SelectItem key="En attente">En attente</SelectItem>
-                                    <SelectItem key="En retard">En retard</SelectItem>
-                                </StyledSelect>
-
-                                <FormLabel htmlFor="montantFactureContenu" isRequired={true}>
-                                    Montant facturé
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantFactureContenu"
-                                    placeholder="1750€"
-                                    value={editingClient.montantFactureContenu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantFactureContenu: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantPaye" isRequired={true}>
-                                    Montant payé
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantPaye"
-                                    placeholder="750€"
-                                    value={editingClient.montantPaye || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, montantPaye: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="dateReglementFacture" isRequired={true}>
-                                    Date du règlement de la facture
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="dateReglementFacture"
-                                    type="date"
-                                    value={editingClient.dateReglementFacture || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, dateReglementFacture: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="restantDu" isRequired={true}>
-                                    Restant dû
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="restantDu"
-                                    placeholder="1750€"
-                                    value={editingClient.restantDu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, restantDu: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantSponsorisation" isRequired={true}>
-                                    Montant de la sponsorisation
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantSponsorisation"
-                                    placeholder="1750€"
-                                    value={editingClient.montantSponsorisation || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantSponsorisation: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantAddition" isRequired={true}>
-                                    Montant de l&apos;addition
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantAddition"
-                                    placeholder="1750€"
-                                    value={editingClient.montantAddition || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantAddition: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            {/* Commentaire */}
-                            <div className="space-y-4">
-                                <FormLabel htmlFor="commentaire" isRequired={false}>
-                                    Commentaire
-                                </FormLabel>
-
-                                <Textarea
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="commentaire"
-                                    minRows={4}
-                                    placeholder="..."
-                                    value={editingClient.commentaire || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, commentaire: e.target.value } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            {/* Cadeau du gérant pour le jeu concours */}
-                            <div className="space-y-4">
-                                <FormLabel htmlFor="commentaireCadeauGerant" isRequired={false}>
-                                    Cadeau du gérant pour le jeu concours
-                                </FormLabel>
-                                <Textarea
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="commentaireCadeauGerant"
-                                    minRows={4}
-                                    placeholder="..."
-                                    value={editingClient.commentaireCadeauGerant || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, commentaireCadeauGerant: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantCadeau" isRequired={true}>
-                                    Montant du cadeau
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantCadeau"
-                                    placeholder="150€"
-                                    value={editingClient.montantCadeau || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, montantCadeau: e.target.value } : null
-                                        )
-                                    }
-                                />
-                                <div className="flex items-center justify-between">
-                                    <span className="text-base ">Tirage au sort effectué</span>
-                                    <Switch
-                                        isSelected={editingClient.tirageAuSort}
-                                        onValueChange={(checked) =>
-                                            setEditingClient(
-                                                editingClient ? { ...editingClient, tirageAuSort: checked } : null
-                                            )
-                                        }
-                                    />
-                                </div>
                             </div>
                         </div>
                     )}
@@ -525,7 +374,7 @@ export default function ClientModal({
                         <Button
                             className="flex-1"
                             color='primary'
-                            isDisabled={isLoading}
+                            isDisabled={isLoading || !validateRequiredFields()}
                             isLoading={isLoading}
                             onPress={onUpdateClient}
                         >
@@ -534,6 +383,18 @@ export default function ClientModal({
                     </div>
                 </ModalFooter>
             </ModalContent>
+
+            {/* Modal pour ajouter une publication */}
+            <PublicationModal
+                editingPublication={editingPublication}
+                isLoading={isLoading}
+                isOpen={isPublicationModalOpen}
+                onAddPublication={handleAddPublication}
+                onOpenChange={setIsPublicationModalOpen}
+                onUpdatePublication={handleUpdatePublication}
+            />
+
+
         </Modal>
     );
 }

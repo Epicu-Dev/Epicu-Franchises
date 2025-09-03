@@ -16,7 +16,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
-import { SelectItem } from "@heroui/select";
+import { Select, SelectItem } from "@heroui/select";
 
 import { StyledSelect } from "@/components/styled-select";
 import { FormLabel } from "@/components";
@@ -86,6 +86,9 @@ export default function InvoiceModal({
   const [selectedPublication, setSelectedPublication] = useState<string>("");
   const [isLoadingPublications, setIsLoadingPublications] = useState(false);
 
+  // État pour la facture de tournage
+  const [tournageFactureStatus, setTournageFactureStatus] = useState<string>("");
+
   // Réinitialiser le formulaire quand le modal s'ouvre
   useEffect(() => {
     if (isOpen) {
@@ -102,7 +105,7 @@ export default function InvoiceModal({
           siret: "",
         });
         setClientSearchTerm(selectedInvoice.nomEtablissement);
-        
+
         // Rechercher automatiquement le client
         searchClientForInvoice(selectedInvoice.nomEtablissement);
       } else {
@@ -128,19 +131,19 @@ export default function InvoiceModal({
   const searchClientForInvoice = async (establishmentName: string) => {
     try {
       const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(establishmentName)}&limit=10`);
-      
+
       if (response.ok) {
         const data = await response.json();
         const clients = data.clients || [];
-        
-        const matchingClient = clients.find((client: Client) => 
+
+        const matchingClient = clients.find((client: Client) =>
           client.nomEtablissement.toLowerCase() === establishmentName.toLowerCase()
         );
-        
+
         if (matchingClient) {
           setSelectedClient(matchingClient);
           setClientSearchTerm(matchingClient.nomEtablissement);
-          
+
           setNewInvoice(prev => ({
             ...prev,
             establishmentName: matchingClient.nomEtablissement,
@@ -214,9 +217,10 @@ export default function InvoiceModal({
     }));
     setClientSearchResults([]);
     setShowClientSearchResults(false);
-    // Réinitialiser aussi la sélection de publication
+    // Réinitialiser aussi la sélection de publication et facture de tournage
     setSelectedPublication("");
     setPublications([]);
+    setTournageFactureStatus("");
   };
 
   // Fonction pour charger les publications (avec fausses données pour l'instant)
@@ -236,7 +240,7 @@ export default function InvoiceModal({
         { id: "pub4", nom: "Reel TikTok - Produit", date: "2024-07-01" },
         { id: "pub5", nom: "Carousel Instagram - Services", date: "2024-07-05" },
       ];
-      
+
       setPublications(fakePublications);
     } catch (err) {
       console.error("Erreur lors du chargement des publications:", err);
@@ -351,6 +355,7 @@ export default function InvoiceModal({
       setClientSearchTerm("");
       setSelectedPublication("");
       setPublications([]);
+      setTournageFactureStatus("");
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -374,6 +379,7 @@ export default function InvoiceModal({
     setClientSearchTerm("");
     setSelectedPublication("");
     setPublications([]);
+    setTournageFactureStatus("");
     onOpenChange(false);
   };
 
@@ -487,7 +493,7 @@ export default function InvoiceModal({
                 <FormLabel htmlFor="publication" isRequired={true}>
                   Publication concernée
                 </FormLabel>
-                <StyledSelect
+                <Select
                   isRequired
                   id="publication"
                   placeholder={isLoadingPublications ? "Chargement des publications..." : "Sélectionnez une publication"}
@@ -499,11 +505,11 @@ export default function InvoiceModal({
                   }}
                 >
                   {publications.map((pub) => (
-                    <SelectItem key={pub.id} value={pub.id}>
+                    <SelectItem key={pub.id} value={pub.nom}>
                       {pub.nom} - {new Date(pub.date).toLocaleDateString('fr-FR')}
                     </SelectItem>
                   ))}
-                </StyledSelect>
+                </Select>
               </>
             )}
 
@@ -608,6 +614,27 @@ export default function InvoiceModal({
                     setNewInvoice((prev) => ({ ...prev, comment: value }));
                   }}
                 />
+
+                <FormLabel htmlFor="tournageFacture" isRequired={true}>
+                  Facture de tournage
+                </FormLabel>
+                <StyledSelect
+                  isRequired
+                  id="tournageFacture"
+                  placeholder="Sélectionnez le statut de la facture de tournage"
+                  selectedKeys={tournageFactureStatus ? [tournageFactureStatus] : []}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    setTournageFactureStatus(value);
+                  }}
+                >
+                  <SelectItem key="payee" value="payee">
+                    <span className="text-green-600 font-medium">✓ Payée</span>
+                  </SelectItem>
+                  <SelectItem key="impayee" value="impayee">
+                    <span className="text-red-600 font-medium">✗ Impayée</span>
+                  </SelectItem>
+                </StyledSelect>
               </>
             )}
 
@@ -635,10 +662,10 @@ export default function InvoiceModal({
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-end">
-          <Button 
-            className="flex-1 border-1" 
-            color='primary' 
-            variant="bordered" 
+          <Button
+            className="flex-1 border-1"
+            color='primary'
+            variant="bordered"
             onPress={handleCancel}
           >
             Annuler
@@ -646,7 +673,7 @@ export default function InvoiceModal({
           <Button
             className="flex-1"
             color='primary'
-            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication}
+            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus}
             onPress={handleSave}
           >
             {selectedInvoice ? "Modifier" : "Ajouter"}
