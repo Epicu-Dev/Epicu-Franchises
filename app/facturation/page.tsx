@@ -234,12 +234,10 @@ export default function FacturationPage() {
 
   const getServiceTypeLabel = (serviceType: string) => {
     switch (serviceType) {
-      case "creation_contenu":
-        return "Création de contenu";
       case "publication":
         return "Publication";
-      case "studio":
-        return "Studio";
+      case "tournage":
+        return "Tournage";
       default:
         return serviceType;
     }
@@ -333,7 +331,7 @@ export default function FacturationPage() {
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="amount"
-                      label="Montant"
+                      label="Montant de la facture"
                       sortDirection={sortDirection}
                       sortField={sortField}
                       onSort={handleSort}

@@ -20,6 +20,7 @@ import { SelectItem } from "@heroui/select";
 
 import { StyledSelect } from "@/components/styled-select";
 import { FormLabel } from "@/components";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface Invoice {
   id: string;
@@ -59,6 +60,7 @@ export default function InvoiceModal({
   onSave,
   onEdit,
 }: InvoiceModalProps) {
+  const { authFetch } = useAuthFetch();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [newInvoice, setNewInvoice] = useState({
@@ -78,6 +80,11 @@ export default function InvoiceModal({
   const [isSearchingClient, setIsSearchingClient] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
+
+  // États pour la sélection de publication
+  const [publications, setPublications] = useState<{ id: string; nom: string; date: string }[]>([]);
+  const [selectedPublication, setSelectedPublication] = useState<string>("");
+  const [isLoadingPublications, setIsLoadingPublications] = useState(false);
 
   // Réinitialiser le formulaire quand le modal s'ouvre
   useEffect(() => {
@@ -120,7 +127,7 @@ export default function InvoiceModal({
 
   const searchClientForInvoice = async (establishmentName: string) => {
     try {
-      const response = await fetch(`/api/clients?q=${encodeURIComponent(establishmentName)}&limit=10`);
+      const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(establishmentName)}&limit=10`);
       
       if (response.ok) {
         const data = await response.json();
@@ -158,7 +165,7 @@ export default function InvoiceModal({
       setIsSearchingClient(true);
       setError(null);
 
-      const response = await fetch(`/api/clients?q=${encodeURIComponent(searchTerm)}&limit=10`);
+      const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(searchTerm)}&limit=10`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la recherche de clients");
@@ -191,6 +198,9 @@ export default function InvoiceModal({
       establishmentName: "",
       siret: "",
     }));
+
+    // Charger les publications pour ce client
+    loadPublications(client.id);
   };
 
   const clearSelectedClient = () => {
@@ -204,6 +214,36 @@ export default function InvoiceModal({
     }));
     setClientSearchResults([]);
     setShowClientSearchResults(false);
+    // Réinitialiser aussi la sélection de publication
+    setSelectedPublication("");
+    setPublications([]);
+  };
+
+  // Fonction pour charger les publications (avec fausses données pour l'instant)
+  const loadPublications = async (clientId: string) => {
+    setIsLoadingPublications(true);
+    try {
+      // TODO: Remplacer par un vrai appel API
+      // const response = await authFetch(`/api/publications?clientId=${clientId}`);
+      // const data = await response.json();
+      // setPublications(data.publications || []);
+
+      // Fausses données pour l'instant
+      const fakePublications = [
+        { id: "pub1", nom: "Campagne Instagram - Été 2024", date: "2024-06-15" },
+        { id: "pub2", nom: "Story Facebook - Promotion", date: "2024-06-20" },
+        { id: "pub3", nom: "Post LinkedIn - Actualité", date: "2024-06-25" },
+        { id: "pub4", nom: "Reel TikTok - Produit", date: "2024-07-01" },
+        { id: "pub5", nom: "Carousel Instagram - Services", date: "2024-07-05" },
+      ];
+      
+      setPublications(fakePublications);
+    } catch (err) {
+      console.error("Erreur lors du chargement des publications:", err);
+      setPublications([]);
+    } finally {
+      setIsLoadingPublications(false);
+    }
   };
 
   // Recherche de clients avec debounce
@@ -309,6 +349,8 @@ export default function InvoiceModal({
       setFieldErrors({});
       setSelectedClient(null);
       setClientSearchTerm("");
+      setSelectedPublication("");
+      setPublications([]);
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -330,6 +372,8 @@ export default function InvoiceModal({
     setError(null);
     setSelectedClient(null);
     setClientSearchTerm("");
+    setSelectedPublication("");
+    setPublications([]);
     onOpenChange(false);
   };
 
@@ -415,10 +459,15 @@ export default function InvoiceModal({
             {/* Encart d'informations du client sélectionné */}
             {selectedClient && (
               <div className="bg-page-bg border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-medium">
-                    Client sélectionné
-                  </h4>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-medium text-sm text-primary-light mb-1">
+                      Client sélectionné
+                    </h4>
+                    <p className="font-medium text-lg">
+                      {selectedClient.nomEtablissement}
+                    </p>
+                  </div>
                   <Button
                     isIconOnly
                     size="sm"
@@ -429,53 +478,33 @@ export default function InvoiceModal({
                     <XMarkIcon className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-primary-light">Établissement:</span>
-                    <span>
-                      {selectedClient.nomEtablissement}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-primary-light">Raison sociale:</span>
-                    <span>
-                      {selectedClient.raisonSociale}
-                    </span>
-                  </div>
-                  {selectedClient.ville && (
-                    <div className="flex justify-between">
-                      <span className="text-primary-light">Ville:</span>
-                      <span>
-                        {selectedClient.ville}
-                      </span>
-                    </div>
-                  )}
-                  {selectedClient.email && (
-                    <div className="flex justify-between">
-                      <span className="text-primary-light">Email:</span>
-                      <span>
-                        {selectedClient.email}
-                      </span>
-                    </div>
-                  )}
-                  {selectedClient.telephone && (
-                    <div className="flex justify-between">
-                      <span className="text-primary-light">Téléphone:</span>
-                      <span>
-                        {selectedClient.telephone}
-                      </span>
-                    </div>
-                  )}
-                  {selectedClient.numeroSiret && (
-                    <div className="flex justify-between">
-                      <span className="text-primary-light">SIRET:</span>
-                      <span>
-                        {selectedClient.numeroSiret}
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
+            )}
+
+            {/* Sélection de publication */}
+            {selectedClient && (
+              <>
+                <FormLabel htmlFor="publication" isRequired={true}>
+                  Publication concernée
+                </FormLabel>
+                <StyledSelect
+                  isRequired
+                  id="publication"
+                  placeholder={isLoadingPublications ? "Chargement des publications..." : "Sélectionnez une publication"}
+                  selectedKeys={selectedPublication ? [selectedPublication] : []}
+                  isDisabled={isLoadingPublications}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    setSelectedPublication(value);
+                  }}
+                >
+                  {publications.map((pub) => (
+                    <SelectItem key={pub.id} value={pub.id}>
+                      {pub.nom} - {new Date(pub.date).toLocaleDateString('fr-FR')}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
+              </>
             )}
 
             {/* SIRET (caché mais nécessaire pour la validation) */}
@@ -500,7 +529,7 @@ export default function InvoiceModal({
             />
 
             {/* Affichage conditionnel des champs de facturation */}
-            {selectedClient && (
+            {selectedClient && selectedPublication && (
               <>
                 <FormLabel htmlFor="serviceType" isRequired={true}>
                   Prestation
@@ -521,13 +550,12 @@ export default function InvoiceModal({
                     validateField('serviceType', value);
                   }}
                 >
-                  <SelectItem key="creation_contenu">Création de contenu</SelectItem>
                   <SelectItem key="publication">Publication</SelectItem>
-                  <SelectItem key="studio">Studio</SelectItem>
+                  <SelectItem key="tournage">Tournage</SelectItem>
                 </StyledSelect>
 
                 <FormLabel htmlFor="amount" isRequired={true}>
-                  Montant
+                  Montant de la facture
                 </FormLabel>
                 <Input
                   isRequired
@@ -548,14 +576,11 @@ export default function InvoiceModal({
                   }}
                 />
 
-                <FormLabel htmlFor="date" isRequired={true}>
+                <FormLabel htmlFor="date" isRequired={false}>
                   Date du paiement
                 </FormLabel>
                 <Input
-                  isRequired
-                  errorMessage={fieldErrors.date}
                   id="date"
-                  isInvalid={!!fieldErrors.date}
                   type="date"
                   classNames={{
                     inputWrapper: "bg-page-bg",
@@ -586,7 +611,7 @@ export default function InvoiceModal({
               </>
             )}
 
-            {/* Message d'instruction si aucun client n'est sélectionné */}
+            {/* Message d'instruction si aucun client ou publication n'est sélectionné */}
             {!selectedClient && (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <div className="text-lg font-medium mb-2">
@@ -594,6 +619,16 @@ export default function InvoiceModal({
                 </div>
                 <div className="text-sm">
                   Utilisez la recherche ci-dessus pour trouver et sélectionner un client
+                </div>
+              </div>
+            )}
+            {selectedClient && !selectedPublication && (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-lg font-medium mb-2">
+                  Sélectionnez une publication pour continuer
+                </div>
+                <div className="text-sm">
+                  Choisissez la publication concernée par cette facture
                 </div>
               </div>
             )}
@@ -611,7 +646,7 @@ export default function InvoiceModal({
           <Button
             className="flex-1"
             color='primary'
-            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType}
+            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication}
             onPress={handleSave}
           >
             {selectedInvoice ? "Modifier" : "Ajouter"}
