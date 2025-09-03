@@ -44,8 +44,7 @@ export function ProspectModal({
     nomEtablissement: "",
     ville: "",
     telephone: "",
-    categorie1: "FOOD",
-    categorie2: undefined,
+    categorie: ["FOOD"],
     statut: "a_contacter",
     datePriseContact: "",
     dateRelance: "",
@@ -66,8 +65,7 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie1: "FOOD",
-        categorie2: undefined,
+        categorie: ["FOOD"],
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
@@ -237,8 +235,7 @@ export function ProspectModal({
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie1: "FOOD",
-        categorie2: undefined,
+        categorie: ["FOOD"],
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
@@ -266,8 +263,7 @@ export function ProspectModal({
       nomEtablissement: "",
       ville: "",
       telephone: "",
-      categorie1: "FOOD",
-      categorie2: undefined,
+      categorie: ["FOOD"],
       statut: "a_contacter",
       datePriseContact: "",
       dateRelance: "",
@@ -298,13 +294,18 @@ export function ProspectModal({
             <StyledSelect
               isRequired
               id="categorie1"
-              selectedKeys={[newProspect.categorie1]}
-              onSelectionChange={(keys) =>
+              selectedKeys={[newProspect.categorie[0] ?? ""]}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys).filter(
+                  (key): key is "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" =>
+                    ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"].includes(key as string)
+                );
+                // Always keep categorie as a tuple of length 1 (for categorie1)
                 setNewProspect((prev) => ({
                   ...prev,
-                  categorie1: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
-                }))
-              }
+                  categorie: [selected[0] ?? prev.categorie[0]],
+                }));
+              }}
             >
               <SelectItem key="FOOD">FOOD</SelectItem>
               <SelectItem key="SHOP">SHOP</SelectItem>
@@ -312,28 +313,29 @@ export function ProspectModal({
               <SelectItem key="FUN">FUN</SelectItem>
               <SelectItem key="BEAUTY">BEAUTY</SelectItem>
             </StyledSelect>
-            <FormLabel htmlFor="categorie" isRequired={false}>
-              Catégorie 2
-            </FormLabel>
-            <StyledSelect
+            {newProspect.categorie.length > 1 ? (
+              <div>
 
-              id="categorie2"
-              selectedKeys={[newProspect.categorie2 || ""]}
-              onSelectionChange={(keys) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  categorie2: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | undefined,
-                }))
-              }
-            >
-              <SelectItem key="">Aucune</SelectItem>
-              <SelectItem key="FOOD">FOOD</SelectItem>
-              <SelectItem key="SHOP">SHOP</SelectItem>
-              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-              <SelectItem key="FUN">FUN</SelectItem>
-              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-            </StyledSelect>
+                <FormLabel htmlFor="categorie" isRequired={false}>
+                  Catégorie 2
+                </FormLabel>
+                <StyledSelect
 
+                  id="categorie2"
+                  selectedKeys={[newProspect.categorie[1] || ""]}
+                  onSelectionChange={(keys) =>
+                    Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none') == "none" ? setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] })) : setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0], ...Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY")] }))
+                  }
+                >
+                  <SelectItem key="none">Aucune</SelectItem>
+                  <SelectItem key="FOOD">FOOD</SelectItem>
+                  <SelectItem key="SHOP">SHOP</SelectItem>
+                  <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                  <SelectItem key="FUN">FUN</SelectItem>
+                  <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                </StyledSelect>
+              </div>
+            ) : <Button color='primary' onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie</Button>}
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>

@@ -166,15 +166,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const prospects = pageRecords.map((record: any) => {
         const catIds = record.get('Catégorie') || [];
-        const catName1 = Array.isArray(catIds) && catIds.length > 0 ? (categoryNames[catIds[0]] || catIds[0]) : '';
-        const catName2 = Array.isArray(catIds) && catIds.length > 1 ? (categoryNames[catIds[1]] || catIds[1]) : '';
+        const catName = catIds.length > 0 ? catIds.map((id: string) => categoryNames[id]) : [];
         const spIds = record.get('Suivi par') || [];
         const suiviPar = Array.isArray(spIds) && spIds.length > 0 ? (suiviNames[spIds[0]] || spIds[0]) : '';
+        console.log("catName", catName);
+
         return {
           id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
-          categorie1: catName1,
-          categorie2: catName2,
+          categorie: catName,
           ville: record.get('Ville'),
           telephone: record.get('Téléphone'),
           suiviPar,
@@ -253,15 +253,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           collabRecords.forEach((c: any) => { suiviNames[c.id] = `${c.get('Prénom') || ''} ${c.get('Nom') || ''}`.trim(); });
         }
 
-        const catName1 = Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0 ? (categoryNames[catIdsOnRecord[0]] || catIdsOnRecord[0]) : '';
-        const catName2 = Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 1 ? (categoryNames[catIdsOnRecord[1]] || catIdsOnRecord[1]) : '';
-        const spName = Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0 ? (suiviNames[suiviIdsOnRecord[0]] || suiviIdsOnRecord[0]) : '';
+        const catName = Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0
+          ? catIdsOnRecord.map((id: string) => categoryNames[id])
+          : [];
+        const spName = Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0
+          ? (suiviNames[suiviIdsOnRecord[0]] || suiviIdsOnRecord[0])
+          : '';
+
+        console.log(catName, spName);
 
         const prospect = {
           id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
-          categorie1: catName1,
-          categorie2: catName2,
+          categorie: catName,
           ville: record.get('Ville'),
           telephone: record.get('Téléphone'),
           suiviPar: spName,

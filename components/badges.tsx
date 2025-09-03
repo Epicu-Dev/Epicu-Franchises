@@ -15,9 +15,12 @@ export const getStatusBadgeColor = (status: string) => {
 };
 
 // Fonction pour obtenir la couleur du badge de catégorie
-export const getCategoryBadgeColor = (category: string) => {
+export const getCategoryBadgeColor = (category?: string) => {
+    if (category === undefined) {
+        return "bg-gray-50/10 text-gray-300 border-gray-200";
+    }
     // Utiliser une approche dynamique pour les catégories
-    const categoryLower = category.toLowerCase();
+    const categoryLower = category?.toLowerCase();
 
     // Mapper les catégories communes à des couleurs
     if (categoryLower.includes('restaurant') || categoryLower.includes('food') || categoryLower.includes('café')) {

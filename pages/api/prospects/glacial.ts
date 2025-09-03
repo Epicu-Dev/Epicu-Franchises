@@ -112,7 +112,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     const prospects = pageRecords.map((record: any) => {
       const catIds = record.get('Catégorie') || [];
-      const catName = Array.isArray(catIds) && catIds.length > 0 ? (categoryNames[catIds[0]] || catIds[0]) : '';
+      const catName = catIds.length > 0 ? catIds.map((id: string) => categoryNames[id]) : [];
       const spIds = record.get('Suivi par') || [];
       const suiviPar = Array.isArray(spIds) && spIds.length > 0 ? (suiviNames[spIds[0]] || spIds[0]) : '';
 

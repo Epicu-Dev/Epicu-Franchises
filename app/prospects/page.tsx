@@ -282,8 +282,7 @@ export default function ProspectsPage() {
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
-      categorie1: prospect.categorie1 as any,
-      categorie2: prospect.categorie2 as any,
+      categorie: prospect.categorie as any,
       statut: selectedTab as any,
       datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
@@ -311,8 +310,7 @@ export default function ProspectsPage() {
         nomEtablissement: prospectToConvert.nomEtablissement,
         ville: prospectToConvert.ville,
         telephone: prospectToConvert.telephone,
-        categorie1: prospectToConvert.categorie1,
-        categorie2: prospectToConvert.categorie2,
+        categorie: prospectToConvert.categorie,
         email: prospectToConvert.email,
         commentaires: prospectToConvert.commentaires,
         adresse: prospectToConvert.adresse,
@@ -352,8 +350,7 @@ export default function ProspectsPage() {
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
-      categorie1: prospect.categorie1 as any,
-      categorie2: prospect.categorie2 as any,
+      categorie: prospect.categorie as any,
       statut: selectedTab as any,
       datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
@@ -368,8 +365,7 @@ export default function ProspectsPage() {
       id: '',
       raisonSociale: prospect.nomEtablissement,
       ville: prospect.ville,
-      categorie1: prospect.categorie1,
-      categorie2: prospect.categorie2,
+      categorie: prospect.categorie,
       telephone: prospect.telephone || '',
       nomEtablissement: prospect.nomEtablissement,
       email: prospect.email || '',
@@ -574,7 +570,7 @@ export default function ProspectsPage() {
                 <TableBody className="mt-4">
                   {prospects.length === 0 ? (
                     <TableRow>
-                      <TableCell className="text-center" colSpan={14}>
+                      <TableCell className="text-center" colSpan={11}>
                         <div className="py-20 text-gray-500">
                           {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
                             <div>
@@ -622,7 +618,7 @@ export default function ProspectsPage() {
                             color="primary"
                             variant="bordered"
                             size="sm"
-                            endContent={<ArrowRightIcon />}
+                            endContent={<ArrowRightIcon className="h-4 w-4" />}
                             onPress={() => openConvertModal(prospect)}
                           >
                             Convertir
@@ -641,10 +637,10 @@ export default function ProspectsPage() {
                           </Button>
                         </TableCell>
                         <TableCell className="font-light">
-                          <CategoryBadge category={prospect.categorie1} />
+                          <CategoryBadge category={prospect.categorie[0]} />
                           {
-                            prospect.categorie2 && (
-                              <CategoryBadge className="ml-2" category={prospect.categorie2} />
+                            prospect.categorie.length > 1 && (
+                              <CategoryBadge className="ml-2" category={prospect.categorie[1] || ''} />
                             )
                           }
 
