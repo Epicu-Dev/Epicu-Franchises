@@ -200,12 +200,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const telephone = body['Téléphone'] || body.telephone || null;
         const categorieRaw = body['Catégorie'] || body.categorie || null;
         const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
+        const dateRelance = body['Date de relance'] || body.dateRelance || null;
         const commentaires = body['Commentaires'] || body.commentaires || null;
         const email = body['Email'] || body.email || null;
         const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'] || body.suivi || null;
 
-        // Only require the establishment name like GET is tolerant
+        // Require establishment name and both date fields
         if (!nom) return res.status(400).json({ error: `Missing required field: Nom de l'établissement` });
+        if (!datePrise) return res.status(400).json({ error: `Missing required field: Date de prise de contact` });
+        if (!dateRelance) return res.status(400).json({ error: `Missing required field: Date de relance` });
 
         const fieldsToCreate: any = {};
         fieldsToCreate["Nom de l'établissement"] = nom;
@@ -213,6 +216,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (email) fieldsToCreate['Email'] = email;
         if (datePrise) fieldsToCreate['Date de prise de contact'] = datePrise;
         if (commentaires) fieldsToCreate['Commentaires'] = commentaires;
+        if (dateRelance) fieldsToCreate['Date de relance'] = dateRelance;
 
         if (villeRaw) {
           const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
@@ -258,6 +262,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           telephone: record.get('Téléphone'),
           suiviPar: spName,
           datePriseContact: record.get('Date de prise de contact'),
+          dateRelance: record.get('Date de relance'),
           commentaires: record.get('Commentaires'),
           email: record.get('Email'),
           adresse: record.get('Adresse'),
@@ -276,12 +281,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const id = (req.query.id as string) || body.id;
         if (!id) return res.status(400).json({ error: 'id requis' });
 
+        // Fetch existing to determine current date fields
+        const existing = await base(TABLE_NAME).find(id);
+        const existingDatePrise = existing.get('Date de prise de contact') || null;
+        const existingDateRelance = existing.get('Date de relance') || null;
+
         const fieldsToUpdate: any = {};
         if (Object.prototype.hasOwnProperty.call(body, "Nom de l'établissement")) fieldsToUpdate["Nom de l'établissement"] = body["Nom de l'établissement"];
         if (Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fieldsToUpdate['Téléphone'] = body['Téléphone'];
         if (Object.prototype.hasOwnProperty.call(body, 'Date de prise de contact')) fieldsToUpdate['Date de prise de contact'] = body['Date de prise de contact'];
         if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
         if (Object.prototype.hasOwnProperty.call(body, 'Email')) fieldsToUpdate['Email'] = body['Email'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) fieldsToUpdate['Date de relance'] = body['Date de relance'];
 
         if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
           const villeRaw = body['Ville EPICU'];
@@ -300,6 +311,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const suiviIds = await resolveCollaboratorIds(raw);
           if (suiviIds.length > 0) fieldsToUpdate['Suivi par'] = suiviIds; else fieldsToUpdate['Suivi par'] = [];
         }
+
+        const resultingDatePrise = Object.prototype.hasOwnProperty.call(fieldsToUpdate, 'Date de prise de contact') ? fieldsToUpdate['Date de prise de contact'] : existingDatePrise;
+        const resultingDateRelance = Object.prototype.hasOwnProperty.call(fieldsToUpdate, 'Date de relance') ? fieldsToUpdate['Date de relance'] : existingDateRelance;
+
+        if (!resultingDatePrise) return res.status(400).json({ error: `Missing required field after update: Date de prise de contact` });
+        if (!resultingDateRelance) return res.status(400).json({ error: `Missing required field after update: Date de relance` });
 
         if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 

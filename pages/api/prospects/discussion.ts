@@ -168,11 +168,13 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         : '';
 
       return {
+        id: record.id,
         nomEtablissement: record.get("Nom de l'établissement"),
         categorie: catName,
         ville: record.get('Ville'),
         suiviPar,
         commentaires: record.get('Commentaires'),
+        datePriseContact: record.get('Date de prise de contact'),
         dateRelance: record.get('Date de relance'),
         telephone: record.get('Téléphone'),
         email: record.get('Email'),
