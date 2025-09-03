@@ -10,6 +10,9 @@ import {
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Tabs, Tab } from "@heroui/tabs";
+
+import { useUser } from "@/contexts/user-context";
 
 interface SubscribersData {
   foodSubscribers: string;
@@ -34,24 +37,77 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
   initialData,
   month,
 }) => {
+  const { userProfile } = useUser();
   const [formData, setFormData] = useState<SubscribersData>(initialData);
+  const [activeTab, setActiveTab] = useState<string>("");
+  const [cityData, setCityData] = useState<Record<string, SubscribersData>>({});
+
+  // Vérifier si l'utilisateur a plusieurs villes
+  const hasMultipleCities = userProfile?.villes && userProfile.villes.length > 1;
 
   useEffect(() => {
     setFormData(initialData);
-  }, [initialData, isOpen]);
+    
+    // Initialiser les données par ville si l'utilisateur a plusieurs villes
+    if (hasMultipleCities && userProfile?.villes) {
+      const initialCityData: Record<string, SubscribersData> = {};
+
+      userProfile.villes.forEach(city => {
+        const cityKey = city.ville.toLowerCase().replace(/\s+/g, '-');
+
+        initialCityData[cityKey] = initialData;
+      });
+
+      setCityData(initialCityData);
+      
+      // Définir le premier tab comme actif
+      if (userProfile.villes.length > 0) {
+        const firstCityKey = userProfile.villes[0].ville.toLowerCase().replace(/\s+/g, '-');
+
+        setActiveTab(firstCityKey);
+        setFormData(initialCityData[firstCityKey] || initialData);
+      }
+    }
+  }, [initialData, isOpen, hasMultipleCities, userProfile?.villes]);
 
   const handleInputChange = (field: keyof SubscribersData, value: string) => {
     // Permettre seulement les nombres
     if (value === "" || /^\d+$/.test(value)) {
-      setFormData(prev => ({
-        ...prev,
+      const newFormData = {
+        ...formData,
         [field]: value
-      }));
+      };
+
+      setFormData(newFormData);
+      
+      // Mettre à jour les données de la ville active si l'utilisateur a plusieurs villes
+      if (hasMultipleCities && activeTab) {
+        setCityData(prev => ({
+          ...prev,
+          [activeTab]: newFormData
+        }));
+      }
+    }
+  };
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    
+    // Charger les données de la ville sélectionnée
+    if (hasMultipleCities) {
+      const cityFormData = cityData[key] || initialData;
+
+      setFormData(cityFormData);
     }
   };
 
   const handleSave = () => {
-    onSave(formData);
+    // Si l'utilisateur a plusieurs villes, sauvegarder les données de la ville active
+    if (hasMultipleCities && activeTab) {
+      onSave(cityData[activeTab] || formData);
+    } else {
+      onSave(formData);
+    }
     onClose();
   };
 
@@ -109,6 +165,27 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
             <p className="text-sm font-light">
               Modifiez les nombres d&apos;abonnés pour chaque catégorie :
             </p>
+
+            {/* Tabs conditionnels pour les villes */}
+            {hasMultipleCities && userProfile?.villes && (
+              <Tabs
+                className="w-full"
+                classNames={{
+                  cursor: "w-[50px] left-[12px] h-1 rounded",
+                  tab: "pb-6 data-[selected=true]:font-semibold text-base font-light",
+                }}
+                selectedKey={activeTab}
+                variant="underlined"
+                onSelectionChange={(key) => handleTabChange(key as string)}
+              >
+                {userProfile.villes.map((city) => (
+                  <Tab
+                    key={city.ville.toLowerCase().replace(/\s+/g, '-')}
+                    title={city.ville}
+                  />
+                ))}
+              </Tabs>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {categories.map((category) => (

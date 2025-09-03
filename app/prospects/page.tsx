@@ -29,44 +29,11 @@ import ConvertProspectModal from "@/components/convert-prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
 import { useUser } from "@/contexts/user-context";
-
-interface Prospect {
-  id: string;
-  siret: string;
-  nomEtablissement: string;
-  ville: string;
-  telephone: string;
-  categorie: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
-  statut: "a_contacter" | "en_discussion" | "glacial";
-  datePremierRendezVous: string;
-  dateRelance: string;
-  vientDeRencontrer: boolean;
-  commentaire: string;
-  suiviPar: string;
-  email?: string;
-  adresse?: string;
-}
-
-interface ApiProspect {
-  id: string;
-  nomEtablissement: string;
-  categorie: string;
-  ville: string;
-  suiviPar: string;
-  commentaires: string;
-  dateRelance: string;
-  telephone?: string;
-  datePremierRendezVous?: string;
-  vientDeRencontrer?: boolean;
-  email?: string;
-  adresse?: string;
-  siret?: string;
-}
-
+import { Prospect } from "@/types/prospect";
 
 export default function ProspectsPage() {
   const { userProfile } = useUser();
-  const [prospects, setProspects] = useState<ApiProspect[]>([]);
+  const [prospects, setProspects] = useState<Prospect[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
   const [nextOffset, setNextOffset] = useState<number | null>(0);
@@ -307,21 +274,19 @@ export default function ProspectsPage() {
 
 
 
-  const handleEditProspect = (prospect: ApiProspect) => {
+  const handleEditProspect = (prospect: Prospect) => {
     setError(null);
     // Convertir ApiProspect en Prospect pour l'édition
     const prospectForEdit: Prospect = {
       id: prospect.id,
-      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: prospect.datePremierRendezVous || '',
+      datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: prospect.vientDeRencontrer || false,
-      commentaire: prospect.commentaires,
+      commentaires: prospect.commentaires,
       suiviPar: prospect.suiviPar,
       email: prospect.email,
       adresse: prospect.adresse,
@@ -347,8 +312,7 @@ export default function ProspectsPage() {
         telephone: prospectToConvert.telephone,
         categorie: prospectToConvert.categorie,
         email: prospectToConvert.email,
-        numeroSiret: prospectToConvert.siret,
-        commentaire: prospectToConvert.commentaire,
+        commentaires: prospectToConvert.commentaires,
         adresse: prospectToConvert.adresse,
       };
 
@@ -379,20 +343,18 @@ export default function ProspectsPage() {
     }
   };
 
-  const openConvertModal = (prospect: ApiProspect) => {
+  const openConvertModal = (prospect: Prospect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
       id: prospect.id,
-      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: prospect.datePremierRendezVous || '',
+      datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: prospect.vientDeRencontrer || false,
-      commentaire: prospect.commentaires,
+      commentaires: prospect.commentaires,
       suiviPar: prospect.suiviPar,
       email: prospect.email,
       adresse: prospect.adresse,
@@ -407,8 +369,7 @@ export default function ProspectsPage() {
       telephone: prospect.telephone || '',
       nomEtablissement: prospect.nomEtablissement,
       email: prospect.email || '',
-      numeroSiret: prospect.siret || '',
-      dateSignatureContrat: '',
+      datePriseContact: '',
       datePublicationContenu: '',
       datePublicationFacture: '',
       statutPaiementContenu: 'En attente' as const,
@@ -571,10 +532,9 @@ export default function ProspectsPage() {
                   <TableColumn className="font-light text-sm">Modifier</TableColumn>
 
                   <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-                  <TableColumn className="font-light text-sm">SIRET</TableColumn>
                   <TableColumn className="font-light text-sm">Ville</TableColumn>
                   <TableColumn className="font-light text-sm">Téléphone</TableColumn>
-                  <TableColumn className="font-light text-sm">Date premier rendez-vous</TableColumn>
+                  <TableColumn className="font-light text-sm">Date premier contact</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="categorie"
@@ -602,7 +562,6 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
-                  <TableColumn className="font-light text-sm">Vient de rencontrer</TableColumn>
                   <TableColumn className="font-light text-sm">Email</TableColumn>
                   <TableColumn className="font-light text-sm">Adresse</TableColumn>
                   <TableColumn className="font-light text-sm">Commentaire</TableColumn>
@@ -679,12 +638,11 @@ export default function ProspectsPage() {
                         <TableCell className="font-light py-5">
                           {prospect.nomEtablissement}
                         </TableCell>
-                        <TableCell className="font-light">{prospect.siret}</TableCell>
                         <TableCell className="font-light">{prospect.ville}</TableCell>
                         <TableCell className="font-light">{prospect.telephone}</TableCell>
                         <TableCell className="font-light">
-                          {prospect.datePremierRendezVous
-                            ? new Date(prospect.datePremierRendezVous).toLocaleDateString('fr-FR', {
+                          {prospect.datePriseContact
+                            ? new Date(prospect.datePriseContact).toLocaleDateString('fr-FR', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
@@ -706,7 +664,6 @@ export default function ProspectsPage() {
                           }
                         </TableCell>
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
-                        <TableCell className="font-light">{prospect.vientDeRencontrer ? 'Oui' : 'Non'}</TableCell>
                         <TableCell className="font-light">{prospect.email}</TableCell>
                         <TableCell className="font-light">{prospect.adresse}</TableCell>
                         <TableCell className="font-light">{prospect.commentaires}</TableCell>

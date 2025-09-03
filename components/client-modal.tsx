@@ -16,35 +16,7 @@ import { Switch } from "@heroui/switch";
 
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
-
-interface Client {
-    id: string;
-    raisonSociale: string;
-    ville: string;
-    categorie: string;
-    telephone: string;
-    nomEtablissement: string;
-    email: string;
-    numeroSiret: string;
-    dateSignatureContrat: string;
-    datePublicationContenu: string;
-    datePublicationFacture: string;
-    statutPaiementContenu: "Payée" | "En attente" | "En retard";
-    montantFactureContenu: string;
-    montantPaye: string;
-    dateReglementFacture: string;
-    restantDu: string;
-    montantSponsorisation: string;
-    montantAddition: string;
-    factureContenu: string;
-    facturePublication: string;
-    commentaire: string;
-    commentaireCadeauGerant: string;
-    montantCadeau: string;
-    tirageAuSort: boolean;
-    adresse?: string;
-    statut?: "actif" | "inactif" | "prospect";
-}
+import { Client } from "@/types/client";
 
 interface ClientModalProps {
     isOpen: boolean;
@@ -203,10 +175,10 @@ export default function ClientModal({
                                     }}
                                     id="numeroSiret"
                                     placeholder="12345678901234"
-                                    value={editingClient.numeroSiret || ""}
+                                    value={editingClient.siret || ""}
                                     onChange={(e) =>
                                         setEditingClient(
-                                            editingClient ? { ...editingClient, numeroSiret: e.target.value } : null
+                                            editingClient ? { ...editingClient, siret: e.target.value } : null
                                         )
                                     }
                                 />

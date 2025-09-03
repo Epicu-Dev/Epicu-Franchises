@@ -23,39 +23,8 @@ import { StyledSelect } from "@/components/styled-select";
 import ClientModal from "@/components/client-modal";
 import { ToastContainer } from "@/components";
 import { Switch } from "@heroui/switch";
+import { Client } from "@/types/client";
 
-interface Client {
-  id: string;
-  raisonSociale: string;
-  ville: string;
-  categorie: string;
-  telephone: string;
-  nomEtablissement: string;
-  email: string;
-  numeroSiret: string;
-  dateSignatureContrat: string;
-  datePublicationContenu: string;
-  datePublicationFacture: string;
-  statutPaiementContenu: "Payée" | "En attente" | "En retard";
-  montantFactureContenu: string;
-  montantPaye: string;
-  dateReglementFacture: string;
-  restantDu: string;
-  montantSponsorisation: string;
-  montantAddition: string;
-  factureContenu: string;
-  facturePublication: string;
-  commentaire: string;
-  commentaireCadeauGerant: string;
-  montantCadeau: string;
-  tirageAuSort: boolean;
-  adresse?: string;
-  statut?: "actif" | "inactif" | "prospect";
-  nombreVues?: number;
-  nombreAbonnes?: number;
-  faitGagnes?: string;
-  FACTURES?: any[];
-}
 
 export default function ClientsPage() {
   const { showWarning } = useToast();
@@ -98,25 +67,28 @@ export default function ClientsPage() {
     { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
     { key: 'nomEtablissement', label: 'Nom établissement', sortable: false },
     { key: 'raisonSociale', label: 'Raison sociale', sortable: false },
-    { key: 'ville', label: 'Ville', sortable: false },
-    { key: 'telephone', label: 'Téléphone', sortable: false },
-    { key: 'email', label: 'Email', sortable: false },
-    { key: 'numeroSiret', label: 'SIRET', sortable: false },
+    { key: 'siret', label: 'Numéro SIRET', sortable: false, field: 'siret' },
+    { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
+    { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
+    { key: 'email', label: 'Mail', sortable: false, field: 'email' },
+
+
     { key: 'dateSignatureContrat', label: 'Date signature contrat', sortable: true, field: 'dateSignatureContrat' },
-    { key: 'datePublicationContenu', label: 'Date publication contenu', sortable: true, field: 'datePublicationContenu' },
-    { key: 'datePublicationFacture', label: 'Date envoi facture', sortable: true, field: 'datePublicationFacture' },
+    { key: 'datePublicationContenu', label: 'Date de publication', sortable: true, field: 'datePublicationContenu' },
+    { key: 'datePublicationFacture', label: 'Envoie facture contenu', sortable: true, field: 'datePublicationFacture' },
+    { key: 'montantFactureTournage', label: 'Montant facture tournage', sortable: true, field: 'montantFactureTournage' },
     { key: 'statutPaiementContenu', label: 'Statut paiement', sortable: true, field: 'statutPaiementContenu' },
     { key: 'montantFactureContenu', label: 'Montant facturé', sortable: false },
     { key: 'montantPaye', label: 'Montant payé', sortable: false },
     { key: 'restantDu', label: 'Restant dû', sortable: false },
-    { key: 'montantSponsorisation', label: 'Sponsorisation', sortable: false },
-    { key: 'montantAddition', label: 'Addition', sortable: false },
+    { key: 'montantSponsorisation', label: 'Montant sponsorisation', sortable: false },
     { key: 'montantCadeau', label: 'Montant cadeau', sortable: false },
+    { key: 'montantAddition', label: 'Montant de l\'addition', sortable: false },
+    { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'tirageAuSort', label: 'Tirage au sort', sortable: false },
-    { key: 'commentaire', label: 'Commentaire', sortable: false },
-    { key: 'commentaireCadeauGerant', label: 'Commentaire cadeau', sortable: false },
     { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
     { key: 'nombreAbonnes', label: 'Nombre abonnés', sortable: false },
+    { key: 'commentaire', label: 'Commentaire', sortable: false },
   ];
 
   // Configuration pour le mode RDV
@@ -538,10 +510,10 @@ export default function ClientsPage() {
                                       </TableCell>
                                     );
                                     break;
-                                  case 'numeroSiret':
+                                  case 'siret':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.numeroSiret}
+                                        {client.siret}
                                       </TableCell>
                                     );
                                     break;
@@ -591,6 +563,13 @@ export default function ClientsPage() {
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
                                         <StatusBadge status={client.statutPaiementContenu || "En attente"} />
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantFactureTournage':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.facturePublication || "-"}
                                       </TableCell>
                                     );
                                     break;
@@ -671,13 +650,7 @@ export default function ClientsPage() {
                                       </TableCell>
                                     );
                                     break;
-                                  case 'faitGagnes':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.faitGagnes || "-"}
-                                      </TableCell>
-                                    );
-                                    break;
+
                                 }
                               });
                             return cells;

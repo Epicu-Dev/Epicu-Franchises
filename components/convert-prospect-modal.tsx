@@ -16,22 +16,7 @@ import { Switch } from "@heroui/switch";
 
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
-
-interface Prospect {
-    id?: string;
-    siret: string;
-    nomEtablissement: string;
-    ville: string;
-    telephone: string;
-    categorie: string;
-    statut: string;
-    datePremierRendezVous: string;
-    dateRelance: string;
-    vientDeRencontrer: boolean;
-    commentaire: string;
-    email?: string;
-    adresse?: string;
-}
+import { Prospect } from "@/types/prospect";
 
 interface Client {
     id: string;
@@ -95,7 +80,7 @@ export default function ConvertProspectModal({
                     Convertir le prospect en client
                 </ModalHeader>
 
-                                <ModalBody className="max-h-[70vh] overflow-y-auto">
+                <ModalBody className="max-h-[70vh] overflow-y-auto">
                     {prospect && editingClient && (
                         <div className="space-y-6">
                             {/* Informations générales */}

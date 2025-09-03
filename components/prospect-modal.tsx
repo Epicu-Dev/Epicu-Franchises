@@ -17,22 +17,7 @@ import { useUser } from "../contexts/user-context";
 
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
-
-interface Prospect {
-  id?: string;
-  siret: string;
-  nomEtablissement: string;
-  ville: string;
-  telephone: string;
-  categorie: string;
-  statut: string;
-  datePremierRendezVous: string;
-  dateRelance: string;
-  vientDeRencontrer: boolean;
-  commentaire: string;
-  email?: string;
-  adresse?: string;
-}
+import { Prospect } from "@/types/prospect";
 
 interface ProspectModalProps {
   isOpen: boolean;
@@ -54,16 +39,16 @@ export function ProspectModal({
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [newProspect, setNewProspect] = useState<Prospect>({
-    siret: "",
+    id: "",
     nomEtablissement: "",
     ville: "",
     telephone: "",
-    categorie: "",
-    statut: "",
-    datePremierRendezVous: "",
+    categorie: "FOOD",
+    statut: "a_contacter",
+    datePriseContact: "",
     dateRelance: "",
-    vientDeRencontrer: false,
-    commentaire: "",
+    commentaires: "",
+    suiviPar: "",
     email: "",
     adresse: "",
   });
@@ -75,16 +60,16 @@ export function ProspectModal({
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       setNewProspect({
-        siret: "",
+        id: "",
         nomEtablissement: "",
         ville: "",
         telephone: "",
         categorie: "FOOD",
         statut: "a_contacter",
-        datePremierRendezVous: "",
+        datePriseContact: "",
         dateRelance: "",
-        vientDeRencontrer: false,
-        commentaire: "",
+        commentaires: "",
+        suiviPar: "",
         email: "",
         adresse: "",
       });
@@ -118,11 +103,11 @@ export function ProspectModal({
           delete errors.telephone;
         }
         break;
-      case 'datePremierRendezVous':
+      case 'datePriseContact':
         if (!value) {
-          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
+          errors.datePriseContact = 'La date du premier contact est requise';
         } else {
-          delete errors.datePremierRendezVous;
+          delete errors.datePriseContact;
         }
         break;
       case 'dateRelance':
@@ -140,7 +125,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact', 'dateRelance'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -167,16 +152,14 @@ export function ProspectModal({
 
       // Adapter les données pour l'API Airtable
       const prospectData: Record<string, any> = {
-        'SIRET': newProspect.siret,
         "Nom de l'établissement": newProspect.nomEtablissement,
         'Ville EPICU': newProspect.ville,
         'Téléphone': newProspect.telephone,
         'Catégorie': newProspect.categorie,
         'Statut': newProspect.statut,
-        'Date du premier contact': newProspect.datePremierRendezVous,
+        'Date du premier contact': newProspect.datePriseContact,
         'Date de relance': newProspect.dateRelance,
-        'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
-        'Commentaires': newProspect.commentaire,
+        'Commentaires': newProspect.commentaires,
         'Email': newProspect.email,
         'Adresse': newProspect.adresse,
       };
@@ -212,16 +195,16 @@ export function ProspectModal({
 
       // Réinitialiser le formulaire et fermer le modal
       setNewProspect({
-        siret: "",
+        id: "",
         nomEtablissement: "",
         ville: "",
         telephone: "",
-        categorie: "",
-        statut: "",
-        datePremierRendezVous: "",
+        categorie: "FOOD",
+        statut: "a_contacter",
+        datePriseContact: "",
         dateRelance: "",
-        vientDeRencontrer: false,
-        commentaire: "",
+        commentaires: "",
+        suiviPar: "",
         email: "",
         adresse: "",
       });
@@ -240,16 +223,16 @@ export function ProspectModal({
     setError(null);
     setFieldErrors({});
     setNewProspect({
-      siret: "",
+      id: "",
       nomEtablissement: "",
       ville: "",
       telephone: "",
-      categorie: "",
-      statut: "",
-      datePremierRendezVous: "",
+      categorie: "FOOD",
+      statut: "a_contacter",
+      datePriseContact: "",
       dateRelance: "",
-      vientDeRencontrer: false,
-      commentaire: "",
+      commentaires: "",
+      suiviPar: "",
       email: "",
       adresse: "",
     });
@@ -269,21 +252,7 @@ export function ProspectModal({
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4">
-            <FormLabel htmlFor="siret" isRequired={true}>
-              N° SIRET
-            </FormLabel>
-            <Input
-              id="siret"
-              isRequired
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              placeholder="12345678901234"
-              value={newProspect.siret}
-              onChange={(e) =>
-                setNewProspect((prev) => ({ ...prev, siret: e.target.value }))
-              }
-            />
+            
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>
@@ -364,7 +333,7 @@ export function ProspectModal({
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  categorie: Array.from(keys)[0] as string,
+                  categorie: Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY",
                 }))
               }
             >
@@ -384,7 +353,7 @@ export function ProspectModal({
               onSelectionChange={(keys) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  statut: Array.from(keys)[0] as string,
+                  statut: Array.from(keys)[0] as "a_contacter" | "en_discussion" | "glacial",
                 }))
               }
             >
@@ -392,27 +361,27 @@ export function ProspectModal({
               <SelectItem key="en_discussion">En discussion</SelectItem>
               <SelectItem key="glacial">Glacial</SelectItem>
             </StyledSelect>
-            <FormLabel htmlFor="datePremierRendezVous" isRequired={true}>
-              Date du premier rendez-vous
+            <FormLabel htmlFor="datePriseContact" isRequired={true}>
+              Date du premier contact
             </FormLabel>
             <Input
               isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              errorMessage={fieldErrors.datePremierRendezVous}
-              id="datePremierRendezVous"
-              isInvalid={!!fieldErrors.datePremierRendezVous}
+              errorMessage={fieldErrors.datePriseContact}
+              id="datePriseContact"
+              isInvalid={!!fieldErrors.datePriseContact}
               type="date"
-              value={newProspect.datePremierRendezVous}
+              value={newProspect.datePriseContact}
               onChange={(e) => {
                 const value = e.target.value;
 
                 setNewProspect((prev) => ({
                   ...prev,
-                  datePremierRendezVous: value,
+                  datePriseContact: value,
                 }));
-                validateField('datePremierRendezVous', value);
+                validateField('datePriseContact', value);
               }}
             />
             <FormLabel htmlFor="dateRelance" isRequired={true}>
@@ -438,36 +407,21 @@ export function ProspectModal({
                 validateField('dateRelance', value);
               }}
             />
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">
-                Je viens de le rencontrer
-              </span>
-              <input
-                checked={newProspect.vientDeRencontrer}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) =>
-                  setNewProspect((prev) => ({
-                    ...prev,
-                    vientDeRencontrer: e.target.checked,
-                  }))
-                }
-              />
-            </div>
-            <FormLabel htmlFor="commentaire" isRequired={false}>
+            
+            <FormLabel htmlFor="commentaires" isRequired={false}>
               Commentaire
             </FormLabel>
             <Textarea
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="commentaire"
+              id="commentaires"
               placeholder="..."
-              value={newProspect.commentaire}
+              value={newProspect.commentaires}
               onChange={(e) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  commentaire: e.target.value,
+                  commentaires: e.target.value,
                 }))
               }
             />
@@ -532,7 +486,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact || !newProspect.dateRelance}
               isLoading={isLoading}
               onPress={handleSubmit}
             >
