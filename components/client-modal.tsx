@@ -18,7 +18,8 @@ import PublicationModal from "./publication-modal";
 
 import { FormLabel, CategoryBadge } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
-import { Client, Publication } from "@/types/client";
+import { Client } from "@/types/client";
+import { Publication } from "@/types/publication";
 
 interface ClientModalProps {
     isOpen: boolean;
@@ -48,7 +49,7 @@ export default function ClientModal({
     // Fonction de validation des champs requis
     const validateRequiredFields = () => {
         if (!editingClient) return false;
-        
+
         const requiredFields = [
             'categorie',
             'nomEtablissement',
@@ -90,7 +91,7 @@ export default function ClientModal({
     };
 
     const handleUpdatePublication = (updatedPublication: Publication) => {
-        const updatedPublications = publications.map(pub => 
+        const updatedPublications = publications.map(pub =>
             pub.id === updatedPublication.id ? updatedPublication : pub
         );
 
@@ -292,8 +293,8 @@ export default function ClientModal({
 
                                 {/* Liste des publications existantes */}
                                 {publications.map((publication, index) => (
-                                    <div 
-                                        key={publication.id} 
+                                    <div
+                                        key={publication.id}
                                         className="bg-page-bg p-4 rounded-lg flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                         role="button"
                                         tabIndex={0}
@@ -320,8 +321,8 @@ export default function ClientModal({
                                                 <div>Date de publication: {new Date(publication.datePublication).toLocaleDateString('fr-FR')}</div>
                                                 <div className="mt-1 flex items-center">
                                                     <span>Catégorie:</span>
-                                                    <CategoryBadge 
-                                                        category={editingClient.categorie} 
+                                                    <CategoryBadge
+                                                        category={editingClient.categorie}
                                                         className="ml-2"
                                                     />
                                                 </div>
@@ -341,7 +342,7 @@ export default function ClientModal({
                                         setIsPublicationModalOpen(true);
                                     }}
                                 >
-                                   
+
                                     Ajouter une publication
                                     <PlusIcon className="w-5 h-5 mr-2" />
                                 </Button>

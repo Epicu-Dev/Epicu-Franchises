@@ -16,8 +16,8 @@ import { Switch } from "@heroui/switch";
 
 import SlotSelectionModal from "./slot-selection-modal";
 import { FormLabel, StyledSelect } from "@/components";
+import { Publication } from "@/types/publication";
 
-import { Publication } from "@/types/client";
 
 interface PublicationModalProps {
     isOpen: boolean;
@@ -61,23 +61,23 @@ export default function PublicationModal({
         // Le format de date généré est "lundi 15 janvier 2024"
         // On va extraire les parties de la date
         const dateParts = slot.date.split(' ');
-        
+
         // Le format est: [jour_semaine, jour, mois, année]
         // Exemple: ["lundi", "15", "janvier", "2024"]
         const day = dateParts[1];
         const month = dateParts[2];
         const year = dateParts[3];
-        
+
         // Convertir en format ISO pour le champ
         const monthMap: { [key: string]: string } = {
             'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
             'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
             'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
         };
-        
+
         const monthNumber = monthMap[month.toLowerCase()];
         const formattedDate = `${year}-${monthNumber}-${day.padStart(2, '0')}`;
-        
+
         setFormData(prev => ({
             ...prev,
             datePublication: formattedDate
@@ -88,7 +88,7 @@ export default function PublicationModal({
     const validateRequiredFields = () => {
         const requiredFields = [
             'datePublication',
-            'dateEnvoiFactureCreation', 
+            'dateEnvoiFactureCreation',
             'montantFactureTournage',
             'dateEnvoiFacturePublication',
             'montantFacturePublication',
@@ -150,7 +150,7 @@ export default function PublicationModal({
     }, [editingPublication, isOpen]);
 
     const handleSubmit = () => {
-        if (editingPublication && onUpdatePublication) {    
+        if (editingPublication && onUpdatePublication) {
             // Mode édition
             const updatedPublication: Publication = {
                 ...editingPublication,
@@ -191,371 +191,371 @@ export default function PublicationModal({
 
     return (
         <>
-        <Modal
-            isOpen={isOpen}
-            scrollBehavior="inside"
-            size="2xl"
-            onOpenChange={onOpenChange}
-        >
-            <ModalContent>
-                <ModalHeader className="flex justify-center">
-                    {editingPublication ? "Modifier la publication" : "Ajouter une publication"}
-                </ModalHeader>
+            <Modal
+                isOpen={isOpen}
+                scrollBehavior="inside"
+                size="2xl"
+                onOpenChange={onOpenChange}
+            >
+                <ModalContent>
+                    <ModalHeader className="flex justify-center">
+                        {editingPublication ? "Modifier la publication" : "Ajouter une publication"}
+                    </ModalHeader>
 
-                <ModalBody className="max-h-[70vh] overflow-y-auto">
-                    <div className="space-y-6">
-                        {/* Date de publication */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="datePublication" isRequired={true}>
-                                Date de publication
-                            </FormLabel>
-                            <div
-                                className="p-3 border border-gray-300 rounded-lg bg-page-bg cursor-pointer hover:border-blue-400 transition-colors"
-                                onClick={() => setIsSlotModalOpen(true)}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setIsSlotModalOpen(true);
+                    <ModalBody className="max-h-[70vh] overflow-y-auto">
+                        <div className="space-y-6">
+                            {/* Date de publication */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="datePublication" isRequired={true}>
+                                    Date de publication
+                                </FormLabel>
+                                <div
+                                    className="p-3 border border-gray-300 rounded-lg bg-page-bg cursor-pointer hover:border-blue-400 transition-colors"
+                                    onClick={() => setIsSlotModalOpen(true)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setIsSlotModalOpen(true);
+                                        }
+                                    }}
+                                >
+                                    {formData.datePublication ? (
+                                        <span className="text-gray-900">
+                                            {new Date(formData.datePublication).toLocaleDateString('fr-FR', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })} - 18h00 - 19h00
+                                        </span>
+                                    ) : (
+                                        <span className="text-gray-500">
+                                            Cliquez pour sélectionner un créneau
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Date d'envoi facture création de contenu */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="dateEnvoiFactureCreation" isRequired={true}>
+                                    Date d&apos;envoi facture création de contenu
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="dateEnvoiFactureCreation"
+                                    type="date"
+                                    value={formData.dateEnvoiFactureCreation}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, dateEnvoiFactureCreation: e.target.value })
                                     }
-                                }}
-                            >
-                                {formData.datePublication ? (
-                                    <span className="text-gray-900">
-                                        {new Date(formData.datePublication).toLocaleDateString('fr-FR', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })} - 18h00 - 19h00
-                                    </span>
-                                ) : (
-                                    <span className="text-gray-500">
-                                        Cliquez pour sélectionner un créneau
-                                    </span>
-                                )}
+                                />
+                            </div>
+
+                            {/* Montant de la facture (tournage) */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="montantFactureTournage" isRequired={true}>
+                                    Montant de la facture (tournage)
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="montantFactureTournage"
+                                    placeholder="500€"
+                                    value={formData.montantFactureTournage}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, montantFactureTournage: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Facture du tournage */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="factureTournage" isRequired={true}>
+                                    Facture du tournage
+                                </FormLabel>
+                                <StyledSelect
+                                    isRequired
+                                    id="factureTournage"
+                                    selectedKeys={[formData.factureTournage]}
+                                    onSelectionChange={(keys) =>
+                                        setFormData({
+                                            ...formData,
+                                            factureTournage: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
+                                        })
+                                    }
+                                >
+                                    <SelectItem key="Payée">Payée</SelectItem>
+                                    <SelectItem key="En attente">En attente</SelectItem>
+                                    <SelectItem key="En retard">En retard</SelectItem>
+                                </StyledSelect>
+                            </div>
+
+                            {/* Date d'envoi facture de publication */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="dateEnvoiFacturePublication" isRequired={true}>
+                                    Date d&apos;envoi facture de publication
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="dateEnvoiFacturePublication"
+                                    type="date"
+                                    value={formData.dateEnvoiFacturePublication}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, dateEnvoiFacturePublication: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Montant de la facture (publication) */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="montantFacturePublication" isRequired={true}>
+                                    Montant de la facture (publication)
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="montantFacturePublication"
+                                    placeholder="750€"
+                                    value={formData.montantFacturePublication}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, montantFacturePublication: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Facture de publication */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="facturePublication" isRequired={true}>
+                                    Facture de publication
+                                </FormLabel>
+                                <StyledSelect
+                                    isRequired
+                                    id="facturePublication"
+                                    selectedKeys={[formData.facturePublication]}
+                                    onSelectionChange={(keys) =>
+                                        setFormData({
+                                            ...formData,
+                                            facturePublication: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
+                                        })
+                                    }
+                                >
+                                    <SelectItem key="Payée">Payée</SelectItem>
+                                    <SelectItem key="En attente">En attente</SelectItem>
+                                    <SelectItem key="En retard">En retard</SelectItem>
+                                </StyledSelect>
+                            </div>
+
+                            {/* Montant de la sponsorisation */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="montantSponsorisation" isRequired={true}>
+                                    Montant de la sponsorisation
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="montantSponsorisation"
+                                    placeholder="150€"
+                                    value={formData.montantSponsorisation}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, montantSponsorisation: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Montant de l'addition */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="montantAddition" isRequired={true}>
+                                    Montant de l&apos;addition
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="montantAddition"
+                                    placeholder="100€"
+                                    value={formData.montantAddition}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, montantAddition: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Bénéfice */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="benefice" isRequired={true}>
+                                    Bénéfice
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="benefice"
+                                    placeholder="1000€"
+                                    value={formData.benefice}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, benefice: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Cadeau du gérant pour le jeu concours */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="cadeauGerant" isRequired={false}>
+                                    Cadeau du gérant pour le jeu concours
+                                </FormLabel>
+                                <Textarea
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="cadeauGerant"
+                                    minRows={3}
+                                    placeholder="—"
+                                    value={formData.cadeauGerant}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, cadeauGerant: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Montant du cadeau */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="montantCadeau" isRequired={true}>
+                                    Montant du cadeau
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="montantCadeau"
+                                    placeholder="150€"
+                                    value={formData.montantCadeau}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, montantCadeau: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            {/* Tirage au sort effectué */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-base">Tirage au sort effectué</span>
+                                <Switch
+                                    isSelected={formData.tirageEffectue}
+                                    onValueChange={(checked) =>
+                                        setFormData({ ...formData, tirageEffectue: checked })
+                                    }
+                                />
+                            </div>
+
+                            {/* Nombre de vues */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="nombreVues" isRequired={true}>
+                                    Nombre de vues
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="nombreVues"
+                                    placeholder="139.973"
+                                    type="number"
+                                    value={formData.nombreVues.toString()}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, nombreVues: parseInt(e.target.value) || 0 })
+                                    }
+                                />
+                            </div>
+
+                            {/* Nombre d'abonnés fait gagnés aux gérants */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="nombreAbonnes" isRequired={true}>
+                                    Nombre d&apos;abonnés fait gagnés aux gérants
+                                </FormLabel>
+                                <Input
+                                    isRequired
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="nombreAbonnes"
+                                    placeholder="139.973"
+                                    type="number"
+                                    value={formData.nombreAbonnes.toString()}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, nombreAbonnes: parseInt(e.target.value) || 0 })
+                                    }
+                                />
+                            </div>
+
+                            {/* Commentaire */}
+                            <div className="space-y-4">
+                                <FormLabel htmlFor="commentaire" isRequired={false}>
+                                    Commentaire
+                                </FormLabel>
+                                <Textarea
+                                    classNames={{
+                                        inputWrapper: "bg-page-bg",
+                                    }}
+                                    id="commentaire"
+                                    minRows={3}
+                                    placeholder="—"
+                                    value={formData.commentaire}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, commentaire: e.target.value })
+                                    }
+                                />
                             </div>
                         </div>
+                    </ModalBody>
 
-                        {/* Date d'envoi facture création de contenu */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="dateEnvoiFactureCreation" isRequired={true}>
-                                Date d&apos;envoi facture création de contenu
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="dateEnvoiFactureCreation"
-                                type="date"
-                                value={formData.dateEnvoiFactureCreation}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, dateEnvoiFactureCreation: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Montant de la facture (tournage) */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="montantFactureTournage" isRequired={true}>
-                                Montant de la facture (tournage)
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="montantFactureTournage"
-                                placeholder="500€"
-                                value={formData.montantFactureTournage}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, montantFactureTournage: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Facture du tournage */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="factureTournage" isRequired={true}>
-                                Facture du tournage
-                            </FormLabel>
-                            <StyledSelect
-                                isRequired
-                                id="factureTournage"
-                                selectedKeys={[formData.factureTournage]}
-                                onSelectionChange={(keys) =>
-                                    setFormData({
-                                        ...formData,
-                                        factureTournage: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
-                                    })
-                                }
+                    <ModalFooter className="flex flex-col gap-3">
+                        <div className="flex justify-between gap-3">
+                            <Button
+                                className="flex-1 border-1"
+                                color='primary'
+                                isDisabled={isLoading}
+                                variant="bordered"
+                                onPress={handleCancel}
                             >
-                                <SelectItem key="Payée">Payée</SelectItem>
-                                <SelectItem key="En attente">En attente</SelectItem>
-                                <SelectItem key="En retard">En retard</SelectItem>
-                            </StyledSelect>
-                        </div>
-
-                        {/* Date d'envoi facture de publication */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="dateEnvoiFacturePublication" isRequired={true}>
-                                Date d&apos;envoi facture de publication
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="dateEnvoiFacturePublication"
-                                type="date"
-                                value={formData.dateEnvoiFacturePublication}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, dateEnvoiFacturePublication: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Montant de la facture (publication) */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="montantFacturePublication" isRequired={true}>
-                                Montant de la facture (publication)
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="montantFacturePublication"
-                                placeholder="750€"
-                                value={formData.montantFacturePublication}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, montantFacturePublication: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Facture de publication */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="facturePublication" isRequired={true}>
-                                Facture de publication
-                            </FormLabel>
-                            <StyledSelect
-                                isRequired
-                                id="facturePublication"
-                                selectedKeys={[formData.facturePublication]}
-                                onSelectionChange={(keys) =>
-                                    setFormData({
-                                        ...formData,
-                                        facturePublication: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
-                                    })
-                                }
+                                Annuler
+                            </Button>
+                            <Button
+                                className="flex-1"
+                                color='primary'
+                                isDisabled={isLoading || !validateRequiredFields()}
+                                isLoading={isLoading}
+                                onPress={handleSubmit}
                             >
-                                <SelectItem key="Payée">Payée</SelectItem>
-                                <SelectItem key="En attente">En attente</SelectItem>
-                                <SelectItem key="En retard">En retard</SelectItem>
-                            </StyledSelect>
+                                {editingPublication ? "Modifier" : "Ajouter"}
+                            </Button>
                         </div>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
 
-                        {/* Montant de la sponsorisation */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="montantSponsorisation" isRequired={true}>
-                                Montant de la sponsorisation
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="montantSponsorisation"
-                                placeholder="150€"
-                                value={formData.montantSponsorisation}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, montantSponsorisation: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Montant de l'addition */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="montantAddition" isRequired={true}>
-                                Montant de l&apos;addition
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="montantAddition"
-                                placeholder="100€"
-                                value={formData.montantAddition}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, montantAddition: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Bénéfice */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="benefice" isRequired={true}>
-                                Bénéfice
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="benefice"
-                                placeholder="1000€"
-                                value={formData.benefice}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, benefice: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Cadeau du gérant pour le jeu concours */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="cadeauGerant" isRequired={false}>
-                                Cadeau du gérant pour le jeu concours
-                            </FormLabel>
-                            <Textarea
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="cadeauGerant"
-                                minRows={3}
-                                placeholder="—"
-                                value={formData.cadeauGerant}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, cadeauGerant: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Montant du cadeau */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="montantCadeau" isRequired={true}>
-                                Montant du cadeau
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="montantCadeau"
-                                placeholder="150€"
-                                value={formData.montantCadeau}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, montantCadeau: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        {/* Tirage au sort effectué */}
-                        <div className="flex items-center justify-between">
-                            <span className="text-base">Tirage au sort effectué</span>
-                            <Switch
-                                isSelected={formData.tirageEffectue}
-                                onValueChange={(checked) =>
-                                    setFormData({ ...formData, tirageEffectue: checked })
-                                }
-                            />
-                        </div>
-
-                        {/* Nombre de vues */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="nombreVues" isRequired={true}>
-                                Nombre de vues
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="nombreVues"
-                                placeholder="139.973"
-                                type="number"
-                                value={formData.nombreVues.toString()}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, nombreVues: parseInt(e.target.value) || 0 })
-                                }
-                            />
-                        </div>
-
-                        {/* Nombre d'abonnés fait gagnés aux gérants */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="nombreAbonnes" isRequired={true}>
-                                Nombre d&apos;abonnés fait gagnés aux gérants
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="nombreAbonnes"
-                                placeholder="139.973"
-                                type="number"
-                                value={formData.nombreAbonnes.toString()}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, nombreAbonnes: parseInt(e.target.value) || 0 })
-                                }
-                            />
-                        </div>
-
-                        {/* Commentaire */}
-                        <div className="space-y-4">
-                            <FormLabel htmlFor="commentaire" isRequired={false}>
-                                Commentaire
-                            </FormLabel>
-                            <Textarea
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="commentaire"
-                                minRows={3}
-                                placeholder="—"
-                                value={formData.commentaire}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, commentaire: e.target.value })
-                                }
-                            />
-                        </div>
-                    </div>
-                </ModalBody>
-
-                <ModalFooter className="flex flex-col gap-3">
-                    <div className="flex justify-between gap-3">
-                        <Button
-                            className="flex-1 border-1"
-                            color='primary'
-                            isDisabled={isLoading}
-                            variant="bordered"
-                            onPress={handleCancel}
-                        >
-                            Annuler
-                        </Button>
-                        <Button
-                            className="flex-1"
-                            color='primary'
-                            isDisabled={isLoading || !validateRequiredFields()}
-                            isLoading={isLoading}
-                            onPress={handleSubmit}
-                        >
-                            {editingPublication ? "Modifier" : "Ajouter"}
-                        </Button>
-                    </div>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
-
-        {/* Modal de sélection de créneaux */}
-        <SlotSelectionModal
-            isOpen={isSlotModalOpen}
-            onClose={() => setIsSlotModalOpen(false)}
-            onSelectSlot={handleSlotSelection}
-        />
+            {/* Modal de sélection de créneaux */}
+            <SlotSelectionModal
+                isOpen={isSlotModalOpen}
+                onClose={() => setIsSlotModalOpen(false)}
+                onSelectSlot={handleSlotSelection}
+            />
         </>
     );
 }

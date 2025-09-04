@@ -21,29 +21,8 @@ import {
 import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge, SortableColumnHeader, InvoiceModal } from "@/components";
+import { Invoice } from "@/types/invoice";
 
-interface Invoice {
-  id: string;
-  categorie: string;
-  nomEtablissement: string;
-  date: string;
-  montant: number;
-  typePrestation: string;
-  statut: string;
-  commentaire?: string;
-}
-
-interface Client {
-  id: string;
-  nomEtablissement: string;
-  raisonSociale: string;
-  ville?: string;
-  categorie?: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
-  numeroSiret?: string;
-  email?: string;
-  telephone?: string;
-  adresse?: string;
-}
 
 interface PaginationInfo {
   hasMore: boolean;

@@ -191,8 +191,7 @@ export function ProspectModal({
         "Nom de l'établissement": newProspect.nomEtablissement,
         'Ville EPICU': newProspect.ville,
         'Téléphone': newProspect.telephone,
-        'Catégorie 1': newProspect.categorie1,
-        'Catégorie 2': newProspect.categorie2,
+        'Catégorie': newProspect.categorie,
         'Statut': newProspect.statut,
         'Date de prise de contact': newProspect.datePriseContact,
         'Date de relance': newProspect.dateRelance,
@@ -316,12 +315,10 @@ export function ProspectModal({
             </StyledSelect>
             {newProspect.categorie.length > 1 ? (
               <div>
-
                 <FormLabel htmlFor="categorie" isRequired={false}>
                   Catégorie 2
                 </FormLabel>
                 <StyledSelect
-
                   id="categorie2"
                   selectedKeys={[newProspect.categorie[1] || ""]}
                   onSelectionChange={(keys) =>

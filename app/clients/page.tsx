@@ -71,23 +71,22 @@ export default function ClientsPage() {
     { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
     { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
     { key: 'email', label: 'Mail', sortable: false, field: 'email' },
-
-
+    { key: 'nombreAbonnesFood', label: 'Nombre abonnés food', sortable: false },
     { key: 'dateSignatureContrat', label: 'Date signature contrat', sortable: true, field: 'dateSignatureContrat' },
     { key: 'datePublicationContenu', label: 'Date de publication', sortable: true, field: 'datePublicationContenu' },
     { key: 'datePublicationFacture', label: 'Envoie facture contenu', sortable: true, field: 'datePublicationFacture' },
     { key: 'montantFactureTournage', label: 'Montant facture tournage', sortable: true, field: 'montantFactureTournage' },
-    { key: 'statutPaiementContenu', label: 'Statut paiement', sortable: true, field: 'statutPaiementContenu' },
-    { key: 'montantFactureContenu', label: 'Montant facturé', sortable: false },
-    { key: 'montantPaye', label: 'Montant payé', sortable: false },
-    { key: 'restantDu', label: 'Restant dû', sortable: false },
-    { key: 'montantSponsorisation', label: 'Montant sponsorisation', sortable: false },
-    { key: 'montantCadeau', label: 'Montant cadeau', sortable: false },
-    { key: 'montantAddition', label: 'Montant de l\'addition', sortable: false },
+    { key: 'factureTournage', label: 'Facture tournage', sortable: false },
+    { key: 'dateEnvoiFacturePublication', label: 'Envoie de facture publication', sortable: false },
+    { key: 'montantFacturePublication', label: 'Montant facture publication', sortable: false },
+    { key: 'facturePublication', label: 'Facture publication', sortable: false },
+    { key: 'montantSponsorisation', label: 'Montant de la sponsorisation', sortable: false },
+    { key: 'montantEdition', label: 'Montant de l\'édition', sortable: false },
+    { key: 'benefices', label: 'Bénéfices', sortable: false },
     { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'tirageAuSort', label: 'Tirage au sort', sortable: false },
     { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
-    { key: 'nombreAbonnes', label: 'Nombre abonnés', sortable: false },
+    { key: 'nombreAbonnes', label: 'Nombre d\'abonnés', sortable: false },
     { key: 'commentaire', label: 'Commentaire', sortable: false },
   ];
 
@@ -434,7 +433,7 @@ export default function ClientsPage() {
                             const cells: JSX.Element[] = [];
 
                             // Cellule Modifier toujours visible en premier
-                            const hasFactures = client.FACTURES && client.FACTURES.length > 0;
+                            const hasFactures = client.invoices && client.invoices.length > 0;
                             cells.push(
                               <TableCell key="modifier" className="font-light">
                                 <div className="relative">
@@ -534,13 +533,14 @@ export default function ClientsPage() {
                                   case 'datePublicationContenu':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.datePublicationContenu
-                                          ? new Date(client.datePublicationContenu).toLocaleDateString('fr-FR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric'
-                                          }).replace(/\//g, '.')
-                                          : "-"
+                                        {
+                                          client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.datePublication || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
                                         }
                                       </TableCell>
                                     );
@@ -548,105 +548,257 @@ export default function ClientsPage() {
                                   case 'datePublicationFacture':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.datePublicationFacture
-                                          ? new Date(client.datePublicationFacture).toLocaleDateString('fr-FR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric'
-                                          }).replace(/\//g, '.')
-                                          : "-"
+                                        {
+                                          client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.dateEnvoiFactureCreation || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
                                         }
+
                                       </TableCell>
                                     );
                                     break;
-                                  case 'statutPaiementContenu':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        <StatusBadge status={client.statutPaiementContenu || "En attente"} />
-                                      </TableCell>
-                                    );
-                                    break;
+
                                   case 'montantFactureTournage':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.facturePublication || "-"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantFactureTournage || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'montantFactureContenu':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.montantFactureContenu}
+                                        {client.invoices && client.invoices.length > 0
+                                          ? client.invoices.map((invoice, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {invoice.montant || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
-                                  case 'montantPaye':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.montantPaye}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'restantDu':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.restantDu}
-                                      </TableCell>
-                                    );
-                                    break;
+
                                   case 'montantSponsorisation':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.montantSponsorisation}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantSponsorisation || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'montantAddition':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.montantAddition}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantAddition || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'montantCadeau':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.montantCadeau}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantCadeau || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'tirageAuSort':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.tirageAuSort ? "Oui" : "Non"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.tirageEffectue ? "Oui" : "Non"}
+                                            </div>
+                                          ))
+                                          : '-'
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'commentaire':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.commentaire || "-"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.commentaire || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'commentaireCadeauGerant':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.commentaireCadeauGerant || "-"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.cadeauGerant || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'nombreVues':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.nombreVues || "-"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.nombreVues || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;
                                   case 'nombreAbonnes':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
-                                        {client.nombreAbonnes || "-"}
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.nombreAbonnes || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreAbonnesFood':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        -
+
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'factureTournage':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              <StatusBadge status={pub.factureTournage || "En attente"} />
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'dateEnvoiFacturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.dateEnvoiFacturePublication
+                                                ? new Date(pub.dateEnvoiFacturePublication).toLocaleDateString('fr-FR', {
+                                                  day: '2-digit',
+                                                  month: '2-digit',
+                                                  year: 'numeric'
+                                                }).replace(/\//g, '.')
+                                                : "-"
+                                              }
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantFacturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantFacturePublication || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'facturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              <StatusBadge status={pub.facturePublication || "En attente"} />
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantEdition':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantAddition || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'benefices':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.benefice || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
                                       </TableCell>
                                     );
                                     break;

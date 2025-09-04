@@ -85,8 +85,10 @@ export default function LoginPage() {
         localStorage.setItem("userType", "franchise");
         
         showMessageWithType("Connexion réussie ! Redirection...", "success");
+        
+        // Forcer un rechargement de la page pour s'assurer que le contexte utilisateur est bien initialisé
         setTimeout(() => {
-          router.push("/home");
+          window.location.href = "/home";
         }, 1500);
       } else {
         // Gestion des erreurs spécifiques
