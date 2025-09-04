@@ -220,29 +220,42 @@ export default function ClientsPage() {
       if (!editingClient.raisonSociale?.trim()) {
         setError("La raison sociale est requise");
         setIsLoading(false);
-
         return;
       }
 
-      const isEditing = editingClient.id;
-      const url = isEditing
-        ? `/api/clients/${editingClient.id}`
-        : '/api/clients/clients';
+      // Vérifier que l'ID existe
+      if (!editingClient.id) {
+        setError("ID du client manquant");
+        setIsLoading(false);
+        return;
+      }
 
-      const method = isEditing ? "PUT" : "POST";
+      // Pour l'édition, utiliser PATCH avec l'ID dans l'URL
+      const url = `/api/clients/clients?id=${editingClient.id}`;
+
+      // Préparer les données pour l'API (mapping des champs frontend vers API)
+      const apiData = {
+        "Nom de l'établissement": editingClient.nomEtablissement,
+        "Raison sociale": editingClient.raisonSociale,
+        "Email": editingClient.email,
+        "Téléphone": editingClient.telephone,
+        "Ville": editingClient.ville,
+        "SIRET": editingClient.siret,
+        "Date de signature du contrat": editingClient.dateSignatureContrat,
+        "Catégorie": editingClient.categorie,
+      };
 
       const response = await fetch(url, {
-        method,
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editingClient),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-
-        throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'la création'} du client`);
+        throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
       // Fermer le modal et recharger les clients

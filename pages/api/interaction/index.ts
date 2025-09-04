@@ -34,23 +34,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const fields: any = {};
 
-    if (body.dateInteraction !== undefined) fields['Date de l\'interaction'] = body.dateInteraction;
-    if (body['Date de l\'interaction'] !== undefined) fields['Date de l\'interaction'] = body['Date de l\'interaction'];
+    if (body.dateInteraction !== undefined) fields['Date de l\'intéraction'] = body.dateInteraction;
+    if (body['Date de l\'intéraction'] !== undefined) fields['Date de l\'intéraction'] = body['Date de l\'intéraction'];
 
     // Etablissement relation
-    const rawEtab = body.etablissement ?? body.etablissementId ?? body['ÉTABLISSEMENTS'] ?? body.etablissement_id;
+    const rawEtab = body.etablissement ?? body.etablissementId ?? body['Etablissement'] ?? body.etablissement_id;
     if (rawEtab !== undefined) {
       const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
       const etabId = await resolveEtablissement(candidate);
-      if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
+      if (etabId) fields['Etablissement'] = [etabId]; else fields['Etablissement'] = [];
     }
 
     if (body.statut !== undefined) fields['Statut'] = body.statut;
     if (body.commentaire !== undefined) fields['Commentaire'] = body.commentaire;
-    if (body.prochainRdv !== undefined) fields['Prochain rdv'] = body.prochainRdv;
-    if (body['Prochain rdv'] !== undefined) fields['Prochain rdv'] = body['Prochain rdv'];
 
-    if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ fourni pour création interaction' });
+    if (Object.keys(fields).length === 0) return res.status(400).json({ error: "Aucun champ fourni pour création interaction" });
 
     try {
       const created = await base(TABLE_NAME).create([{ fields }]);

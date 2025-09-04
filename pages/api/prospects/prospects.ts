@@ -169,7 +169,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const catName = catIds.length > 0 ? catIds.map((id: string) => categoryNames[id]) : [];
         const spIds = record.get('Suivi par') || [];
         const suiviPar = Array.isArray(spIds) && spIds.length > 0 ? (suiviNames[spIds[0]] || spIds[0]) : '';
-        console.log("catName", catName);
 
         return {
           id: record.id,
@@ -260,8 +259,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const spName = Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0
           ? (suiviNames[suiviIdsOnRecord[0]] || suiviIdsOnRecord[0])
           : '';
-
-        console.log(catName, spName);
 
         const prospect = {
           id: record.id,

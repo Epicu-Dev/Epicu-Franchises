@@ -98,6 +98,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Description',
       'Ville EPICU',
       'Commentaires',
+      'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
     ];
 
     const allowedOrderBy = new Set([
@@ -196,6 +197,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           : '';
 
         return {
+          id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
           categorie: catName,
           raisonSociale: record.get('Raison sociale'),
@@ -207,7 +209,8 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           siret: record.get('SIRET'),
           description: record.get('Description'),
           villeEpicu: record.get('Ville EPICU'),
-          commentaires: record.get('Commentaires')
+          commentaires: record.get('Commentaires'),
+          dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)')
         };
       });
 

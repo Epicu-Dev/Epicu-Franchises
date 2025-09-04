@@ -15,6 +15,7 @@ import { Textarea } from "@heroui/input";
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 import { Prospect } from "@/types/prospect";
+import { getValidAccessToken } from "@/utils/auth";
 
 type ProspectStatus = "A contacter" | "En discussion" | "Glacial" | "Client";
 
@@ -22,44 +23,88 @@ interface ConvertProspectModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     prospect: Prospect | null;
-    // Props pour la conversion en client
-    editingClient?: any;
-    setEditingClient?: React.Dispatch<React.SetStateAction<any>>;
-    onUpdateClient?: () => Promise<void>;
-    // Props pour la mise à jour du statut
-    status?: ProspectStatus | null;
-    setStatus?: React.Dispatch<React.SetStateAction<ProspectStatus | null>>;
-    comment?: string;
-    setComment?: React.Dispatch<React.SetStateAction<string>>;
-    onUpdateProspect?: () => Promise<void>;
-    isLoading: boolean;
-    error: string | null;
+    onInteractionCreated?: () => void;
 }
 
 export default function ConvertProspectModal({
     isOpen,
     onOpenChange,
     prospect,
-    editingClient: _editingClient,
-    setEditingClient: _setEditingClient,
-    onUpdateClient,
-    status,
-    setStatus,
-    comment,
-    setComment,
-    onUpdateProspect,
-    isLoading,
-    error
+    onInteractionCreated
 }: ConvertProspectModalProps) {
-    // États locaux pour la conversion en client (si les props ne sont pas fournies)
-    const [localStatus, setLocalStatus] = useState<ProspectStatus | null>(null);
-    const [localComment, setLocalComment] = useState<string>("");
+    const [status, setStatus] = useState<ProspectStatus | null>(null);
+    const [comment, setComment] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Utiliser les props si fournies, sinon les états locaux
-    const currentStatus = status !== undefined ? status : localStatus;
-    const currentComment = comment !== undefined ? comment : localComment;
-    const currentSetStatus = setStatus || setLocalStatus;
-    const currentSetComment = setComment || setLocalComment;
+    // Fonction pour convertir le statut front vers API
+    const convertStatusForAPI = (frontStatus: ProspectStatus): string => {
+        if (frontStatus === "Glacial") {
+            return "Pas intéressé";
+        }
+        return frontStatus;
+    };
+
+    const handleSubmit = async () => {
+        if (!prospect || !status) {
+            setError("Veuillez sélectionner un statut");
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const token = await getValidAccessToken();
+            if (!token) {
+                throw new Error('No access token');
+            }
+
+            const interactionData = {
+                etablissement: prospect.nomEtablissement,
+                dateInteraction: new Date().toISOString().split('T')[0], // Date du jour
+                statut: convertStatusForAPI(status),
+                commentaire: comment,
+                prochainRdv: null
+            };
+
+            const response = await fetch('/api/interaction', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(interactionData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Erreur lors de la création de l'interaction");
+            }
+
+            // Réinitialiser le formulaire
+            setStatus(null);
+            setComment("");
+            onOpenChange(false);
+            
+            // Notifier le parent que l'interaction a été créée
+            if (onInteractionCreated) {
+                onInteractionCreated();
+            }
+
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Une erreur est survenue");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClose = () => {
+        setStatus(null);
+        setComment("");
+        setError(null);
+        onOpenChange(false);
+    };
 
     return (
         <Modal
@@ -70,7 +115,7 @@ export default function ConvertProspectModal({
         >
             <ModalContent>
                 <ModalHeader className="flex justify-center">
-                    Modifier le statut du prospect
+                    Créer une interaction
                 </ModalHeader>
 
                 <ModalBody className="max-h-[70vh] overflow-y-auto">
@@ -84,11 +129,10 @@ export default function ConvertProspectModal({
                                     isRequired
                                     id="status"
                                     placeholder="Sélectionner un statut"
-                                    selectedKeys={currentStatus ? [currentStatus] : []}
+                                    selectedKeys={status ? [status] : []}
                                     onSelectionChange={(keys) => {
                                         const selectedStatus = Array.from(keys)[0] as ProspectStatus;
-
-                                        currentSetStatus(selectedStatus);
+                                        setStatus(selectedStatus);
                                     }}
                                 >
                                     <SelectItem key="A contacter">A contacter</SelectItem>
@@ -107,8 +151,8 @@ export default function ConvertProspectModal({
                                     id="comment"
                                     minRows={4}
                                     placeholder="Ajouter un commentaire..."
-                                    value={currentComment}
-                                    onChange={(e) => currentSetComment(e.target.value)}
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -129,22 +173,18 @@ export default function ConvertProspectModal({
                             color='primary'
                             isDisabled={isLoading}
                             variant="bordered"
-                            onPress={() => {
-                                onOpenChange(false);
-                                currentSetStatus(null);
-                                currentSetComment("");
-                            }}
+                            onPress={handleClose}
                         >
                             Annuler
                         </Button>
                         <Button
                             className="flex-1"
                             color='primary'
-                            isDisabled={isLoading}
+                            isDisabled={isLoading || !status}
                             isLoading={isLoading}
-                            onPress={onUpdateClient || onUpdateProspect}
+                            onPress={handleSubmit}
                         >
-                            {isLoading ? 'Chargement...' : 'Modifier'}
+                            {isLoading ? 'Chargement...' : 'Créer l\'interaction'}
                         </Button>
                     </div>
                 </ModalFooter>
