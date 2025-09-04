@@ -28,6 +28,41 @@ const findOrCreateEstablishment = async (val: any): Promise<string | null> => {
   }
 };
 
+// Ensure required invoice fields exist on a record; returns fieldsToUpdate or null
+const ensureInvoiceFields = async (recId: string, rec?: any) => {
+  try {
+    let record = rec;
+    if (!record) {
+      record = await base(TABLE).find(recId);
+    }
+    const fieldsToUpdate: any = {};
+    // Date d'émission
+    const dateEmission = record.get("Date d'échéance") || record.get("Date d'émission") || record.get('Date d\'émission');
+    // prefer Date d'émission field exact name
+    const dateField = record.get("Date d'émission") || record.get('Date d\'émission');
+    if (!dateField) {
+      // set to today ISO if missing
+      fieldsToUpdate["Date d'émission"] = new Date().toISOString();
+    }
+
+    // Montant payé
+    const montantPaye = record.get('Montant payé');
+    if (montantPaye === undefined || montantPaye === null) {
+      fieldsToUpdate['Montant payé'] = 0;
+    }
+
+    // PUBLICATIONS relation
+    const publications = record.get('PUBLICATIONS');
+    if (!publications) {
+      fieldsToUpdate['PUBLICATIONS'] = [];
+    }
+
+    return Object.keys(fieldsToUpdate).length > 0 ? fieldsToUpdate : null;
+  } catch (e) {
+    return null;
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // Route by method
@@ -112,6 +147,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const created = await base(TABLE).create([{ fields: fieldsToCreate }]);
       const rec = created[0];
 
+      // Ensure required fields exist on created record
+      try {
+        const toUpdate = await ensureInvoiceFields(rec.id, rec);
+        if (toUpdate) await base(TABLE).update([{ id: rec.id, fields: toUpdate }]);
+      } catch (e) {
+        // ignore
+      }
+
       // resolve client name
       let nomEtablissement = null;
       const clientIds = rec.get('Client') || [];
@@ -169,6 +212,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const updated = await base(TABLE).update([{ id, fields: fieldsToUpdate }]);
       const rec = updated[0];
+
+      // Ensure required fields exist on updated record
+      try {
+        const toUpdate = await ensureInvoiceFields(rec.id, rec);
+        if (toUpdate) await base(TABLE).update([{ id: rec.id, fields: toUpdate }]);
+      } catch (e) {
+        // ignore
+      }
 
       // resolve client name
       let nomEtablissement = null;
