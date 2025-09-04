@@ -685,19 +685,7 @@ export default function AgendaPage() {
       </div>
     );
   }
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="w-full text-primary">
