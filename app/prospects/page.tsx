@@ -462,7 +462,7 @@ export default function ProspectsPage() {
               </StyledSelect>
 
               <StyledSelect
-                className="w-32"
+                className="w-45"
                 placeholder="Suivi par"
                 selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
                 onSelectionChange={(keys) =>
@@ -528,7 +528,7 @@ export default function ProspectsPage() {
                 shadow="none"
               >
                 <TableHeader className="mb-4">
-                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
+                  <TableColumn className="font-light text-sm">Basculer</TableColumn>
                   <TableColumn className="font-light text-sm">Modifier</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader

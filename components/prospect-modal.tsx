@@ -44,6 +44,7 @@ export function ProspectModal({
     id: "",
     nomEtablissement: "",
     ville: "",
+    villeEpicu: "",
     telephone: "",
     categorie: ["FOOD"],
     statut: "a_contacter",
@@ -65,6 +66,7 @@ export function ProspectModal({
         id: "",
         nomEtablissement: "",
         ville: "",
+        villeEpicu: "",
         telephone: "",
         categorie: ["FOOD"],
         statut: "a_contacter",
@@ -147,11 +149,8 @@ export function ProspectModal({
         }
         break;
       case 'dateRelance':
-        if (!value) {
-          errors.dateRelance = 'La date de relance est requise';
-        } else {
-          delete errors.dateRelance;
-        }
+        // La date de relance est optionnelle, pas de validation requise
+        delete errors.dateRelance;
         break;
     }
 
@@ -161,7 +160,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact', 'dateRelance'];
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -189,7 +188,7 @@ export function ProspectModal({
       // Adapter les données pour l'API Airtable
       const prospectData: Record<string, any> = {
         "Nom de l'établissement": newProspect.nomEtablissement,
-        'Ville EPICU': newProspect.ville,
+        'Ville': newProspect.ville,
         'Téléphone': newProspect.telephone,
         'Catégorie': newProspect.categorie,
         'Statut': newProspect.statut,
@@ -199,6 +198,19 @@ export function ProspectModal({
         'Email': newProspect.email,
         'Adresse': newProspect.adresse,
       };
+
+      // Gérer la ville Epicu : si l'utilisateur n'a qu'une seule ville, l'envoyer automatiquement
+      // Sinon, utiliser la sélection du dropdown
+      if (userProfile?.villes && userProfile.villes.length === 1) {
+        prospectData['Ville EPICU'] = userProfile.villes[0].ville;
+      } else if (newProspect.villeEpicu) {
+        prospectData['Ville EPICU'] = newProspect.villeEpicu;
+      }
+
+      // Gérer le suivi par : envoyer comme un tableau avec l'ID du collaborateur
+      if (newProspect.suiviPar) {
+        prospectData['Suivi par'] = [newProspect.suiviPar];
+      }
 
 
 
@@ -234,6 +246,7 @@ export function ProspectModal({
         id: "",
         nomEtablissement: "",
         ville: "",
+        villeEpicu: "",
         telephone: "",
         categorie: ["FOOD"],
         statut: "a_contacter",
@@ -262,6 +275,7 @@ export function ProspectModal({
       id: "",
       nomEtablissement: "",
       ville: "",
+      villeEpicu: "",
       telephone: "",
       categorie: ["FOOD"],
       statut: "a_contacter",
@@ -386,26 +400,50 @@ export function ProspectModal({
             <FormLabel htmlFor="ville" isRequired={true}>
               Ville
             </FormLabel>
-            <StyledSelect
-              id="ville"
+            <Input
               isRequired
-              errorMessage={fieldErrors.ville}
-              isInvalid={!!fieldErrors.ville}
-              placeholder="Sélectionner une ville"
-              selectedKeys={newProspect.ville ? [newProspect.ville] : []}
-              onSelectionChange={(keys) => {
-                const selectedVille = Array.from(keys)[0] as string;
-
-                setNewProspect((prev) => ({ ...prev, ville: selectedVille }));
-                validateField('ville', selectedVille);
+              classNames={{
+                inputWrapper: "bg-page-bg",
               }}
-            >
-              {userProfile?.villes?.map((ville) => (
-                <SelectItem key={ville.ville}>
-                  {ville.ville}
-                </SelectItem>
-              )) || []}
-            </StyledSelect>
+              errorMessage={fieldErrors.ville}
+              id="ville"
+              isInvalid={!!fieldErrors.ville}
+              placeholder="Nom de la ville"
+              value={newProspect.ville}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                setNewProspect((prev) => ({
+                  ...prev,
+                  ville: value,
+                }));
+                validateField('ville', value);
+              }}
+            />
+
+            {userProfile?.villes && userProfile.villes.length > 1 && (
+              <>
+                <FormLabel htmlFor="villeEpicu" isRequired={false}>
+                  Ville Epicu
+                </FormLabel>
+                <StyledSelect
+                  id="villeEpicu"
+                  placeholder="Sélectionner une ville Epicu"
+                  selectedKeys={newProspect.villeEpicu ? [newProspect.villeEpicu] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedVilleEpicu = Array.from(keys)[0] as string;
+
+                    setNewProspect((prev) => ({ ...prev, villeEpicu: selectedVilleEpicu }));
+                  }}
+                >
+                  {userProfile.villes.map((ville) => (
+                    <SelectItem key={ville.ville}>
+                      {ville.ville}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
+              </>
+            )}
             <FormLabel htmlFor="telephone" isRequired={true}>
               Téléphone
             </FormLabel>
@@ -557,7 +595,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact || !newProspect.dateRelance}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact}
               isLoading={isLoading}
               onPress={handleSubmit}
             >

@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { SelectItem } from "@heroui/select";
 import {
@@ -11,49 +10,22 @@ import {
     ModalFooter,
 } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import { Switch } from "@heroui/switch";
 
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 import { Prospect } from "@/types/prospect";
 
-interface Client {
-    id: string;
-    raisonSociale: string;
-    ville: string;
-    categorie: string;
-    telephone: string;
-    nomEtablissement: string;
-    email: string;
-    numeroSiret: string;
-    dateSignatureContrat: string;
-    datePublicationContenu: string;
-    datePublicationFacture: string;
-    statutPaiementContenu: "Payée" | "En attente" | "En retard";
-    montantFactureContenu: string;
-    montantPaye: string;
-    dateReglementFacture: string;
-    restantDu: string;
-    montantSponsorisation: string;
-    montantAddition: string;
-    factureContenu: string;
-    facturePublication: string;
-    commentaire: string;
-    commentaireCadeauGerant: string;
-    montantCadeau: string;
-    tirageAuSort: boolean;
-    adresse?: string;
-    statut?: "actif" | "inactif" | "prospect";
-}
+type ProspectStatus = "A contacter" | "En discussion" | "Glacial" | "Client";
 
 interface ConvertProspectModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     prospect: Prospect | null;
-    editingClient: Client | null;
-    setEditingClient: React.Dispatch<React.SetStateAction<Client | null>>;
-    onUpdateClient: () => Promise<void>;
+    status: ProspectStatus | null;
+    setStatus: React.Dispatch<React.SetStateAction<ProspectStatus | null>>;
+    comment: string;
+    setComment: React.Dispatch<React.SetStateAction<string>>;
+    onUpdateProspect: () => Promise<void>;
     isLoading: boolean;
     error: string | null;
 }
@@ -62,9 +34,11 @@ export default function ConvertProspectModal({
     isOpen,
     onOpenChange,
     prospect,
-    editingClient,
-    setEditingClient,
-    onUpdateClient,
+    status,
+    setStatus,
+    comment,
+    setComment,
+    onUpdateProspect,
     isLoading,
     error
 }: ConvertProspectModalProps) {
@@ -77,391 +51,46 @@ export default function ConvertProspectModal({
         >
             <ModalContent>
                 <ModalHeader className="flex justify-center">
-                    Convertir le prospect en client
+                    Modifier le statut du prospect
                 </ModalHeader>
 
                 <ModalBody className="max-h-[70vh] overflow-y-auto">
-                    {prospect && editingClient && (
+                    {prospect && (
                         <div className="space-y-6">
-                            {/* Informations générales */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    Informations générales
-                                </h3>
-
-                                <FormLabel htmlFor="nomEtablissement" isRequired={true}>
-                                    Nom établissement
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    id="nomEtablissement"
-                                    placeholder="Nom de l'établissement"
-                                    value={editingClient.nomEtablissement}
-                                />
-
-                                <FormLabel htmlFor="ville" isRequired={true}>
-                                    Ville
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    id="ville"
-                                    placeholder="Paris"
-                                    value={editingClient.ville || ""}
-                                />
-
-                                <FormLabel htmlFor="categorie" isRequired={true}>
-                                    Catégorie
+                                <FormLabel htmlFor="status" isRequired={true}>
+                                    Statut
                                 </FormLabel>
                                 <StyledSelect
                                     isRequired
-                                    isDisabled
-                                    id="categorie"
-                                    placeholder="Sélectionner une catégorie"
-                                    selectedKeys={
-                                        editingClient.categorie ? [editingClient.categorie] : []
-                                    }
+                                    id="status"
+                                    placeholder="Sélectionner un statut"
+                                    selectedKeys={status ? [status] : []}
+                                    onSelectionChange={(keys) => {
+                                        const selectedStatus = Array.from(keys)[0] as ProspectStatus;
+
+                                        setStatus(selectedStatus);
+                                    }}
                                 >
-                                    <SelectItem key={editingClient.categorie}>
-                                        {editingClient.categorie}
-                                    </SelectItem>
+                                    <SelectItem key="A contacter">A contacter</SelectItem>
+                                    <SelectItem key="En discussion">En discussion</SelectItem>
+                                    <SelectItem key="Glacial">Glacial</SelectItem>
+                                    <SelectItem key="Client">Client</SelectItem>
                                 </StyledSelect>
 
-                                <FormLabel htmlFor="telephone" isRequired={true}>
-                                    Téléphone
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    id="telephone"
-                                    placeholder="01 23 45 67 89"
-                                    value={editingClient.telephone || ""}
-                                />
-
-                                <FormLabel htmlFor="email" isRequired={true}>
-                                    Mail
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    id="email"
-                                    placeholder="contact@etablissement.fr"
-                                    type="email"
-                                    value={editingClient.email || ""}
-                                />
-
-                                <FormLabel htmlFor="numeroSiret" isRequired={true}>
-                                    Numéro de SIRET
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    id="numeroSiret"
-                                    placeholder="12345678901234"
-                                    value={editingClient.numeroSiret || ""}
-                                />
-
-                                <FormLabel htmlFor="commentaire" isRequired={false}>
+                                <FormLabel htmlFor="comment" isRequired={false}>
                                     Commentaire
                                 </FormLabel>
                                 <Textarea
-                                    isReadOnly
-                                    classNames={{
-                                        inputWrapper: "bg-gray-50 dark:bg-gray-800",
-                                    }}
-                                    minRows={3}
-                                    placeholder="..."
-                                    value={editingClient.commentaire || ""}
-                                />
-                            </div>
-
-                            {/* Prestations */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                                    Prestations
-                                </h3>
-
-                                <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
-                                    Date de signature du contrat
-                                </FormLabel>
-                                <Input
-                                    isRequired
                                     classNames={{
                                         inputWrapper: "bg-page-bg",
                                     }}
-                                    id="dateSignatureContrat"
-                                    type="date"
-                                    value={editingClient.dateSignatureContrat || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, dateSignatureContrat: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <Button
-                                    color='primary'
-                                    endContent={<ArrowDownTrayIcon className="w-4 h-4" />}
-                                >
-                                    Télécharger
-                                </Button>
-
-                                <FormLabel htmlFor="datePublicationContenu" isRequired={true}>
-                                    Date de publication
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="datePublicationContenu"
-                                    type="date"
-                                    value={editingClient.datePublicationContenu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, datePublicationContenu: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="datePublicationFacture" isRequired={true}>
-                                    Date d&apos;envoie facture création de contenu
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="datePublicationFacture"
-                                    type="date"
-                                    value={editingClient.datePublicationFacture || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, datePublicationFacture: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="statutPaiementContenu" isRequired={true}>
-                                    Statut du paiement
-                                </FormLabel>
-                                <StyledSelect
-                                    id="statutPaiementContenu"
-                                    selectedKeys={
-                                        editingClient.statutPaiementContenu
-                                            ? [editingClient.statutPaiementContenu]
-                                            : []
-                                    }
-                                    onSelectionChange={(keys) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? {
-                                                    ...editingClient,
-                                                    statutPaiementContenu: Array.from(keys)[0] as
-                                                        | "Payée"
-                                                        | "En attente"
-                                                        | "En retard",
-                                                }
-                                                : null
-                                        )
-                                    }
-                                >
-                                    <SelectItem key="Payée">Payée</SelectItem>
-                                    <SelectItem key="En attente">En attente</SelectItem>
-                                    <SelectItem key="En retard">En retard</SelectItem>
-                                </StyledSelect>
-
-                                <FormLabel htmlFor="montantFactureContenu" isRequired={true}>
-                                    Montant facturé
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantFactureContenu"
-                                    placeholder="1750€"
-                                    value={editingClient.montantFactureContenu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantFactureContenu: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantPaye" isRequired={true}>
-                                    Montant payé
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantPaye"
-                                    placeholder="750€"
-                                    value={editingClient.montantPaye || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, montantPaye: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="dateReglementFacture" isRequired={true}>
-                                    Date du règlement de la facture
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="dateReglementFacture"
-                                    type="date"
-                                    value={editingClient.dateReglementFacture || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, dateReglementFacture: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="restantDu" isRequired={true}>
-                                    Restant dû
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="restantDu"
-                                    placeholder="1750€"
-                                    value={editingClient.restantDu || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, restantDu: e.target.value } : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantSponsorisation" isRequired={true}>
-                                    Montant de la sponsorisation
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantSponsorisation"
-                                    placeholder="1750€"
-                                    value={editingClient.montantSponsorisation || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantSponsorisation: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-
-                                <FormLabel htmlFor="montantAddition" isRequired={true}>
-                                    Montant de l&apos;addition
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantAddition"
-                                    placeholder="1750€"
-                                    value={editingClient.montantAddition || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, montantAddition: e.target.value }
-                                                : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-
-
-                            {/* Cadeau du gérant pour le jeu concours */}
-                            <div className="space-y-4">
-                                <FormLabel htmlFor="commentaireCadeauGerant" isRequired={false}>
-                                    Cadeau du gérant pour le jeu concours
-                                </FormLabel>
-                                <Textarea
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="commentaireCadeauGerant"
+                                    id="comment"
                                     minRows={4}
-                                    placeholder="..."
-                                    value={editingClient.commentaireCadeauGerant || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient
-                                                ? { ...editingClient, commentaireCadeauGerant: e.target.value }
-                                                : null
-                                        )
-                                    }
+                                    placeholder="Ajouter un commentaire..."
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
                                 />
-
-                                <FormLabel htmlFor="montantCadeau" isRequired={true}>
-                                    Montant du cadeau
-                                </FormLabel>
-                                <Input
-                                    isRequired
-                                    classNames={{
-                                        inputWrapper: "bg-page-bg",
-                                    }}
-                                    id="montantCadeau"
-                                    placeholder="150€"
-                                    value={editingClient.montantCadeau || ""}
-                                    onChange={(e) =>
-                                        setEditingClient(
-                                            editingClient ? { ...editingClient, montantCadeau: e.target.value } : null
-                                        )
-                                    }
-                                />
-                                <div className="flex items-center justify-between">
-                                    <span className="text-base ">Tirage au sort effectué</span>
-                                    <Switch
-                                        isSelected={editingClient.tirageAuSort}
-                                        onValueChange={(checked) =>
-                                            setEditingClient(
-                                                editingClient ? { ...editingClient, tirageAuSort: checked } : null
-                                            )
-                                        }
-                                    />
-                                </div>
                             </div>
                         </div>
                     )}
@@ -483,7 +112,8 @@ export default function ConvertProspectModal({
                             variant="bordered"
                             onPress={() => {
                                 onOpenChange(false);
-                                setEditingClient(null);
+                                setStatus(null);
+                                setComment("");
                             }}
                         >
                             Annuler
@@ -493,9 +123,9 @@ export default function ConvertProspectModal({
                             color='primary'
                             isDisabled={isLoading}
                             isLoading={isLoading}
-                            onPress={onUpdateClient}
+                            onPress={onUpdateProspect}
                         >
-                            {isLoading ? 'Chargement...' : (editingClient?.id ? 'Modifier' : 'Ajouter')}
+                            {isLoading ? 'Chargement...' : 'Modifier'}
                         </Button>
                     </div>
                 </ModalFooter>

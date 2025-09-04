@@ -2,6 +2,7 @@ export interface Prospect {
     id: string;
     nomEtablissement: string;
     ville: string;
+    villeEpicu?: string;
     telephone: string;
     categorie: ["FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY"];
     statut: "a_contacter" | "en_discussion" | "glacial";
