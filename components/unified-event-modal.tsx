@@ -7,17 +7,17 @@ import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Checkbox } from "@heroui/checkbox";
-import { Switch } from "@heroui/switch";
+import { Spinner } from "@heroui/spinner";
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
-import { Client } from "@/app/api/clients/data";
+import { Client } from "@/types/client";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+
 import { FormLabel } from "./form-label";
+import SlotSelectionModal from "./slot-selection-modal";
 
 type EventType = "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar";
-
-interface Category {
-  id: string;
-  name: string;
-}
 
 interface UnifiedEventModalProps {
   isOpen: boolean;
@@ -34,6 +34,8 @@ export function UnifiedEventModal({
   onEventCreated,
   onEventAdded
 }: UnifiedEventModalProps) {
+  const { authFetch } = useAuthFetch();
+  
   // États communs
   const [formData, setFormData] = useState({
     // Champs Google Calendar de base
@@ -55,9 +57,6 @@ export function UnifiedEventModal({
     drawCompleted: false,
 
     // Champs spécifiques rendez-vous
-    establishmentName: '',
-    categoryId: '',
-    categoryName: '',
     appointmentType: '',
 
     // Champs spécifiques événement
@@ -65,43 +64,120 @@ export function UnifiedEventModal({
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
 
-  // Charger les clients et catégories
+  // États pour la recherche de client (comme dans invoice-modal)
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
+  const [isSearchingClient, setIsSearchingClient] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientSearchResults, setShowClientSearchResults] = useState(false);
+
+  // Fonction pour gérer la sélection de créneau
+  const handleSlotSelection = (slot: { date: string; time: string }) => {
+    // Le format de date généré est "lundi 15 janvier 2024"
+    // On va extraire les parties de la date
+    const dateParts = slot.date.split(' ');
+
+    // Le format est: [jour_semaine, jour, mois, année]
+    // Exemple: ["lundi", "15", "janvier", "2024"]
+    const day = dateParts[1];
+    const month = dateParts[2];
+    const year = dateParts[3];
+
+    // Convertir en format ISO pour le champ
+    const monthMap: { [key: string]: string } = {
+      'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+      'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+      'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+    };
+
+    const monthNumber = monthMap[month.toLowerCase()];
+    const formattedDate = `${year}-${monthNumber}-${day.padStart(2, '0')}`;
+
+    setFormData(prev => ({
+      ...prev,
+      startDate: formattedDate,
+      startTime: '18:00',
+      endTime: '19:00'
+    }));
+  };
+
+  // Charger les catégories (plus nécessaire pour rendez-vous)
   useEffect(() => {
-    if (isOpen && (eventType === 'tournage' || eventType === 'publication')) {
-      fetchClients();
-    }
-    if (isOpen && eventType === 'rendez-vous') {
-      fetchCategories();
-    }
+    // Plus de chargement de catégories nécessaire
   }, [isOpen, eventType]);
 
-  const fetchClients = async () => {
+  // Fonctions de recherche de client (comme dans invoice-modal)
+  const searchClients = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setClientSearchResults([]);
+      setShowClientSearchResults(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/clients');
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data.clients || []);
+      setIsSearchingClient(true);
+
+      const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(searchTerm)}&limit=10`);
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la recherche de clients");
       }
-    } catch (error) {
-      console.error('Erreur lors du chargement des clients:', error);
+
+      const data = await response.json();
+      setClientSearchResults(data.clients || []);
+      setShowClientSearchResults(true);
+    } catch (err) {
+      console.error("Erreur lors de la recherche de clients:", err);
+    } finally {
+      setIsSearchingClient(false);
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.results || []);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des catégories:', error);
-    }
+  const selectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearchTerm(client.nomEtablissement);
+    setShowClientSearchResults(false);
+
+    // Mettre à jour formData avec les informations du client
+    setFormData(prev => ({
+      ...prev,
+      selectedClient: client,
+      summary: eventType === 'tournage' 
+        ? `Tournage - ${client.nomEtablissement}`
+        : eventType === 'publication'
+        ? `Publication - ${client.nomEtablissement}`
+        : `RDV - ${client.nomEtablissement}`,
+      location: client.nomEtablissement
+    }));
   };
+
+  const clearSelectedClient = () => {
+    setSelectedClient(null);
+    setClientSearchTerm("");
+    setFormData(prev => ({
+      ...prev,
+      selectedClient: null,
+      summary: '',
+      location: ''
+    }));
+    setClientSearchResults([]);
+    setShowClientSearchResults(false);
+  };
+
+  // Recherche de clients avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (clientSearchTerm) {
+        searchClients(clientSearchTerm);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [clientSearchTerm]);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +191,7 @@ export function UnifiedEventModal({
       }
     } catch (error) {
       console.error('Erreur lors de la soumission:', error);
-      alert('Erreur lors de la création de l\'événement');
+      alert('Erreur lors de la création de l&apos;événement');
     } finally {
       setIsLoading(false);
     }
@@ -188,13 +264,13 @@ export function UnifiedEventModal({
 
     } else if (eventType === 'rendez-vous') {
       const rdvEvent = {
-        title: `RDV - ${formData.establishmentName}`,
+        title: `RDV - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "rendez-vous",
         date: formData.startDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
-        location: formData.establishmentName,
-        description: `Rendez-vous ${formData.appointmentType} - Catégorie: ${formData.categoryName}${formData.description ? ` - ${formData.description}` : ""}`,
+        location: formData.selectedClient?.nomEtablissement || formData.location,
+        description: `Rendez-vous ${formData.appointmentType}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
       };
       events.push(rdvEvent);
@@ -213,9 +289,10 @@ export function UnifiedEventModal({
       events.push(eventData);
     }
 
-    // Créer les événements via l'API
+    // Créer les événements localement ET dans Google Calendar
     for (const eventData of events) {
-      const response = await fetch("/api/agenda", {
+      // Créer l'événement local
+      const localResponse = await fetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -223,8 +300,43 @@ export function UnifiedEventModal({
         body: JSON.stringify(eventData),
       });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de l'événement");
+      if (!localResponse.ok) {
+        throw new Error("Erreur lors de l'ajout de l'événement local");
+      }
+
+      // Créer l'événement dans Google Calendar
+      try {
+        const googleEventData: Partial<GoogleCalendarEvent> = {
+          summary: eventData.title,
+          description: eventData.description || undefined,
+          location: eventData.location || undefined,
+          start: {
+            dateTime: `${eventData.date}T${eventData.startTime}:00`,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          },
+          end: {
+            dateTime: `${eventData.date}T${eventData.endTime}:00`,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }
+        };
+
+        const googleResponse = await fetch('/api/google-calendar/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(googleEventData),
+        });
+
+        if (googleResponse.ok) {
+          const createdGoogleEvent = await googleResponse.json();
+          onEventCreated?.(createdGoogleEvent);
+        } else {
+          console.warn("Impossible de créer l'événement dans Google Calendar, mais l'événement local a été créé");
+        }
+      } catch (googleError) {
+        console.warn("Erreur lors de la création dans Google Calendar:", googleError);
+        // On continue même si Google Calendar échoue
       }
     }
 
@@ -268,13 +380,14 @@ export function UnifiedEventModal({
       videographers: false,
       winner: '',
       drawCompleted: false,
-      establishmentName: '',
-      categoryId: '',
-      categoryName: '',
       appointmentType: '',
       eventFor: ''
     });
-    setClientSearchQuery('');
+    // Réinitialiser les états de recherche de client
+    setClientSearchTerm('');
+    setClientSearchResults([]);
+    setSelectedClient(null);
+    setShowClientSearchResults(false);
     onOpenChange(false);
   };
 
@@ -292,350 +405,365 @@ export function UnifiedEventModal({
   // Définir la date d'aujourd'hui comme valeur par défaut
   const today = new Date().toISOString().split('T')[0];
 
-  // Filtrer les clients selon la recherche
-  const filteredClients = clients.filter(client =>
-    client.nomEtablissement.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
-    client.raisonSociale.toLowerCase().includes(clientSearchQuery.toLowerCase())
-  );
-
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
-      <ModalContent>
-        <ModalHeader className="flex flex-col gap-1">
-          {getModalTitle()}
-        </ModalHeader>
-        <form onSubmit={handleSubmit}>
-          <ModalBody>
-            <div className="space-y-4">
+    <>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            {getModalTitle()}
+          </ModalHeader>
+          <form onSubmit={handleSubmit}>
+            <ModalBody>
+              <div className="space-y-4">
 
-              {/* Sélection de client pour tournage et publication */}
-              {(eventType === 'tournage' || eventType === 'publication') && (
-                <div className="space-y-2">
-                  <FormLabel htmlFor="clientSearch" isRequired={true}>
-                    Client
-                  </FormLabel>
-                  <Input
-                    placeholder="Rechercher un client..."
-                    value={clientSearchQuery}
-                    onChange={(e) => setClientSearchQuery(e.target.value)}
-                  />
-                  {clientSearchQuery && filteredClients.length > 0 && (
-                    <div className="max-h-40 overflow-y-auto border rounded-lg">
-                      {filteredClients.slice(0, 5).map((client) => (
-                        <div
-                          key={client.id}
-                          className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                          onClick={() => {
-                            handleInputChange('selectedClient', client);
-                            const title = eventType === 'tournage'
-                              ? `Tournage - ${client.nomEtablissement}`
-                              : `Publication - ${client.nomEtablissement}`;
-                            handleInputChange('summary', title);
-                            handleInputChange('location', client.nomEtablissement);
-                            setClientSearchQuery('');
-                          }}
-                        >
-                          <div className="font-medium">{client.nomEtablissement}</div>
-                          <div className="text-sm text-gray-600">{client.raisonSociale}</div>
-                          <div className="text-xs text-gray-500">{client.ville} - {client.categorie}</div>
+                {/* Sélection de client pour tournage, publication et rendez-vous */}
+                {(eventType === 'tournage' || eventType === 'publication' || eventType === 'rendez-vous') && (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <FormLabel htmlFor="clientSearch" isRequired={true}>
+                        Rechercher un client
+                      </FormLabel>
+                      <Input
+                        isRequired
+                        endContent={
+                          isSearchingClient ? (
+                            <Spinner size="sm" />
+                          ) : (
+                            <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                          )
+                        }
+                        id="clientSearch"
+                        placeholder="Rechercher par nom, email, téléphone..."
+                        classNames={{
+                          inputWrapper: "bg-page-bg",
+                        }}
+                        value={clientSearchTerm}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setClientSearchTerm(value);
+                          if (!value) {
+                            clearSelectedClient();
+                          }
+                        }}
+                        onFocus={() => {
+                          if (clientSearchTerm && clientSearchResults.length > 0) {
+                            setShowClientSearchResults(true);
+                          }
+                        }}
+                      />
+
+                      {/* Résultats de recherche */}
+                      {showClientSearchResults && clientSearchResults.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {clientSearchResults.map((client) => (
+                            <div
+                              key={client.id}
+                              className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                              onClick={() => selectClient(client)}
+                              onKeyDown={(e) => e.key === 'Enter' && selectClient(client)}
+                              role="button"
+                              tabIndex={0}
+                            >
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {client.nomEtablissement}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-300">
+                                {client.raisonSociale}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {client.ville && `${client.ville} • `}
+                                {client.email && `${client.email} • `}
+                                {client.telephone && client.telephone}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                  {formData.selectedClient && (
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <div className="font-medium">Client sélectionné:</div>
-                      <div>{formData.selectedClient.nomEtablissement}</div>
-                      <div className="text-sm text-gray-600">{formData.selectedClient.ville} - {formData.selectedClient.categorie}</div>
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* Nom de l'établissement pour rendez-vous */}
-              {eventType === 'rendez-vous' && (
-                <>
-                  <FormLabel htmlFor="establishmentName" isRequired={true}>
-                    Nom de l'établissement
-                  </FormLabel>
-                  <Input
-                    id="establishmentName"
-                    placeholder="Nom de l'établissement"
-                    value={formData.establishmentName}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      handleInputChange('establishmentName', value);
-                      // Auto-remplir le titre
-                      if (value) {
-                        handleInputChange('summary', `RDV - ${value}`);
-                        handleInputChange('location', value);
-                      }
-                    }}
-                    required
-                  />
-                </>
-
-              )}
-
-              {/* Catégorie pour rendez-vous */}
-              {eventType === 'rendez-vous' && (
-                <>
-                  <FormLabel htmlFor="categoryId" isRequired={true}>
-                    Catégorie
-                  </FormLabel>
-                  <Select
-                    id="categoryId"
-                    placeholder="Sélectionner une catégorie"
-                    selectedKeys={formData.categoryId ? [formData.categoryId] : []}
-                    onSelectionChange={(keys) => {
-                      const selectedId = Array.from(keys)[0] as string;
-                      const selectedCategory = categories.find(cat => cat.id === selectedId);
-                      handleInputChange('categoryId', selectedId);
-                      handleInputChange('categoryName', selectedCategory?.name || '');
-                    }}
-                    required
-                  >
-                    {categories.map((category) => (
-                      <SelectItem key={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </>
-
-              )}
-
-              {/* Type de rendez-vous */}
-              {eventType === 'rendez-vous' && (
-                <>
-                  <FormLabel htmlFor="appointmentType" isRequired={true}>
-                    Type de rendez-vous
-                  </FormLabel>
-                  <Input
-                    id="appointmentType"
-                    placeholder="Ex: Fidélisation"
-                    value={formData.appointmentType}
-                    onChange={(e) => handleInputChange('appointmentType', e.target.value)}
-                    required
-                  />
-                </>
-
-              )}
-
-              {/* Titre de l'événement - editable pour tous les types */}
-              {
-                eventType === 'evenement' &&
-                <Input
-                  id="summary"
-                  placeholder={
-                    "Titre de l'événement"
-                  }
-                  value={formData.summary}
-                  onChange={(e) => handleInputChange('summary', e.target.value)}
-                  required
-                />}
-
-              {/* Dropdowns pour événement */}
-              {eventType === 'evenement' && (
-                <>
-                  <FormLabel htmlFor="appointmentType" isRequired={true}>
-                    Type d'événement
-                  </FormLabel>
-                  <Select
-                    id="appointmentType"
-                    placeholder="Sélectionner un type"
-                    selectedKeys={formData.appointmentType ? [formData.appointmentType] : []}
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0] as string;
-                      handleInputChange('appointmentType', value);
-                    }}
-                    required
-                  >
-                    <SelectItem key="brunch">Brunch</SelectItem>
-                    <SelectItem key="seminaire">Séminaire</SelectItem>
-                    <SelectItem key="formation">Formation</SelectItem>
-                    <SelectItem key="reunion">Réunion</SelectItem>
-                    <SelectItem key="autre">Autre</SelectItem>
-                  </Select>
-
-                  <FormLabel htmlFor="eventFor" isRequired={true}>
-                    Pour qui
-                  </FormLabel>
-                  <Select
-                    id="eventFor"
-                    placeholder="Sélectionner un destinataire"
-                    selectedKeys={formData.eventFor ? [formData.eventFor] : []}
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0] as string;
-                      handleInputChange('eventFor', value);
-                    }}
-                    required
-                  >
-                    <SelectItem key="franchises">Franchisés</SelectItem>
-                    <SelectItem key="sieges">Sièges</SelectItem>
-                    <SelectItem key="partenaires">Partenaires</SelectItem>
-                  </Select>
-                </>
-              )}
-
-              {/* Description */}
-              <FormLabel htmlFor="description" isRequired={true}>
-                Description
-              </FormLabel>
-              <Textarea
-                id="description"
-                placeholder="Description de l'événement (optionnel)"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-              />
-
-              {/* Lieu */}
-              {(eventType === 'google-calendar' || eventType === 'evenement') && (
-                <>
-                  <FormLabel htmlFor="location" isRequired={true}>
-                    Lieu
-                  </FormLabel>
-                  <Input
-                    id="location"
-                    placeholder="Ex: Bureau principal"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                  />
-                </>
-              )}
-
-              {/* Gagnant pour publication */}
-              {eventType === 'publication' && (
-                <>
-                  <FormLabel htmlFor="winner" isRequired={true}>
-                    Gagnant
-                  </FormLabel>
-                  <Input
-                    id="winner"
-                    placeholder="Nom Prénom"
-                    value={formData.winner}
-                    onChange={(e) => handleInputChange('winner', e.target.value)}
-                  />
-                </>
-              )}
-
-              {/* Switch tirage au sort pour publication */}
-              {eventType === 'publication' && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Tirage au sort effectué</span>
-                  <Switch
-                    isSelected={formData.drawCompleted}
-                    onValueChange={(checked) => handleInputChange('drawCompleted', checked)}
-                  />
-                </div>
-              )}
-
-              {/* Checkboxes prestataires pour tournage */}
-              {eventType === 'tournage' && (
-                <div className="space-y-2">
-                  <FormLabel htmlFor="prestataires" isRequired={true}>
-                    Prestataires
-                  </FormLabel>
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      isSelected={formData.photographers}
-                      onValueChange={(checked) => handleInputChange('photographers', checked)}
-                    >
-                      Photographe
-                    </Checkbox>
-                    <Checkbox
-                      isSelected={formData.videographers}
-                      onValueChange={(checked) => handleInputChange('videographers', checked)}
-                    >
-                      Vidéaste
-                    </Checkbox>
+                    {/* Encart d'informations du client sélectionné */}
+                    {selectedClient && (
+                      <div className="bg-page-bg border rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium text-sm text-primary-light mb-1">
+                              Client sélectionné
+                            </h4>
+                            <p className="font-medium text-lg">
+                              {selectedClient.nomEtablissement}
+                            </p>
+                          </div>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            className="text-primary-light"
+                            onPress={clearSelectedClient}
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Dates et heures */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
 
-                  <FormLabel htmlFor="startDate" isRequired={true}>
-                    Date de début
-                  </FormLabel>
+
+                {/* Type de rendez-vous */}
+                {eventType === 'rendez-vous' && (
+                  <>
+                    <FormLabel htmlFor="appointmentType" isRequired={true}>
+                      Type de rendez-vous
+                    </FormLabel>
+                    <Input
+                      id="appointmentType"
+                      placeholder="Ex: Fidélisation"
+                      value={formData.appointmentType}
+                      onChange={(e) => handleInputChange('appointmentType', e.target.value)}
+                      required
+                    />
+                  </>
+
+                )}
+
+                {/* Titre de l'événement - editable pour tous les types */}
+                {
+                  eventType === 'evenement' &&
                   <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    defaultValue={today}
+                    id="summary"
+                    placeholder={
+                      "Titre de l'événement"
+                    }
+                    value={formData.summary}
+                    onChange={(e) => handleInputChange('summary', e.target.value)}
                     required
-                  />
-                </div>
+                  />}
+
+                {/* Dropdowns pour événement */}
+                {eventType === 'evenement' && (
+                  <>
+                    <FormLabel htmlFor="appointmentType" isRequired={true}>
+                      Type d&apos;événement
+                    </FormLabel>
+                    <Select
+                      id="appointmentType"
+                      placeholder="Sélectionner un type"
+                      selectedKeys={formData.appointmentType ? [formData.appointmentType] : []}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0] as string;
+                        handleInputChange('appointmentType', value);
+                      }}
+                      required
+                    >
+                      <SelectItem key="brunch">Brunch</SelectItem>
+                      <SelectItem key="seminaire">Séminaire</SelectItem>
+                      <SelectItem key="formation">Formation</SelectItem>
+                      <SelectItem key="reunion">Réunion</SelectItem>
+                      <SelectItem key="autre">Autre</SelectItem>
+                    </Select>
+
+                    <FormLabel htmlFor="eventFor" isRequired={true}>
+                      Pour qui
+                    </FormLabel>
+                    <Select
+                      id="eventFor"
+                      placeholder="Sélectionner un destinataire"
+                      selectedKeys={formData.eventFor ? [formData.eventFor] : []}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0] as string;
+                        handleInputChange('eventFor', value);
+                      }}
+                      required
+                    >
+                      <SelectItem key="franchises">Franchisés</SelectItem>
+                      <SelectItem key="sieges">Sièges</SelectItem>
+                      <SelectItem key="partenaires">Partenaires</SelectItem>
+                    </Select>
+                  </>
+                )}
 
 
-                <div>
-                  <FormLabel htmlFor="startTime" isRequired={true}>
-                    Heure de début
-                  </FormLabel>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => handleInputChange('startTime', e.target.value)}
-                    required
-                  />
 
+                {/* Lieu */}
+                {(eventType === 'google-calendar' || eventType === 'evenement') && (
+                  <>
+                    <FormLabel htmlFor="description" isRequired={true}>
+                      Description
+                    </FormLabel>
+                    <Textarea
+                      id="description"
+                      placeholder="Description de l'événement (optionnel)"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={3}
+                    />
+                    <FormLabel htmlFor="location" isRequired={true}>
+                      Lieu
+                    </FormLabel>
+                    <Input
+                      id="location"
+                      placeholder="Ex: Bureau principal"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                    />
+                  </>
+                )}
 
-                </div>
+                {/* Checkboxes prestataires pour tournage */}
+                {eventType === 'tournage' && (
+                  <div className="space-y-2">
+                    <FormLabel htmlFor="prestataires" isRequired={true}>
+                      Prestataires
+                    </FormLabel>
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        isSelected={formData.photographers}
+                        onValueChange={(checked) => handleInputChange('photographers', checked)}
+                      >
+                        Photographe
+                      </Checkbox>
+                      <Checkbox
+                        isSelected={formData.videographers}
+                        onValueChange={(checked) => handleInputChange('videographers', checked)}
+                      >
+                        Vidéaste
+                      </Checkbox>
+                    </div>
+                  </div>
+                )}
+
+                {/* Date de publication avec sélection de créneau */}
+                {eventType === 'publication' && (
+                  <div>
+                    <FormLabel htmlFor="startDate" isRequired={true}>
+                      Date de publication
+                    </FormLabel>
+                    <div
+                      className="p-3 border border-gray-300 rounded-lg bg-white cursor-pointer hover:border-blue-400 transition-colors"
+                      onClick={() => setIsSlotModalOpen(true)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setIsSlotModalOpen(true);
+                        }
+                      }}
+                    >
+                      {formData.startDate ? (
+                        <span className="text-gray-900">
+                          {new Date(formData.startDate).toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })} - 18h00 - 19h00
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">
+                          Cliquez pour sélectionner un créneau
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dates et heures pour les autres types d'événements */}
+                {eventType !== 'publication' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FormLabel htmlFor="startDate" isRequired={true}>
+                        Date de début
+                      </FormLabel>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => handleInputChange('startDate', e.target.value)}
+                        defaultValue={today}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <FormLabel htmlFor="startTime" isRequired={true}>
+                        Heure de début
+                      </FormLabel>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={formData.startTime}
+                        onChange={(e) => handleInputChange('startTime', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {eventType !== 'publication' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FormLabel htmlFor="endDate" isRequired={true}>
+                        Date de fin
+                      </FormLabel>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => handleInputChange('endDate', e.target.value)}
+                        defaultValue={formData.startDate || today}
+                      />
+                    </div>
+
+                    <div>
+                      <FormLabel htmlFor="endTime" isRequired={true}>
+                        Heure de fin
+                      </FormLabel>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={formData.endTime}
+                        onChange={(e) => handleInputChange('endTime', e.target.value)}
+                        defaultValue={formData.startTime}
+                      />
+                    </div>
+                  </div>
+                )}
+
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <FormLabel htmlFor="endDate" isRequired={true}>
-                    Date de fin
-                  </FormLabel>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange('endDate', e.target.value)}
-                    defaultValue={formData.startDate || today}
-                  />
-                </div>
+            </ModalBody>
 
-                <div>
-                  <FormLabel htmlFor="endTime" isRequired={true}>
-                    Heure de fin
-                  </FormLabel>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => handleInputChange('endTime', e.target.value)}
-                    defaultValue={formData.startTime}
-                  />
-                </div>
-              </div>
+            <ModalFooter className="flex justify-between">
+              <Button
+                className="flex-1 border-1"
+                color="primary"
+                variant="light"
+                onPress={handleClose}
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1"
+                color="primary"
+                type="submit"
+                isLoading={isLoading}
+              >
+                {eventType === 'google-calendar' ? 'Créer dans Google Calendar' : 'Créer l&apos;événement'}
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
 
-            </div>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button
-              color="danger"
-              variant="light"
-              onPress={handleClose}
-            >
-              Annuler
-            </Button>
-            <Button
-              color="primary"
-              type="submit"
-              isLoading={isLoading}
-            >
-              {eventType === 'google-calendar' ? 'Créer dans Google Calendar' : 'Créer l\'événement'}
-            </Button>
-          </ModalFooter>
-        </form>
-      </ModalContent>
-    </Modal>
+      {/* Modal de sélection de créneaux pour les publications */}
+      {eventType === 'publication' && (
+        <SlotSelectionModal
+          isOpen={isSlotModalOpen}
+          onClose={() => setIsSlotModalOpen(false)}
+          onSelectSlot={handleSlotSelection}
+        />
+      )}
+    </>
   );
 }

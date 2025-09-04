@@ -393,13 +393,13 @@ export default function StudioPage() {
               >
                 Accéder au drive
               </Button>
-              <Button
+              {/* <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
                 onClick={handleOpenPrestationModal}
               >
                 Demander une prestation
-              </Button>
+              </Button> */}
             </div>
           </div>
 

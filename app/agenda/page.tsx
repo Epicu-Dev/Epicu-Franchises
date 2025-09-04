@@ -121,15 +121,15 @@ export default function AgendaPage() {
   // Fonction pour transformer les événements Google Calendar en format compatible
   const transformGoogleEvents = (googleEvents: GoogleCalendarEvent[]): Event[] => {
     return googleEvents.map((googleEvent) => {
-      const startDate = googleEvent.start.dateTime 
+      const startDate = googleEvent.start.dateTime
         ? new Date(googleEvent.start.dateTime)
-        : googleEvent.start.date 
+        : googleEvent.start.date
           ? new Date(googleEvent.start.date)
           : new Date();
-      
-      const endDate = googleEvent.end.dateTime 
+
+      const endDate = googleEvent.end.dateTime
         ? new Date(googleEvent.end.dateTime)
-        : googleEvent.end.date 
+        : googleEvent.end.date
           ? new Date(googleEvent.end.date)
           : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
 
@@ -367,7 +367,7 @@ export default function AgendaPage() {
 
     // Transformer les événements Google Calendar
     const transformedGoogleEvents = transformGoogleEvents(googleEvents);
-    
+
     // Combiner les événements locaux et Google Calendar
     const allEvents = [...events, ...transformedGoogleEvents];
 
@@ -410,7 +410,7 @@ export default function AgendaPage() {
 
     // Transformer les événements Google Calendar
     const transformedGoogleEvents = transformGoogleEvents(googleEvents);
-    
+
     // Combiner les événements locaux et Google Calendar
     const allEvents = [...events, ...transformedGoogleEvents];
 
@@ -685,6 +685,19 @@ export default function AgendaPage() {
       </div>
     );
   }
+  if (loading) {
+    return (
+      <div className="w-full">
+        <Card className="w-full" shadow="none">
+          <CardBody className="p-6">
+            <div className="flex justify-center items-center h-64">
+              <Spinner className="text-black dark:text-white" size="lg" />
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full text-primary">
@@ -692,52 +705,47 @@ export default function AgendaPage() {
         <CardBody className="p-6">
 
           {/* En-tête avec navigation et boutons */}
-          <div className="flex justify-end items-center mb-6">
+          {
+
+            <div className="flex justify-end items-center mb-6">
 
 
-            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4">
 
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => openModal("tournage")}
-              >
-                Ajouter un tournage
-              </Button>
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("tournage")}
+                >
+                  Ajouter un tournage
+                </Button>
 
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => openModal("publication")}
-              >
-                Ajouter une publication
-              </Button>
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("publication")}
+                >
+                  Ajouter une publication
+                </Button>
 
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => openModal("rendez-vous")}
-              >
-                Ajouter un rendez-vous
-              </Button>
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("rendez-vous")}
+                >
+                  Ajouter un rendez-vous
+                </Button>
 
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => openModal("evenement")}
-              >
-                Ajouter un évènement
-              </Button>
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("evenement")}
+                >
+                  Ajouter un évènement
+                </Button>
 
-              <Button
-                color='secondary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => openModal("google-calendar")}
-              >
-                Google Calendar
-              </Button>
-            </div>
-          </div>
+              </div>
+            </div>}
           {/* Synchronisation Google Calendar - seulement si connecté */}
           {isGoogleConnected && (
             <GoogleCalendarSync
@@ -747,7 +755,7 @@ export default function AgendaPage() {
           )}
 
 
-         
+
 
 
           {/* Filtres et vues */}

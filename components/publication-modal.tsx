@@ -14,8 +14,9 @@ import {
 import { Textarea } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 
-import { FormLabel } from "@/components";
-import { StyledSelect } from "@/components/styled-select";
+import SlotSelectionModal from "./slot-selection-modal";
+import { FormLabel, StyledSelect } from "@/components";
+
 import { Publication } from "@/types/client";
 
 interface PublicationModalProps {
@@ -53,6 +54,35 @@ export default function PublicationModal({
         nombreAbonnes: 0,
         commentaire: ""
     });
+    const [isSlotModalOpen, setIsSlotModalOpen] = React.useState(false);
+
+    // Fonction pour gérer la sélection de créneau
+    const handleSlotSelection = (slot: { date: string; time: string }) => {
+        // Le format de date généré est "lundi 15 janvier 2024"
+        // On va extraire les parties de la date
+        const dateParts = slot.date.split(' ');
+        
+        // Le format est: [jour_semaine, jour, mois, année]
+        // Exemple: ["lundi", "15", "janvier", "2024"]
+        const day = dateParts[1];
+        const month = dateParts[2];
+        const year = dateParts[3];
+        
+        // Convertir en format ISO pour le champ
+        const monthMap: { [key: string]: string } = {
+            'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+            'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+            'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+        };
+        
+        const monthNumber = monthMap[month.toLowerCase()];
+        const formattedDate = `${year}-${monthNumber}-${day.padStart(2, '0')}`;
+        
+        setFormData(prev => ({
+            ...prev,
+            datePublication: formattedDate
+        }));
+    };
 
     // Fonction de validation des champs requis
     const validateRequiredFields = () => {
@@ -120,7 +150,7 @@ export default function PublicationModal({
     }, [editingPublication, isOpen]);
 
     const handleSubmit = () => {
-        if (editingPublication && onUpdatePublication) {
+        if (editingPublication && onUpdatePublication) {    
             // Mode édition
             const updatedPublication: Publication = {
                 ...editingPublication,
@@ -160,6 +190,7 @@ export default function PublicationModal({
     };
 
     return (
+        <>
         <Modal
             isOpen={isOpen}
             scrollBehavior="inside"
@@ -178,18 +209,33 @@ export default function PublicationModal({
                             <FormLabel htmlFor="datePublication" isRequired={true}>
                                 Date de publication
                             </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
+                            <div
+                                className="p-3 border border-gray-300 rounded-lg bg-page-bg cursor-pointer hover:border-blue-400 transition-colors"
+                                onClick={() => setIsSlotModalOpen(true)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsSlotModalOpen(true);
+                                    }
                                 }}
-                                id="datePublication"
-                                type="date"
-                                value={formData.datePublication}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, datePublication: e.target.value })
-                                }
-                            />
+                            >
+                                {formData.datePublication ? (
+                                    <span className="text-gray-900">
+                                        {new Date(formData.datePublication).toLocaleDateString('fr-FR', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })} - 18h00 - 19h00
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-500">
+                                        Cliquez pour sélectionner un créneau
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Date d'envoi facture création de contenu */}
@@ -503,5 +549,13 @@ export default function PublicationModal({
                 </ModalFooter>
             </ModalContent>
         </Modal>
+
+        {/* Modal de sélection de créneaux */}
+        <SlotSelectionModal
+            isOpen={isSlotModalOpen}
+            onClose={() => setIsSlotModalOpen(false)}
+            onSelectSlot={handleSlotSelection}
+        />
+        </>
     );
 }
