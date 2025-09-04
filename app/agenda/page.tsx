@@ -685,7 +685,7 @@ export default function AgendaPage() {
       </div>
     );
   }
-  
+
 
   return (
     <div className="w-full text-primary">
@@ -735,38 +735,42 @@ export default function AgendaPage() {
               </div>
             </div>}
           {/* Synchronisation Google Calendar - seulement si connecté */}
-          {isGoogleConnected && (
-            <GoogleCalendarSync
-              onEventsFetched={handleGoogleEventsFetched}
-              onEventCreated={handleGoogleEventCreated}
-            />
-          )}
+
 
 
 
 
 
           {/* Filtres et vues */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={handlePreviousMonth}
-                >
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </Button>
-                <span>
-                  {view === "semaine"
-                    ? formatWeekRange(currentDate)
-                    : formatMonthYear(currentDate)}
-                </span>
-                <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
-                  <ChevronRightIcon className="h-4 w-4" />
-                </Button>
+          <div className="flex justify-between items-center mb-6 w-full">
+
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    onPress={handlePreviousMonth}
+                  >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                  </Button>
+                  <span>
+                    {view === "semaine"
+                      ? formatWeekRange(currentDate)
+                      : formatMonthYear(currentDate)}
+                  </span>
+                  <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
+            {isGoogleConnected && (
+              <GoogleCalendarSync
+                onEventsFetched={handleGoogleEventsFetched}
+                onEventCreated={handleGoogleEventCreated}
+              />
+            )}
           </div>
 
 

@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Spinner } from "@heroui/spinner";
-import { 
-  CalendarIcon, 
-  CheckCircleIcon, 
+import {
+  CalendarIcon,
+  CheckCircleIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
@@ -39,7 +39,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
       // Vérifier si la dernière synchronisation date de plus de 5 minutes
       const lastSyncTime = new Date(syncStatus.lastSync).getTime();
       const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-      
+
       if (lastSyncTime < fiveMinutesAgo) {
         // Synchroniser automatiquement si la dernière sync date de plus de 5 minutes
         syncEvents();
@@ -64,7 +64,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
       if (response.ok) {
         const status = await response.json();
         setSyncStatus(status);
-        
+
         // Si déjà connecté, synchroniser automatiquement les événements
         if (status.isConnected) {
           // Attendre un peu que le state soit mis à jour
@@ -121,16 +121,16 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
       if (response.ok) {
         const { events } = await response.json();
         onEventsFetched?.(events);
-        setSyncStatus(prev => ({ 
-          ...prev, 
-          lastSync: new Date() 
+        setSyncStatus(prev => ({
+          ...prev,
+          lastSync: new Date()
         }));
       }
     } catch (error) {
       console.error('Erreur lors de la synchronisation:', error);
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        error: 'Erreur de synchronisation' 
+      setSyncStatus(prev => ({
+        ...prev,
+        error: 'Erreur de synchronisation'
       }));
     } finally {
       setIsLoading(false);
@@ -146,7 +146,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
         },
         body: JSON.stringify(eventData),
       });
-      
+
       if (response.ok) {
         const createdEvent = await response.json();
         onEventCreated?.(createdEvent);
@@ -159,6 +159,28 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
   };
 
   return (
-    <></>
+    <div>
+      {syncStatus.calendars && syncStatus.calendars.length > 0 && (
+        <div className="flex items-center flex-col">
+          <p className="text-sm text-gray-600 mb-2">Calendriers synchronisés:</p>
+          <div className="flex flex-wrap gap-2">
+            {syncStatus.calendars.filter(calendar => calendar.primary).map((calendar) => (
+              <span
+                key={calendar.id}
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${calendar.primary
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}
+              >
+                {calendar.summary}
+                {calendar.primary && (
+                  <CheckCircleIcon className="h-3 w-3 ml-1" />
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
