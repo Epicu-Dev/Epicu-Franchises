@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { isRefreshTokenValid, isUserLoggedIn } from '@/utils/auth';
+import { isRefreshTokenValid, isUserLoggedIn, getValidAccessToken } from '@/utils/auth';
+import { useTokenRefresh } from '@/hooks/use-token-refresh';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { HelpModal } from '@/components/help-modal';
@@ -16,6 +17,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // Activer le rafraîchissement automatique des tokens
+  useTokenRefresh();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -37,19 +41,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }
 
         if (!isUserLoggedIn()) {
-          console.log('Access token expiré, redirection vers login');
-          localStorage.clear();
-          router.push('/login');
-          return;
+          console.log('Access token expiré, tentative de refresh...');
+          // Essayer de rafraîchir le token avant de rediriger
+          const refreshedToken = await getValidAccessToken();
+          if (!refreshedToken) {
+            console.log('Impossible de rafraîchir le token, redirection vers login');
+            localStorage.clear();
+            router.push('/login');
+            return;
+          }
+          console.log('Token rafraîchi avec succès');
         }
 
-        // Vérifier que le profil utilisateur est présent
+        // Vérifier que le profil utilisateur est présent (optionnel)
         const userProfile = localStorage.getItem('userProfile');
         if (!userProfile) {
-          console.log('Profil utilisateur manquant, redirection vers login');
-          localStorage.clear();
-          router.push('/login');
-          return;
+          console.log('Profil utilisateur manquant, mais on continue - il sera rechargé par le UserContext');
+          // Ne pas rediriger, laisser le UserContext gérer le rechargement du profil
         }
 
         setIsAuthChecking(false);

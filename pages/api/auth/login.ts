@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: accessToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 15 * 60 * 1000).toISOString(), // 15 min
+          expires_at: new Date(now + 4 * 60 * 60 * 1000).toISOString(), // 4 heures
         },
       },
     ]);
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: refreshToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
+          expires_at: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 jours
         },
       },
     ]);

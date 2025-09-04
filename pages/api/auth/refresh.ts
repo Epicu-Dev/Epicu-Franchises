@@ -61,8 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const newRefreshToken = generateToken(48);
     const now = Date.now();
 
-    const expiresAtAccess = new Date(now + 60 * 60 * 1000).toISOString(); // 1h
-    const expiresAtRefresh = new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 jours
+    const expiresAtAccess = new Date(now + 4 * 60 * 60 * 1000).toISOString(); // 4 heures
+    const expiresAtRefresh = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 jours
 
     await base('AUTH_ACCESS_TOKEN').create([
       {

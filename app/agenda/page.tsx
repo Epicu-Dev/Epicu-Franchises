@@ -62,6 +62,7 @@ export default function AgendaPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingGoogleConnection, setIsCheckingGoogleConnection] = useState(true);
 
   // États pour la modal unifiée
   const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
@@ -103,6 +104,7 @@ export default function AgendaPage() {
   // Vérifier le statut de Google Calendar
   const checkGoogleCalendarStatus = async () => {
     try {
+      setIsCheckingGoogleConnection(true);
       const response = await fetch('/api/google-calendar/status');
 
       if (response.ok) {
@@ -115,6 +117,8 @@ export default function AgendaPage() {
     } catch (error) {
       // Erreur lors de la vérification du statut
       setIsGoogleConnected(false);
+    } finally {
+      setIsCheckingGoogleConnection(false);
     }
   };
 
@@ -646,6 +650,25 @@ export default function AgendaPage() {
       </div>
     );
   };
+
+  // Afficher le loading général pendant la vérification de connexion Google
+  if (isCheckingGoogleConnection) {
+    return (
+      <div className="w-full">
+        <Card className="w-full" shadow="none">
+          <CardBody className="p-6">
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <Spinner className="text-black dark:text-white mb-4" size="lg" />
+                <div className="text-lg mb-2">Vérification de la connexion Google Calendar...</div>
+                <div className="text-sm text-gray-600">Veuillez patienter pendant que nous vérifions votre connexion</div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   // Afficher le message d'invitation si Google Calendar n'est pas connecté
   if (isGoogleConnected === false) {
