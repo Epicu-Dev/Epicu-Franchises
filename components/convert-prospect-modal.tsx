@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@heroui/button";
 import { SelectItem } from "@heroui/select";
 import {
@@ -21,11 +22,16 @@ interface ConvertProspectModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     prospect: Prospect | null;
-    status: ProspectStatus | null;
-    setStatus: React.Dispatch<React.SetStateAction<ProspectStatus | null>>;
-    comment: string;
-    setComment: React.Dispatch<React.SetStateAction<string>>;
-    onUpdateProspect: () => Promise<void>;
+    // Props pour la conversion en client
+    editingClient?: any;
+    setEditingClient?: React.Dispatch<React.SetStateAction<any>>;
+    onUpdateClient?: () => Promise<void>;
+    // Props pour la mise à jour du statut
+    status?: ProspectStatus | null;
+    setStatus?: React.Dispatch<React.SetStateAction<ProspectStatus | null>>;
+    comment?: string;
+    setComment?: React.Dispatch<React.SetStateAction<string>>;
+    onUpdateProspect?: () => Promise<void>;
     isLoading: boolean;
     error: string | null;
 }
@@ -34,6 +40,9 @@ export default function ConvertProspectModal({
     isOpen,
     onOpenChange,
     prospect,
+    editingClient: _editingClient,
+    setEditingClient: _setEditingClient,
+    onUpdateClient,
     status,
     setStatus,
     comment,
@@ -42,6 +51,16 @@ export default function ConvertProspectModal({
     isLoading,
     error
 }: ConvertProspectModalProps) {
+    // États locaux pour la conversion en client (si les props ne sont pas fournies)
+    const [localStatus, setLocalStatus] = useState<ProspectStatus | null>(null);
+    const [localComment, setLocalComment] = useState<string>("");
+
+    // Utiliser les props si fournies, sinon les états locaux
+    const currentStatus = status !== undefined ? status : localStatus;
+    const currentComment = comment !== undefined ? comment : localComment;
+    const currentSetStatus = setStatus || setLocalStatus;
+    const currentSetComment = setComment || setLocalComment;
+
     return (
         <Modal
             isOpen={isOpen}
@@ -65,11 +84,11 @@ export default function ConvertProspectModal({
                                     isRequired
                                     id="status"
                                     placeholder="Sélectionner un statut"
-                                    selectedKeys={status ? [status] : []}
+                                    selectedKeys={currentStatus ? [currentStatus] : []}
                                     onSelectionChange={(keys) => {
                                         const selectedStatus = Array.from(keys)[0] as ProspectStatus;
 
-                                        setStatus(selectedStatus);
+                                        currentSetStatus(selectedStatus);
                                     }}
                                 >
                                     <SelectItem key="A contacter">A contacter</SelectItem>
@@ -88,8 +107,8 @@ export default function ConvertProspectModal({
                                     id="comment"
                                     minRows={4}
                                     placeholder="Ajouter un commentaire..."
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
+                                    value={currentComment}
+                                    onChange={(e) => currentSetComment(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -112,8 +131,8 @@ export default function ConvertProspectModal({
                             variant="bordered"
                             onPress={() => {
                                 onOpenChange(false);
-                                setStatus(null);
-                                setComment("");
+                                currentSetStatus(null);
+                                currentSetComment("");
                             }}
                         >
                             Annuler
@@ -123,7 +142,7 @@ export default function ConvertProspectModal({
                             color='primary'
                             isDisabled={isLoading}
                             isLoading={isLoading}
-                            onPress={onUpdateProspect}
+                            onPress={onUpdateClient || onUpdateProspect}
                         >
                             {isLoading ? 'Chargement...' : 'Modifier'}
                         </Button>

@@ -59,7 +59,15 @@ export function ProspectModal({
   // Initialiser le formulaire avec les données du prospect à éditer
   useEffect(() => {
     if (isEditing && editingProspect) {
-      setNewProspect(editingProspect);
+      // Si le prospect a un suiviPar (nom), trouver l'ID correspondant
+      let prospectToSet = { ...editingProspect };
+      if (editingProspect.suiviPar && collaborateurs.length > 0) {
+        const collaborateur = collaborateurs.find(collab => collab.nomComplet === editingProspect.suiviPar);
+        if (collaborateur) {
+          prospectToSet.suiviPar = collaborateur.id;
+        }
+      }
+      setNewProspect(prospectToSet);
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       setNewProspect({
@@ -80,7 +88,7 @@ export function ProspectModal({
     }
     setError(null);
     setFieldErrors({});
-  }, [isEditing, editingProspect, isOpen]);
+  }, [isEditing, editingProspect, isOpen, collaborateurs]);
 
   // Récupérer la liste des collaborateurs au chargement du modal
   useEffect(() => {
@@ -534,24 +542,28 @@ export function ProspectModal({
               }}
             />
 
-            <FormLabel htmlFor="statut" isRequired={true}>
+            <FormLabel htmlFor="statut" >
               Etat du prospect
             </FormLabel>
-            <StyledSelect
-              isRequired
-              id="statut"
-              selectedKeys={[newProspect.statut]}
-              onSelectionChange={(keys) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  statut: Array.from(keys)[0] as "a_contacter" | "en_discussion" | "glacial",
-                }))
-              }
-            >
-              <SelectItem key="a_contacter">À contacter</SelectItem>
-              <SelectItem key="en_discussion">En discussion</SelectItem>
-              <SelectItem key="glacial">Glacial</SelectItem>
-            </StyledSelect>
+            <div>
+
+              <Input
+                isReadOnly
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                id="statut"
+                value={
+                  newProspect.statut === "a_contacter" ? "À contacter" :
+                    newProspect.statut === "en_discussion" ? "En discussion" :
+                      newProspect.statut === "glacial" ? "Glacial" :
+                        newProspect.statut
+                }
+              />
+              <p className="text-xs mt-2">
+                Pour changer l&apos;état du prospect, utilisez le bouton &quot;Convertir&quot;
+              </p>
+            </div>
 
             <FormLabel htmlFor="commentaires" isRequired={false}>
               Commentaire
