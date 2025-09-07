@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
+import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'COLLABORATEURS';
 const VIEW_NAME = 'Utilisateurs par rôle';
@@ -40,6 +41,55 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       const pattern = escapeForAirtableRegex(q.trim());
 
       selectOptions.filterByFormula = `REGEX_MATCH(LOWER({Nom complet}), "${pattern}")`;
+    }
+
+    // Auth: si l'utilisateur est admin -> voir tous les collaborateurs
+    // sinon -> ne voir que les collaborateurs qui partagent au moins une Ville EPICU avec lui
+    const callerUserId = await requireValidAccessToken(req, res);
+    if (!callerUserId) return; // requireValidAccessToken a déjà répondu
+
+    try {
+      const callerRec = await base(TABLE_NAME).find(callerUserId);
+      const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
+      const isAdmin = callerRole === 'admin' || callerRole === 'administrateur';
+
+      if (!isAdmin) {
+        let linkedIds: string[] = [];
+        const linked = callerRec.get('Ville EPICU');
+        if (linked) {
+          if (Array.isArray(linked)) linkedIds = linked;
+          else if (typeof linked === 'string') linkedIds = [linked];
+        }
+
+        if (linkedIds.length === 0) {
+          // l'utilisateur n'a pas de ville Epicu liée -> pas de résultats
+          return res.status(200).json({
+            results: [],
+            pagination: {
+              limit,
+              offset,
+              orderBy,
+              order,
+              hasMore: false,
+              nextOffset: null,
+              prevOffset: Math.max(0, offset - limit),
+            },
+          });
+        }
+
+        // construire un filtre Airtable pour restreindre aux enregistrements dont {Ville EPICU} contient un des linkedIds
+        const cityParts = linkedIds.map((id) => `FIND("${String(id).replace(/"/g, '\\"')}", ARRAYJOIN({Ville EPICU}))`);
+        const cityFilter = `OR(${cityParts.join(',')})`;
+
+        if (selectOptions.filterByFormula) {
+          selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${cityFilter})`;
+        } else {
+          selectOptions.filterByFormula = cityFilter;
+        }
+      }
+    } catch (e) {
+      console.error('Erreur récupération collaborateur caller:', e);
+      return res.status(500).json({ error: 'Impossible de récupérer les informations de l\'utilisateur' });
     }
 
     const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
