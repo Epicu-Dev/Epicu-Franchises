@@ -20,6 +20,35 @@ import { useUser } from "@/contexts/user-context";
 
 type EventType = "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar";
 
+interface FormData {
+  // Champs Google Calendar de base
+  summary: string;
+  description: string;
+  location: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+
+  // Champs spécifiques tournage
+  selectedClient: Client | null;
+  photographers: boolean;
+  videographers: boolean;
+
+  // Champs spécifiques publication
+  winner: string;
+  drawCompleted: boolean;
+
+  // Champs spécifiques rendez-vous
+  appointmentType: string;
+
+  // Champs spécifiques événement
+  eventFor: string;
+
+  // Créneau sélectionné
+  selectedSlotId: string | null;
+}
+
 interface UnifiedEventModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,7 +68,7 @@ export function UnifiedEventModal({
   const { userProfile } = useUser();
   
   // États communs
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     // Champs Google Calendar de base
     summary: '',
     description: '',
@@ -62,7 +91,10 @@ export function UnifiedEventModal({
     appointmentType: '',
 
     // Champs spécifiques événement
-    eventFor: ''
+    eventFor: '',
+
+    // Créneau sélectionné
+    selectedSlotId: null
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -115,11 +147,13 @@ export function UnifiedEventModal({
       }
     }
 
+    console.log('Créneau sélectionné avec ID:', slot.id);
     setFormData(prev => ({
       ...prev,
       startDate: formattedDate,
       startTime: startTime,
-      endTime: endTime
+      endTime: endTime,
+      selectedSlotId: slot.id // Stocker l'ID du créneau sélectionné
     }));
   };
 
@@ -318,6 +352,8 @@ export function UnifiedEventModal({
     }
 
     // Créer les événements localement ET dans Google Calendar
+    let eventCreatedSuccessfully = false;
+    
     for (const eventData of events) {
       // Créer l'événement local
       const localResponse = await fetch("/api/agenda", {
@@ -331,6 +367,8 @@ export function UnifiedEventModal({
       if (!localResponse.ok) {
         throw new Error("Erreur lors de l'ajout de l'événement local");
       }
+      
+      eventCreatedSuccessfully = true;
 
       // Créer l'événement dans Google Calendar
       try {
@@ -366,6 +404,36 @@ export function UnifiedEventModal({
         console.warn("Erreur lors de la création dans Google Calendar:", googleError);
         // On continue même si Google Calendar échoue
       }
+    }
+
+    // Marquer le créneau comme indisponible seulement si l'événement a été créé avec succès
+    if (eventCreatedSuccessfully && formData.selectedSlotId) {
+      try {
+        console.log('Tentative de mise à jour du créneau:', formData.selectedSlotId);
+        const slotResponse = await authFetch(`/api/publications/creneaux?id=${formData.selectedSlotId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            statutPublication: ['recsdyl2X41rpj7LG'] // ID du statut "Indisponible" en tableau
+          }),
+        });
+        
+        if (slotResponse.ok) {
+          console.log('Créneau marqué comme indisponible avec succès');
+        } else {
+          const errorData = await slotResponse.json();
+          console.error('Erreur lors de la mise à jour du créneau:', errorData);
+        }
+      } catch (slotError) {
+        console.error("Impossible de marquer le créneau comme indisponible:", slotError);
+        // On continue même si la mise à jour du créneau échoue
+      }
+    } else if (!eventCreatedSuccessfully) {
+      console.log('Événement non créé, pas de mise à jour du créneau');
+    } else {
+      console.log('Aucun créneau sélectionné, pas de mise à jour nécessaire');
     }
 
     onEventAdded?.();
@@ -409,7 +477,8 @@ export function UnifiedEventModal({
       winner: '',
       drawCompleted: false,
       appointmentType: '',
-      eventFor: ''
+      eventFor: '',
+      selectedSlotId: null
     });
     // Réinitialiser les états de recherche de client
     setClientSearchTerm('');

@@ -104,6 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 const body = req.body || {};
                 const id = (req.query.id as string) || body.id;
+                console.log('PATCH creneaux - ID:', id, 'Body:', body);
                 if (!id) return res.status(400).json({ error: 'id requis pour PATCH' });
 
                 const userId = await requireValidAccessToken(req, res);
@@ -113,13 +114,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 let existing: any = null;
                 try {
                     existing = await base(TABLE_NAME).find(id);
+                    console.log('Créneau trouvé:', existing.id, existing.fields);
                 } catch (e) {
+                    console.error('Créneau introuvable:', id, e);
                     return res.status(404).json({ error: 'Créneau introuvable' });
                 }
 
                 const fields: any = {};
-                if (body.statutPublication !== undefined) fields['Statut de publication'] = body.statutPublication;
-                if (body['Statut de publication'] !== undefined) fields['Statut de publication'] = body['Statut de publication'];
+                if (body.statutPublication !== undefined) {
+                    // S'assurer que statutPublication est toujours un tableau
+                    fields['Statut de publication'] = Array.isArray(body.statutPublication) 
+                        ? body.statutPublication 
+                        : [body.statutPublication];
+                }
+                if (body['Statut de publication'] !== undefined) {
+                    // S'assurer que Statut de publication est toujours un tableau
+                    fields['Statut de publication'] = Array.isArray(body['Statut de publication']) 
+                        ? body['Statut de publication'] 
+                        : [body['Statut de publication']];
+                }
 
                 if (body.dateTournage !== undefined) fields['Date de tournage'] = body.dateTournage;
                 if (body['Date de tournage'] !== undefined) fields['Date de tournage'] = body['Date de tournage'];
@@ -138,7 +151,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
+                console.log('Mise à jour des champs:', fields);
                 const updated = await base(TABLE_NAME).update([{ id, fields }]);
+                console.log('Créneau mis à jour avec succès:', updated[0].id);
                 return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
             } catch (err: any) {
                 console.error('creneaux PATCH error', err);

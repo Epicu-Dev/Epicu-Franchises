@@ -37,7 +37,7 @@ export default function TodoPage() {
   const [itemsPerPage] = useState(50);
   const [searchTerm] = useState("");
   const [selectedStatut, setSelectedStatut] = useState("");
-  const [sortField, setSortField] = useState<string>("");
+  const [sortField, setSortField] = useState<string>("Date d'échéance");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
