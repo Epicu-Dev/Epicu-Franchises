@@ -32,10 +32,12 @@ import { AgendaModals } from "@/components/agenda-modals";
 import { ProspectModal } from "@/components/prospect-modal";
 import { AgendaSection } from "@/components/agenda-section";
 import { TodoBadge } from "@/components/badges";
+import InvoiceModal from "@/components/invoice-modal";
 import { FormLabel } from "@/components";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { Invoice } from "@/types/invoice";
 
 // Types pour les données réelles
 type AgendaEvent = {
@@ -91,6 +93,8 @@ export default function HomePage() {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [agendaLoading, setAgendaLoading] = useState(false);
   const [todoLoading, setTodoLoading] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [statistics, setStatistics] = useState<{
     prospectsSignes: number;
     tauxConversion: number;
@@ -104,6 +108,8 @@ export default function HomePage() {
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
   const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   // Mettre à jour les villes disponibles basées sur le profil utilisateur
   useEffect(() => {
@@ -210,6 +216,54 @@ export default function HomePage() {
       setTodoItems([]);
     } finally {
       setTodoLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les factures (paiements) du mois sélectionné
+  const fetchInvoices = async () => {
+    try {
+      setInvoicesLoading(true);
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      );
+
+      const params = new URLSearchParams();
+      params.set("limit", "100");
+      params.set("status", "payee");
+
+      const response = await authFetch(`/api/facturation?${params.toString()}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const list: Invoice[] = data.invoices || [];
+
+        const filtered = list.filter((inv) => {
+          if (!inv.date) return false;
+          const d = new Date(inv.date);
+          return d >= startOfMonth && d <= endOfMonth;
+        });
+
+        setInvoices(filtered);
+      } else {
+        setInvoices([]);
+      }
+    } catch {
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
     }
   };
 
@@ -331,7 +385,7 @@ export default function HomePage() {
   // Fonction pour récupérer les données
   const fetchData = async () => {
     // Récupération des événements d'agenda, todos et statistiques
-    await Promise.all([fetchAgenda(), fetchTodos(), fetchStatistics()]);
+    await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
   };
 
   // Effet pour charger les données au montage du composant
@@ -343,6 +397,7 @@ export default function HomePage() {
   useEffect(() => {
     fetchAgenda();
     fetchTodos();
+    fetchInvoices();
     fetchStatistics();
   }, [selectedDate]);
 
@@ -417,6 +472,54 @@ export default function HomePage() {
       tags: []
     }));
   }, [todoItems]);
+
+  // Transformation des factures pour l'affichage
+  const displayInvoices = useMemo(() => {
+    return invoices.slice(0, 3).map((inv) => ({
+      id: inv.id,
+      client: inv.nomEtablissement || "Nom client",
+      date: inv.date,
+      montant: inv.montant || 0,
+    }));
+  }, [invoices]);
+
+  const formatAmount = (amount: number) =>
+    new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+      amount || 0
+    );
+
+  const handleAddInvoice = async (invoiceData: any) => {
+    try {
+      const response = await authFetch("/api/facturation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      });
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleEditInvoice = async (invoiceData: any) => {
+    try {
+      if (!selectedInvoice) return;
+      const response = await authFetch(`/api/facturation?id=${encodeURIComponent(selectedInvoice.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      });
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const handleAddTodo = async () => {
     if (newTodo.mission.trim()) {
@@ -661,6 +764,51 @@ export default function HomePage() {
                   )}
                 </div>
               </div>
+
+              {/* Paiement Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Paiement
+                  </h3>
+                  <Button
+                    isIconOnly
+                    color='primary'
+                    size="sm"
+                    onPress={() => {
+                      setSelectedInvoice(null);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2 lg:space-y-3">
+                  {invoicesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500"><Spinner /></div>
+                    </div>
+                  ) : displayInvoices.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500">Pas de résultat</div>
+                    </div>
+                  ) : (
+                    displayInvoices.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between py-4 border-b border-gray-100">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-light text-primary">{inv.client}</p>
+                          <p className="text-xs text-primary-light">
+                            {new Date(inv.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
+                          </p>
+                        </div>
+                        <span className="text-xs px-3 py-1 rounded-md bg-green-100 text-green-600">
+                          {formatAmount(inv.montant)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </CardBody>
@@ -765,6 +913,15 @@ export default function HomePage() {
         isOpen={isProspectModalOpen}
         onClose={() => setIsProspectModalOpen(false)}
         onProspectAdded={fetchData}
+      />
+
+      {/* Modal d'ajout de facture */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        selectedInvoice={selectedInvoice}
+        onOpenChange={setIsInvoiceModalOpen}
+        onSave={handleAddInvoice}
+        onEdit={handleEditInvoice}
       />
     </DashboardLayout>
   );
