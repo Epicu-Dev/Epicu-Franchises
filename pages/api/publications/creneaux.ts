@@ -4,7 +4,7 @@ import { base } from '../constants';
 import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'CALENDRIER PUBLICATIONS';
-const VIEW_NAME = 'Toute les publications';
+const VIEW_NAME = 'Toutes les publications';
 
 // helper: resolve or create a related record; returns record id or null
 async function ensureRelatedRecord(tableName: string, candidateValue: any, candidateFields: string[]) {
@@ -75,16 +75,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const filterFormula = formulaParts.length > 1 ? `AND(${formulaParts.join(',')})` : formulaParts[0];
 
                 // fetch records; request only needed fields
-                const fields = ['DATE', 'Catégorie', 'JOUR', 'Date de publication', 'HEURE', 'Statut de publication'];
+                const fields = ['DATE', 'CATÉGORIE', 'JOUR', 'DATE DE PUBLICATION', 'HEURE', 'Statut de publication'];
                 const records = await base(TABLE_NAME).select({ view: VIEW_NAME, filterByFormula: filterFormula, fields, pageSize: 100, sort: [{ field: 'DATE', direction: 'asc' }] }).all();
 
                 // map to simple objects
                 const mapped = records.map((r: any) => ({
                     id: r.id,
                     DATE: r.get('DATE'),
-                    CATEGORIE: r.get('Catégorie'),
+                    CATEGORIE: r.get('CATÉGORIE'),
                     JOUR: r.get('JOUR'),
-                    DATE_DE_PUBLICATION: r.get('Date de publication'),
+                    DATE_DE_PUBLICATION: r.get('DATE DE PUBLICATION'),
                     HEURE: r.get('HEURE'),
                     STATUT_DE_PUBLICATION: r.get('Statut de publication'),
                 }));

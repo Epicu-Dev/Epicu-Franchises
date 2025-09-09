@@ -515,9 +515,7 @@ export default function AgendaPage() {
                   >
                     <div className="font-medium truncate flex items-center gap-1">
                       {event.title}
-                      {event.isGoogleEvent && (
-                        <span className="text-blue-600 text-[10px]">GC</span>
-                      )}
+
                     </div>
                     {event.startTime && (
                       <div className="text-xs opacity-75">
@@ -629,9 +627,6 @@ export default function AgendaPage() {
                         >
                           <div className="font-medium truncate flex items-center gap-1">
                             {event.title}
-                            {event.isGoogleEvent && (
-                              <span className="text-blue-600 text-[10px]">GC</span>
-                            )}
                           </div>
                           {event.startTime && event.endTime && (
                             <div className="text-xs opacity-75 mt-0.5">

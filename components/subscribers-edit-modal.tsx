@@ -157,7 +157,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
       onClose={handleCancel}
     >
       <ModalContent>
-        <ModalHeader >
+        <ModalHeader className="flex justify-center">
           Modifier les nombres d&apos;abonnés - {month}
         </ModalHeader>
         <ModalBody>

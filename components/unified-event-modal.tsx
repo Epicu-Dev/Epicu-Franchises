@@ -10,12 +10,12 @@ import { Checkbox } from "@heroui/checkbox";
 import { Spinner } from "@heroui/spinner";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
+import { FormLabel } from "./form-label";
+import SlotSelectionModal from "./slot-selection-modal";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
 import { Client } from "@/types/client";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-
-import { FormLabel } from "./form-label";
-import SlotSelectionModal from "./slot-selection-modal";
+import { useUser } from "@/contexts/user-context";
 
 type EventType = "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar";
 
@@ -35,6 +35,7 @@ export function UnifiedEventModal({
   onEventAdded
 }: UnifiedEventModalProps) {
   const { authFetch } = useAuthFetch();
+  const { userProfile } = useUser();
   
   // États communs
   const [formData, setFormData] = useState({
@@ -74,32 +75,50 @@ export function UnifiedEventModal({
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
 
   // Fonction pour gérer la sélection de créneau
-  const handleSlotSelection = (slot: { date: string; time: string }) => {
-    // Le format de date généré est "lundi 15 janvier 2024"
-    // On va extraire les parties de la date
-    const dateParts = slot.date.split(' ');
+  const handleSlotSelection = (slot: any) => {
+    // Le slot vient maintenant du modal modifié avec la structure TimeSlot
+    // On utilise directement la date ISO et l'heure
+    if (!slot.DATE) {
+      // eslint-disable-next-line no-console
+      console.error('Date manquante dans le créneau sélectionné');
 
-    // Le format est: [jour_semaine, jour, mois, année]
-    // Exemple: ["lundi", "15", "janvier", "2024"]
-    const day = dateParts[1];
-    const month = dateParts[2];
-    const year = dateParts[3];
+      return;
+    }
 
-    // Convertir en format ISO pour le champ
-    const monthMap: { [key: string]: string } = {
-      'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
-      'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
-      'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
-    };
+    // Utiliser directement la date ISO
+    const date = new Date(slot.DATE);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
 
-    const monthNumber = monthMap[month.toLowerCase()];
-    const formattedDate = `${year}-${monthNumber}-${day.padStart(2, '0')}`;
+    // Formater la date en format ISO (YYYY-MM-DD)
+    const formattedDate = `${year}-${month}-${day}`;
+
+    // Extraire l'heure du créneau (format: "14h00 - 15h00")
+    let startTime = '18:00';
+    let endTime = '19:00';
+    
+    if (slot.HEURE) {
+      // Parser l'heure du format "14h00 - 15h00"
+      const timeMatch = slot.HEURE.match(/(\d{1,2})h(\d{2})/);
+      if (timeMatch) {
+        const hour = timeMatch[1].padStart(2, '0');
+        const minute = timeMatch[2];
+
+        startTime = `${hour}:${minute}`;
+        
+        // Calculer l'heure de fin (ajouter 1 heure)
+        const endHour = (parseInt(hour) + 1).toString().padStart(2, '0');
+
+        endTime = `${endHour}:${minute}`;
+      }
+    }
 
     setFormData(prev => ({
       ...prev,
       startDate: formattedDate,
-      startTime: '18:00',
-      endTime: '19:00'
+      startTime: startTime,
+      endTime: endTime
     }));
   };
 
@@ -245,6 +264,7 @@ export function UnifiedEventModal({
         location: formData.selectedClient?.nomEtablissement || formData.location,
         description: `Tournage avec ${formData.photographers ? "photographe" : ""}${formData.photographers && formData.videographers ? " et " : ""}${formData.videographers ? "vidéaste" : ""}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
+        collaborator: userProfile?.id,
       };
       events.push(tournageEvent);
 
@@ -259,6 +279,7 @@ export function UnifiedEventModal({
         location: formData.selectedClient?.nomEtablissement || formData.location,
         description: `Publication ${formData.selectedClient?.categorie || ''} - Gagnant: ${formData.winner || "À déterminer"} - Tirage: ${formData.drawCompleted ? "Effectué" : "En attente"}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
+        collaborator: userProfile?.id,
       };
       events.push(publicationEvent);
 
@@ -272,6 +293,7 @@ export function UnifiedEventModal({
         location: formData.selectedClient?.nomEtablissement || formData.location,
         description: `Rendez-vous ${formData.appointmentType}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
+        collaborator: userProfile?.id,
       };
       events.push(rdvEvent);
 
@@ -285,6 +307,7 @@ export function UnifiedEventModal({
         location: formData.location || undefined,
         description: formData.description || undefined,
         category: "siege",
+        collaborator: userProfile?.id,
       };
       events.push(eventData);
     }

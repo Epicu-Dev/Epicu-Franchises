@@ -71,6 +71,7 @@ export default function HomeAdminPage() {
     tauxConversion: number;
     totalClients: number;
     totalFranchises: number;
+    totalProspects: number;
     totalPosts: number;
     totalPrestations: number;
   } | null>(null);

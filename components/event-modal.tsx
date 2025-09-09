@@ -13,6 +13,7 @@ import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 
 import { FormLabel } from "./form-label";
+import { useUser } from "@/contexts/user-context";
 
 interface Event {
     id: string;
@@ -37,6 +38,7 @@ export function EventModal({
     onOpenChange,
     onEventAdded,
 }: EventModalProps) {
+    const { userProfile } = useUser();
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
@@ -137,6 +139,7 @@ export function EventModal({
                 location: newEvent.location || undefined,
                 description: newEvent.description || undefined,
                 category: "siege" as Event["category"], // Par défaut, peut être modifié selon eventFor
+                collaborator: userProfile?.id,
             };
 
             const response = await fetch("/api/agenda", {
