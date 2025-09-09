@@ -99,6 +99,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Ville EPICU',
       'Commentaires',
       'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
+      'HISTORIQUE DE PUBLICATIONS',
     ];
 
     const allowedOrderBy = new Set([
@@ -190,11 +191,66 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      // Récupérer les publications pour tous les clients de la page
+      const publicationIds = Array.from(new Set(pageRecords.flatMap((r: any) => r.get('HISTORIQUE DE PUBLICATIONS') || [])));
+      let publicationsData: Record<string, any> = {};
+
+      if (publicationIds.length > 0) {
+        try {
+          const publications = await base('HISTORIQUE DE PUBLICATIONS')
+            .select({
+              filterByFormula: `OR(${publicationIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
+              fields: [
+                'Date de publication',
+                'Montant de la sponsorisation',
+                "Montant de l'addition",
+                'Cadeau du gérant pour le jeu concours',
+                'Montant du cadeau',
+                'Tirage effectué',
+                'Commentaire',
+                '📊 Nombre de vues',
+                '❤️ Likes',
+                '🔁 Partages',
+                '📌 Enregistrements'
+              ],
+              pageSize: Math.min(publicationIds.length, 100),
+              maxRecords: publicationIds.length,
+            })
+            .all();
+
+          publications.forEach((pub: any) => {
+            publicationsData[pub.id] = {
+              id: pub.id,
+              datePublication: pub.get('Date de publication'),
+              montantSponsorisation: pub.get('Montant de la sponsorisation'),
+              montantAddition: pub.get("Montant de l'addition"),
+              cadeauGerant: pub.get('Cadeau du gérant pour le jeu concours'),
+              montantCadeau: pub.get('Montant du cadeau'),
+              tirageEffectue: pub.get('Tirage effectué'),
+              benefice: pub.get('Bénéfice'),
+              commentaire: pub.get('Commentaire'),
+              nombreVues: pub.get('📊 Nombre de vues') || 0,
+              likes: pub.get('❤️ Likes') || 0,
+              partages: pub.get('🔁 Partages') || 0,
+              enregistrements: pub.get('📌 Enregistrements') || 0,
+            };
+          });
+        } catch (e) {
+          // Ignorer les erreurs de récupération des publications
+        }
+      }
+
       const clients = pageRecords.map((record: any) => {
         const catIds = record.get('Catégorie') || [];
         const catName = Array.isArray(catIds) && catIds.length > 0
           ? (categoryNames[catIds[0]] || catIds[0])
           : '';
+
+        // Récupérer les publications associées à ce client
+        const clientPublicationIds = record.get('HISTORIQUE DE PUBLICATIONS') || [];
+        const publications = Array.isArray(clientPublicationIds)
+          ? clientPublicationIds.map((id: string) => publicationsData[id]).filter(Boolean)
+          : [];
 
         return {
           id: record.id,
@@ -210,7 +266,8 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           description: record.get('Description'),
           villeEpicu: record.get('Ville EPICU'),
           commentaires: record.get('Commentaires'),
-          dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)')
+          dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)'),
+          publications: publications
         };
       });
 

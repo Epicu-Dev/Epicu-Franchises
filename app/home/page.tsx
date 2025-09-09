@@ -29,7 +29,6 @@ import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
 import { AgendaModals } from "@/components/agenda-modals";
-import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { ProspectModal } from "@/components/prospect-modal";
 import { AgendaSection } from "@/components/agenda-section";
 import { TodoBadge } from "@/components/badges";
@@ -88,11 +87,8 @@ export default function HomePage() {
   ]);
 
   // États pour les données dynamiques
-  const [prospects, setProspects] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [agendaLoading, setAgendaLoading] = useState(false);
   const [todoLoading, setTodoLoading] = useState(false);
   const [statistics, setStatistics] = useState<{
@@ -167,8 +163,7 @@ export default function HomePage() {
 
         setEvents(eventsData.events || []);
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération de l\'agenda:', error);
+    } catch {
       setEvents([]);
     } finally {
       setAgendaLoading(false);
@@ -211,8 +206,7 @@ export default function HomePage() {
 
         setTodoItems(filteredTodos);
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des todos:', error);
+    } catch {
       setTodoItems([]);
     } finally {
       setTodoLoading(false);
@@ -228,65 +222,106 @@ export default function HomePage() {
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
       const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
 
-      // Construire les paramètres de requête
+      // Construire les paramètres de requête pour l'API /api/data/data
       const params = new URLSearchParams();
-      params.set('q', monthYear); // Rechercher par mois-année
+      params.set('date', monthYear);
 
-      // Ajouter le filtre de ville si nécessaire
+      // Déterminer le paramètre ville
+      let villeParam = 'all';
+
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
-          // Pour "National", exclure les villes locales de l'utilisateur
-
-          // On ne peut pas exclure directement, on filtrera côté client
+          // Pour "National", on utilise 'all' et on filtrera côté client
+          villeParam = 'all';
         } else {
-          // Pour une ville spécifique
+          // Pour une ville spécifique, on utilise l'ID de la ville
           const selectedCityData = cities.find(c => c.key === selectedCity);
+
           if (selectedCityData) {
-            params.set('q', `${monthYear} ${selectedCityData.label}`);
+            // Chercher l'ID de la ville dans le profil utilisateur
+            const userVille = userProfile?.villes?.find(v => 
+              v.ville.toLowerCase() === selectedCityData.label.toLowerCase()
+            );
+
+            if (userVille?.id) {
+              villeParam = userVille.id;
+            } else {
+              // Si pas d'ID trouvé, utiliser le nom de la ville
+              villeParam = selectedCityData.label;
+            }
           }
         }
       }
+      params.set('ville', villeParam);
 
-      const response = await authFetch(`/api/statistiques?${params.toString()}`);
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
 
-        // Traiter les données selon le filtre de ville
-        let filteredData = data.statistiques || [];
-
+        // L'API /api/data/data retourne déjà les données agrégées
         if (selectedCity === "national") {
-          // Exclure les villes locales de l'utilisateur
-          const userVilles = userProfile?.villes || [];
-          const localVilleNames = userVilles.map(v => v.ville);
-          filteredData = filteredData.filter((item: any) =>
-            !localVilleNames.some(localVille =>
-              item.villeEpicu && item.villeEpicu.toLowerCase().includes(localVille.toLowerCase())
-            )
-          );
+          // Pour "National", on doit exclure les villes locales de l'utilisateur
+          // On récupère d'abord toutes les données puis on filtre
+          const allParams = new URLSearchParams();
+          allParams.set('date', monthYear);
+          allParams.set('ville', 'all');
+          
+          const allResponse = await authFetch(`/api/data/data?${allParams.toString()}`);
+
+          if (allResponse.ok) {
+            const allData = await allResponse.json();
+            
+            // Récupérer les données des villes locales de l'utilisateur
+            const userVilles = userProfile?.villes || [];
+            let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
+            
+            for (const ville of userVilles) {
+              if (ville.id) {
+                const localParams = new URLSearchParams();
+                localParams.set('date', monthYear);
+                localParams.set('ville', ville.id);
+                
+                const localResponse = await authFetch(`/api/data/data?${localParams.toString()}`);
+
+                if (localResponse.ok) {
+                  const localData = await localResponse.json();
+                  localTotals.totalAbonnes += localData.totalAbonnes || 0;
+                  localTotals.totalVues += localData.totalVues || 0;
+                  localTotals.totalProspectsSignes += localData.prospectsSignesDsLeMois || 0;
+                  localTotals.tauxConversion += localData.tauxDeConversion || 0;
+                }
+              }
+            }
+            
+            // Calculer les données nationales (toutes - locales)
+            const nationalData = {
+              totalAbonnes: (allData.totalAbonnes || 0) - localTotals.totalAbonnes,
+              totalVues: (allData.totalVues || 0) - localTotals.totalVues,
+              totalProspectsSignes: (allData.totalProspectsSignes || 0) - localTotals.totalProspectsSignes,
+              tauxConversion: allData.tauxConversion || 0
+            };
+            
+            setStatistics({
+              prospectsSignes: nationalData.totalProspectsSignes,
+              tauxConversion: nationalData.tauxConversion,
+              abonnes: nationalData.totalAbonnes,
+              vues: nationalData.totalVues
+            });
+          }
+        } else {
+          // Pour "tout" ou une ville spécifique, utiliser directement les données
+          const stats = {
+            prospectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
+            tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
+            abonnes: data.totalAbonnes || 0,
+            vues: data.totalVues || 0
+          };
+
+          setStatistics(stats);
         }
-
-        // Calculer les totaux
-        const totals = filteredData.reduce((acc: any, item: any) => {
-          acc.prospectsSignes += parseInt(item.prospectsSignesDsLeMois) || 0;
-          acc.tauxConversion += parseFloat(item.txDeConversion) || 0;
-          acc.abonnes += parseInt(item.totalAbonnes) || 0;
-          acc.vues += parseInt(item.totalVues) || 0;
-          return acc;
-        }, { prospectsSignes: 0, tauxConversion: 0, abonnes: 0, vues: 0 });
-
-        // Calculer la moyenne du taux de conversion
-        const avgTauxConversion = filteredData.length > 0 ? totals.tauxConversion / filteredData.length : 0;
-
-        setStatistics({
-          prospectsSignes: totals.prospectsSignes,
-          tauxConversion: avgTauxConversion,
-          abonnes: totals.abonnes,
-          vues: totals.vues
-        });
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error);
+    } catch {
       setStatistics(null);
     } finally {
       setStatisticsLoading(false);
@@ -295,32 +330,8 @@ export default function HomePage() {
 
   // Fonction pour récupérer les données
   const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // Récupération des prospects
-      const prospectsResponse = await authFetch('/api/prospects');
-      const prospectsData = await prospectsResponse.json();
-
-      setProspects(prospectsData.prospects || []);
-
-      // Récupération des clients
-      const clientsResponse = await authFetch('/api/clients');
-      const clientsData = await clientsResponse.json();
-
-      setClients(clientsData.clients || []);
-
-      // Récupération des événements d'agenda, todos et statistiques
-      await Promise.all([fetchAgenda(), fetchTodos(), fetchStatistics()]);
-    } catch {
-      // Gestion des erreurs de récupération des données
-      setProspects([]);
-      setClients([]);
-      setEvents([]);
-      setTodoItems([]);
-    } finally {
-      setLoading(false);
-    }
+    // Récupération des événements d'agenda, todos et statistiques
+    await Promise.all([fetchAgenda(), fetchTodos(), fetchStatistics()]);
   };
 
   // Effet pour charger les données au montage du composant
@@ -359,7 +370,7 @@ export default function HomePage() {
       iconColor: "text-custom-green-stats",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? `+${(statistics.vues / 1000000).toFixed(1)}` : "0",
+      value: statisticsLoading ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-rose/40",
@@ -446,8 +457,8 @@ export default function HomePage() {
           // Recharger les todos
           await fetchTodos();
         }
-      } catch (error) {
-        console.error('Erreur lors de l\'ajout du todo:', error);
+      } catch {
+        // Gestion silencieuse de l'erreur
       }
     }
   };
@@ -691,8 +702,8 @@ export default function HomePage() {
                 Mission
               </FormLabel>
               <Input
-                isRequired
                 id="mission"
+                isRequired
                 placeholder="Titre de la tâche"
                 classNames={{
                   inputWrapper: "bg-page-bg",
@@ -719,7 +730,12 @@ export default function HomePage() {
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">
-            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={onAddTodoModalClose}>
+            <Button
+              className="flex-1 border-1"
+              color='primary'
+              variant="bordered"
+              onPress={onAddTodoModalClose}
+            >
               Annuler
             </Button>
             <Button

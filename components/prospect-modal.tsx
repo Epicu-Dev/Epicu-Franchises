@@ -335,7 +335,7 @@ export function ProspectModal({
               <SelectItem key="FUN">FUN</SelectItem>
               <SelectItem key="BEAUTY">BEAUTY</SelectItem>
             </StyledSelect>
-            {newProspect.categorie.length > 1 ? (
+            {/* {newProspect.categorie.length > 1 ? (
               <div>
                 <FormLabel htmlFor="categorie" isRequired={false}>
                   Catégorie 2
@@ -356,6 +356,7 @@ export function ProspectModal({
                 </StyledSelect>
               </div>
             ) : <Button endContent={<PlusIcon className="h-4 w-4" />} color='primary' variant="bordered" className="border-1" onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie (Optionnel)</Button>}
+            */}
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>

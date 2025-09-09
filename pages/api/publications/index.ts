@@ -45,6 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
                         const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
                         if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
+                    } else {
+                        // Établissement obligatoire
+                        return res.status(400).json({ error: 'Établissement obligatoire' });
                     }
 
                     const rawCat = body.categorie ?? body.category ?? body['Catégorie'] ?? body['CATÉGORIE'];
@@ -135,6 +138,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
                         const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
                         if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
+                    } else {
+                        // Établissement obligatoire
+                        return res.status(400).json({ error: 'Établissement obligatoire' });
                     }
 
                     const rawCat = body.categorie ?? body.category ?? body['Catégorie'] ?? body['CATÉGORIE'];
@@ -237,7 +243,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         likes: p.get('❤️ Likes'),
                         partages: p.get('🔁 Partages'),
                         enregistrements: p.get('📌 Enregistrements'),
-                        beneficiaire: p.get('Bénéfice') ?? p.get('Bénéfice provenant de historique de publications') ?? p.get('Bénéfice provenant de historique de publications'),
+                        benefice: p.get('Bénéfice') ?? p.get('Bénéfice provenant de historique de publications') ?? p.get('Bénéfice provenant de historique de publications'),
                     };
 
                     // find invoices linked via PUBLICATIONS field

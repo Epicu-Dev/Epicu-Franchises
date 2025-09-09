@@ -32,6 +32,7 @@ export {
 
 // Composants d'interface
 export { MetricCard } from './metric-card';
+export { StatsGrid } from './stats-grid';
 export { default as MessageAlert } from './message-alert';
 export { default as GlobalToastContainer } from './global-toast-container';
 export { default as ToastContainer } from './toast-container';

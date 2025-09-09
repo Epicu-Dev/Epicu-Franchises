@@ -11,7 +11,6 @@ import {
     ModalBody,
     ModalFooter,
 } from "@heroui/modal";
-
 import { ChevronRightIcon, PlusIcon } from "@heroicons/react/24/outline";
 
 import PublicationModal from "./publication-modal";
@@ -73,38 +72,6 @@ export default function ClientModal({
         setPublications(editingClient?.publications || []);
     }, [editingClient]);
 
-    const handleAddPublication = (publication: Omit<Publication, 'id'>) => {
-        const newPublication: Publication = {
-            ...publication,
-            id: Date.now().toString() // Générer un ID temporaire
-        };
-
-        setPublications([...publications, newPublication]);
-
-        // Mettre à jour le client avec la nouvelle publication
-        if (editingClient) {
-            setEditingClient({
-                ...editingClient,
-                publications: [...publications, newPublication]
-            });
-        }
-    };
-
-    const handleUpdatePublication = (updatedPublication: Publication) => {
-        const updatedPublications = publications.map(pub =>
-            pub.id === updatedPublication.id ? updatedPublication : pub
-        );
-
-        setPublications(updatedPublications);
-
-        // Mettre à jour le client avec la publication modifiée
-        if (editingClient) {
-            setEditingClient({
-                ...editingClient,
-                publications: updatedPublications
-            });
-        }
-    };
 
     return (
         <Modal
@@ -319,13 +286,7 @@ export default function ClientModal({
                                             </div>
                                             <div className="text-sm text-gray-600 dark:text-gray-400">
                                                 <div>Date de publication: {new Date(publication.datePublication).toLocaleDateString('fr-FR')}</div>
-                                                <div className="mt-1 flex items-center">
-                                                    <span>Catégorie:</span>
-                                                    <CategoryBadge
-                                                        category={editingClient.categorie}
-                                                        className="ml-2"
-                                                    />
-                                                </div>
+                                                
                                             </div>
                                         </div>
                                         <ChevronRightIcon className="w-5 h-5 " />
@@ -388,11 +349,13 @@ export default function ClientModal({
             {/* Modal pour ajouter une publication */}
             <PublicationModal
                 editingPublication={editingPublication}
-                isLoading={isLoading}
+                etablissementId={editingClient?.id}
                 isOpen={isPublicationModalOpen}
-                onAddPublication={handleAddPublication}
                 onOpenChange={setIsPublicationModalOpen}
-                onUpdatePublication={handleUpdatePublication}
+                onPublicationAdded={() => {
+                    // Rafraîchir les données du client après ajout de publication
+                    onUpdateClient();
+                }}
             />
 
 

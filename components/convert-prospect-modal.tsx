@@ -115,7 +115,7 @@ export default function ConvertProspectModal({
         >
             <ModalContent>
                 <ModalHeader className="flex justify-center">
-                    Créer une interaction
+                    Convertir le prospect
                 </ModalHeader>
 
                 <ModalBody className="max-h-[70vh] overflow-y-auto">
@@ -184,7 +184,7 @@ export default function ConvertProspectModal({
                             isLoading={isLoading}
                             onPress={handleSubmit}
                         >
-                            {isLoading ? 'Chargement...' : 'Créer l\'interaction'}
+                            {isLoading ? 'Chargement...' : 'Basculer'}
                         </Button>
                     </div>
                 </ModalFooter>

@@ -82,7 +82,7 @@ export default function ClientsPage() {
     { key: 'facturePublication', label: 'Facture publication', sortable: false },
     { key: 'montantSponsorisation', label: 'Montant de la sponsorisation', sortable: false },
     { key: 'montantEdition', label: 'Montant de l\'édition', sortable: false },
-    { key: 'benefices', label: 'Bénéfices', sortable: false },
+    { key: 'benefice', label: 'Bénéfices', sortable: false },
     { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'tirageAuSort', label: 'Tirage au sort', sortable: false },
     { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
@@ -801,7 +801,7 @@ export default function ClientsPage() {
                                       </TableCell>
                                     );
                                     break;
-                                  case 'benefices':
+                                  case 'benefice':
                                     cells.push(
                                       <TableCell key={column.key} className="font-light">
                                         {client.publications && client.publications.length > 0

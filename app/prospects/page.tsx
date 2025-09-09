@@ -48,9 +48,6 @@ export default function ProspectsPage() {
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
-  const [editingClient, setEditingClient] = useState<any>(null);
-  const [isLoadingConvert, setIsLoadingConvert] = useState(false);
-  const [convertError, setConvertError] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
 
@@ -296,53 +293,6 @@ export default function ProspectsPage() {
     setIsProspectModalOpen(true);
   };
 
-  const handleConvertToClient = async () => {
-    if (!prospectToConvert || !editingClient) return;
-
-    try {
-      setIsLoadingConvert(true);
-      setConvertError(null);
-
-      // Préparer les données du client pour l'API
-      const clientData = {
-        ...editingClient,
-        // S'assurer que les données du prospect sont bien transmises
-        nomEtablissement: prospectToConvert.nomEtablissement,
-        ville: prospectToConvert.ville,
-        telephone: prospectToConvert.telephone,
-        categorie: prospectToConvert.categorie,
-        email: prospectToConvert.email,
-        commentaires: prospectToConvert.commentaires,
-        adresse: prospectToConvert.adresse,
-      };
-
-      const response = await fetch(`/api/prospects/${prospectToConvert.id}/convert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(clientData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la conversion en client");
-      }
-
-      // Fermer le modal et réinitialiser
-      setIsConvertModalOpen(false);
-      setProspectToConvert(null);
-      setEditingClient(null);
-
-      // Recharger les prospects
-      fetchProspects();
-    } catch (err) {
-      setConvertError(err instanceof Error ? err.message : "Une erreur est survenue");
-    } finally {
-      setIsLoadingConvert(false);
-    }
-  };
-
   const openConvertModal = (prospect: Prospect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
@@ -390,8 +340,6 @@ export default function ProspectsPage() {
     };
 
     setProspectToConvert(prospectForConvert);
-    setEditingClient(clientData);
-    setConvertError(null);
     setIsConvertModalOpen(true);
   };
 
@@ -693,21 +641,14 @@ export default function ProspectsPage() {
 
       {/* Modal de conversion de prospect en client */}
       <ConvertProspectModal
-        error={convertError}
-        editingClient={editingClient}
-        isLoading={isLoadingConvert}
         isOpen={isConvertModalOpen}
         prospect={prospectToConvert}
-        setEditingClient={setEditingClient}
         onOpenChange={(open) => {
           setIsConvertModalOpen(open);
           if (!open) {
             setProspectToConvert(null);
-            setEditingClient(null);
-            setConvertError(null);
           }
         }}
-        onUpdateClient={handleConvertToClient}
       />
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
