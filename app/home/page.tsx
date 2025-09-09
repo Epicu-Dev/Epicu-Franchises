@@ -7,10 +7,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Input } from "@heroui/input";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -28,12 +26,12 @@ import { Spinner } from "@heroui/spinner";
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
-import { AgendaModals } from "@/components/agenda-modals";
+import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { ProspectModal } from "@/components/prospect-modal";
 import { AgendaSection } from "@/components/agenda-section";
 import { TodoBadge } from "@/components/badges";
 import InvoiceModal from "@/components/invoice-modal";
-import { FormLabel } from "@/components";
+import TodoModal from "@/components/todo-modal";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -73,11 +71,6 @@ export default function HomePage() {
     onOpen: onAddTodoModalOpen,
     onClose: onAddTodoModalClose,
   } = useDisclosure();
-  const [newTodo, setNewTodo] = useState({
-    mission: "",
-    deadline: "",
-    status: "En cours" as "En cours" | "En retard" | "Terminé",
-  });
 
   // État pour le filtre de ville
   const [selectedCity, setSelectedCity] = useState<string>("tout");
@@ -103,10 +96,9 @@ export default function HomePage() {
   } | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
 
-  // États pour les modals d'agenda
-  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
-  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+  // États pour le modal unifié d'agenda
+  const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
+  const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -241,6 +233,7 @@ export default function HomePage() {
       );
 
       const params = new URLSearchParams();
+
       params.set("limit", "100");
       params.set("status", "payee");
 
@@ -252,7 +245,9 @@ export default function HomePage() {
 
         const filtered = list.filter((inv) => {
           if (!inv.date) return false;
+
           const d = new Date(inv.date);
+
           return d >= startOfMonth && d <= endOfMonth;
         });
 
@@ -278,6 +273,7 @@ export default function HomePage() {
 
       // Construire les paramètres de requête pour l'API /api/data/data
       const params = new URLSearchParams();
+
       params.set('date', monthYear);
 
       // Déterminer le paramètre ville
@@ -318,6 +314,7 @@ export default function HomePage() {
           // Pour "National", on doit exclure les villes locales de l'utilisateur
           // On récupère d'abord toutes les données puis on filtre
           const allParams = new URLSearchParams();
+
           allParams.set('date', monthYear);
           allParams.set('ville', 'all');
           
@@ -328,11 +325,13 @@ export default function HomePage() {
             
             // Récupérer les données des villes locales de l'utilisateur
             const userVilles = userProfile?.villes || [];
+
             let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
             
             for (const ville of userVilles) {
               if (ville.id) {
                 const localParams = new URLSearchParams();
+
                 localParams.set('date', monthYear);
                 localParams.set('ville', ville.id);
                 
@@ -340,6 +339,7 @@ export default function HomePage() {
 
                 if (localResponse.ok) {
                   const localData = await localResponse.json();
+
                   localTotals.totalAbonnes += localData.totalAbonnes || 0;
                   localTotals.totalVues += localData.totalVues || 0;
                   localTotals.totalProspectsSignes += localData.prospectsSignesDsLeMois || 0;
@@ -495,6 +495,7 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invoiceData),
       });
+
       if (response.ok) {
         setIsInvoiceModalOpen(false);
         await fetchInvoices();
@@ -507,11 +508,13 @@ export default function HomePage() {
   const handleEditInvoice = async (invoiceData: any) => {
     try {
       if (!selectedInvoice) return;
+
       const response = await authFetch(`/api/facturation?id=${encodeURIComponent(selectedInvoice.id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invoiceData),
       });
+
       if (response.ok) {
         setIsInvoiceModalOpen(false);
         await fetchInvoices();
@@ -521,49 +524,15 @@ export default function HomePage() {
     }
   };
 
-  const handleAddTodo = async () => {
-    if (newTodo.mission.trim()) {
-      try {
+  const handleTodoAdded = async () => {
+    // Recharger les todos
+    await fetchTodos();
+  };
 
-        // Récupérer l'ID du collaborateur
-        const meRes = await authFetch('/api/auth/me');
-
-        if (!meRes.ok) return;
-        const me = await meRes.json();
-        const collaboratorId = me.id as string;
-
-        const payload = {
-          'Nom de la tâche': newTodo.mission,
-          'Date de création': new Date().toISOString(),
-          'Statut': newTodo.status,
-          'Type de tâche': 'Général',
-          'Date d\'échéance': newTodo.deadline || '',
-          'Collaborateur': [collaboratorId]
-        };
-
-        const response = await authFetch('/api/todo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          // Réinitialiser le formulaire
-          setNewTodo({
-            mission: "",
-            deadline: "",
-            status: "En cours",
-          });
-
-          onAddTodoModalClose();
-
-          // Recharger les todos
-          await fetchTodos();
-        }
-      } catch {
-        // Gestion silencieuse de l'erreur
-      }
-    }
+  // Fonctions pour ouvrir le modal unifié avec le bon type
+  const openUnifiedModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
+    setCurrentEventType(type);
+    setIsUnifiedModalOpen(true);
   };
 
   return (
@@ -711,9 +680,9 @@ export default function HomePage() {
               <AgendaSection
                 events={agendaEvents}
                 loading={agendaLoading}
-                onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                onTournageSelect={() => setIsTournageModalOpen(true)}
+                onPublicationSelect={() => openUnifiedModal("publication")}
+                onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
+                onTournageSelect={() => openUnifiedModal("tournage")}
               />
 
               {/* To do Section */}
@@ -835,77 +804,18 @@ export default function HomePage() {
       </Modal>
 
       {/* Modal d'ajout de tâche ToDo */}
-      <Modal
+      <TodoModal
         isOpen={isAddTodoModalOpen}
-        placement="center"
-        onClose={onAddTodoModalClose}
-      >
-        <ModalContent>
-          <ModalHeader className="flex justify-center">
-            Ajouter une nouvelle tâche
-          </ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <FormLabel htmlFor="mission" isRequired={true}>
-                Mission
-              </FormLabel>
-              <Input
-                id="mission"
-                isRequired
-                placeholder="Titre de la tâche"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newTodo.mission}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, mission: e.target.value }))
-                }
-              />
-              <FormLabel htmlFor="deadline" isRequired={true}>
-                Deadline
-              </FormLabel>
-              <Input
-                id="deadline"
-                type="date"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newTodo.deadline}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter className="flex justify-between">
-            <Button
-              className="flex-1 border-1"
-              color='primary'
-              variant="bordered"
-              onPress={onAddTodoModalClose}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="flex-1"
-              color='primary'
-              onPress={handleAddTodo}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        onOpenChange={onAddTodoModalClose}
+        onTodoAdded={handleTodoAdded}
+      />
 
-      {/* Modals d'agenda */}
-      <AgendaModals
-        isPublicationModalOpen={isPublicationModalOpen}
-        isRdvModalOpen={isRdvModalOpen}
-        isTournageModalOpen={isTournageModalOpen}
-        setIsPublicationModalOpen={setIsPublicationModalOpen}
-        setIsRdvModalOpen={setIsRdvModalOpen}
-        setIsTournageModalOpen={setIsTournageModalOpen}
+      {/* Modal unifié pour tous les types d'événements */}
+      <UnifiedEventModal
+        eventType={currentEventType}
+        isOpen={isUnifiedModalOpen}
         onEventAdded={fetchData}
+        onOpenChange={setIsUnifiedModalOpen}
       />
 
       {/* Modal d'ajout de prospect */}
@@ -919,9 +829,9 @@ export default function HomePage() {
       <InvoiceModal
         isOpen={isInvoiceModalOpen}
         selectedInvoice={selectedInvoice}
+        onEdit={handleEditInvoice}
         onOpenChange={setIsInvoiceModalOpen}
         onSave={handleAddInvoice}
-        onEdit={handleEditInvoice}
       />
     </DashboardLayout>
   );
