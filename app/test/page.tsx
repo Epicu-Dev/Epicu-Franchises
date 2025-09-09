@@ -1782,12 +1782,12 @@ export default function TestProspects() {
               <Card title="Statistiques mensuelles — Test">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">Date (mm-yyyy)</label>
-                    <Input type="text" value={dateStat} onChange={(e) => setDateStat(e.target.value)} />
+                    <label htmlFor="dateStat" className="text-sm font-medium">Date (mm-yyyy)</label>
+                    <Input id="dateStat" type="text" value={dateStat} onChange={(e) => setDateStat(e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Ville EPICU (record id) — laisser vide pour "all"</label>
-                    <select className="w-full border rounded-xl px-3 py-2" value={selectedVilleIdStat} onChange={(e) => setSelectedVilleIdStat(e.target.value)}>
+                    <label htmlFor="villeIdStat" className="text-sm font-medium">Ville EPICU (record id) — laisser vide pour &quot;all&quot;</label>
+                    <select id="villeIdStat" className="w-full border rounded-xl px-3 py-2" value={selectedVilleIdStat} onChange={(e) => setSelectedVilleIdStat(e.target.value)}>
                       <option value="">— all —</option>
                       {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville} — {v.id}</option>)}
                     </select>
