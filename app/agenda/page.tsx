@@ -14,6 +14,7 @@ import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { getValidAccessToken } from "@/utils/auth";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
+import { getEventColorFromEstablishmentCategories } from "@/components/badges";
 
 interface Event {
   id: string;
@@ -27,6 +28,7 @@ interface Event {
   category: "siege" | "franchises" | "prestataires";
   isGoogleEvent?: boolean; // Marqueur pour identifier les événements Google Calendar
   htmlLink?: string; // Lien vers l'événement dans Google Calendar
+  establishmentCategories?: string[]; // Catégories des établissements associés
 }
 
 interface CalendarDay {
@@ -53,6 +55,7 @@ interface ApiEvent {
   type: string;
   description?: string;
   collaborators?: string[];
+  establishmentCategories?: string[];
 }
 
 export default function AgendaPage() {
@@ -95,7 +98,7 @@ export default function AgendaPage() {
 
         window.location.href = authUrl;
       }
-    } catch (error) {
+    } catch {
       // Erreur lors de la connexion
       setError('Erreur lors de la connexion à Google Calendar');
     }
@@ -114,7 +117,7 @@ export default function AgendaPage() {
       } else {
         setIsGoogleConnected(false);
       }
-    } catch (error) {
+    } catch {
       // Erreur lors de la vérification du statut
       setIsGoogleConnected(false);
     } finally {
@@ -248,6 +251,9 @@ export default function AgendaPage() {
           category = "prestataires";
         }
 
+        console.log(apiEvent.establishmentCategories);
+        
+
         return {
           id: apiEvent.id,
           title: apiEvent.task,
@@ -257,6 +263,7 @@ export default function AgendaPage() {
           endTime,
           description: apiEvent.description,
           category,
+          establishmentCategories: apiEvent.establishmentCategories,
         };
       });
 
@@ -354,6 +361,28 @@ export default function AgendaPage() {
       return `${startOfWeek.getDate()} ${months[startOfWeek.getMonth()]} - ${endOfWeek.getDate()} ${months[endOfWeek.getMonth()]} ${startOfWeek.getFullYear()}`;
     } else {
       return `${startOfWeek.getDate()} ${months[startOfWeek.getMonth()]} ${startOfWeek.getFullYear()} - ${endOfWeek.getDate()} ${months[endOfWeek.getMonth()]} ${endOfWeek.getFullYear()}`;
+    }
+  };
+
+  // Fonction helper pour obtenir la couleur d'un événement
+  const getEventColor = (event: Event) => {
+    // Si l'événement a des catégories d'établissement, utiliser ces couleurs
+    if (event.establishmentCategories && event.establishmentCategories.length > 0) {
+      return getEventColorFromEstablishmentCategories(event.establishmentCategories);
+    }
+    
+    // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
+    switch (event.type) {
+      case "rendez-vous":
+        return "bg-custom-blue-rdv/14 text-custom-blue-rdv";
+      case "tournage":
+        return "bg-custom-rose/14 text-custom-rose";
+      case "publication":
+        return "bg-custom-blue-pub/14 text-custom-blue-pub";
+      case "evenement":
+        return "bg-custom-orange-event/14 text-custom-orange-event";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -490,14 +519,7 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded cursor-pointer ${event.type === "rendez-vous"
-                      ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
-                      : event.type === "tournage"
-                        ? "bg-custom-rose/14 text-custom-rose"
-                        : event.type === "publication"
-                          ? "bg-custom-blue-pub/14 text-custom-blue-pub"
-                          : "bg-custom-orange-event/14 text-custom-orange-event"
-                      } ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
                     title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                     role={event.isGoogleEvent ? "button" : undefined}
                     tabIndex={event.isGoogleEvent ? 0 : undefined}
@@ -602,14 +624,7 @@ export default function AgendaPage() {
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${event.type === "rendez-vous"
-                            ? "bg-custom-blue-rdv/14 text-custom-blue-rdv"
-                            : event.type === "tournage"
-                              ? "bg-custom-rose/14 text-custom-rose"
-                              : event.type === "publication"
-                                ? "bg-custom-blue-pub/14 text-custom-blue-pub"
-                                : "bg-custom-orange-event/14 text-custom-orange-event"
-                            } ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
                           title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                           role={event.isGoogleEvent ? "button" : undefined}
                           tabIndex={event.isGoogleEvent ? 0 : undefined}

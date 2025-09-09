@@ -241,7 +241,6 @@ export default function ClientsPage() {
         "Téléphone": editingClient.telephone,
         "Ville": editingClient.ville,
         "SIRET": editingClient.siret,
-        "Date de signature du contrat": editingClient.dateSignatureContrat,
         "Catégorie": editingClient.categorie,
       };
 

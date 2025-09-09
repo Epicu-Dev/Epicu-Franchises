@@ -19,6 +19,9 @@ import { useUser } from "@/contexts/user-context";
 import { SortableColumnHeader } from "@/components/sortable-column-header";
 import { SubscribersEditModal } from "@/components";
 import { useSortableTable } from "@/hooks/use-sortable-table";
+import { getValidAccessToken } from "@/utils/auth";
+
+
 
 interface SubscribersData {
   foodSubscribers: string;
@@ -28,15 +31,179 @@ interface SubscribersData {
   beautySubscribers: string;
 }
 
+interface ApiDataResponse {
+  date: string;
+  ville: string;
+  totalAbonnes: number;
+  totalVues: number;
+  totalProspectsSignes: number;
+  totalProspectsVus: number;
+  tauxConversion: number | null;
+  rawCount: number;
+}
+
+interface TableDataRow {
+  month: string;
+  revenue: string;
+  conversionRate: string;
+  signedClients: string;
+  prospectsMet: string;
+  newProspects: string;
+  publishedPosts: string;
+  foodSubscribers: string;
+  shopSubscribers: string;
+  travelSubscribers: string;
+  funSubscribers: string;
+  beautySubscribers: string;
+  giftsAmount: string;
+  city: string;
+  cityName: string;
+  categories: string[];
+}
+
 export default function DataPage() {
   const { userProfile, isLoading } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
-  const [tableData, setTableData] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<TableDataRow[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
-  // Générer des données de test basées sur les vraies villes de l'utilisateur
+  // Fonction pour les appels API authentifiés
+  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
+    const token = await getValidAccessToken();
+
+    if (!token) throw new Error('No access token');
+
+    const headers = new Headers((init?.headers as HeadersInit) || {});
+
+    headers.set('Authorization', `Bearer ${token}`);
+    const merged: RequestInit = { ...init, headers };
+
+    return fetch(input, merged);
+  };
+
+  // Fonction pour récupérer les données depuis l'API
+  const fetchDataFromAPI = async () => {
+    if (!userProfile?.villes || userProfile.villes.length === 0) {
+      return [];
+    }
+
+    setDataLoading(true);
+    setDataError(null);
+
+    try {
+      const currentYear = parseInt(selectedYear);
+      const currentMonth = new Date().getMonth(); // 0-based (0 = Janvier)
+      
+      const allMonths = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+      ];
+
+      // Si c'est l'année actuelle, ne montrer que les mois passés et actuel
+      let months = allMonths;
+
+      if (currentYear === new Date().getFullYear()) {
+        months = allMonths.slice(0, currentMonth + 1);
+      }
+
+      // Trier par ordre décroissant (plus récent en premier)
+      months = [...months].reverse();
+
+      const dataPromises = months.map(async (month, index) => {
+        const monthNumber = allMonths.indexOf(month) + 1;
+        const date = `${monthNumber.toString().padStart(2, '0')}-${currentYear}`;
+        
+        // Alterner entre les villes de l'utilisateur
+        const cityIndex = index % userProfile.villes.length;
+        const city = userProfile.villes[cityIndex];
+        const villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+
+        try {
+          const response = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
+          const apiData: ApiDataResponse = await response.json();
+
+          if (!response.ok) {
+            // Retourner des données par défaut en cas d'erreur
+            return {
+              month,
+              revenue: "0€",
+              conversionRate: "0%",
+              signedClients: "0",
+              prospectsMet: "0",
+              newProspects: "0",
+              publishedPosts: "0",
+              foodSubscribers: "0",
+              shopSubscribers: "0",
+              travelSubscribers: "0",
+              funSubscribers: "0",
+              beautySubscribers: "0",
+              giftsAmount: "0€",
+              city: city.ville.toLowerCase().replace(/\s+/g, '-'),
+              cityName: city.ville,
+              categories: ["FOOD", "SHOP"],
+            };
+          }
+
+          // Convertir les données API en format tableau
+          return {
+            month,
+            revenue: `${Math.floor(apiData.totalVues * 0.1)}€`, // Estimation basée sur les vues
+            conversionRate: apiData.tauxConversion ? `${apiData.tauxConversion}%` : "0%",
+            signedClients: apiData.totalProspectsSignes.toString(),
+            prospectsMet: apiData.totalProspectsVus.toString(),
+            newProspects: Math.floor(apiData.totalVues * 0.05).toString(), // Estimation
+            publishedPosts: Math.floor(apiData.totalVues * 0.02).toString(), // Estimation
+            foodSubscribers: Math.floor(apiData.totalAbonnes * 0.1).toString(), // Estimation
+            shopSubscribers: Math.floor(apiData.totalAbonnes * 0.4).toString(), // Estimation
+            travelSubscribers: Math.floor(apiData.totalAbonnes * 0.2).toString(), // Estimation
+            funSubscribers: Math.floor(apiData.totalAbonnes * 0.1).toString(), // Estimation
+            beautySubscribers: Math.floor(apiData.totalAbonnes * 0.2).toString(), // Estimation
+            giftsAmount: `${Math.floor(apiData.totalProspectsSignes * 50)}€`, // Estimation
+            city: city.ville.toLowerCase().replace(/\s+/g, '-'),
+            cityName: city.ville,
+            categories: ["FOOD", "SHOP"],
+          };
+        } catch {
+          // Retourner des données par défaut en cas d'erreur
+          return {
+            month,
+            revenue: "0€",
+            conversionRate: "0%",
+            signedClients: "0",
+            prospectsMet: "0",
+            newProspects: "0",
+            publishedPosts: "0",
+            foodSubscribers: "0",
+            shopSubscribers: "0",
+            travelSubscribers: "0",
+            funSubscribers: "0",
+            beautySubscribers: "0",
+            giftsAmount: "0€",
+            city: city.ville.toLowerCase().replace(/\s+/g, '-'),
+            cityName: city.ville,
+            categories: ["FOOD", "SHOP"],
+          };
+        }
+      });
+
+      const results = await Promise.all(dataPromises);
+
+      return results;
+    } catch {
+      setDataError('Erreur lors du chargement des données');
+
+      return [];
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Générer des données de test basées sur les vraies villes de l'utilisateur (fallback)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateTableData = () => {
     if (!userProfile?.villes || userProfile.villes.length === 0) {
       return [];
@@ -114,9 +281,17 @@ export default function DataPage() {
 
   // Initialiser les données du tableau au chargement
   useEffect(() => {
-    const data = generateTableData();
+    const loadData = async () => {
+      const data = await fetchDataFromAPI();
 
-    setTableData(data);
+      setTableData(data);
+    };
+
+    if (userProfile?.villes && userProfile.villes.length > 0) {
+      loadData();
+    } else {
+      setTableData([]);
+    }
   }, [userProfile?.villes, selectedYear]);
 
   const allTableData = tableData;
@@ -196,11 +371,43 @@ export default function DataPage() {
   }, [userProfile?.villes]);
 
   // Afficher un message de chargement
-  if (isLoading) {
+  if (isLoading || dataLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-primary">Chargement des données...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Afficher un message d'erreur si il y en a une
+  if (dataError) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center text-primary">
+            <p className="text-lg mb-2 text-red-600">Erreur de chargement</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {dataError}
+            </p>
+            <Button 
+              className="mt-4" 
+              color="primary" 
+              onPress={() => {
+                setDataError(null);
+                const loadData = async () => {
+                  const data = await fetchDataFromAPI();
+
+                  setTableData(data);
+                };
+
+                loadData();
+              }}
+            >
+              Réessayer
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     );

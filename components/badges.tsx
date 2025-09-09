@@ -39,6 +39,17 @@ export const getCategoryBadgeColor = (category?: string) => {
     }
 };
 
+// Fonction pour obtenir la couleur d'un événement basée sur les catégories d'établissement
+export const getEventColorFromEstablishmentCategories = (establishmentCategories?: string[]) => {
+    if (!establishmentCategories || establishmentCategories.length === 0) {
+        return "bg-gray-100 text-gray-800";
+    }
+
+    // Prendre la première catégorie pour déterminer la couleur
+    const firstCategory = establishmentCategories[0];
+    return getCategoryBadgeColor(firstCategory);
+};
+
 // Fonction pour obtenir la couleur du badge de statut de facture
 export const getInvoiceStatusBadgeColor = (status: string) => {
     switch (status) {

@@ -57,7 +57,6 @@ export default function ClientModal({
             'ville',
             'telephone',
             'email',
-            'dateSignatureContrat'
         ];
 
         return requiredFields.every(field => {
@@ -232,25 +231,7 @@ export default function ClientModal({
                                 }
                             />
 
-                            <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
-                                Date de signature du contrat
-                            </FormLabel>
-                            <Input
-                                isRequired
-                                classNames={{
-                                    inputWrapper: "bg-page-bg",
-                                }}
-                                id="dateSignatureContrat"
-                                type="date"
-                                value={editingClient.dateSignatureContrat || ""}
-                                onChange={(e) =>
-                                    setEditingClient(
-                                        editingClient
-                                            ? { ...editingClient, dateSignatureContrat: e.target.value }
-                                            : null
-                                    )
-                                }
-                            />
+                         
 
                             {/* Publications */}
                             <div className="space-y-4">

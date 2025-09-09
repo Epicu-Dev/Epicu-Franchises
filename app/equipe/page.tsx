@@ -53,31 +53,18 @@ interface TeamMember {
   trainingCertificateSignatureDate: string;
 }
 
-interface AdminTeamMember {
+
+
+
+// Interface pour les données de l'API équipe
+interface CollaborateurEquipe {
   id: string;
-  city: string;
-  firstName: string;
-  lastName: string;
-  identifier: string;
-  password: string;
-  birthDate: string;
-  personalEmail: string;
-  franchiseEmail: string;
-  phone: string;
-  postalAddress: string;
-  siret: string;
-  dipSignatureDate: string;
-  franchiseContractSignatureDate: string;
-  trainingCertificateSignatureDate: string;
-}
-
-
-
-// Interface pour les données de l'API collaborateurs
-interface Collaborateur {
-  id: string;
-  nomComplet: string;
-  villes: string[];
+  nom: string;
+  prenom: string;
+  villeEpicu: string[];
+  emailEpicu: string | null;
+  role: string | null;
+  etablissements: string[];
 }
 
 export default function EquipePage() {
@@ -92,128 +79,6 @@ export default function EquipePage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
 
-  // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
-  const mockAdminData: AdminTeamMember[] = [
-    {
-      id: "1",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "2",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "3",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "4",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "5",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "6",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "7",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-  ];
 
   // Wrapper fetch avec authentification
   const authFetch = async (input: RequestInfo, init?: RequestInit) => {
@@ -241,7 +106,7 @@ export default function EquipePage() {
         params.set('q', searchTerm);
       }
 
-      const response = await authFetch(`/api/collaborateurs?${params}`);
+      const response = await authFetch(`/api/equipe?${params}`);
 
       if (!response.ok) {
         throw new Error(
@@ -250,38 +115,44 @@ export default function EquipePage() {
       }
 
       const data = await response.json();
-      const collaborateurs: Collaborateur[] = data.results || [];
+
+      const collaborateurs: CollaborateurEquipe[] = data.results || [];
 
       // Transformer les données de l'API en format TeamMember
-      const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
-        // Déterminer la catégorie basée sur les villes ou l'index
+      const transformedMembers: TeamMember[] = collaborateurs.map((collab) => {
+        // Déterminer la catégorie basée sur le rôle
         let category: "siege" | "franchise" | "prestataire" = "siege";
+        const roleLower = (collab.role || "").toLowerCase();
+        
+        if (roleLower.includes("franchise") || roleLower.includes("franchisé")) {
+          category = "franchise";
+        } else if (roleLower.includes("prestataire")) {
+          category = "prestataire";
+        }
 
-        if (index >= 10 && index < 25) category = "franchise";
-        else if (index >= 25) category = "prestataire";
-
-        // Déterminer le rôle basé sur la catégorie
-        let role = "Collaborateur";
-
-        if (category === "siege") role = "Collaborateur Siège";
-        else if (category === "franchise") role = "Franchisé";
-        else if (category === "prestataire") role = "Prestataire";
+        // Utiliser le rôle de l'API ou définir un rôle par défaut
+        let role = collab.role || "Collaborateur";
+        
+        if (!collab.role) {
+          if (category === "siege") role = "Collaborateur Siège";
+          else if (category === "franchise") role = "Franchisé";
+          else if (category === "prestataire") role = "Prestataire";
+        }
 
         // Déterminer la localisation
         let location = "Siège";
 
         if (category === "franchise" || category === "prestataire") {
-          location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+          location = collab.villeEpicu && collab.villeEpicu.length > 0 ? collab.villeEpicu[0] : "Ville non définie";
         }
 
-        // Extraire le prénom et nom du nom complet
-        const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
-        const nameParts = nomComplet.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
+        // Utiliser les vrais prénom et nom de l'API
+        const firstName = collab.prenom || '';
+        const lastName = collab.nom || '';
+        const fullName = `${firstName} ${lastName}`.trim() || `Collaborateur ${collab.id}`;
 
         // Déterminer la ville (première ville de la liste ou ville par défaut)
-        const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
+        const city = collab.villeEpicu && collab.villeEpicu.length > 0 ? collab.villeEpicu[0] : "Ville non définie";
 
         // Générer un identifiant basé sur le nom
         const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
@@ -292,9 +163,9 @@ export default function EquipePage() {
         // Date de naissance par défaut (peut être modifiée plus tard)
         const birthDate = "01.01.1990";
 
-        // Générer des emails basés sur le nom et la ville
+        // Utiliser l'email EPICU de l'API ou générer des emails basés sur le nom et la ville
         const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-        const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+        const franchiseEmail = collab.emailEpicu || `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
 
         // Générer des données pour les nouveaux champs
         const phone = "0648596769"; // Téléphone par défaut
@@ -306,7 +177,7 @@ export default function EquipePage() {
 
         return {
           id: collab.id,
-          name: collab.nomComplet || `Collaborateur ${index + 1}`,
+          name: fullName,
           role,
           location,
           avatar: `/api/placeholder/150/150`,
@@ -338,6 +209,7 @@ export default function EquipePage() {
       setMembers(filteredMembers);
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Erreur lors de la récupération des membres:', error);
       // En cas d'erreur, on garde les données existantes ou on vide la liste
       setMembers([]);
@@ -366,6 +238,7 @@ export default function EquipePage() {
     // Vérifier aussi le rôle dans le profil utilisateur
     if (userProfile?.role) {
       const role = userProfile.role.toLowerCase();
+
       return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
     }
 
@@ -457,13 +330,13 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
-                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   endContent={
                     searchTerm && (
                       <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
                     )
                   }
                   placeholder="Rechercher..."
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
@@ -495,12 +368,12 @@ export default function EquipePage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
+                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
                     className="group relative flex flex-col items-center text-center cursor-pointer hover:scale-105 transition-transform"
-                    onClick={() => handleMemberClick(member)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
+                    onClick={() => handleMemberClick(member)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
                   >
                     <Avatar
                       className="w-16 h-16 mb-3"
@@ -686,18 +559,18 @@ export default function EquipePage() {
       {/* Modal pour ajouter/modifier un membre - visible uniquement pour les admins */}
       {isAdmin() && (
         <TeamMemberModal
+          isEditing={false}
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onMemberAdded={handleMemberAdded}
-          isEditing={false}
         />
       )}
 
       {/* Modal pour afficher l'équipe du franchisé */}
       <FranchiseTeamModal
         isOpen={isFranchiseTeamModalOpen}
-        onClose={handleFranchiseTeamModalClose}
         selectedMember={selectedMember}
+        onClose={handleFranchiseTeamModalClose}
       />
     </div>
   );
