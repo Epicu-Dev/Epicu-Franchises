@@ -44,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Type',
         'Description',
         'Collaborateur',
+        'Établissements',
       ];
 
       // Construire la formule de filtrage si besoin
@@ -74,6 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const type = r.get('Type') || '';
         const description = r.get('Description') || '';
         const collaborators = r.get('Collaborateur') || [];
+        const etablissements = r.get('Établissements') || [];
 
         return {
           id: r.id,
@@ -82,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type,
           description,
           collaborators,
+          etablissements,
         };
       });
 
@@ -148,6 +151,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         else fieldsToCreate['Collaborateur'] = [collPayload];
       }
 
+      // Établissements linkage: expect an array of record ids or single id
+      const etablissementPayload = body['Établissements'] || body.etablissement || body.etablissements || body.establishment || body.establishments;
+
+      if (etablissementPayload) {
+        if (Array.isArray(etablissementPayload)) fieldsToCreate['Établissements'] = etablissementPayload;
+        else fieldsToCreate['Établissements'] = [etablissementPayload];
+      }
+
       const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
 
       res.status(201).json({ id: created[0].id, ...fieldsToCreate });
@@ -190,6 +201,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else {
           // empty string or falsy -> clear
           fieldsToUpdate['Collaborateur'] = [];
+        }
+      }
+
+      // Établissements linkage: accept array, single id, null (to clear)
+      if (Object.prototype.hasOwnProperty.call(body, 'Établissements') || Object.prototype.hasOwnProperty.call(body, 'etablissement') || Object.prototype.hasOwnProperty.call(body, 'etablissements') || Object.prototype.hasOwnProperty.call(body, 'establishment') || Object.prototype.hasOwnProperty.call(body, 'establishments')) {
+        const etablissementPayload = body['Établissements'] ?? body.etablissement ?? body.etablissements ?? body.establishment ?? body.establishments;
+
+        if (etablissementPayload === null) {
+          // clear links
+          fieldsToUpdate['Établissements'] = [];
+        } else if (Array.isArray(etablissementPayload)) {
+          fieldsToUpdate['Établissements'] = etablissementPayload;
+        } else if (etablissementPayload) {
+          fieldsToUpdate['Établissements'] = [etablissementPayload];
+        } else {
+          // empty string or falsy -> clear
+          fieldsToUpdate['Établissements'] = [];
         }
       }
 

@@ -12,6 +12,7 @@ import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import { FormLabel } from "./form-label";
 import SlotSelectionModal from "./slot-selection-modal";
+
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
 import { Client } from "@/types/client";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -265,6 +266,7 @@ export function UnifiedEventModal({
         description: `Tournage avec ${formData.photographers ? "photographe" : ""}${formData.photographers && formData.videographers ? " et " : ""}${formData.videographers ? "vidéaste" : ""}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
         collaborator: userProfile?.id,
+        etablissement: formData.selectedClient?.id || null,
       };
       events.push(tournageEvent);
 
@@ -280,6 +282,7 @@ export function UnifiedEventModal({
         description: `Publication ${formData.selectedClient?.categorie || ''} - Gagnant: ${formData.winner || "À déterminer"} - Tirage: ${formData.drawCompleted ? "Effectué" : "En attente"}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
         collaborator: userProfile?.id,
+        etablissement: formData.selectedClient?.id || null,
       };
       events.push(publicationEvent);
 
@@ -294,6 +297,7 @@ export function UnifiedEventModal({
         description: `Rendez-vous ${formData.appointmentType}${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
         collaborator: userProfile?.id,
+        etablissement: formData.selectedClient?.id || null,
       };
       events.push(rdvEvent);
 
@@ -308,6 +312,7 @@ export function UnifiedEventModal({
         description: formData.description || undefined,
         category: "siege",
         collaborator: userProfile?.id,
+        etablissement: formData.selectedClient?.id || null,
       };
       events.push(eventData);
     }
