@@ -114,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       userInfo = {
         id: userRecord.id,
-        email: userRecord.get('Email EPICU'),
+        email: userRecord.get('Email perso'),
         firstname: userRecord.get('Prénom'),
         lastname: userRecord.get('Nom'),
         villes: villesEpicu,

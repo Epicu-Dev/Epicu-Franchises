@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const records = await base('COLLABORATEURS')
       .select({
-        filterByFormula: `{Email EPICU} = '${email}'`,
+        filterByFormula: `{Email perso} = '${email}'`,
         maxRecords: 1,
       })
       .firstPage();
@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Connexion réussie',
       user: {
         id: user.id,
-        email: user.get('Email EPICU'),
+        email: user.get('Email perso'),
         firstname: user.get('Prénom'),
         lastname: user.get('Nom'),
         villes: villesEpicu,

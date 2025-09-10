@@ -95,7 +95,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // Transformer les données Airtable en format UserProfile
       const transformedProfile: UserProfile = {
         id: userData.id,
-        email: userData['Email EPICU'] || '',
+        email: userData['Email perso'] || '',
         firstname: userData['Prénom'] || '',
         lastname: userData['Nom'] || '',
         role: userData['Rôle'] || '',

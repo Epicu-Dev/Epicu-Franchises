@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: userRecord.id,
       nom: userRecord.get('Nom'),
       prenom: userRecord.get('Prénom'),
-      email: userRecord.get('Email EPICU'),
+      email: userRecord.get('Email perso'),
       villes: villesEpicu,
     });
   } catch (error: any) {

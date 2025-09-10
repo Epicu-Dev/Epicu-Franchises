@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const selectOptions: any = {
         view: VIEW_NAME,
-        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email EPICU', 'Rôle', 'ÉTABLISSEMENTS', 'Trombi'],
+        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email perso', 'Rôle', 'ÉTABLISSEMENTS', 'Trombi'],
         pageSize: limit,
         sort: [{ field: orderBy, direction: order }],
         maxRecords: offset + limit + 1,
@@ -62,6 +62,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // require auth to access équipe
       const callerUserId = await requireValidAccessToken(req, res);
       if (!callerUserId) return;
+
+      // detect if caller is admin to include sensitive fields
+      let isAdmin = false;
+      try {
+        const callerRec = await base(TABLE_NAME).find(callerUserId);
+        const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
+        isAdmin = callerRole === 'admin' || callerRole === 'administrateur';
+      } catch (e) {
+        console.warn('Impossible de récupérer le rôle de l\'utilisateur caller', e);
+      }
+
+      if (isAdmin) {
+        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'SIRET', 'Date DIP', 'Date de signature du contrat de franchise', "Date de signature de l'attestation de formation initiale");
+      }
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
 
@@ -82,16 +96,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const villes = villesIds.map((id) => cityNameById.get(id)).filter((v): v is string => Boolean(v));
         const etablIds: string[] = (r.get('ÉTABLISSEMENTS') as string[] | undefined) || [];
 
-        return {
+        const baseObj: any = {
           id: r.id,
           nom: r.get('Nom') || '',
           prenom: r.get('Prénom') || '',
           villeEpicu: villes,
-          emailEpicu: r.get('Email EPICU') || null,
+          emailEpicu: r.get('Email perso') || null,
           role: r.get('Rôle') || null,
           etablissements: etablIds,
           trombi: r.get('Trombi') || null,
         };
+
+        if (isAdmin) {
+          baseObj.dateNaissance = r.get('Date de naissance') || null;
+          baseObj.telephone = r.get('Téléphone') || null;
+          baseObj.adresse = r.get('Adresse') || null;
+          baseObj.siret = r.get('SIRET') || null;
+          baseObj.dateDIP = r.get('Date DIP') || null;
+          baseObj.dateSignatureContrat = r.get('Date de signature du contrat de franchise') || null;
+          baseObj.dateSignatureAttestation = r.get("Date de signature de l'attestation de formation initiale") || null;
+        }
+
+        return baseObj;
       });
 
       const hasMore = upToPageRecords.length > offset + limit;
@@ -111,7 +137,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
       if (body.siret !== undefined) fields['SIRET'] = body.siret;
       if (body.email !== undefined) fields['Email'] = body.email;
-      if (body.emailEpicu !== undefined) fields['Email EPICU'] = body.emailEpicu;
+      if (body.emailEpicu !== undefined) fields['Email perso'] = body.emailEpicu;
       if (body.telephone !== undefined) fields['Téléphone'] = body.telephone;
       if (body.dateNaissance !== undefined) fields['Date de naissance'] = body.dateNaissance;
       if (body.dateDIP !== undefined) fields['Date DIP'] = body.dateDIP;
@@ -177,7 +203,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (Object.prototype.hasOwnProperty.call(body, 'prenom') || Object.prototype.hasOwnProperty.call(body, 'Prénom')) fields['Prénom'] = body.prenom ?? body.Prénom;
       if (Object.prototype.hasOwnProperty.call(body, 'siret') || Object.prototype.hasOwnProperty.call(body, 'SIRET')) fields['SIRET'] = body.siret ?? body.SIRET;
       if (Object.prototype.hasOwnProperty.call(body, 'email') || Object.prototype.hasOwnProperty.call(body, 'Email')) fields['Email'] = body.email ?? body.Email;
-      if (Object.prototype.hasOwnProperty.call(body, 'emailEpicu') || Object.prototype.hasOwnProperty.call(body, 'Email EPICU')) fields['Email EPICU'] = body.emailEpicu ?? body['Email EPICU'];
+      if (Object.prototype.hasOwnProperty.call(body, 'emailEpicu') || Object.prototype.hasOwnProperty.call(body, 'Email perso')) fields['Email perso'] = body.emailEpicu ?? body['Email perso'];
       if (Object.prototype.hasOwnProperty.call(body, 'telephone') || Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
       if (Object.prototype.hasOwnProperty.call(body, 'dateNaissance') || Object.prototype.hasOwnProperty.call(body, 'Date de naissance')) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
       if (Object.prototype.hasOwnProperty.call(body, 'dateDIP') || Object.prototype.hasOwnProperty.call(body, 'Date DIP')) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
