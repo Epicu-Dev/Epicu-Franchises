@@ -13,63 +13,50 @@ import {
 import { Tabs, Tab } from "@heroui/tabs";
 import { Button } from "@heroui/button";
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { Spinner } from "@heroui/spinner";
 
 import { DashboardLayout } from "../dashboard-layout";
 import { useUser } from "@/contexts/user-context";
-import { SortableColumnHeader } from "@/components/sortable-column-header";
 import { SubscribersEditModal } from "@/components";
 import { useSortableTable } from "@/hooks/use-sortable-table";
 import { getValidAccessToken } from "@/utils/auth";
-
-
-
-interface SubscribersData {
-  foodSubscribers: string;
-  shopSubscribers: string;
-  travelSubscribers: string;
-  funSubscribers: string;
-  beautySubscribers: string;
-}
-
-interface ApiDataResponse {
-  date: string;
-  ville: string;
-  totalAbonnes: number;
-  totalVues: number;
-  totalProspectsSignes: number;
-  totalProspectsVus: number;
-  tauxConversion: number | null;
-  rawCount: number;
-}
-
-interface TableDataRow {
-  month: string;
-  revenue: string;
-  conversionRate: string;
-  signedClients: string;
-  prospectsMet: string;
-  newProspects: string;
-  publishedPosts: string;
-  foodSubscribers: string;
-  shopSubscribers: string;
-  travelSubscribers: string;
-  funSubscribers: string;
-  beautySubscribers: string;
-  giftsAmount: string;
-  city: string;
-  cityName: string;
-  categories: string[];
-}
+import { Data } from "@/types/data";
 
 export default function DataPage() {
   const { userProfile, isLoading } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
-  const [tableData, setTableData] = useState<TableDataRow[]>([]);
+  const [tableData, setTableData] = useState<Data[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [savingSubscribers, setSavingSubscribers] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const allMonths = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ];
+
+  // Fonction pour formater le mois à partir de la date
+  const formatMonthFromDate = (date: string): string => {
+    try {
+      // Format attendu: "MM-YYYY" (ex: "01-2024")
+      const parts = date.split('-');
+      if (parts.length === 2) {
+        const monthIndex = parseInt(parts[0]) - 1;
+
+        if (monthIndex >= 0 && monthIndex < 12) {
+          return allMonths[monthIndex];
+        }
+      }
+
+      return date; // Retourner la date originale si le format n'est pas reconnu
+    } catch {
+      return date;
+    }
+  };
 
   // Fonction pour les appels API authentifiés
   const authFetch = async (input: RequestInfo, init?: RequestInit) => {
@@ -85,6 +72,37 @@ export default function DataPage() {
     return fetch(input, merged);
   };
 
+  // Fonction pour transformer les données API en données d'affichage
+  const transformApiDataToDisplayData = (apiData: any, _month: string, _city: any): Data => {
+    return {
+      id: apiData.id,
+      date: apiData.date || '',
+      ville: apiData.ville || '',
+      totalAbonnes: apiData.totalAbonnes || 0,
+      totalVues: apiData.totalVues || 0,
+      totalProspectsSignes: apiData.totalProspectsSignes || 0,
+      totalProspectsVus: apiData.totalProspectsVus || 0,
+      tauxConversion: apiData.tauxConversion || 0,
+      rawCount: apiData.rawCount || 0,
+      moisAnnee: apiData.moisAnnee,
+      villeEpicu: apiData.villeEpicu,
+      prospectsSignesDsLeMois: apiData.prospectsSignesDsLeMois,
+      tauxDeConversion: apiData.tauxDeConversion,
+      viewsFood: apiData.viewsFood,
+      abonnesFood: apiData.abonnesFood,
+      abonnesShop: apiData.abonnesShop,
+      vuesShop: apiData.vuesShop,
+      abonnesTravel: apiData.abonnesTravel,
+      vuesTravel: apiData.vuesTravel,
+      abonnesFun: apiData.abonnesFun,
+      vuesFun: apiData.vuesFun,
+      abonnesBeauty: apiData.abonnesBeauty,
+      vuesBeauty: apiData.vuesBeauty,
+      postsPublies: apiData.postsPublies,
+      cumulMontantCadeau: apiData.cumulMontantCadeau,
+    };
+  };
+
   // Fonction pour récupérer les données depuis l'API
   const fetchDataFromAPI = async () => {
     if (!userProfile?.villes || userProfile.villes.length === 0) {
@@ -97,7 +115,7 @@ export default function DataPage() {
     try {
       const currentYear = parseInt(selectedYear);
       const currentMonth = new Date().getMonth(); // 0-based (0 = Janvier)
-      
+
       const allMonths = [
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
@@ -113,80 +131,70 @@ export default function DataPage() {
       // Trier par ordre décroissant (plus récent en premier)
       months = [...months].reverse();
 
+      // Déterminer quelle ville utiliser selon l'onglet sélectionné
+      let selectedCity = null;
+
+      if (activeTab === "overview") {
+        // Pour "Vue d'ensemble", utiliser toutes les villes
+        selectedCity = null;
+      } else {
+        // Pour un onglet de ville spécifique, trouver la ville correspondante
+        selectedCity = userProfile.villes.find(city => 
+          city.ville.toLowerCase().replace(/\s+/g, '-') === activeTab
+        );
+      }
+
       const dataPromises = months.map(async (month, index) => {
         const monthNumber = allMonths.indexOf(month) + 1;
         const date = `${monthNumber.toString().padStart(2, '0')}-${currentYear}`;
         
-        // Alterner entre les villes de l'utilisateur
-        const cityIndex = index % userProfile.villes.length;
-        const city = userProfile.villes[cityIndex];
-        const villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+        // Utiliser la ville sélectionnée ou alterner entre toutes les villes
+        let city, villeParam;
+
+        if (selectedCity) {
+          // Ville spécifique : utiliser toujours la même ville
+          city = selectedCity;
+          villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+        } else {
+          // Vue d'ensemble : alterner entre les villes
+          const cityIndex = index % userProfile.villes.length;
+
+          city = userProfile.villes[cityIndex];
+          villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+        }
 
         try {
           const response = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
-          const apiData: ApiDataResponse = await response.json();
 
           if (!response.ok) {
             // Retourner des données par défaut en cas d'erreur
-            return {
-              month,
-              revenue: "0€",
-              conversionRate: "0%",
-              signedClients: "0",
-              prospectsMet: "0",
-              newProspects: "0",
-              publishedPosts: "0",
-              foodSubscribers: "0",
-              shopSubscribers: "0",
-              travelSubscribers: "0",
-              funSubscribers: "0",
-              beautySubscribers: "0",
-              giftsAmount: "0€",
-              city: city.ville.toLowerCase().replace(/\s+/g, '-'),
-              cityName: city.ville,
-              categories: ["FOOD", "SHOP"],
-            };
+            return transformApiDataToDisplayData({
+              date,
+              ville: villeParam,
+              totalAbonnes: 0,
+              totalVues: 0,
+              totalProspectsSignes: 0,
+              totalProspectsVus: 0,
+              tauxConversion: null,
+              rawCount: 0,
+            }, month, city);
           }
 
-          // Convertir les données API en format tableau
-          return {
-            month,
-            revenue: `${Math.floor(apiData.totalVues * 0.1)}€`, // Estimation basée sur les vues
-            conversionRate: apiData.tauxConversion ? `${apiData.tauxConversion}%` : "0%",
-            signedClients: apiData.totalProspectsSignes.toString(),
-            prospectsMet: apiData.totalProspectsVus.toString(),
-            newProspects: Math.floor(apiData.totalVues * 0.05).toString(), // Estimation
-            publishedPosts: Math.floor(apiData.totalVues * 0.02).toString(), // Estimation
-            foodSubscribers: Math.floor(apiData.totalAbonnes * 0.1).toString(), // Estimation
-            shopSubscribers: Math.floor(apiData.totalAbonnes * 0.4).toString(), // Estimation
-            travelSubscribers: Math.floor(apiData.totalAbonnes * 0.2).toString(), // Estimation
-            funSubscribers: Math.floor(apiData.totalAbonnes * 0.1).toString(), // Estimation
-            beautySubscribers: Math.floor(apiData.totalAbonnes * 0.2).toString(), // Estimation
-            giftsAmount: `${Math.floor(apiData.totalProspectsSignes * 50)}€`, // Estimation
-            city: city.ville.toLowerCase().replace(/\s+/g, '-'),
-            cityName: city.ville,
-            categories: ["FOOD", "SHOP"],
-          };
+          const apiData = await response.json();
+
+          return transformApiDataToDisplayData(apiData, month, city);
         } catch {
           // Retourner des données par défaut en cas d'erreur
-          return {
-            month,
-            revenue: "0€",
-            conversionRate: "0%",
-            signedClients: "0",
-            prospectsMet: "0",
-            newProspects: "0",
-            publishedPosts: "0",
-            foodSubscribers: "0",
-            shopSubscribers: "0",
-            travelSubscribers: "0",
-            funSubscribers: "0",
-            beautySubscribers: "0",
-            giftsAmount: "0€",
-            city: city.ville.toLowerCase().replace(/\s+/g, '-'),
-            cityName: city.ville,
-            categories: ["FOOD", "SHOP"],
-          };
+          return transformApiDataToDisplayData({
+            date,
+            ville: villeParam,
+            totalAbonnes: 0,
+            totalVues: 0,
+            totalProspectsSignes: 0,
+            totalProspectsVus: 0,
+            tauxConversion: null,
+            rawCount: 0,
+          }, month, city);
         }
       });
 
@@ -202,82 +210,6 @@ export default function DataPage() {
     }
   };
 
-  // Générer des données de test basées sur les vraies villes de l'utilisateur (fallback)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const generateTableData = () => {
-    if (!userProfile?.villes || userProfile.villes.length === 0) {
-      return [];
-    }
-
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth(); // 0-based (0 = Janvier)
-    const year = parseInt(selectedYear);
-
-    const allMonths = [
-      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-    ];
-
-    // Si c'est l'année actuelle, ne montrer que les mois passés et actuel
-    let months = allMonths;
-
-    if (year === currentYear) {
-      months = allMonths.slice(0, currentMonth + 1);
-    }
-
-    // Trier par ordre décroissant (plus récent en premier)
-    months = [...months].reverse();
-
-    const categories = ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"];
-
-    return months.map((month, index) => {
-      // Alterner entre les villes de l'utilisateur
-      const cityIndex = index % userProfile.villes.length;
-      const city = userProfile.villes[cityIndex];
-
-      // Générer des données réalistes
-      const revenue = Math.floor(Math.random() * 8000 + 10000) + "€";
-      const conversionRate = Math.floor(Math.random() * 15 + 80) + "%";
-      const signedClients = Math.floor(Math.random() * 8 + 8).toString();
-      const prospectsMet = Math.floor(Math.random() * 4 + 1).toString();
-      const newProspects = Math.floor(Math.random() * 10 + 25).toString();
-      const publishedPosts = Math.floor(Math.random() * 4 + 5).toString();
-
-      // Générer le nombre d'abonnés par catégorie
-      const foodSubscribers = Math.floor(Math.random() * 2000 + 1000).toString();
-      const shopSubscribers = Math.floor(Math.random() * 20000 + 10000).toString();
-      const travelSubscribers = Math.floor(Math.random() * 3000 + 2000).toString();
-      const funSubscribers = Math.floor(Math.random() * 500 + 100).toString();
-      const beautySubscribers = Math.floor(Math.random() * 1500 + 1000).toString();
-
-      // Générer le montant des cadeaux offerts
-      const giftsAmount = Math.floor(Math.random() * 3000 + 1000) + "€";
-
-      // Sélectionner 2 catégories aléatoires
-      const selectedCategories = categories
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 2);
-
-      return {
-        month,
-        revenue,
-        conversionRate,
-        signedClients,
-        prospectsMet,
-        newProspects,
-        publishedPosts,
-        foodSubscribers,
-        shopSubscribers,
-        travelSubscribers,
-        funSubscribers,
-        beautySubscribers,
-        giftsAmount,
-        city: city.ville.toLowerCase().replace(/\s+/g, '-'),
-        cityName: city.ville,
-        categories: selectedCategories,
-      };
-    });
-  };
 
   // Initialiser les données du tableau au chargement
   useEffect(() => {
@@ -292,26 +224,14 @@ export default function DataPage() {
     } else {
       setTableData([]);
     }
-  }, [userProfile?.villes, selectedYear]);
+  }, [userProfile?.villes, selectedYear, activeTab]);
 
-  const allTableData = tableData;
-
-  // Filtrer les données selon l'onglet actif et la catégorie sélectionnée
-  const filteredData = allTableData.filter((row) => {
-    // Filtre par ville (onglet)
-    if (activeTab !== "overview" && row.city !== activeTab) {
-      return false;
-    }
-
-    return true;
-  });
-
-  // Utiliser le hook de tri réutilisable
-  const { sortField, sortDirection, handleSort, sortedData } = useSortableTable(filteredData);
+  // Utiliser le hook de tri réutilisable directement sur les données de l'API
+  const { sortedData } = useSortableTable(tableData);
 
   // Fonction pour ouvrir le modal d'édition
   const handleEditSubscribers = (rowIndex: number) => {
-    const actualIndex = allTableData.findIndex(row =>
+    const actualIndex = tableData.findIndex(row =>
       sortedData.findIndex(sortedRow => sortedRow === row) === rowIndex
     );
 
@@ -320,15 +240,53 @@ export default function DataPage() {
   };
 
   // Fonction pour sauvegarder les modifications
-  const handleSaveSubscribers = (newData: SubscribersData) => {
+  const handleSaveSubscribers = async (newData: Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>) => {
     if (editingRowIndex !== null) {
-      const updatedData = [...tableData];
+      const currentRow = tableData[editingRowIndex];
 
-      updatedData[editingRowIndex] = {
-        ...updatedData[editingRowIndex],
-        ...newData
-      };
-      setTableData(updatedData);
+      setSavingSubscribers(true);
+      setSaveError(null);
+
+      try {
+        // Préparer les données pour l'API en utilisant l'interface Data
+        const apiData = {
+          ville: currentRow.ville,
+          date: currentRow.date,
+          abonnesFood: newData.abonnesFood || 0,
+          abonnesShop: newData.abonnesShop || 0,
+          abonnesTravel: newData.abonnesTravel || 0,
+          abonnesFun: newData.abonnesFun || 0,
+          abonnesBeauty: newData.abonnesBeauty || 0,
+        };
+
+        // Appeler l'API PATCH pour sauvegarder
+        const response = await authFetch('/api/data/data', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiData),
+        });
+
+        if (response.ok) {
+          // Mettre à jour l'état local seulement si l'API a réussi
+          const updatedData = [...tableData];
+
+          updatedData[editingRowIndex] = {
+            ...updatedData[editingRowIndex],
+            ...newData
+          };
+          setTableData(updatedData);
+        } else {
+          const error = await response.text();
+
+          setSaveError(`Erreur lors de la sauvegarde: ${error}`);
+        }
+      } catch (error) {
+        setSaveError(`Erreur lors de la sauvegarde: ${error}`);
+      } finally {
+        setSavingSubscribers(false);
+      }
     }
     setEditModalOpen(false);
     setEditingRowIndex(null);
@@ -341,25 +299,25 @@ export default function DataPage() {
   };
 
   // Obtenir les données actuelles pour le modal
-  const getCurrentSubscribersData = (): SubscribersData => {
+  const getCurrentSubscribersData = (): Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'> => {
     if (editingRowIndex !== null && tableData[editingRowIndex]) {
       const row = tableData[editingRowIndex];
 
       return {
-        foodSubscribers: row.foodSubscribers,
-        shopSubscribers: row.shopSubscribers,
-        travelSubscribers: row.travelSubscribers,
-        funSubscribers: row.funSubscribers,
-        beautySubscribers: row.beautySubscribers,
+        abonnesFood: row.abonnesFood || 0,
+        abonnesShop: row.abonnesShop || 0,
+        abonnesTravel: row.abonnesTravel || 0,
+        abonnesFun: row.abonnesFun || 0,
+        abonnesBeauty: row.abonnesBeauty || 0,
       };
     }
 
     return {
-      foodSubscribers: "",
-      shopSubscribers: "",
-      travelSubscribers: "",
-      funSubscribers: "",
-      beautySubscribers: "",
+      abonnesFood: 0,
+      abonnesShop: 0,
+      abonnesTravel: 0,
+      abonnesFun: 0,
+      abonnesBeauty: 0,
     };
   };
 
@@ -370,12 +328,25 @@ export default function DataPage() {
     }
   }, [userProfile?.villes]);
 
-  // Afficher un message de chargement
-  if (isLoading || dataLoading) {
+
+  // Afficher un message d'erreur de sauvegarde
+  if (saveError) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-primary">Chargement des données...</div>
+          <div className="text-center text-primary">
+            <p className="text-lg mb-2 text-red-600">Erreur de sauvegarde</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {saveError}
+            </p>
+            <Button
+              className="mt-4"
+              color="primary"
+              onPress={() => setSaveError(null)}
+            >
+              Fermer
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -391,9 +362,9 @@ export default function DataPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {dataError}
             </p>
-            <Button 
-              className="mt-4" 
-              color="primary" 
+            <Button
+              className="mt-4"
+              color="primary"
               onPress={() => {
                 setDataError(null);
                 const loadData = async () => {
@@ -491,80 +462,70 @@ export default function DataPage() {
             </div>
 
             {/* Data Table */}
-            <Card  shadow="none">
+            <Card shadow="none">
               <CardBody className="p-0">
-                <Table aria-label="Data table">
-                  <TableHeader>
-                    <TableColumn className="font-light text-sm w-20">
-                      Actions
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">
-                      <SortableColumnHeader
-                        field="month"
-                        label="Mois"
-                        sortDirection={sortDirection}
-                        sortField={sortField}
-                        onSort={handleSort}
-                      />
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">Chiffre d&apos;affaires</TableColumn>
-                    <TableColumn className="font-light text-sm">Taux de conversion</TableColumn>
-                    <TableColumn className="font-light text-sm">Clients signés</TableColumn>
-                    <TableColumn className="font-light text-sm">Prospects rencontrés</TableColumn>
-                    <TableColumn className="font-light text-sm">Nouveaux prospects</TableColumn>
-                    <TableColumn className="font-light text-sm">
-                      <SortableColumnHeader
-                        field="publishedPosts"
-                        label="Posts publiés"
-                        sortDirection={sortDirection}
-                        sortField={sortField}
-                        onSort={handleSort}
-                      />
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">Nombre abonnés food</TableColumn>
-                    <TableColumn className="font-light text-sm">Nombre abonnés shop</TableColumn>
-                    <TableColumn className="font-light text-sm">Nombre abonnés travel</TableColumn>
-                    <TableColumn className="font-light text-sm">Nombre abonnés fun</TableColumn>
-                    <TableColumn className="font-light text-sm">Nombre abonnés beauty</TableColumn>
-                    <TableColumn className="font-light text-sm">Montant des cadeaux offerts</TableColumn>
-                  </TableHeader>
-                  <TableBody className="mt-30">
-                    {sortedData.map((row, index) => (
-                      <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700 ">
-                        <TableCell className="py-5">
-                          <Button
-                            className="min-w-0 px-2 h-8"
-                            color="primary"
-                            size="sm"
-                            variant="light"
-                            onPress={() => handleEditSubscribers(index)}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-light text-sm py-5">
-                          {row.month}
-                        </TableCell>
-                        <TableCell className="font-light text-sm">{row.revenue}</TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-custom-green-stats/14 text-custom-green-stats dark:text-custom-green-stats">
-                            {row.conversionRate}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-light text-sm">{row.signedClients}</TableCell>
-                        <TableCell className="font-light text-sm">{row.prospectsMet}</TableCell>
-                        <TableCell className="font-light text-sm">{row.newProspects}</TableCell>
-                        <TableCell className="font-light text-sm">{row.publishedPosts}</TableCell>
-                        <TableCell className="font-light text-sm">{row.foodSubscribers}</TableCell>
-                        <TableCell className="font-light text-sm">{row.shopSubscribers}</TableCell>
-                        <TableCell className="font-light text-sm">{row.travelSubscribers}</TableCell>
-                        <TableCell className="font-light text-sm">{row.funSubscribers}</TableCell>
-                        <TableCell className="font-light text-sm">{row.beautySubscribers}</TableCell>
-                        <TableCell className="font-light text-sm">{row.giftsAmount}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {
+                  isLoading || dataLoading ?
+                    <div className="flex justify-center items-center h-64">
+                      <Spinner className="text-black dark:text-white" size="lg" />
+                    </div>
+                    :
+                    <Table aria-label="Data table">
+                      <TableHeader>
+                        <TableColumn className="font-light text-sm w-20">
+                          Actions
+                        </TableColumn>
+                        <TableColumn className="font-light text-sm">Mois</TableColumn>
+                        <TableColumn className="font-light text-sm">Total abonnés</TableColumn>
+                        <TableColumn className="font-light text-sm">Total vues</TableColumn>
+                        <TableColumn className="font-light text-sm">Prospects signés</TableColumn>
+                        <TableColumn className="font-light text-sm">Prospects vus</TableColumn>
+                        <TableColumn className="font-light text-sm">Taux de conversion</TableColumn>
+                        <TableColumn className="font-light text-sm">Posts publiés</TableColumn>
+                        <TableColumn className="font-light text-sm">Abonnés FOOD</TableColumn>
+                        <TableColumn className="font-light text-sm">Abonnés SHOP</TableColumn>
+                        <TableColumn className="font-light text-sm">Abonnés TRAVEL</TableColumn>
+                        <TableColumn className="font-light text-sm">Abonnés FUN</TableColumn>
+                        <TableColumn className="font-light text-sm">Abonnés BEAUTY</TableColumn>
+                        <TableColumn className="font-light text-sm">Montant des cadeaux</TableColumn>
+                      </TableHeader>
+                      <TableBody className="mt-30">
+                        {sortedData.map((row, index) => (
+                          <TableRow key={index} className="border-t border-gray-100  dark:border-gray-700 ">
+                            <TableCell className="py-5">
+                              <Button
+                                className="min-w-0 px-2 h-8"
+                                color="primary"
+                                size="sm"
+                                variant="light"
+                                onPress={() => handleEditSubscribers(index)}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                            <TableCell className="font-light text-sm py-5">
+                              {formatMonthFromDate(row.date)}
+                            </TableCell>
+                            <TableCell className="font-light text-sm">{row.totalAbonnes}</TableCell>
+                            <TableCell className="font-light text-sm">{row.totalVues}</TableCell>
+                            <TableCell className="font-light text-sm">{row.totalProspectsSignes}</TableCell>
+                            <TableCell className="font-light text-sm">{row.totalProspectsVus}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-custom-green-stats/14 text-custom-green-stats dark:text-custom-green-stats">
+                                {row.tauxConversion ? `${row.tauxConversion}%` : "0%"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-light text-sm">{row.postsPublies || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.abonnesFood || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.abonnesShop || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.abonnesTravel || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.abonnesFun || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.abonnesBeauty || 0}</TableCell>
+                            <TableCell className="font-light text-sm">{row.cumulMontantCadeau || 0}€</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>}
               </CardBody>
             </Card>
           </CardBody>
@@ -574,7 +535,8 @@ export default function DataPage() {
         <SubscribersEditModal
           initialData={getCurrentSubscribersData()}
           isOpen={editModalOpen}
-          month={editingRowIndex !== null && tableData[editingRowIndex] ? tableData[editingRowIndex].month : ""}
+          month={editingRowIndex !== null && tableData[editingRowIndex] ? formatMonthFromDate(tableData[editingRowIndex].date) : ""}
+          saving={savingSubscribers}
           onClose={handleCloseModal}
           onSave={handleSaveSubscribers}
         />

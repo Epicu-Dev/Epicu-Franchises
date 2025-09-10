@@ -3,78 +3,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '../constants';
 
 const TABLE_NAME = 'ÉTABLISSEMENTS';
-const VIEW_NAME = '🟢 Clients';
+const VIEW_NAME = '🌍 Tous établissements';
 
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // PATCH handler: update client fields
-    if (req.method === 'PATCH') {
-      try {
-        const body = req.body || {};
-        const id = (req.query.id as string) || body.id;
-        if (!id) return res.status(400).json({ error: 'id requis' });
-
-        // Helpers (minimal, adapted from prospects)
-        const ensureRelatedRecord = async (tableName: string, candidateValue: any, candidateFields: string[]) => {
-          if (!candidateValue) return null;
-          if (typeof candidateValue === 'string' && /^rec[A-Za-z0-9]+/.test(candidateValue)) return candidateValue;
-          const val = String(candidateValue || '').trim();
-          if (!val) return null;
-          const formulaParts = candidateFields.map((f) => `LOWER({${f}}) = "${val.toLowerCase().replace(/"/g, '\\"')}"`);
-          try {
-            const found = await base(tableName).select({ filterByFormula: `OR(${formulaParts.join(',')})`, maxRecords: 1 }).firstPage();
-            if (found && found.length > 0) return found[0].id;
-          } catch (e) {
-            // ignore
-          }
-          try {
-            const created = await base(tableName).create([{ fields: { [candidateFields[0] || 'Name']: val } }]);
-            return created[0].id;
-          } catch (e) {
-            return null;
-          }
-        };
-
-        const resolveCategoryIds = async (raw: any) => {
-          if (!raw) return [];
-          const values = Array.isArray(raw) ? raw : [raw];
-          const ids: string[] = [];
-          for (const v of values.slice(0, 2)) {
-            const id = await ensureRelatedRecord('Catégories', v, ['Name']);
-            if (id) ids.push(id);
-          }
-          return ids;
-        };
-
-        const fieldsToUpdate: any = {};
-        if (Object.prototype.hasOwnProperty.call(body, 'Catégorie')) {
-          const catIds = await resolveCategoryIds(body['Catégorie'] || body.categorie);
-          if (catIds.length > 0) fieldsToUpdate['Catégorie'] = catIds; else fieldsToUpdate['Catégorie'] = [];
-        }
-        if (Object.prototype.hasOwnProperty.call(body, "Nom de l'établissement")) fieldsToUpdate["Nom de l'établissement"] = body["Nom de l'établissement"];
-        if (Object.prototype.hasOwnProperty.call(body, 'Raison sociale')) fieldsToUpdate['Raison sociale'] = body['Raison sociale'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Email')) fieldsToUpdate['Email'] = body['Email'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fieldsToUpdate['Téléphone'] = body['Téléphone'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Adresse')) fieldsToUpdate['Adresse'] = body['Adresse'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Ville')) fieldsToUpdate['Ville'] = body['Ville'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Code postal')) fieldsToUpdate['Code postal'] = body['Code postal'];
-        if (Object.prototype.hasOwnProperty.call(body, 'SIRET')) fieldsToUpdate['SIRET'] = body['SIRET'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Description')) fieldsToUpdate['Description'] = body['Description'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
-          const villeId = await ensureRelatedRecord('VILLES EPICU', body['Ville EPICU'], ['Ville', 'Name']);
-          if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
-        }
-
-        if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
-
-        const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
-        return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
-      } catch (err: any) {
-        console.error('clients PATCH error', err);
-        return res.status(500).json({ error: 'Erreur mise à jour client', details: err?.message || String(err) });
-      }
-    }
+    
     const limitRaw = parseInt((req.query.limit as string) || '50', 10);
     const offsetRaw = parseInt((req.query.offset as string) || '0', 10);
     const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw));
@@ -201,7 +134,6 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
             .select({
               filterByFormula: `OR(${publicationIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
               fields: [
-                'Nom publication',
                 'Date de publication',
                 'Montant de la sponsorisation',
                 "Montant de l'addition",
@@ -222,7 +154,6 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           publications.forEach((pub: any) => {
             publicationsData[pub.id] = {
               id: pub.id,
-              nom: pub.get('Nom publication'),
               datePublication: pub.get('Date de publication'),
               montantSponsorisation: pub.get('Montant de la sponsorisation'),
               montantAddition: pub.get("Montant de l'addition"),

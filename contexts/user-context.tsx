@@ -101,7 +101,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         role: userData['Rôle'] || '',
         villes: userData['villes'] || [],
         telephone: userData['Téléphone'] || '',
-        identifier: userData['Identifiant'] || ''
+        identifier: userData['Identifiant'] || '',
+        trombi: userData['Trombi'] || undefined
       };
 
       setUserProfile(transformedProfile);

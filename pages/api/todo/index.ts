@@ -58,22 +58,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
       const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Date de création";
 
-      // Tri par défaut : toujours trier par Statut en ASC
-      const defaultSort = { field: 'Statut', direction: 'asc' as const };
-      
-      // Si un autre tri est demandé, l'ajouter en plus du tri par défaut
-      const additionalSort = orderBy !== 'Statut' ? { field: orderBy, direction: order } : null;
-      
-      const sortArray = additionalSort 
-        ? [defaultSort, additionalSort]
-        : [defaultSort];
-
+      // Tri personnalisé côté serveur pour placer "Terminé" en dernier
       const selectOptions: any = {
         view: VIEW_NAME,
         fields,
         pageSize: Math.min(100, offset + limit),
         maxRecords: offset + limit,
-        sort: sortArray,
       };
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -136,24 +126,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return true;
       });
 
-      const page = filtered.slice(offset, offset + limit);
+      // Tri personnalisé : d'abord par deadline, puis "Terminé" en dernier
+      const sorted = filtered.sort((a: any, b: any) => {
+        // Si l'un est "Terminé" et l'autre non, "Terminé" va en dernier
+        if (a.status === "Terminé" && b.status !== "Terminé") return 1;
+        if (b.status === "Terminé" && a.status !== "Terminé") return -1;
+        
+        // Si les deux ont le même statut (ou aucun n'est "Terminé"), trier par deadline
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+        
+        // Tri par deadline (les dates les plus proches en premier)
+        return dateA - dateB;
+      });
+
+      const page = sorted.slice(offset, offset + limit);
 
       res.status(200).json({ 
         todos: page, 
-        total: filtered.length,
+        total: sorted.length,
         pagination: {
           limit,
           offset,
           orderBy,
           order,
-          hasMore: filtered.length > offset + limit,
-          nextOffset: filtered.length > offset + limit ? offset + limit : null,
+          hasMore: sorted.length > offset + limit,
+          nextOffset: sorted.length > offset + limit ? offset + limit : null,
           prevOffset: Math.max(0, offset - limit),
         },
         sorting: {
-          defaultSort: 'Statut (ASC)',
-          additionalSort: additionalSort ? `${orderBy} (${order.toUpperCase()})` : null,
-          appliedSorts: sortArray.map(s => `${s.field} (${s.direction.toUpperCase()})`)
+          defaultSort: 'Deadline (ASC) - Terminé en dernier',
+          additionalSort: null,
+          appliedSorts: ['Deadline (ASC)', 'Statut (Terminé en dernier)']
         }
       });
 

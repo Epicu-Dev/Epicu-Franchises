@@ -16,7 +16,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 
 import { StyledSelect } from "@/components/styled-select";
 import { FormLabel } from "@/components";
@@ -43,6 +43,7 @@ interface Client {
   email?: string;
   telephone?: string;
   adresse?: string;
+  publications?: Array<{ id: string; nom: string; datePublication: string }>;
 }
 
 interface InvoiceModalProps {
@@ -82,9 +83,8 @@ export default function InvoiceModal({
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
 
   // États pour la sélection de publication
-  const [publications, setPublications] = useState<{ id: string; nom: string; date: string }[]>([]);
+  const [publications, setPublications] = useState<{ id: string; nom: string; datePublication: string }[]>([]);
   const [selectedPublication, setSelectedPublication] = useState<string>("");
-  const [isLoadingPublications, setIsLoadingPublications] = useState(false);
 
   // État pour la facture de tournage
   const [tournageFactureStatus, setTournageFactureStatus] = useState<string>("");
@@ -202,8 +202,7 @@ export default function InvoiceModal({
       siret: "",
     }));
 
-    // Charger les publications pour ce client
-    loadPublications(client.id);
+    // Les publications seront automatiquement mises à jour via le useEffect
   };
 
   const clearSelectedClient = () => {
@@ -223,32 +222,10 @@ export default function InvoiceModal({
     setTournageFactureStatus("");
   };
 
-  // Fonction pour charger les publications (avec fausses données pour l'instant)
-  const loadPublications = async (clientId: string) => {
-    setIsLoadingPublications(true);
-    try {
-      // TODO: Remplacer par un vrai appel API
-      // const response = await authFetch(`/api/publications?clientId=${clientId}`);
-      // const data = await response.json();
-      // setPublications(data.publications || []);
-
-      // Fausses données pour l'instant
-      const fakePublications = [
-        { id: "pub1", nom: "Campagne Instagram - Été 2024", date: "2024-06-15" },
-        { id: "pub2", nom: "Story Facebook - Promotion", date: "2024-06-20" },
-        { id: "pub3", nom: "Post LinkedIn - Actualité", date: "2024-06-25" },
-        { id: "pub4", nom: "Reel TikTok - Produit", date: "2024-07-01" },
-        { id: "pub5", nom: "Carousel Instagram - Services", date: "2024-07-05" },
-      ];
-
-      setPublications(fakePublications);
-    } catch (err) {
-      console.error("Erreur lors du chargement des publications:", err);
-      setPublications([]);
-    } finally {
-      setIsLoadingPublications(false);
-    }
-  };
+  // Mettre à jour les publications quand selectedClient change
+  useEffect(() => {
+    setPublications(selectedClient?.publications || []);
+  }, [selectedClient]);
 
   // Recherche de clients avec debounce
   useEffect(() => {
@@ -493,23 +470,22 @@ export default function InvoiceModal({
                 <FormLabel htmlFor="publication" isRequired={true}>
                   Publication concernée
                 </FormLabel>
-                <Select
+                <StyledSelect
                   isRequired
                   id="publication"
-                  placeholder={isLoadingPublications ? "Chargement des publications..." : "Sélectionnez une publication"}
+                  placeholder="Sélectionnez une publication"
                   selectedKeys={selectedPublication ? [selectedPublication] : []}
-                  isDisabled={isLoadingPublications}
                   onSelectionChange={(keys) => {
                     const value = Array.from(keys)[0] as string;
                     setSelectedPublication(value);
                   }}
                 >
                   {publications.map((pub) => (
-                    <SelectItem key={pub.id} value={pub.nom}>
-                      {pub.nom} - {new Date(pub.date).toLocaleDateString('fr-FR')}
+                    <SelectItem key={pub.id}>
+                      {pub.nom || `Publication ${pub.id}`} - {new Date(pub.datePublication).toLocaleDateString('fr-FR')}
                     </SelectItem>
                   ))}
-                </Select>
+                </StyledSelect>
               </>
             )}
 
@@ -561,7 +537,7 @@ export default function InvoiceModal({
                 </StyledSelect>
 
                 <FormLabel htmlFor="amount" isRequired={true}>
-                  Montant de la facture
+                  Montant de la facture HT
                 </FormLabel>
                 <Input
                   isRequired
@@ -616,22 +592,22 @@ export default function InvoiceModal({
                 />
 
                 <FormLabel htmlFor="tournageFacture" isRequired={true}>
-                  Facture de tournage
+                  Statut de la facture
                 </FormLabel>
                 <StyledSelect
                   isRequired
                   id="tournageFacture"
-                  placeholder="Sélectionnez le statut de la facture de tournage"
+                  placeholder="Sélectionnez le statut de la facture"
                   selectedKeys={tournageFactureStatus ? [tournageFactureStatus] : []}
                   onSelectionChange={(keys) => {
                     const value = Array.from(keys)[0] as string;
                     setTournageFactureStatus(value);
                   }}
                 >
-                  <SelectItem key="payee" value="payee">
+                  <SelectItem key="payee">
                     <span className="text-green-600 font-medium">✓ Payée</span>
                   </SelectItem>
-                  <SelectItem key="impayee" value="impayee">
+                  <SelectItem key="impayee">
                     <span className="text-red-600 font-medium">✗ Impayée</span>
                   </SelectItem>
                 </StyledSelect>

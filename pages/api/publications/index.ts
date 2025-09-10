@@ -232,6 +232,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const pubId = p.id;
                     const pubFields: any = {
                         id: pubId,
+                        nom: p.get('Nom publication'),
                         montantSponsorisation: p.get('Montant de la sponsorisation'),
                         datePublication: p.get('Date de publication'),
                         montantAddition: p.get("Montant de l'addition"),

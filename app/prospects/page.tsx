@@ -29,10 +29,12 @@ import ConvertProspectModal from "@/components/convert-prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
 import { useUser } from "@/contexts/user-context";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Prospect } from "@/types/prospect";
 
 export default function ProspectsPage() {
   const { userProfile } = useUser();
+  const { authFetch } = useAuthFetch();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
@@ -62,7 +64,7 @@ export default function ProspectsPage() {
     const fetchFilters = async () => {
       try {
         // Récupérer les collaborateurs
-        const collabResponse = await fetch('/api/collaborateurs?limit=200&offset=0');
+        const collabResponse = await authFetch('/api/collaborateurs?limit=200&offset=0');
 
         if (collabResponse.ok) {
           const collabData = await collabResponse.json();
@@ -182,7 +184,7 @@ export default function ProspectsPage() {
         setNextOffset(data.pagination?.nextOffset || null);
 
       } else {
-        // Onglet "À contacter" - utiliser l'API des prospects normaux
+        // Onglet "Contacté" - utiliser l'API des prospects normaux
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
 
@@ -360,7 +362,7 @@ export default function ProspectsPage() {
               variant="underlined"
               onSelectionChange={(key) => setSelectedTab(key as string)}
             >
-              <Tab key="a_contacter" title="À contacter" />
+              <Tab key="a_contacter" title="Contacté" />
               <Tab key="en_discussion" title="En discussion" />
               <Tab key="glacial" title="Glacial" />
             </Tabs>
@@ -620,7 +622,7 @@ export default function ProspectsPage() {
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
 
                         <TableCell className="font-light">{prospect.ville}</TableCell>
-                        <TableCell className="font-light">{prospect.telephone}</TableCell>
+                        <TableCell className="font-light min-w-32">{prospect.telephone}</TableCell>
 
 
                         <TableCell className="font-light">{prospect.email}</TableCell>

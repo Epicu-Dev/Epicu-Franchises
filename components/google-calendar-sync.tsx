@@ -119,11 +119,12 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
     try {
       const response = await fetch('/api/google-calendar/sync');
       if (response.ok) {
-        const { events } = await response.json();
+        const { events, message } = await response.json();
         onEventsFetched?.(events);
         setSyncStatus(prev => ({
           ...prev,
-          lastSync: new Date()
+          lastSync: new Date(),
+          message: message
         }));
       }
     } catch (error) {
@@ -162,23 +163,24 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
     <div>
       {syncStatus.calendars && syncStatus.calendars.length > 0 && (
         <div className="flex items-center flex-col">
-          <p className="text-sm text-gray-600 mb-2">Calendriers synchronisés:</p>
+          <p className="text-sm text-gray-600 mb-2">Calendrier EPICU synchronisé:</p>
           <div className="flex flex-wrap gap-2">
-            {syncStatus.calendars.filter(calendar => calendar.primary).map((calendar) => (
+            {syncStatus.calendars.filter(calendar => 
+              calendar.summary?.toLowerCase().includes('epicu')
+            ).map((calendar) => (
               <span
                 key={calendar.id}
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${calendar.primary
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-800'
-                  }`}
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
               >
+                <CalendarIcon className="h-3 w-3 mr-1" />
                 {calendar.summary}
-                {calendar.primary && (
-                  <CheckCircleIcon className="h-3 w-3 ml-1" />
-                )}
+                <CheckCircleIcon className="h-3 w-3 ml-1" />
               </span>
             ))}
           </div>
+          {syncStatus.message && (
+            <p className="text-xs text-gray-500 mt-1">{syncStatus.message}</p>
+          )}
         </div>
       )}
     </div>

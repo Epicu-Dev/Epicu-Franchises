@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const selectOptions: any = {
         view: VIEW_NAME,
-        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email EPICU', 'Rôle', 'ÉTABLISSEMENTS'],
+        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email EPICU', 'Rôle', 'ÉTABLISSEMENTS', 'Trombi'],
         pageSize: limit,
         sort: [{ field: orderBy, direction: order }],
         maxRecords: offset + limit + 1,
@@ -90,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           emailEpicu: r.get('Email EPICU') || null,
           role: r.get('Rôle') || null,
           etablissements: etablIds,
+          trombi: r.get('Trombi') || null,
         };
       });
 

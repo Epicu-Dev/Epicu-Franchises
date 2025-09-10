@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+
+import { StyledSelect } from "./styled-select";
 import {
   Modal,
   ModalContent,
@@ -307,7 +309,7 @@ export default function TodoModal({
             <FormLabel htmlFor="status" isRequired={true}>
               Statut
             </FormLabel>
-            <Select
+            <StyledSelect
               errorMessage={fieldErrors.status}
               id="status"
               isInvalid={!!fieldErrors.status}
@@ -323,7 +325,7 @@ export default function TodoModal({
               <SelectItem key="À faire">Pas commencé</SelectItem>
               <SelectItem key="Terminé">Terminé</SelectItem>
               <SelectItem key="En attente">En attente</SelectItem>
-            </Select>
+            </StyledSelect>
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-between">

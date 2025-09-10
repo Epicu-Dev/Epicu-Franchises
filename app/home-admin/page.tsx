@@ -369,7 +369,7 @@ export default function HomeAdminPage() {
                       setNewProspect({ ...newProspect, statut: selectedKey });
                     }}
                   >
-                    <SelectItem key="a_contacter">À contacter</SelectItem>
+                    <SelectItem key="a_contacter">Contacté</SelectItem>
                     <SelectItem key="en_discussion">En discussion</SelectItem>
                     <SelectItem key="glacial">Glacial</SelectItem>
                   </StyledSelect>

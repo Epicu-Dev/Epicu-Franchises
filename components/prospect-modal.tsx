@@ -14,6 +14,7 @@ import {
 } from "@heroui/modal";
 
 import { useUser } from "../contexts/user-context";
+import { useAuthFetch } from "../hooks/use-auth-fetch";
 
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
@@ -35,6 +36,7 @@ export function ProspectModal({
   editingProspect = null,
   isEditing = false
 }: ProspectModalProps) {
+  const { authFetch } = useAuthFetch();
   const { userProfile } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
@@ -94,7 +96,7 @@ export function ProspectModal({
   useEffect(() => {
     const fetchCollaborateurs = async () => {
       try {
-        const response = await fetch('/api/collaborateurs?limit=200&offset=0');
+        const response = await authFetch('/api/collaborateurs?limit=200&offset=0');
         if (response.ok) {
           const data = await response.json();
           let allCollaborateurs = data.results || [];
@@ -335,7 +337,7 @@ export function ProspectModal({
               <SelectItem key="FUN">FUN</SelectItem>
               <SelectItem key="BEAUTY">BEAUTY</SelectItem>
             </StyledSelect>
-            {/* {newProspect.categorie.length > 1 ? (
+            {newProspect.categorie.length > 1 ? (
               <div>
                 <FormLabel htmlFor="categorie" isRequired={false}>
                   Catégorie 2
@@ -356,7 +358,7 @@ export function ProspectModal({
                 </StyledSelect>
               </div>
             ) : <Button endContent={<PlusIcon className="h-4 w-4" />} color='primary' variant="bordered" className="border-1" onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie (Optionnel)</Button>}
-            */}
+           
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>
@@ -555,7 +557,7 @@ export function ProspectModal({
                 }}
                 id="statut"
                 value={
-                  newProspect.statut === "a_contacter" ? "À contacter" :
+                  newProspect.statut === "a_contacter" ? "Contacté" :
                     newProspect.statut === "en_discussion" ? "En discussion" :
                       newProspect.statut === "glacial" ? "Glacial" :
                         newProspect.statut

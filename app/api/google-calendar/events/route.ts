@@ -38,9 +38,22 @@ export async function POST(request: NextRequest) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
     
-    // Créer l'événement dans Google Calendar
+    // Récupérer la liste des calendriers pour trouver celui contenant "EPICU"
+    const calendarList = await calendar.calendarList.list();
+    const epicuCalendar = calendarList.data.items?.find(cal => 
+      cal.summary?.toLowerCase().includes('epicu')
+    );
+
+    if (!epicuCalendar) {
+      return NextResponse.json(
+        { error: 'Aucun calendrier contenant "EPICU" trouvé' },
+        { status: 404 }
+      );
+    }
+    
+    // Créer l'événement dans le calendrier EPICU
     const event = await calendar.events.insert({
-      calendarId: 'primary',
+      calendarId: epicuCalendar.id!,
       requestBody: {
         summary: eventData.summary,
         description: eventData.description,
@@ -90,8 +103,21 @@ export async function POST(request: NextRequest) {
           const eventData: Partial<GoogleCalendarEvent> = await request.json();
           const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
           
+          // Récupérer la liste des calendriers pour trouver celui contenant "EPICU"
+          const calendarList = await calendar.calendarList.list();
+          const epicuCalendar = calendarList.data.items?.find(cal => 
+            cal.summary?.toLowerCase().includes('epicu')
+          );
+
+          if (!epicuCalendar) {
+            return NextResponse.json(
+              { error: 'Aucun calendrier contenant "EPICU" trouvé' },
+              { status: 404 }
+            );
+          }
+          
           const event = await calendar.events.insert({
-            calendarId: 'primary',
+            calendarId: epicuCalendar.id!,
             requestBody: {
               summary: eventData.summary,
               description: eventData.description,

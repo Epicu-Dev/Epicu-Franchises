@@ -29,35 +29,9 @@ import { getValidAccessToken } from "../../utils/auth";
 import { TeamMemberModal } from "../../components/team-member-modal";
 import { FranchiseTeamModal } from "../../components/franchise-team-modal";
 import { useUser } from "../../contexts/user-context";
+import { TrombiAttachment } from "../../types/user";
 
 interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  location: string;
-  avatar: string;
-  category: "siege" | "franchise" | "prestataire";
-  city: string;
-  firstName: string;
-  lastName: string;
-  identifier: string;
-  password: string;
-  birthDate: string;
-  personalEmail: string;
-  franchiseEmail: string;
-  phone: string;
-  postalAddress: string;
-  siret: string;
-  dipSignatureDate: string;
-  franchiseContractSignatureDate: string;
-  trainingCertificateSignatureDate: string;
-}
-
-
-
-
-// Interface pour les données de l'API équipe
-interface CollaborateurEquipe {
   id: string;
   nom: string;
   prenom: string;
@@ -65,7 +39,12 @@ interface CollaborateurEquipe {
   emailEpicu: string | null;
   role: string | null;
   etablissements: string[];
+  trombi: TrombiAttachment[] | null;
 }
+
+
+
+
 
 export default function EquipePage() {
   const { userProfile, userType } = useUser();
@@ -116,94 +95,24 @@ export default function EquipePage() {
 
       const data = await response.json();
 
-      const collaborateurs: CollaborateurEquipe[] = data.results || [];
-
-      // Transformer les données de l'API en format TeamMember
-      const transformedMembers: TeamMember[] = collaborateurs.map((collab) => {
-        // Déterminer la catégorie basée sur le rôle
-        let category: "siege" | "franchise" | "prestataire" = "siege";
-        const roleLower = (collab.role || "").toLowerCase();
-        
-        if (roleLower.includes("franchise") || roleLower.includes("franchisé")) {
-          category = "franchise";
-        } else if (roleLower.includes("prestataire")) {
-          category = "prestataire";
-        }
-
-        // Utiliser le rôle de l'API ou définir un rôle par défaut
-        let role = collab.role || "Collaborateur";
-        
-        if (!collab.role) {
-          if (category === "siege") role = "Collaborateur Siège";
-          else if (category === "franchise") role = "Franchisé";
-          else if (category === "prestataire") role = "Prestataire";
-        }
-
-        // Déterminer la localisation
-        let location = "Siège";
-
-        if (category === "franchise" || category === "prestataire") {
-          location = collab.villeEpicu && collab.villeEpicu.length > 0 ? collab.villeEpicu[0] : "Ville non définie";
-        }
-
-        // Utiliser les vrais prénom et nom de l'API
-        const firstName = collab.prenom || '';
-        const lastName = collab.nom || '';
-        const fullName = `${firstName} ${lastName}`.trim() || `Collaborateur ${collab.id}`;
-
-        // Déterminer la ville (première ville de la liste ou ville par défaut)
-        const city = collab.villeEpicu && collab.villeEpicu.length > 0 ? collab.villeEpicu[0] : "Ville non définie";
-
-        // Générer un identifiant basé sur le nom
-        const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
-
-        // Générer un mot de passe temporaire
-        const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-        // Date de naissance par défaut (peut être modifiée plus tard)
-        const birthDate = "01.01.1990";
-
-        // Utiliser l'email EPICU de l'API ou générer des emails basés sur le nom et la ville
-        const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-        const franchiseEmail = collab.emailEpicu || `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
-
-        // Générer des données pour les nouveaux champs
-        const phone = "0648596769"; // Téléphone par défaut
-        const postalAddress = "1 place de Mairie, Tourcoing"; // Adresse par défaut
-        const siret = "87450934562398"; // SIRET par défaut
-        const dipSignatureDate = "12.07.2024"; // Date signature DIP par défaut
-        const franchiseContractSignatureDate = "02.12.2024"; // Date signature contrat par défaut
-        const trainingCertificateSignatureDate = "02.12.2024"; // Date signature attestation par défaut
-
-        return {
-          id: collab.id,
-          name: fullName,
-          role,
-          location,
-          avatar: `/api/placeholder/150/150`,
-          category,
-          city,
-          firstName,
-          lastName,
-          identifier,
-          password,
-          birthDate,
-          personalEmail,
-          franchiseEmail,
-          phone,
-          postalAddress,
-          siret,
-          dipSignatureDate,
-          franchiseContractSignatureDate,
-          trainingCertificateSignatureDate,
-        };
-      });
+      // Utiliser directement les données de l'API
+      const members: TeamMember[] = data.results || [];
 
       // Filtrer par catégorie si sélectionnée
-      let filteredMembers = transformedMembers;
+      let filteredMembers = members;
 
       if (selectedCategory && selectedCategory !== "tout") {
-        filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+        filteredMembers = members.filter(member => {
+          const roleLower = (member.role || "").toLowerCase();
+          if (selectedCategory === "siege") {
+            return !roleLower.includes("franchise") && !roleLower.includes("franchisé") && !roleLower.includes("prestataire");
+          } else if (selectedCategory === "franchise") {
+            return roleLower.includes("franchise") || roleLower.includes("franchisé");
+          } else if (selectedCategory === "prestataire") {
+            return roleLower.includes("prestataire");
+          }
+          return true;
+        });
       }
 
       setMembers(filteredMembers);
@@ -368,7 +277,7 @@ export default function EquipePage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
+                    aria-label={`Voir l'équipe de ${member.prenom} ${member.nom} à ${member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}`}
                     className="group relative flex flex-col items-center text-center cursor-pointer hover:scale-105 transition-transform"
                     role="button"
                     tabIndex={0}
@@ -381,17 +290,17 @@ export default function EquipePage() {
                         base: "ring-2 ring-gray-200 dark:ring-gray-700",
                         img: "object-cover",
                       }}
-                      name={member.name}
-                      src={member.avatar}
+                      name={`${member.prenom} ${member.nom}`}
+                      src={member.trombi?.[0]?.url}
                     />
                     <h3 className="font-semibold  text-sm mb-1">
-                      {member.name}
+                      {member.prenom} {member.nom}
                     </h3>
                     <p className="text-sm font-light ">
                       {member.role}
                     </p>
                     <p className="text-xs font-light ">
-                      {member.location}
+                      {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                     </p>
                   </div>
                 ))}
@@ -441,7 +350,7 @@ export default function EquipePage() {
                               </Tooltip>
                             </TableCell>
                             <TableCell className="font-light">
-                              {member.city}
+                              {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                             </TableCell>
                             <TableCell className="font-light">
                               <span className="font-light">
@@ -450,73 +359,73 @@ export default function EquipePage() {
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.firstName}
+                                {member.prenom}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.lastName}
+                                {member.nom}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.identifier}
+                                {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell className="font-light">
                               <span >
-                                {member.password}
+                                {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.birthDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <a
                                 className="font-light underline"
-                                href={`mailto:${member.personalEmail}`}
+                                href={`mailto:${member.emailEpicu || ""}`}
                               >
-                                {member.personalEmail}
+                                {member.emailEpicu || "Non défini"}
                               </a>
                             </TableCell>
                             <TableCell>
                               <a
                                 className="font-light underline"
-                                href={`mailto:${member.franchiseEmail}`}
+                                href={`mailto:${member.emailEpicu || ""}`}
                               >
-                                {member.franchiseEmail}
+                                {member.emailEpicu || "Non défini"}
                               </a>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.phone}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.postalAddress}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.siret}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.dipSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.franchiseContractSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.trainingCertificateSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                           </TableRow>

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
 import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
+import { Data } from '../../../types/data';
 
 const TABLE_NAME = 'STATISTIQUES MENSUELLES';
 const VIEW_NAME = 'Vue complète';
@@ -101,7 +102,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			return res.status(400).json({ error: 'Paramètre date invalide. Format attendu: mm-yyyy' });
 		}
 
-		const fields = ['Mois-Année', 'Ville EPICU', '📊 Total abonnés', '📊 Total vues', '📊 Prospects signés ds le mois', '📊 Prospects vus ds le mois', '📊 Tx de conversion'];
+		const fields = [
+			'Mois-Année', 
+			'Ville EPICU', 
+			'📊 Total abonnés', 
+			'📊 Total vues', 
+			'📊 Prospects signés ds le mois', 
+			'📊 Prospects vus ds le mois', 
+			'📊 Tx de conversion',
+			'📊 Vues 🟠 FOOD',
+			'📊 Abonnés 🟠 FOOD',
+			'📊 Abonnés 🟣 SHOP',
+			'📊 Vues 🟣 SHOP',
+			'📊 Abonnés 🟢 TRAVEL',
+			'📊 Vues 🟢 TRAVEL',
+			'📊 Abonnés 🔴 FUN',
+			'📊 Vues 🔴 FUN',
+			'📊 Abonnés 🩷 BEAUTY',
+			'📊 Vues 🩷 BEAUTY',
+			'Posts publiés',
+			'Cumul de Montant du cadeau (à partir de HISTORIQUE DE PUBLICATIONS)'
+		];
 
 		let villeName: string | null = null;
 		if (ville !== 'all' && /^rec/i.test(ville)) {
@@ -150,6 +171,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			let totalProspectsVus = 0;
 			const txValues: number[] = [];
 			let totalRecords = 0;
+			
+			// Données détaillées par catégorie
+			let viewsFood = 0;
+			let abonnesFood = 0;
+			let abonnesShop = 0;
+			let vuesShop = 0;
+			let abonnesTravel = 0;
+			let vuesTravel = 0;
+			let abonnesFun = 0;
+			let vuesFun = 0;
+			let abonnesBeauty = 0;
+			let vuesBeauty = 0;
+			
+			// Données supplémentaires
+			let postsPublies = 0;
+			let cumulMontantCadeau = 0;
 
 			const cityNameById = new Map<string, string>();
 			try {
@@ -180,6 +217,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 							totalProspectsVus += toNumber(r.get('📊 Prospects vus ds le mois'));
 							const tx = r.get('📊 Tx de conversion');
 							if (tx !== undefined && tx !== null && tx !== '') txValues.push(toNumber(tx));
+							
+							// Agrégation des données détaillées par catégorie
+							viewsFood += toNumber(r.get('📊 Vues 🟠 FOOD'));
+							abonnesFood += toNumber(r.get('📊 Abonnés 🟠 FOOD'));
+							abonnesShop += toNumber(r.get('📊 Abonnés 🟣 SHOP'));
+							vuesShop += toNumber(r.get('📊 Vues 🟣 SHOP'));
+							abonnesTravel += toNumber(r.get('📊 Abonnés 🟢 TRAVEL'));
+							vuesTravel += toNumber(r.get('📊 Vues 🟢 TRAVEL'));
+							abonnesFun += toNumber(r.get('📊 Abonnés 🔴 FUN'));
+							vuesFun += toNumber(r.get('📊 Vues 🔴 FUN'));
+							abonnesBeauty += toNumber(r.get('📊 Abonnés 🩷 BEAUTY'));
+							vuesBeauty += toNumber(r.get('📊 Vues 🩷 BEAUTY'));
+							
+							// Agrégation des données supplémentaires
+							postsPublies += toNumber(r.get('📊 Posts publiés'));
+							cumulMontantCadeau += toNumber(r.get('📊 Cumul de Montant du cadeau (à partir de HISTORIQUE DE PUBLICATIONS)'));
 						});
 					})
 				);
@@ -196,6 +249,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 							totalProspectsVus += toNumber(r.get('📊 Prospects vus ds le mois'));
 							const tx = r.get('📊 Tx de conversion');
 							if (tx !== undefined && tx !== null && tx !== '') txValues.push(toNumber(tx));
+							
+							// Agrégation des données détaillées par catégorie
+							viewsFood += toNumber(r.get('📊 Vues 🟠 FOOD'));
+							abonnesFood += toNumber(r.get('📊 Abonnés 🟠 FOOD'));
+							abonnesShop += toNumber(r.get('📊 Abonnés 🟣 SHOP'));
+							vuesShop += toNumber(r.get('📊 Vues 🟣 SHOP'));
+							abonnesTravel += toNumber(r.get('📊 Abonnés 🟢 TRAVEL'));
+							vuesTravel += toNumber(r.get('📊 Vues 🟢 TRAVEL'));
+							abonnesFun += toNumber(r.get('📊 Abonnés 🔴 FUN'));
+							vuesFun += toNumber(r.get('📊 Vues 🔴 FUN'));
+							abonnesBeauty += toNumber(r.get('📊 Abonnés 🩷 BEAUTY'));
+							vuesBeauty += toNumber(r.get('📊 Vues 🩷 BEAUTY'));
+							
+							// Agrégation des données supplémentaires
+							postsPublies += toNumber(r.get('📊 Posts publiés'));
+							cumulMontantCadeau += toNumber(r.get('📊 Cumul de Montant du cadeau (à partir de HISTORIQUE DE PUBLICATIONS)'));
 						});
 					})
 				);
@@ -209,20 +278,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				tauxConversion = +(sumTx / txValues.length).toFixed(2);
 			}
 
-			return res.status(200).json({ date, ville: 'all', totalAbonnes, totalVues, totalProspectsSignes, totalProspectsVus, tauxConversion, rawCount: totalRecords });
+			const responseData: Partial<Data> = { 
+				date, 
+				ville: 'all', 
+				totalAbonnes, 
+				totalVues, 
+				totalProspectsSignes, 
+				totalProspectsVus, 
+				tauxConversion, 
+				rawCount: totalRecords,
+				viewsFood,
+				abonnesFood,
+				abonnesShop,
+				vuesShop,
+				abonnesTravel,
+				vuesTravel,
+				abonnesFun,
+				vuesFun,
+				abonnesBeauty,
+				vuesBeauty,
+				postsPublies,
+				cumulMontantCadeau
+			};
+			return res.status(200).json(responseData);
 		}
 
 		if (!records || records.length === 0) return res.status(404).json({ error: 'Aucune statistique trouvée pour ce filtre' });
 
 		const r = records[0];
-		const result = {
+		const result: Partial<Data> = {
 			id: r.id,
-			moisAnnee: r.get('Mois-Année'),
-			villeEpicu: r.get('Ville EPICU'),
+			date,
+			ville,
+			moisAnnee: String(r.get('Mois-Année') || ''),
+			villeEpicu: String(r.get('Ville EPICU') || ''),
 			totalAbonnes: toNumber(r.get('📊 Total abonnés')),
 			totalVues: toNumber(r.get('📊 Total vues')),
+			totalProspectsSignes: toNumber(r.get('📊 Prospects signés ds le mois')),
+			totalProspectsVus: toNumber(r.get('📊 Prospects vus ds le mois')),
+			tauxConversion: toNumber(r.get('📊 Tx de conversion')),
 			prospectsSignesDsLeMois: toNumber(r.get('📊 Prospects signés ds le mois')),
-			tauxDeConversion: (r.get('📊 Tx de conversion') ?? r.get('Taux de conversion')) || null,
+			tauxDeConversion: toNumber(r.get('📊 Tx de conversion')),
+			viewsFood: toNumber(r.get('📊 Vues 🟠 FOOD')),
+			abonnesFood: toNumber(r.get('📊 Abonnés 🟠 FOOD')),
+			abonnesShop: toNumber(r.get('📊 Abonnés 🟣 SHOP')),
+			vuesShop: toNumber(r.get('📊 Vues 🟣 SHOP')),
+			abonnesTravel: toNumber(r.get('📊 Abonnés 🟢 TRAVEL')),
+			vuesTravel: toNumber(r.get('📊 Vues 🟢 TRAVEL')),
+			abonnesFun: toNumber(r.get('📊 Abonnés 🔴 FUN')),
+			vuesFun: toNumber(r.get('📊 Vues 🔴 FUN')),
+			abonnesBeauty: toNumber(r.get('📊 Abonnés 🩷 BEAUTY')),
+			vuesBeauty: toNumber(r.get('📊 Vues 🩷 BEAUTY')),
+			postsPublies: toNumber(r.get('📊 Posts publiés')),
+			cumulMontantCadeau: toNumber(r.get('📊 Cumul de Montant du cadeau (à partir de HISTORIQUE DE PUBLICATIONS)')),
 		};
 
 		return res.status(200).json(result);

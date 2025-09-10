@@ -1,6 +1,7 @@
 
 export interface Publication {
     id: string;
+    nom: string;
     datePublication: string;
     dateEnvoiFactureCreation: string;
     montantFactureTournage: string;

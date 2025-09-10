@@ -1,14 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-
 import { Input } from '@heroui/input';
+import { Avatar } from '@heroui/avatar';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+
+import { useUser } from '../contexts/user-context';
 
 
 export function Header() {
   const router = useRouter();
+  const { userProfile } = useUser();
 
   const handleProfileClick = () => {
     router.push('/profil');
@@ -40,15 +42,13 @@ export function Header() {
 
           {/* User Profile Picture */}
           <button
-            className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleProfileClick}
           >
-            <Image
-              alt="Profile"
-              className="w-full h-full object-cover"
-              height={40}
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-              width={40}
+            <Avatar
+              className="w-10 h-10"
+              name={userProfile ? `${userProfile.firstname || 'Prénom'} ${userProfile.lastname || 'Nom'}` : 'Utilisateur'}
+              src={userProfile?.trombi?.[0]?.url}
             />
           </button>
         </div>

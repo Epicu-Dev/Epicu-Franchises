@@ -10,6 +10,7 @@ import { Select, SelectItem } from "@heroui/select";
 import { Resource, ResourceCategory } from "../types/resource";
 
 import { FormLabel } from "./form-label";
+import { StyledSelect } from "./styled-select";
 
 interface ResourceModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export default function ResourceModal({
               <FormLabel htmlFor="category" isRequired={true}>
                 Type de ressource
               </FormLabel>
-              <Select
+              <StyledSelect
                 isRequired
                 classNames={{
                   trigger: "bg-page-bg",
@@ -93,7 +94,7 @@ export default function ResourceModal({
                     {option.label}
                   </SelectItem>
                 ))}
-              </Select>
+              </StyledSelect>
 
               <FormLabel htmlFor="title" isRequired={true}>
                 Nom du document

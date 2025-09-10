@@ -32,9 +32,23 @@ export async function GET(request: NextRequest) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
     
-    // Récupérer les événements du calendrier principal
+    // Récupérer la liste des calendriers pour trouver celui contenant "EPICU"
+    const calendarList = await calendar.calendarList.list();
+    const epicuCalendar = calendarList.data.items?.find(cal => 
+      cal.summary?.toLowerCase().includes('epicu')
+    );
+
+    if (!epicuCalendar) {
+      return NextResponse.json({
+        events: [],
+        syncTime: new Date().toISOString(),
+        message: 'Aucun calendrier contenant "EPICU" trouvé'
+      });
+    }
+
+    // Récupérer les événements du calendrier EPICU
     const events = await calendar.events.list({
-      calendarId: 'primary',
+      calendarId: epicuCalendar.id!,
       timeMin,
       timeMax,
       singleEvents: true,
@@ -75,8 +89,23 @@ export async function GET(request: NextRequest) {
           
           // Réessayer la synchronisation
           const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          
+          // Récupérer la liste des calendriers pour trouver celui contenant "EPICU"
+          const calendarList = await calendar.calendarList.list();
+          const epicuCalendar = calendarList.data.items?.find(cal => 
+            cal.summary?.toLowerCase().includes('epicu')
+          );
+
+          if (!epicuCalendar) {
+            return NextResponse.json({
+              events: [],
+              syncTime: new Date().toISOString(),
+              message: 'Aucun calendrier contenant "EPICU" trouvé'
+            });
+          }
+
           const events = await calendar.events.list({
-            calendarId: 'primary',
+            calendarId: epicuCalendar.id!,
             timeMin: new Date().toISOString(),
             timeMax: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             singleEvents: true,

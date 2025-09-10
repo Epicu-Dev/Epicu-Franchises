@@ -262,7 +262,7 @@ export default function ClientModal({
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="font-medium text-gray-700 dark:text-gray-300">
-                                                    Publication {index + 1}
+                                                    {publication.nom || `Publication ${index + 1}`}
                                                 </span>
                                             </div>
                                             <div className="text-sm text-gray-600 dark:text-gray-400">

@@ -13,14 +13,9 @@ import { Input } from "@heroui/input";
 import { Tabs, Tab } from "@heroui/tabs";
 
 import { useUser } from "@/contexts/user-context";
+import { Data } from "@/types/data";
 
-interface SubscribersData {
-  foodSubscribers: string;
-  shopSubscribers: string;
-  travelSubscribers: string;
-  funSubscribers: string;
-  beautySubscribers: string;
-}
+type SubscribersData = Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>;
 
 interface SubscribersEditModalProps {
   isOpen: boolean;
@@ -28,6 +23,7 @@ interface SubscribersEditModalProps {
   onSave: (data: SubscribersData) => void;
   initialData: SubscribersData;
   month: string;
+  saving?: boolean;
 }
 
 export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
@@ -36,6 +32,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
   onSave,
   initialData,
   month,
+  saving = false,
 }) => {
   const { userProfile } = useUser();
   const [formData, setFormData] = useState<SubscribersData>(initialData);
@@ -75,7 +72,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
     if (value === "" || /^\d+$/.test(value)) {
       const newFormData = {
         ...formData,
-        [field]: value
+        [field]: value === "" ? 0 : parseInt(value)
       };
 
       setFormData(newFormData);
@@ -118,31 +115,31 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
 
   const categories = [
     {
-      key: "foodSubscribers" as keyof SubscribersData,
+      key: "abonnesFood" as keyof SubscribersData,
       label: "FOOD",
       color: "bg-custom-orange-food/10 text-custom-orange-food",
       placeholder: "Nombre d'abonnés Food"
     },
     {
-      key: "shopSubscribers" as keyof SubscribersData,
+      key: "abonnesShop" as keyof SubscribersData,
       label: "SHOP",
       color: "bg-custom-purple-shop/10 text-custom-purple-shop",
       placeholder: "Nombre d'abonnés Shop"
     },
     {
-      key: "travelSubscribers" as keyof SubscribersData,
+      key: "abonnesTravel" as keyof SubscribersData,
       label: "TRAVEL",
       color: "bg-custom-green-travel/10 text-custom-green-travel",
       placeholder: "Nombre d'abonnés Travel"
     },
     {
-      key: "funSubscribers" as keyof SubscribersData,
+      key: "abonnesFun" as keyof SubscribersData,
       label: "FUN",
       color: "bg-custom-green-travel/10 text-custom-green-travel",
       placeholder: "Nombre d'abonnés Fun"
     },
     {
-      key: "beautySubscribers" as keyof SubscribersData,
+      key: "abonnesBeauty" as keyof SubscribersData,
       label: "BEAUTY",
       color: "bg-custom-blue-beauty/10 text-custom-blue-beauty",
       placeholder: "Nombre d'abonnés Beauty"
@@ -203,7 +200,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
                     }}
                     placeholder={category.placeholder}
                     type="text"
-                    value={formData[category.key]}
+                    value={formData[category.key]?.toString() || "0"}
                     variant="bordered"
                     onChange={(e) => handleInputChange(category.key, e.target.value)}
                   />
@@ -214,7 +211,10 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
         </ModalBody>
         <ModalFooter className="flex justify-between">
           <Button
-            className="flex-1 border-1" color='primary' variant="bordered"
+            className="flex-1 border-1" 
+            color='primary' 
+            variant="bordered"
+            isDisabled={saving}
             onPress={handleCancel}
           >
             Annuler
@@ -222,9 +222,11 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
           <Button
             className="flex-1"
             color="primary"
+            isLoading={saving}
+            isDisabled={saving}
             onPress={handleSave}
           >
-            Sauvegarder
+            {saving ? "Sauvegarde..." : "Sauvegarder"}
           </Button>
         </ModalFooter>
       </ModalContent>

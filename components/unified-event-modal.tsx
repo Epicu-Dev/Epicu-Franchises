@@ -5,7 +5,9 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+
+import { StyledSelect } from "./styled-select";
 import { Checkbox } from "@heroui/checkbox";
 import { Spinner } from "@heroui/spinner";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
@@ -66,7 +68,7 @@ export function UnifiedEventModal({
 }: UnifiedEventModalProps) {
   const { authFetch } = useAuthFetch();
   const { userProfile } = useUser();
-  
+
   // États communs
   const [formData, setFormData] = useState<FormData>({
     // Champs Google Calendar de base
@@ -130,7 +132,7 @@ export function UnifiedEventModal({
     // Extraire l'heure du créneau (format: "14h00 - 15h00")
     let startTime = '18:00';
     let endTime = '19:00';
-    
+
     if (slot.HEURE) {
       // Parser l'heure du format "14h00 - 15h00"
       const timeMatch = slot.HEURE.match(/(\d{1,2})h(\d{2})/);
@@ -139,7 +141,7 @@ export function UnifiedEventModal({
         const minute = timeMatch[2];
 
         startTime = `${hour}:${minute}`;
-        
+
         // Calculer l'heure de fin (ajouter 1 heure)
         const endHour = (parseInt(hour) + 1).toString().padStart(2, '0');
 
@@ -173,7 +175,7 @@ export function UnifiedEventModal({
     try {
       setIsSearchingClient(true);
 
-      const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(searchTerm)}&limit=10`);
+      const response = await authFetch(`/api/etablissements/etablissements?q=${encodeURIComponent(searchTerm)}&limit=10`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la recherche de clients");
@@ -198,11 +200,11 @@ export function UnifiedEventModal({
     setFormData(prev => ({
       ...prev,
       selectedClient: client,
-      summary: eventType === 'tournage' 
+      summary: eventType === 'tournage'
         ? `Tournage - ${client.nomEtablissement}`
         : eventType === 'publication'
-        ? `Publication - ${client.nomEtablissement}`
-        : `RDV - ${client.nomEtablissement}`,
+          ? `Publication - ${client.nomEtablissement}`
+          : `RDV - ${client.nomEtablissement}`,
       location: client.nomEtablissement
     }));
   };
@@ -288,12 +290,17 @@ export function UnifiedEventModal({
   const handleLocalEventSubmit = async () => {
     const events = [];
 
+    // Combiner la date et l'heure pour créer une date complète
+    const createDateTime = (date: string, time: string) => {
+      return new Date(`${date}T${time}:00`).toISOString();
+    };
+
     if (eventType === 'tournage') {
       // Créer l'événement de tournage
       const tournageEvent = {
         title: `Tournage - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "tournage",
-        date: formData.startDate,
+        date: createDateTime(formData.startDate, formData.startTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
@@ -309,7 +316,7 @@ export function UnifiedEventModal({
       const publicationEvent = {
         title: `Publication - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "publication",
-        date: formData.startDate,
+        date: createDateTime(formData.startDate, formData.startTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
@@ -324,7 +331,7 @@ export function UnifiedEventModal({
       const rdvEvent = {
         title: `RDV - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "rendez-vous",
-        date: formData.startDate,
+        date: createDateTime(formData.startDate, formData.startTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
@@ -339,7 +346,7 @@ export function UnifiedEventModal({
       const eventData = {
         title: formData.summary,
         type: "evenement",
-        date: formData.startDate,
+        date: createDateTime(formData.startDate, formData.startTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.location || undefined,
@@ -353,7 +360,7 @@ export function UnifiedEventModal({
 
     // Créer les événements localement ET dans Google Calendar
     let eventCreatedSuccessfully = false;
-    
+
     for (const eventData of events) {
       // Créer l'événement local
       const localResponse = await fetch("/api/agenda", {
@@ -367,7 +374,7 @@ export function UnifiedEventModal({
       if (!localResponse.ok) {
         throw new Error("Erreur lors de l'ajout de l'événement local");
       }
-      
+
       eventCreatedSuccessfully = true;
 
       // Créer l'événement dans Google Calendar
@@ -377,11 +384,11 @@ export function UnifiedEventModal({
           description: eventData.description || undefined,
           location: eventData.location || undefined,
           start: {
-            dateTime: `${eventData.date}T${eventData.startTime}:00`,
+            dateTime: `${formData.startDate}T${eventData.startTime}:00`,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
           },
           end: {
-            dateTime: `${eventData.date}T${eventData.endTime}:00`,
+            dateTime: `${formData.startDate}T${eventData.endTime}:00`,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
           }
         };
@@ -419,7 +426,7 @@ export function UnifiedEventModal({
             statutPublication: ['recsdyl2X41rpj7LG'] // ID du statut "Indisponible" en tableau
           }),
         });
-        
+
         if (slotResponse.ok) {
           console.log('Créneau marqué comme indisponible avec succès');
         } else {
@@ -506,7 +513,7 @@ export function UnifiedEventModal({
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex  gap-1 justify-center">
             {getModalTitle()}
           </ModalHeader>
           <form onSubmit={handleSubmit}>
@@ -518,7 +525,7 @@ export function UnifiedEventModal({
                   <div className="space-y-2">
                     <div className="relative">
                       <FormLabel htmlFor="clientSearch" isRequired={true}>
-                        Rechercher un client
+                        Rechercher un client/prospect
                       </FormLabel>
                       <Input
                         isRequired
@@ -643,7 +650,7 @@ export function UnifiedEventModal({
                     <FormLabel htmlFor="appointmentType" isRequired={true}>
                       Type d&apos;événement
                     </FormLabel>
-                    <Select
+                    <StyledSelect
                       id="appointmentType"
                       placeholder="Sélectionner un type"
                       selectedKeys={formData.appointmentType ? [formData.appointmentType] : []}
@@ -658,12 +665,12 @@ export function UnifiedEventModal({
                       <SelectItem key="formation">Formation</SelectItem>
                       <SelectItem key="reunion">Réunion</SelectItem>
                       <SelectItem key="autre">Autre</SelectItem>
-                    </Select>
+                    </StyledSelect>
 
                     <FormLabel htmlFor="eventFor" isRequired={true}>
                       Pour qui
                     </FormLabel>
-                    <Select
+                    <StyledSelect
                       id="eventFor"
                       placeholder="Sélectionner un destinataire"
                       selectedKeys={formData.eventFor ? [formData.eventFor] : []}
@@ -676,7 +683,7 @@ export function UnifiedEventModal({
                       <SelectItem key="franchises">Franchisés</SelectItem>
                       <SelectItem key="sieges">Sièges</SelectItem>
                       <SelectItem key="partenaires">Partenaires</SelectItem>
-                    </Select>
+                    </StyledSelect>
                   </>
                 )}
 
@@ -685,7 +692,7 @@ export function UnifiedEventModal({
                 {/* Lieu */}
                 {(eventType === 'google-calendar' || eventType === 'evenement') && (
                   <>
-                    <FormLabel htmlFor="description" isRequired={true}>
+                    <FormLabel htmlFor="description" isRequired={false}>
                       Description
                     </FormLabel>
                     <Textarea
@@ -710,8 +717,8 @@ export function UnifiedEventModal({
                 {/* Checkboxes prestataires pour tournage */}
                 {eventType === 'tournage' && (
                   <div className="space-y-2">
-                    <FormLabel htmlFor="prestataires" isRequired={true}>
-                      Prestataires
+                    <FormLabel htmlFor="prestataires" isRequired={false}>
+                      Partenaires
                     </FormLabel>
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -846,7 +853,7 @@ export function UnifiedEventModal({
                 type="submit"
                 isLoading={isLoading}
               >
-                {eventType === 'google-calendar' ? 'Créer dans Google Calendar' : 'Créer l&apos;événement'}
+                {eventType === 'google-calendar' ? 'Créer dans Google Calendar' : "Créer l'événement"}
               </Button>
             </ModalFooter>
           </form>

@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+
+import { StyledSelect } from "@/components/styled-select";
 import {
   Table,
   TableHeader,
@@ -183,7 +185,7 @@ export default function TodoPage() {
           {/* Header with filters */}
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
-              <Select
+              <StyledSelect
                 className="w-48"
                 placeholder="État"
                 selectedKeys={selectedStatut ? [selectedStatut] : []}
@@ -195,7 +197,7 @@ export default function TodoPage() {
                 <SelectItem key="À faire">Pas commencé</SelectItem>
                 <SelectItem key="Terminé">Terminé</SelectItem>
                 <SelectItem key="En attente">En attente</SelectItem>
-              </Select>
+              </StyledSelect>
 
             </div>
 

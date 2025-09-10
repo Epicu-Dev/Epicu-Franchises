@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
@@ -16,13 +15,14 @@ import {
 } from "@heroui/table";
 import { MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { Switch } from "@heroui/switch";
 
 import { CategoryBadge, StatusBadge } from "@/components/badges";
 import { SortableColumnHeader } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 import ClientModal from "@/components/client-modal";
 import { ToastContainer } from "@/components";
-import { Switch } from "@heroui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { Client } from "@/types/client";
 
 
@@ -51,12 +51,14 @@ export default function ClientsPage() {
     if (isRdvMode) {
       // Mode RDV activé : sélectionner toutes les colonnes RDV
       const rdvColumns = new Set(rdvColumnConfig.map(col => col.key));
+
       setVisibleColumns(rdvColumns);
     } else {
       // Mode normal : vider la sélection pour afficher toutes les colonnes
       setVisibleColumns(new Set());
     }
   }, [isRdvMode]);
+
   const [, setViewCount] = useState<number | null>(null);
 
   // Configuration des colonnes du tableau
@@ -165,11 +167,10 @@ export default function ClientsPage() {
       if (response.ok) {
         const data = await response.json();
 
-        console.log('Catégories récupérées:', data.results);
         setCategories(data.results || []);
       }
-    } catch (err) {
-      console.error('Erreur lors de la récupération des catégories:', err);
+    } catch {
+      // Erreur silencieuse lors de la récupération des catégories
     }
   };
 
@@ -220,6 +221,7 @@ export default function ClientsPage() {
       if (!editingClient.raisonSociale?.trim()) {
         setError("La raison sociale est requise");
         setIsLoading(false);
+
         return;
       }
 
@@ -227,6 +229,7 @@ export default function ClientsPage() {
       if (!editingClient.id) {
         setError("ID du client manquant");
         setIsLoading(false);
+
         return;
       }
 
@@ -254,6 +257,7 @@ export default function ClientsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
@@ -269,6 +273,15 @@ export default function ClientsPage() {
     }
   };
 
+  // Fonction de réinitialisation de tous les filtres
+  const resetAllFilters = () => {
+    setSelectedCategory('tous');
+    setSelectedCategoryId('');
+    setVisibleColumns(new Set());
+    setSearchTerm('');
+    setIsRdvMode(false);
+  };
+
 
   return (
     <div className="w-full text-primary">
@@ -277,6 +290,19 @@ export default function ClientsPage() {
           {/* Header with filters */}
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
+              {/* Bouton de réinitialisation de tous les filtres */}
+              {(selectedCategoryId || visibleColumns.size > 0 || searchTerm) && (
+                <Button
+                  isIconOnly
+                  size="md"
+                  className="bg-page-bg"
+                  title="Réinitialiser tous les filtres"
+                  onPress={resetAllFilters}
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              )}
+
               <StyledSelect
                 className="w-40"
                 placeholder="Catégorie"
@@ -284,7 +310,6 @@ export default function ClientsPage() {
                 onSelectionChange={(keys) => {
                   const selected = Array.from(keys)[0] as string;
 
-                  console.log('Catégorie sélectionnée:', selected);
                   if (selected === 'tous') {
                     setSelectedCategory('tous');
                     setSelectedCategoryId('');
@@ -314,11 +339,12 @@ export default function ClientsPage() {
               <StyledSelect
                 className="w-64"
                 placeholder={`Colonnes (${visibleColumns.size === 0 ? (isRdvMode ? rdvColumnConfig.length : columnConfig.length) : visibleColumns.size})`}
-                selectionMode="multiple"
                 selectedKeys={visibleColumns}
+                selectionMode="multiple"
                 onSelectionChange={(keys) => {
                   // Always include 'modifier' column, and add all selected keys
                   const newVisibleColumns = new Set(['modifier', ...Array.from(keys as Set<string> | string[])]);
+
                   setVisibleColumns(newVisibleColumns);
                 }}
               >
@@ -341,15 +367,15 @@ export default function ClientsPage() {
 
 
               <div className="relative">
-                <Input
+                  <Input
                   className="w-64 pr-4 pl-10"
-                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   classNames={{
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
                   endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                   placeholder="Rechercher..."
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -446,6 +472,7 @@ export default function ClientsPage() {
 
                             // Cellule Modifier toujours visible en premier
                             const hasFactures = client.invoices && client.invoices.length > 0;
+
                             cells.push(
                               <TableCell key="modifier" className="font-light">
                                 <div className="relative">
@@ -478,8 +505,10 @@ export default function ClientsPage() {
                             (isRdvMode ? rdvColumnConfig : columnConfig)
                               .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
                               .forEach((column) => {
+
                                 switch (column.key) {
                                   case 'categorie':
+
                                     cells.push(
                                       <TableCell key={column.key} className="font-light py-5">
                                         <CategoryBadge category={client.categorie || ""} />
@@ -509,7 +538,7 @@ export default function ClientsPage() {
                                     break;
                                   case 'telephone':
                                     cells.push(
-                                      <TableCell key={column.key} className="font-light">
+                                      <TableCell key={column.key} className="font-light min-w-32">
                                         {client.telephone}
                                       </TableCell>
                                     );
@@ -817,6 +846,7 @@ export default function ClientsPage() {
 
                                 }
                               });
+
                             return cells;
                           })()}
                         </TableRow>

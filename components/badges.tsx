@@ -30,7 +30,7 @@ export const getCategoryBadgeColor = (category?: string) => {
     } else if (categoryLower.includes('travel') || categoryLower.includes('hôtel') || categoryLower.includes('voyage')) {
         return "bg-custom-green-travel/10 text-custom-green-travel";
     } else if (categoryLower.includes('fun') || categoryLower.includes('loisir') || categoryLower.includes('divertissement')) {
-        return "bg-custom-green-travel/10 text-custom-green-travel";
+        return "bg-custom-red-fun/10 text-custom-red-fun";
     } else if (categoryLower.includes('beauty') || categoryLower.includes('beauté') || categoryLower.includes('esthétique')) {
         return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
     } else {

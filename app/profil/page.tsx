@@ -272,7 +272,7 @@ export default function ProfilPage() {
                         className="w-20 h-20"
                         name={`${userProfile.firstname} ${userProfile.lastname}`}
                         size="lg"
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+                        src={userProfile.trombi?.[0]?.url}
                       />
                       <div>
                         <h2 className="text-2xl font-semibold">

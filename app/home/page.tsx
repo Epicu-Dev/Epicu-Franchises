@@ -18,7 +18,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { Card, CardBody } from "@heroui/card";
 import { Spinner } from "@heroui/spinner";
@@ -95,6 +95,12 @@ export default function HomePage() {
     vues: number;
   } | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
+  
+  // État de loading global pour la navigation par mois
+  const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Ref pour annuler les requêtes en cours
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // États pour le modal unifié d'agenda
   const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
@@ -115,11 +121,18 @@ export default function HomePage() {
       }));
 
       // Mettre à jour la liste des villes avec celles de l'utilisateur
-      setCities([
-        { key: "tout", label: "Tout" },
+      const newCities = [
+        ...(userVilles.length > 1 ? [{ key: "tout", label: "Tout" }] : []),
         ...userCities,
         { key: "national", label: "National" }
-      ]);
+      ];
+      
+      setCities(newCities);
+
+      // Si l'utilisateur n'a qu'une seule ville, la sélectionner par défaut
+      if (userVilles.length === 1 && selectedCity === "tout") {
+        setSelectedCity(userCities[0].key);
+      }
 
       // Signal que le profil est chargé
       setUserProfileLoaded(true);
@@ -130,7 +143,7 @@ export default function HomePage() {
         { key: "national", label: "National" }
       ]);
     }
-  }, [userProfile, setUserProfileLoaded]);
+  }, [userProfile, setUserProfileLoaded, selectedCity]);
 
   // Fonction pour récupérer les données agenda
   const fetchAgenda = async () => {
@@ -160,6 +173,8 @@ export default function HomePage() {
         const eventsData = await eventsResponse.json();
 
         setEvents(eventsData.events || []);
+      } else {
+        setEvents([]);
       }
     } catch {
       setEvents([]);
@@ -203,6 +218,8 @@ export default function HomePage() {
         }) || [];
 
         setTodoItems(filteredTodos);
+      } else {
+        setTodoItems([]);
       }
     } catch {
       setTodoItems([]);
@@ -374,18 +391,59 @@ export default function HomePage() {
 
           setStatistics(stats);
         }
+      } else {
+        // Si la réponse n'est pas ok, mettre les statistiques à 0
+        setStatistics({
+          prospectsSignes: 0,
+          tauxConversion: 0,
+          abonnes: 0,
+          vues: 0
+        });
       }
     } catch {
-      setStatistics(null);
+      // En cas d'erreur, mettre les statistiques à 0
+      setStatistics({
+        prospectsSignes: 0,
+        tauxConversion: 0,
+        abonnes: 0,
+        vues: 0
+      });
     } finally {
       setStatisticsLoading(false);
     }
   };
 
   // Fonction pour récupérer les données
-  const fetchData = async () => {
-    // Récupération des événements d'agenda, todos et statistiques
-    await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
+  const fetchData = async (isNavigation = false) => {
+    // Annuler la requête précédente si elle existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Créer un nouveau contrôleur pour cette requête
+    const abortController = new AbortController();
+    
+    abortControllerRef.current = abortController;
+    
+    if (isNavigation) {
+      setIsNavigating(true);
+    }
+    
+    try {
+      // Récupération des événements d'agenda, todos et statistiques
+      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
+    } catch (error) {
+      // Ignorer les erreurs d'annulation
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      throw error;
+    } finally {
+      if (isNavigation) {
+        setIsNavigating(false);
+      }
+      abortControllerRef.current = null;
+    }
   };
 
   // Effet pour charger les données au montage du composant
@@ -395,16 +453,22 @@ export default function HomePage() {
 
   // Effet pour recharger agenda, todos et statistiques quand la date change
   useEffect(() => {
-    fetchAgenda();
-    fetchTodos();
-    fetchInvoices();
-    fetchStatistics();
+    fetchData(true);
   }, [selectedDate]);
 
   // Effet pour recharger les statistiques quand la ville change
   useEffect(() => {
     fetchStatistics();
   }, [selectedCity]);
+
+  // Cleanup pour annuler les requêtes en cours
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Calcul du taux de conversion (maintenant géré par l'API statistiques)
   // const conversionRate = useMemo(() => {
@@ -418,28 +482,28 @@ export default function HomePage() {
 
   const metrics = [
     {
-      value: statisticsLoading ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
       label: "Nombre d'abonnés",
       icon: <ChartBarIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-green-stats/40",
       iconColor: "text-custom-green-stats",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-rose/40",
       iconColor: "text-custom-rose",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
       label: "Prospects signés",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
       iconColor: "text-yellow-400",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
       label: "Taux de conversion",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-orange-food/40",
@@ -552,19 +616,21 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between">
               {/* Location Filters - Design avec "Tout" séparé et villes groupées */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {/* Bouton "Tout" séparé */}
-                <Button
-                  className={
-                    selectedCity === "tout"
-                      ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
-                  }
-                  size="sm"
-                  variant="solid"
-                  onPress={() => setSelectedCity("tout")}
-                >
-                  Tout
-                </Button>
+                {/* Bouton "Tout" séparé - affiché seulement si l'utilisateur a plusieurs villes */}
+                {userProfile?.villes && userProfile.villes.length > 1 && (
+                  <Button
+                    className={
+                      selectedCity === "tout"
+                        ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
+                    }
+                    size="sm"
+                    variant="solid"
+                    onPress={() => setSelectedCity("tout")}
+                  >
+                    Tout
+                  </Button>
+                )}
 
                 {/* Groupe des villes locales de l'utilisateur */}
                 {cities.filter(city => city.key !== "tout" && city.key !== "national").length > 0 && (
@@ -638,9 +704,12 @@ export default function HomePage() {
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
 
-            {selectedDate
-              .toDate(getLocalTimeZone())
-              .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            <div className="flex items-center gap-2">
+              {selectedDate
+                .toDate(getLocalTimeZone())
+                .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </div>
+            
             <Button
               isIconOnly
               className="text-gray-600"
@@ -679,7 +748,7 @@ export default function HomePage() {
               {/* Agenda Section */}
               <AgendaSection
                 events={agendaEvents}
-                loading={agendaLoading}
+                loading={agendaLoading || isNavigating}
                 onPublicationSelect={() => openUnifiedModal("publication")}
                 onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
                 onTournageSelect={() => openUnifiedModal("tournage")}
@@ -701,7 +770,7 @@ export default function HomePage() {
                   </Button>
                 </div>
                 <div className="space-y-2 lg:space-y-3">
-                  {todoLoading ? (
+                  {(todoLoading || isNavigating) ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="text-sm text-gray-500"><Spinner /></div>
                     </div>
@@ -753,7 +822,7 @@ export default function HomePage() {
                   </Button>
                 </div>
                 <div className="space-y-2 lg:space-y-3">
-                  {invoicesLoading ? (
+                  {(invoicesLoading || isNavigating) ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="text-sm text-gray-500"><Spinner /></div>
                     </div>

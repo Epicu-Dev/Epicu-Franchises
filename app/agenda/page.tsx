@@ -12,9 +12,11 @@ import {
 
 import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 import { UnifiedEventModal } from "@/components/unified-event-modal";
+import { EventDetailModal } from "@/components/event-detail-modal";
 import { getValidAccessToken } from "@/utils/auth";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
 import { getEventColorFromEstablishmentCategories } from "@/components/badges";
+import { useUser } from "@/contexts/user-context";
 
 interface Event {
   id: string;
@@ -59,6 +61,7 @@ interface ApiEvent {
 }
 
 export default function AgendaPage() {
+  const { userProfile } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view] = useState<"semaine" | "mois">("mois");
   const [selectedCategory] = useState<string>("tout");
@@ -72,6 +75,27 @@ export default function AgendaPage() {
   const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
+
+  // États pour la modal de détail d'événement
+  const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
+  // Fonction pour vérifier si l'utilisateur peut ajouter des événements (même logique que la sidebar)
+  const canAddEvents = () => {
+    if (!userProfile?.role) {
+      return false;
+    }
+
+    // Mapper les rôles de l'API vers les permissions
+    const roleMapping: { [key: string]: boolean } = {
+      'Admin': true,
+      'Franchisé': false,
+      'Collaborateur': false,
+    };
+
+    return roleMapping[userProfile.role] || false;
+  };
+
   // Gestionnaires pour Google Calendar
   const handleGoogleEventsFetched = (events: GoogleCalendarEvent[]) => {
     setGoogleEvents(events);
@@ -86,6 +110,18 @@ export default function AgendaPage() {
   const openModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
     setCurrentEventType(type);
     setIsUnifiedModalOpen(true);
+  };
+
+  // Fonction pour ouvrir la modal de détail d'événement
+  const openEventDetailModal = (event: Event) => {
+    setSelectedEvent(event);
+    setIsEventDetailModalOpen(true);
+  };
+
+  // Fonction appelée après suppression d'un événement
+  const handleEventDeleted = () => {
+    // Recharger les événements
+    fetchEvents();
   };
 
   // Fonction pour connecter à Google Calendar
@@ -251,8 +287,7 @@ export default function AgendaPage() {
           category = "prestataires";
         }
 
-        console.log(apiEvent.establishmentCategories);
-        
+
 
         return {
           id: apiEvent.id,
@@ -364,25 +399,72 @@ export default function AgendaPage() {
     }
   };
 
+  // Fonction pour dédupliquer les événements (priorité à Airtable)
+  const deduplicateEvents = (airtableEvents: Event[], googleEvents: Event[]) => {
+    const combinedEvents = [...airtableEvents, ...googleEvents];
+    const uniqueEvents = new Map<string, Event>();
+
+    combinedEvents.forEach(event => {
+      // Créer une clé unique basée sur la date et le nom
+      const eventDate = new Date(event.date).toDateString();
+      const key = `${eventDate}-${event.title}`;
+
+      if (!uniqueEvents.has(key)) {
+        // Premier événement avec cette clé, l'ajouter
+        uniqueEvents.set(key, event);
+      } else {
+        // Événement existant trouvé, vérifier la priorité
+        const existingEvent = uniqueEvents.get(key)!;
+
+        // Priorité : Airtable (isGoogleEvent = false) > Google Calendar (isGoogleEvent = true)
+        if (!event.isGoogleEvent && existingEvent.isGoogleEvent) {
+          // L'événement actuel est d'Airtable et l'existant est de Google Calendar
+          uniqueEvents.set(key, event);
+        }
+        // Sinon, garder l'événement existant (déjà prioritaire)
+      }
+    });
+
+    return Array.from(uniqueEvents.values());
+  };
+
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
-    // Si l'événement a des catégories d'établissement, utiliser ces couleurs
-    if (event.establishmentCategories && event.establishmentCategories.length > 0) {
-      return getEventColorFromEstablishmentCategories(event.establishmentCategories);
+    if(event.isGoogleEvent) {
+      return "bg-custom-text-color/14 text-custom-text-color";
+    }
+    // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
+    switch (event.type) {
+      case "tournage":
+        return "bg-custom-red-filming/14 text-custom-red-filming";
+      case "publication":
+        return "bg-custom-purple-publication/14 text-custom-purple-publication";
+      case "evenement":
+        return "bg-custom-orange-event/14 text-custom-orange-event";
+      case "rendez-vous":
+        return "bg-custom-blue-meeting/14 text-custom-blue-meeting";
+      default:
+        return "bg-custom-text-color text-custom-text-color";
+    }
+  };
+  // Fonction helper pour obtenir la couleur d'un événement
+  const getEventBorderColor = (event: Event) => {
+    if(event.isGoogleEvent) {
+      return "border-custom-text-color";
     }
     
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
-      case "rendez-vous":
-        return "bg-custom-blue-rdv/14 text-custom-blue-rdv";
       case "tournage":
-        return "bg-custom-rose/14 text-custom-rose";
+        return "border-custom-red-filming";
       case "publication":
-        return "bg-custom-blue-pub/14 text-custom-blue-pub";
+        return "border-custom-purple-publication";
       case "evenement":
-        return "bg-custom-orange-event/14 text-custom-orange-event";
+        return "border-custom-orange-event";
+      case "rendez-vous":
+        return "border-custom-blue-meeting";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "border-black";
     }
   };
 
@@ -401,8 +483,8 @@ export default function AgendaPage() {
     // Transformer les événements Google Calendar
     const transformedGoogleEvents = transformGoogleEvents(googleEvents);
 
-    // Combiner les événements locaux et Google Calendar
-    const allEvents = [...events, ...transformedGoogleEvents];
+    // Dédupliquer les événements (priorité à Airtable)
+    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
 
     while (currentDate <= lastDay || days.length < 42) {
       const dayEvents = allEvents.filter((event) => {
@@ -444,8 +526,8 @@ export default function AgendaPage() {
     // Transformer les événements Google Calendar
     const transformedGoogleEvents = transformGoogleEvents(googleEvents);
 
-    // Combiner les événements locaux et Google Calendar
-    const allEvents = [...events, ...transformedGoogleEvents];
+    // Dédupliquer les événements (priorité à Airtable)
+    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
 
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startOfWeek);
@@ -519,7 +601,7 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
                     title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                     role={event.isGoogleEvent ? "button" : undefined}
                     tabIndex={event.isGoogleEvent ? 0 : undefined}
@@ -529,13 +611,9 @@ export default function AgendaPage() {
                         window.open(event.htmlLink, '_blank');
                       }
                     }}
-                    onClick={() => {
-                      if (event.isGoogleEvent && event.htmlLink) {
-                        window.open(event.htmlLink, '_blank');
-                      }
-                    }}
+                    onClick={() => openEventDetailModal(event)}
                   >
-                    <div className="font-medium truncate flex items-center gap-1">
+                    <div className="font-light truncate flex items-center gap-1">
                       {event.title}
 
                     </div>
@@ -624,7 +702,7 @@ export default function AgendaPage() {
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} ${event.isGoogleEvent ? "border border-2 border-blue-500" : ""}`}
+                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
                           title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                           role={event.isGoogleEvent ? "button" : undefined}
                           tabIndex={event.isGoogleEvent ? 0 : undefined}
@@ -634,11 +712,7 @@ export default function AgendaPage() {
                               window.open(event.htmlLink, '_blank');
                             }
                           }}
-                          onClick={() => {
-                            if (event.isGoogleEvent && event.htmlLink) {
-                              window.open(event.htmlLink, '_blank');
-                            }
-                          }}
+                          onClick={() => openEventDetailModal(event)}
                         >
                           <div className="font-medium truncate flex items-center gap-1">
                             {event.title}
@@ -725,12 +799,9 @@ export default function AgendaPage() {
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
 
-          {/* En-tête avec navigation et boutons */}
-          {
-
+          {/* En-tête avec navigation et boutons - visible seulement pour les admins */}
+          {(
             <div className="flex justify-end items-center mb-6">
-
-
               <div className="flex items-center space-x-4">
 
                 <Button
@@ -757,16 +828,17 @@ export default function AgendaPage() {
                   Ajouter un rendez-vous
                 </Button>
 
-                <Button
-                  color='primary'
-                  endContent={<PlusIcon className="h-4 w-4" />}
-                  onPress={() => openModal("evenement")}
-                >
-                  Ajouter un évènement
-                </Button>
-
+                {canAddEvents() &&
+                  <Button
+                    color='primary'
+                    endContent={<PlusIcon className="h-4 w-4" />}
+                    onPress={() => openModal("evenement")}
+                  >
+                    Ajouter un événement
+                  </Button>}
               </div>
-            </div>}
+            </div>
+          )}
           {/* Synchronisation Google Calendar - seulement si connecté */}
 
 
@@ -830,6 +902,14 @@ export default function AgendaPage() {
         eventType={currentEventType}
         onEventCreated={handleGoogleEventCreated}
         onEventAdded={fetchEvents}
+      />
+
+      {/* Modal de détail d'événement */}
+      <EventDetailModal
+        isOpen={isEventDetailModalOpen}
+        onOpenChange={setIsEventDetailModalOpen}
+        event={selectedEvent}
+        onEventDeleted={handleEventDeleted}
       />
     </div>
   );
