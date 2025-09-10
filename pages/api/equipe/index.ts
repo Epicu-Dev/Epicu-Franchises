@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (isAdmin) {
-        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'SIRET', 'Date DIP', 'Date de signature du contrat de franchise', "Date de signature de l'attestation de formation initiale");
+        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Date de signature du contrat de franchise', "Date de signature de l'attestation de formation initiale");
       }
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -111,7 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           baseObj.dateNaissance = r.get('Date de naissance') || null;
           baseObj.telephone = r.get('Téléphone') || null;
           baseObj.adresse = r.get('Adresse') || null;
-          baseObj.siret = r.get('SIRET') || null;
+          baseObj.siret = r.get('Siret') || null;
           baseObj.dateDIP = r.get('Date DIP') || null;
           baseObj.dateSignatureContrat = r.get('Date de signature du contrat de franchise') || null;
           baseObj.dateSignatureAttestation = r.get("Date de signature de l'attestation de formation initiale") || null;
@@ -135,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (body.nom !== undefined) fields['Nom'] = body.nom;
       if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
-      if (body.siret !== undefined) fields['SIRET'] = body.siret;
+      if (body.siret !== undefined) fields['Siret'] = body.siret;
       if (body.email !== undefined) fields['Email'] = body.email;
       if (body.emailEpicu !== undefined) fields['Email perso'] = body.emailEpicu;
       if (body.telephone !== undefined) fields['Téléphone'] = body.telephone;
@@ -201,7 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const fields: any = {};
       if (Object.prototype.hasOwnProperty.call(body, 'nom') || Object.prototype.hasOwnProperty.call(body, 'Nom')) fields['Nom'] = body.nom ?? body.Nom;
       if (Object.prototype.hasOwnProperty.call(body, 'prenom') || Object.prototype.hasOwnProperty.call(body, 'Prénom')) fields['Prénom'] = body.prenom ?? body.Prénom;
-      if (Object.prototype.hasOwnProperty.call(body, 'siret') || Object.prototype.hasOwnProperty.call(body, 'SIRET')) fields['SIRET'] = body.siret ?? body.SIRET;
+      if (Object.prototype.hasOwnProperty.call(body, 'siret') || Object.prototype.hasOwnProperty.call(body, 'Siret')) fields['Siret'] = body.siret ?? body.SIRET;
       if (Object.prototype.hasOwnProperty.call(body, 'email') || Object.prototype.hasOwnProperty.call(body, 'Email')) fields['Email'] = body.email ?? body.Email;
       if (Object.prototype.hasOwnProperty.call(body, 'emailEpicu') || Object.prototype.hasOwnProperty.call(body, 'Email perso')) fields['Email perso'] = body.emailEpicu ?? body['Email perso'];
       if (Object.prototype.hasOwnProperty.call(body, 'telephone') || Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
