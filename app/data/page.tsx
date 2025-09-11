@@ -238,7 +238,7 @@ export default function DataPage() {
     setEditingRowIndex(actualIndex);
     setEditModalOpen(true);
   };
-
+ 
   // Fonction pour sauvegarder les modifications
   const handleSaveSubscribers = async (newData: Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>) => {
     if (editingRowIndex !== null) {
