@@ -362,11 +362,6 @@ export default function EquipePage() {
                                 {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell className="font-light">
-                              <span>
-                                ••••••••
-                              </span>
-                            </TableCell>
                             <TableCell>
                               <span className="font-light">
                                 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : "Non défini"}
