@@ -370,9 +370,9 @@ export default function EquipePage() {
                             <TableCell>
                               <a
                                 className="font-light underline"
-                                href={`mailto:${member.emailEpicu || ""}`}
+                                href={`mailto:${member.emailPerso || ""}`}
                               >
-                                {member.emailEpicu || "Non défini"}
+                                {member.emailPerso || "Non défini"}
                               </a>
                             </TableCell>
                             <TableCell>

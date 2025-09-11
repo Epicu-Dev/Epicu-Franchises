@@ -64,6 +64,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                     prenom: collab.prenom || '',
                     villeEpicu: collab.villeEpicu || [],
                     emailEpicu: collab.emailEpicu || null,
+                    emailPerso: collab.emailPerso || null,
                     role: collab.role || null,
                     etablissements: collab.etablissements || [],
                     trombi: collab.trombi || null,

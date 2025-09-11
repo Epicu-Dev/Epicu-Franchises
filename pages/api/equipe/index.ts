@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const selectOptions: any = {
         view: VIEW_NAME,
-        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email perso', 'Rôle', 'ÉTABLISSEMENTS', 'Trombi'],
+        fields: ['Nom', 'Prénom', 'Ville EPICU', 'Email EPICU', 'Rôle', 'ÉTABLISSEMENTS', 'Trombi'],
         pageSize: limit,
         sort: [{ field: orderBy, direction: order }],
         maxRecords: offset + limit + 1,
@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (isAdmin) {
-        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Franchise signée le', "Attestation formation initiale");
+        selectOptions.fields.push('Email perso', 'Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Franchise signée le', "Attestation formation initiale");
       }
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -101,13 +101,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nom: r.get('Nom') || '',
           prenom: r.get('Prénom') || '',
           villeEpicu: villes,
-          emailEpicu: r.get('Email perso') || null,
+          emailEpicu: r.get('Email EPICU') || null,
           role: r.get('Rôle') || null,
           etablissements: etablIds,
           trombi: r.get('Trombi') || null,
         };
 
         if (isAdmin) {
+          baseObj.emailPerso = r.get('Email perso') || null;
           baseObj.dateNaissance = r.get('Date de naissance') || null;
           baseObj.telephone = r.get('Téléphone') || null;
           baseObj.adresse = r.get('Adresse') || null;
@@ -150,8 +151,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (isAdmin) {
         if (body.nom !== undefined) fields['Nom'] = body.nom;
         if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
-        if (body.email !== undefined) fields['Email'] = body.email;
-        if (body.emailEpicu !== undefined) fields['Email perso'] = body.emailEpicu;
+        if (body.emailPerso !== undefined) fields['Email perso'] = body.emailPerso;
+        if (body.emailEpicu !== undefined) fields['Email EPICU'] = body.emailEpicu;
         if (body.cp !== undefined) fields['CP'] = body.cp;
         if (body.ville !== undefined) fields['Ville'] = body.ville;
         if (body.categorie !== undefined) fields['Catégorie'] = Array.isArray(body.categorie) ? body.categorie.slice(0, 2) : [body.categorie];
@@ -174,18 +175,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       } catch (e) {
         console.warn('Erreur résolution ville (POST équipe)', e);
-      }
-
-      // ÉTABLISSEMENTS relation (optionnel)
-      try {
-        const rawEtab = body.etablissement ?? body.etablissements ?? body.Etablissements ?? body.etablissementId ?? body.etablissement_id;
-        if (rawEtab !== undefined && rawEtab !== null) {
-          const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
-          const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
-          if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
-        }
-      } catch (e) {
-        console.warn('Erreur résolution établissements (POST équipe)', e);
       }
 
       // Minimal validation
@@ -232,8 +221,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // writable by admins (and match POST fields)
       if (body.nom !== undefined || body.Nom !== undefined) fields['Nom'] = body.nom ?? body.Nom;
       if (body.prenom !== undefined || body.Prénom !== undefined) fields['Prénom'] = body.prenom ?? body.Prénom;
-      if (body.email !== undefined || body.Email !== undefined) fields['Email'] = body.email ?? body.Email;
-      if (body.emailEpicu !== undefined || body['Email perso'] !== undefined) fields['Email perso'] = body.emailEpicu ?? body['Email perso'];
+      if (body.emailPerso !== undefined || body.emailPerso !== undefined) fields['Email perso'] = body.emailPerso ?? body.emailPerso;
+      if (body.emailEpicu !== undefined || body['Email EPICU'] !== undefined) fields['Email EPICU'] = body.emailEpicu ?? body['Email EPICU'];
       if (body.cp !== undefined || body.CP !== undefined) fields['CP'] = body.cp ?? body.CP;
       if (body.ville !== undefined || body.Ville !== undefined) fields['Ville'] = body.ville ?? body.Ville;
       if (body.categorie !== undefined || body['Catégorie'] !== undefined) fields['Catégorie'] = Array.isArray(body.categorie || body['Catégorie']) ? (body.categorie || body['Catégorie']).slice(0, 2) : [body.categorie || body['Catégorie']];
@@ -263,22 +252,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       } catch (e) {
         console.warn('Erreur résolution ville (PATCH équipe)', e);
-      }
-
-      // ÉTABLISSEMENTS relation
-      try {
-        const rawEtab = body.etablissement ?? body.etablissements ?? body.Etablissements ?? body.etablissementId ?? body.etablissement_id ?? body['ÉTABLISSEMENTS'];
-        if (rawEtab !== undefined) {
-          if (rawEtab === null) {
-            fields['ÉTABLISSEMENTS'] = [];
-          } else {
-            const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
-            const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
-            if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
-          }
-        }
-      } catch (e) {
-        console.warn('Erreur résolution établissements (PATCH équipe)', e);
       }
 
       if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });

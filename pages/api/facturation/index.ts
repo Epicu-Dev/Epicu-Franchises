@@ -131,8 +131,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const commentaire = body['Commentaire'] || body.commentaire || null;
 
       const fieldsToCreate: any = {};
-      if (prestation) fieldsToCreate['Prestation demandée'] = prestation;
-      fieldsToCreate['Suivi par'] = [userId];
+      // Ne pas envoyer le champ Prestation demandée pour éviter les erreurs de permissions
+      // if (prestation) fieldsToCreate['Prestation demandée'] = prestation;
 
       if (clientRaw) {
         const cid = await findOrCreateEstablishment(clientRaw);
@@ -189,9 +189,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) return res.status(400).json({ error: 'id requis' });
 
       const fieldsToUpdate: any = {};
-      if (Object.prototype.hasOwnProperty.call(body, 'Prestation demandée') || Object.prototype.hasOwnProperty.call(body, 'prestation')) fieldsToUpdate['Prestation demandée'] = body['Prestation demandée'] || body.prestation;
-      // set suivi par to current user
-      fieldsToUpdate['Suivi par'] = [userId];
+      // Ne pas envoyer le champ Prestation demandée pour éviter les erreurs de permissions
+      // if (Object.prototype.hasOwnProperty.call(body, 'Prestation demandée') || Object.prototype.hasOwnProperty.call(body, 'prestation')) fieldsToUpdate['Prestation demandée'] = body['Prestation demandée'] || body.prestation;
 
       if (Object.prototype.hasOwnProperty.call(body, 'Client') || Object.prototype.hasOwnProperty.call(body, 'client')) {
         const clientRaw = body['Client'] || body.client;

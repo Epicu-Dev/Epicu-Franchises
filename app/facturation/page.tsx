@@ -22,6 +22,7 @@ import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge, SortableColumnHeader, InvoiceModal } from "@/components";
 import { Invoice } from "@/types/invoice";
+import { getValidAccessToken } from "@/utils/auth";
 
 
 interface PaginationInfo {
@@ -142,9 +143,15 @@ export default function FacturationPage() {
 
   const handleAddInvoice = async (invoiceData: any) => {
     try {
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('No access token');
+      }
+
       const response = await fetch("/api/facturation", {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(invoiceData),
@@ -165,6 +172,11 @@ export default function FacturationPage() {
     if (!selectedInvoice) return;
 
     try {
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('No access token');
+      }
+
       const updatedInvoice = {
         ...selectedInvoice,
         category: invoiceData.category,
@@ -175,12 +187,13 @@ export default function FacturationPage() {
         comment: invoiceData.comment,
       };
 
-      const response = await fetch(`/api/facturation/${selectedInvoice.id}`, {
-        method: "PUT",
+      const response = await fetch(`/api/facturation?id=${selectedInvoice.id}`, {
+        method: "PATCH",
         headers: {
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedInvoice),
+        body: JSON.stringify(invoiceData),
       });
 
       if (!response.ok) {
