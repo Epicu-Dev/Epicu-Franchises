@@ -24,45 +24,56 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Vérifier d'abord si l'authentification a déjà été vérifiée récemment
+        const lastAuthCheck = localStorage.getItem('lastAuthCheck');
+        const now = Date.now();
+        
+        // Si la vérification a été faite il y a moins de 30 secondes, on skip
+        if (lastAuthCheck && (now - parseInt(lastAuthCheck)) < 30000) {
+          setIsAuthChecking(false);
+
+          return;
+        }
+
         const accessToken = localStorage.getItem('accessToken');
         const refreshToken = localStorage.getItem('refreshToken');
 
         if (!accessToken || !refreshToken) {
-          console.log('Tokens manquants, redirection vers login');
           router.push('/login');
+
           return;
         }
 
         if (!isRefreshTokenValid()) {
-          console.log('Refresh token expiré, redirection vers login');
           localStorage.clear();
           router.push('/login');
+
           return;
         }
 
         if (!isUserLoggedIn()) {
-          console.log('Access token expiré, tentative de refresh...');
           // Essayer de rafraîchir le token avant de rediriger
           const refreshedToken = await getValidAccessToken();
+
           if (!refreshedToken) {
-            console.log('Impossible de rafraîchir le token, redirection vers login');
             localStorage.clear();
             router.push('/login');
+
             return;
           }
-          console.log('Token rafraîchi avec succès');
         }
 
         // Vérifier que le profil utilisateur est présent (optionnel)
         const userProfile = localStorage.getItem('userProfile');
+
         if (!userProfile) {
-          console.log('Profil utilisateur manquant, mais on continue - il sera rechargé par le UserContext');
           // Ne pas rediriger, laisser le UserContext gérer le rechargement du profil
         }
 
+        // Marquer la vérification comme faite
+        localStorage.setItem('lastAuthCheck', now.toString());
         setIsAuthChecking(false);
-      } catch (error) {
-        console.error('Erreur lors de la vérification d\'authentification:', error);
+      } catch {
         localStorage.clear();
         router.push('/login');
       }
@@ -83,8 +94,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           body: JSON.stringify({ accessToken, refreshToken }),
         });
       }
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+    } catch {
+      // Erreur silencieuse lors de la déconnexion
     } finally {
       localStorage.clear();
       router.push('/login');
@@ -94,18 +105,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleHelpClick = () => {
     setIsHelpModalOpen(true);
   };
-
-  // Afficher un loader pendant la vérification d'authentification
-  if (isAuthChecking) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-page-bg dark:bg-black">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Vérification de l&apos;authentification...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-page-bg dark:bg-black">
@@ -120,7 +119,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-6 pt-20 md:pt-6 bg-page-bg dark:bg-black ">
           <div className="max-w-7xl mx-auto">
-            {children}
+            {!isAuthChecking && children}
           </div>
         </div>
       </div>

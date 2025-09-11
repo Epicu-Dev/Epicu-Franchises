@@ -104,8 +104,6 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     const hasMore = upToPageRecords.length === offset + limit;
 
-    console.log(statistiques);
-
     res.status(200).json({
       statistiques,
       pagination: {

@@ -180,11 +180,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const eventEstablishmentIds = event.etablissements || [];
         const eventCategories = eventEstablishmentIds.flatMap((id: string) => establishmentCategories[id] || []);
         
-        // Log pour debug
-        if (eventCategories.length > 0) {
-          // eslint-disable-next-line no-console
-          console.log(`Event ${event.id} (${event.task}): categories =`, eventCategories);
-        }
         
         return {
           ...event,

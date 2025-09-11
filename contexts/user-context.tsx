@@ -148,6 +148,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Charger le profil utilisateur au montage
   useEffect(() => {
     if (isLoaded) {
+      // Vérifier si on a déjà un profil en cache récent
+      const cachedProfile = localStorage.getItem('userProfile');
+      const cacheTime = localStorage.getItem('userProfileCacheTime');
+      
+      // Si on a un profil en cache récent (moins de 5 minutes), on ne fait pas d'appel API
+      if (cachedProfile && cacheTime && (Date.now() - parseInt(cacheTime) < 300000)) {
+        setIsLoading(false);
+        return;
+      }
+      
       fetchUserProfile();
     }
   }, [isLoaded]);

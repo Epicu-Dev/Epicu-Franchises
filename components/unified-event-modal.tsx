@@ -149,7 +149,6 @@ export function UnifiedEventModal({
       }
     }
 
-    console.log('Créneau sélectionné avec ID:', slot.id);
     setFormData(prev => ({
       ...prev,
       startDate: formattedDate,
@@ -416,7 +415,6 @@ export function UnifiedEventModal({
     // Marquer le créneau comme indisponible seulement si l'événement a été créé avec succès
     if (eventCreatedSuccessfully && formData.selectedSlotId) {
       try {
-        console.log('Tentative de mise à jour du créneau:', formData.selectedSlotId);
         const slotResponse = await authFetch(`/api/publications/creneaux?id=${formData.selectedSlotId}`, {
           method: 'PATCH',
           headers: {
@@ -428,19 +426,14 @@ export function UnifiedEventModal({
         });
 
         if (slotResponse.ok) {
-          console.log('Créneau marqué comme indisponible avec succès');
         } else {
           const errorData = await slotResponse.json();
-          console.error('Erreur lors de la mise à jour du créneau:', errorData);
         }
       } catch (slotError) {
-        console.error("Impossible de marquer le créneau comme indisponible:", slotError);
         // On continue même si la mise à jour du créneau échoue
       }
     } else if (!eventCreatedSuccessfully) {
-      console.log('Événement non créé, pas de mise à jour du créneau');
     } else {
-      console.log('Aucun créneau sélectionné, pas de mise à jour nécessaire');
     }
 
     onEventAdded?.();
