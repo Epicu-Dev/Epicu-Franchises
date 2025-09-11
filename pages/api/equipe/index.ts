@@ -176,18 +176,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.warn('Erreur résolution ville (POST équipe)', e);
       }
 
-      // ÉTABLISSEMENTS relation (optionnel)
-      try {
-        const rawEtab = body.etablissement ?? body.etablissements ?? body.Etablissements ?? body.etablissementId ?? body.etablissement_id;
-        if (rawEtab !== undefined && rawEtab !== null) {
-          const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
-          const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
-          if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
-        }
-      } catch (e) {
-        console.warn('Erreur résolution établissements (POST équipe)', e);
-      }
-
       // Minimal validation
       if (!fields['Nom'] && !fields['Prénom']) return res.status(400).json({ error: 'Nom ou Prénom requis' });
 
@@ -263,22 +251,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       } catch (e) {
         console.warn('Erreur résolution ville (PATCH équipe)', e);
-      }
-
-      // ÉTABLISSEMENTS relation
-      try {
-        const rawEtab = body.etablissement ?? body.etablissements ?? body.Etablissements ?? body.etablissementId ?? body.etablissement_id ?? body['ÉTABLISSEMENTS'];
-        if (rawEtab !== undefined) {
-          if (rawEtab === null) {
-            fields['ÉTABLISSEMENTS'] = [];
-          } else {
-            const candidate = Array.isArray(rawEtab) ? rawEtab[0] : rawEtab;
-            const etabId = await ensureRelatedRecord('ÉTABLISSEMENTS', candidate, ["Nom de l'établissement", 'Name']);
-            if (etabId) fields['ÉTABLISSEMENTS'] = [etabId]; else fields['ÉTABLISSEMENTS'] = [];
-          }
-        }
-      } catch (e) {
-        console.warn('Erreur résolution établissements (PATCH équipe)', e);
       }
 
       if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
