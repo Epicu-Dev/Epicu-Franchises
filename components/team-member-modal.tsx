@@ -157,10 +157,17 @@ export function TeamMemberModal({
           delete errors.telephone;
         }
         break;
-      case 'emailEpicu':
+      case 'emailPerso':
         if (!value || !value.trim()) {
-          errors.emailEpicu = 'L\'email Epicu est requis';
+          errors.emailPerso = 'L\'email personnel est requis';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.emailPerso = 'Format d\'email invalide';
+        } else {
+          delete errors.emailPerso;
+        }
+        break;
+      case 'emailEpicu':
+        if (value && value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           errors.emailEpicu = 'Format d\'email invalide';
         } else {
           delete errors.emailEpicu;
@@ -183,7 +190,7 @@ export function TeamMemberModal({
   };
 
   const validateAllFields = (member: any) => {
-    const fields = ['prenom', 'nom', 'villeEpicu', 'telephone', 'emailEpicu', 'siret'];
+    const fields = ['prenom', 'nom', 'villeEpicu', 'telephone', 'emailPerso', 'siret'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -220,26 +227,26 @@ export function TeamMemberModal({
 
       if (!token) throw new Error('No access token');
 
-      // Préparer les données pour l'API Airtable
-      const apiData = {
-        'Nom': memberWithCity.nom,
-        'Prénom': memberWithCity.prenom,
-        'Rôle': memberWithCity.role,
-        'Ville EPICU': memberWithCity.villeEpicu,
-        'Email EPICU': memberWithCity.emailEpicu,
-        'Email perso': memberWithCity.emailPerso,
-        'Date de naissance': memberWithCity.dateNaissance,
-        'Téléphone': memberWithCity.telephone,
-        'Adresse': memberWithCity.adresse,
-        'Siret': memberWithCity.siret,
-        'Date DIP': memberWithCity.dateDIP,
-        'Franchise signée le': memberWithCity.dateSignatureContrat,
-        'Attestation formation initiale': memberWithCity.dateSignatureAttestation,
+      // Préparer les données pour l'API équipe
+      const requestData = {
+        nom: memberWithCity.nom,
+        prenom: memberWithCity.prenom,
+        role: memberWithCity.role,
+        villeEpicu: memberWithCity.villeEpicu,
+        emailEpicu: memberWithCity.emailEpicu,
+        emailPerso: memberWithCity.emailPerso,
+        dateNaissance: memberWithCity.dateNaissance,
+        telephone: memberWithCity.telephone,
+        adresse: memberWithCity.adresse,
+        siret: memberWithCity.siret,
+        dateDIP: memberWithCity.dateDIP,
+        dateSignatureContrat: memberWithCity.dateSignatureContrat,
+        dateSignatureAttestation: memberWithCity.dateSignatureAttestation,
       };
 
       // Appel API pour créer/modifier le collaborateur
       const method = isEditing ? 'PATCH' : 'POST';
-      const url = isEditing ? `/api/collaborateurs/${editingMember?.id}` : '/api/collaborateurs';
+      const url = isEditing ? `/api/equipe?id=${editingMember?.id}` : '/api/equipe';
 
       const response = await fetch(url, {
         method,
@@ -247,7 +254,7 @@ export function TeamMemberModal({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(apiData),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
@@ -446,14 +453,39 @@ export function TeamMemberModal({
               }}
             />
 
-            <FormLabel htmlFor="emailEpicu" isRequired={true}>
+
+             <FormLabel htmlFor="emailPerso" isRequired={true}>
+               Email personnel
+             </FormLabel>
+             <Input
+               isRequired
+               errorMessage={fieldErrors.emailPerso}
+               id="emailPerso"
+               isInvalid={!!fieldErrors.emailPerso}
+               classNames={{
+                 inputWrapper: "bg-page-bg",
+               }}
+               placeholder="prenom.nom@gmail.com"
+               type="email"
+               value={newMember.emailPerso || ""}
+               onChange={(e) => {
+                 const value = e.target.value;
+
+                 setNewMember((prev) => ({ ...prev, emailPerso: value }));
+                 validateField('emailPerso', value);
+               }}
+             />
+
+            <FormLabel htmlFor="emailEpicu" isRequired={false}>
               Email Epicu
             </FormLabel>
             <Input
-              isRequired
               errorMessage={fieldErrors.emailEpicu}
               id="emailEpicu"
               isInvalid={!!fieldErrors.emailEpicu}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               placeholder="prenom.nom@epicu.fr"
               type="email"
               value={newMember.emailEpicu || ""}
@@ -465,23 +497,6 @@ export function TeamMemberModal({
               }}
             />
 
-            <FormLabel htmlFor="emailPerso" isRequired={false}>
-              Email personnel
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="emailPerso"
-              placeholder="prenom.nom@gmail.com"
-              type="email"
-              value={newMember.emailPerso || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-
-                setNewMember((prev) => ({ ...prev, emailPerso: value }));
-              }}
-            />
 
             <FormLabel htmlFor="dateNaissance" isRequired={false}>
               Date de naissance
@@ -581,7 +596,7 @@ export function TeamMemberModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.prenom || !newMember.nom || !selectedCityId || !newMember.telephone || !newMember.emailEpicu || !newMember.siret}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.prenom || !newMember.nom || !selectedCityId || !newMember.telephone || !newMember.emailPerso || !newMember.siret}
               isLoading={isLoading}
               onPress={handleSubmit}
             >
