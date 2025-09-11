@@ -130,21 +130,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const userId = await requireValidAccessToken(req, res);
       if (!userId) return;
 
+      // detect admin to allow performing POST
+      let isAdmin = false;
+      try {
+        const callerRec = await base(TABLE_NAME).find(userId);
+        const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
+        isAdmin = callerRole === 'admin' || callerRole === 'administrateur';
+      } catch (e) {
+        console.warn('Impossible de récupérer le rôle de l\'utilisateur caller (POST équipe)', e);
+      }
+
+      if (!isAdmin) {
+        return res.status(403).json({ error: 'Forbidden: admin role required' });
+      }
+
       const body = req.body || {};
       const fields: any = {};
 
-      if (body.nom !== undefined) fields['Nom'] = body.nom;
-      if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
-      if (body.siret !== undefined) fields['Siret'] = body.siret;
-      if (body.email !== undefined) fields['Email'] = body.email;
-      if (body.emailEpicu !== undefined) fields['Email perso'] = body.emailEpicu;
-      if (body.telephone !== undefined) fields['Téléphone'] = body.telephone;
-      if (body.dateNaissance !== undefined) fields['Date de naissance'] = body.dateNaissance;
-      if (body.dateDIP !== undefined) fields['Date DIP'] = body.dateDIP;
-      if (body.adresse !== undefined) fields['Adresse'] = body.adresse;
-      if (body.cp !== undefined) fields['CP'] = body.cp;
-      if (body.ville !== undefined) fields['Ville'] = body.ville;
-      if (body.categorie !== undefined) fields['Catégorie'] = Array.isArray(body.categorie) ? body.categorie.slice(0, 2) : [body.categorie];
+      if (isAdmin) {
+        if (body.nom !== undefined) fields['Nom'] = body.nom;
+        if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
+        if (body.email !== undefined) fields['Email'] = body.email;
+        if (body.emailEpicu !== undefined) fields['Email perso'] = body.emailEpicu;
+        if (body.cp !== undefined) fields['CP'] = body.cp;
+        if (body.ville !== undefined) fields['Ville'] = body.ville;
+        if (body.categorie !== undefined) fields['Catégorie'] = Array.isArray(body.categorie) ? body.categorie.slice(0, 2) : [body.categorie];
+        if (body.siret !== undefined || body.Siret !== undefined) fields['Siret'] = body.siret ?? body.Siret;
+        if (body.telephone !== undefined || body['Téléphone'] !== undefined) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
+        if (body.dateNaissance !== undefined || body['Date de naissance'] !== undefined) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
+        if (body.dateDIP !== undefined || body['Date DIP'] !== undefined) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
+        if (body.adresse !== undefined || body['Adresse'] !== undefined) fields['Adresse'] = body.adresse ?? body['Adresse'];
+        if (body.attestationFormationInitiale !== undefined) fields['Attestation formation initiale'] = body.attestationFormationInitiale;
+        if (body['Attestation formation initiale'] !== undefined) fields['Attestation formation initiale'] = body['Attestation formation initiale'];
+      }
 
       // Ville EPICU relation
       try {
@@ -198,21 +216,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'Collaborateur introuvable' });
       }
 
-      const fields: any = {};
-      if (Object.prototype.hasOwnProperty.call(body, 'nom') || Object.prototype.hasOwnProperty.call(body, 'Nom')) fields['Nom'] = body.nom ?? body.Nom;
-      if (Object.prototype.hasOwnProperty.call(body, 'prenom') || Object.prototype.hasOwnProperty.call(body, 'Prénom')) fields['Prénom'] = body.prenom ?? body.Prénom;
-      if (Object.prototype.hasOwnProperty.call(body, 'siret') || Object.prototype.hasOwnProperty.call(body, 'Siret')) fields['Siret'] = body.siret ?? body.SIRET;
-      if (Object.prototype.hasOwnProperty.call(body, 'email') || Object.prototype.hasOwnProperty.call(body, 'Email')) fields['Email'] = body.email ?? body.Email;
-      if (Object.prototype.hasOwnProperty.call(body, 'emailEpicu') || Object.prototype.hasOwnProperty.call(body, 'Email perso')) fields['Email perso'] = body.emailEpicu ?? body['Email perso'];
-      if (Object.prototype.hasOwnProperty.call(body, 'telephone') || Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
-      if (Object.prototype.hasOwnProperty.call(body, 'dateNaissance') || Object.prototype.hasOwnProperty.call(body, 'Date de naissance')) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
-      if (Object.prototype.hasOwnProperty.call(body, 'dateDIP') || Object.prototype.hasOwnProperty.call(body, 'Date DIP')) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
-      if (Object.prototype.hasOwnProperty.call(body, 'adresse') || Object.prototype.hasOwnProperty.call(body, 'Adresse')) fields['Adresse'] = body.adresse ?? body.Adresse;
-      if (Object.prototype.hasOwnProperty.call(body, 'cp') || Object.prototype.hasOwnProperty.call(body, 'CP')) fields['CP'] = body.cp ?? body.CP;
-      if (Object.prototype.hasOwnProperty.call(body, 'ville') || Object.prototype.hasOwnProperty.call(body, 'Ville')) fields['Ville'] = body.ville ?? body.Ville;
-      if (Object.prototype.hasOwnProperty.call(body, 'categorie') || Object.prototype.hasOwnProperty.call(body, 'Catégorie')) {
-        fields['Catégorie'] = Array.isArray(body.categorie || body['Catégorie']) ? (body.categorie || body['Catégorie']).slice(0, 2) : [body.categorie || body['Catégorie']];
+      // Only admins can PATCH (same constraint as POST)
+      let isAdmin = false;
+      try {
+        const callerRec = await base(TABLE_NAME).find((await requireValidAccessToken(req, res)) as string);
+        const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
+        isAdmin = callerRole === 'admin' || callerRole === 'administrateur';
+      } catch (e) {
+        console.warn('Impossible de récupérer le rôle de l\'utilisateur caller (PATCH équipe)', e);
       }
+
+      if (!isAdmin) return res.status(403).json({ error: 'Forbidden: admin role required' });
+
+      const fields: any = {};
+      // writable by admins (and match POST fields)
+      if (body.nom !== undefined || body.Nom !== undefined) fields['Nom'] = body.nom ?? body.Nom;
+      if (body.prenom !== undefined || body.Prénom !== undefined) fields['Prénom'] = body.prenom ?? body.Prénom;
+      if (body.email !== undefined || body.Email !== undefined) fields['Email'] = body.email ?? body.Email;
+      if (body.emailEpicu !== undefined || body['Email perso'] !== undefined) fields['Email perso'] = body.emailEpicu ?? body['Email perso'];
+      if (body.cp !== undefined || body.CP !== undefined) fields['CP'] = body.cp ?? body.CP;
+      if (body.ville !== undefined || body.Ville !== undefined) fields['Ville'] = body.ville ?? body.Ville;
+      if (body.categorie !== undefined || body['Catégorie'] !== undefined) fields['Catégorie'] = Array.isArray(body.categorie || body['Catégorie']) ? (body.categorie || body['Catégorie']).slice(0, 2) : [body.categorie || body['Catégorie']];
+
+      // sensitive fields (admins only)
+      if (body.siret !== undefined || body.Siret !== undefined) fields['Siret'] = body.siret ?? body.Siret;
+      if (body.telephone !== undefined || body['Téléphone'] !== undefined) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
+      if (body.dateNaissance !== undefined || body['Date de naissance'] !== undefined) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
+      if (body.dateDIP !== undefined || body['Date DIP'] !== undefined) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
+      if (body.adresse !== undefined || body['Adresse'] !== undefined) fields['Adresse'] = body.adresse ?? body['Adresse'];
+      // Attestation formation initiale
+      if (body.attestationFormationInitiale !== undefined) fields['Attestation formation initiale'] = body.attestationFormationInitiale;
+      if (body['Attestation formation initiale'] !== undefined) fields['Attestation formation initiale'] = body['Attestation formation initiale'];
+      if (body.dateSignatureAttestation !== undefined) fields['Attestation formation initiale'] = body.dateSignatureAttestation;
 
       // Ville EPICU relation
       try {
@@ -257,7 +292,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-  res.setHeader('Allow', ['GET', 'POST', 'PATCH']);
+    res.setHeader('Allow', ['GET', 'POST', 'PATCH']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     console.error('Airtable error (equipe):', error?.message || error);
