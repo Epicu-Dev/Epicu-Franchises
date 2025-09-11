@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (isAdmin) {
-        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Date de signature du contrat de franchise', "Date de signature de l'attestation de formation initiale");
+        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Franchise signée le', "Attestation formation initiale");
       }
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -113,8 +113,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           baseObj.adresse = r.get('Adresse') || null;
           baseObj.siret = r.get('Siret') || null;
           baseObj.dateDIP = r.get('Date DIP') || null;
-          baseObj.dateSignatureContrat = r.get('Date de signature du contrat de franchise') || null;
-          baseObj.dateSignatureAttestation = r.get("Date de signature de l'attestation de formation initiale") || null;
+          baseObj.dateSignatureContrat = r.get('Franchise signée le') || null;
+          baseObj.dateSignatureAttestation = r.get("Attestation formation initiale") || null;
         }
 
         return baseObj;
