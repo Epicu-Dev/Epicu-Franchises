@@ -7,29 +7,18 @@ import { Avatar } from "@heroui/avatar";
 import { Spinner } from "@heroui/spinner";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { getValidAccessToken } from "../utils/auth";
+import { TrombiAttachment } from "../types/user";
 
 // Interface TeamMember pour la compatibilité avec la page équipe
 interface TeamMember {
     id: string;
-    name: string;
-    role: string;
-    location: string;
-    avatar: string;
-    category: "siege" | "franchise" | "prestataire";
-    city: string;
-    firstName: string;
-    lastName: string;
-    identifier: string;
-    password: string;
-    birthDate: string;
-    personalEmail: string;
-    franchiseEmail: string;
-    phone: string;
-    postalAddress: string;
-    siret: string;
-    dipSignatureDate: string;
-    franchiseContractSignatureDate: string;
-    trainingCertificateSignatureDate: string;
+    nom: string;
+    prenom: string;
+    villeEpicu: string[];
+    emailEpicu: string | null;
+    role: string | null;
+    etablissements: string[];
+    trombi: TrombiAttachment[] | null;
 }
 
 interface FranchiseTeamModalProps {
@@ -56,7 +45,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
     };
 
     const fetchTeamMembers = async () => {
-        if (!selectedMember?.city) return;
+        if (!selectedMember?.villeEpicu || selectedMember.villeEpicu.length === 0) return;
 
         try {
             setLoading(true);
@@ -71,49 +60,23 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
             const data = await response.json();
             const collaborateurs = data.results || [];
 
-            // Transformer les données et filtrer par ville
+            // Utiliser directement les données de l'API et filtrer par ville
             const transformedMembers: TeamMember[] = collaborateurs
-                .map((collab: any, index: number): TeamMember => {
-                    const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
-                    const nameParts = nomComplet.split(' ');
-                    const firstName = nameParts[0] || '';
-                    const lastName = nameParts.slice(1).join(' ') || '';
-                    const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-
-                    // Déterminer la catégorie et le rôle
-                    let category: "siege" | "franchise" | "prestataire" = "siege";
-                    if (index >= 10 && index < 25) category = "franchise";
-                    else if (index >= 25) category = "prestataire";
-
-                    let role = "Collaborateur";
-                    if (category === "siege") role = "Collaborateur Siège";
-                    else if (category === "franchise") role = "Franchisé";
-                    else if (category === "prestataire") role = "Prestataire";
-
-                    return {
-                        id: collab.id,
-                        name: nomComplet,
-                        role,
-                        location: city,
-                        avatar: `/api/placeholder/150/150`,
-                        category,
-                        city,
-                        firstName,
-                        lastName,
-                        identifier: `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`,
-                        password: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-                        birthDate: "01.01.1990",
-                        phone: "0648596769",
-                        personalEmail: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`,
-                        franchiseEmail: `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`,
-                        postalAddress: "1 place de Mairie, Tourcoing",
-                        siret: "87450934562398",
-                        dipSignatureDate: "12.07.2024",
-                        franchiseContractSignatureDate: "02.12.2024",
-                        trainingCertificateSignatureDate: "02.12.2024",
-                    };
+                .filter((collab: any) => {
+                    const collabVilles = collab.villeEpicu || [];
+                    const selectedVilles = selectedMember.villeEpicu || [];
+                    return collabVilles.some((ville: string) => selectedVilles.includes(ville));
                 })
-                .filter((member: TeamMember) => member.city === selectedMember.city);
+                .map((collab: any): TeamMember => ({
+                    id: collab.id,
+                    nom: collab.nom || '',
+                    prenom: collab.prenom || '',
+                    villeEpicu: collab.villeEpicu || [],
+                    emailEpicu: collab.emailEpicu || null,
+                    role: collab.role || null,
+                    etablissements: collab.etablissements || [],
+                    trombi: collab.trombi || null,
+                }));
 
             setTeamMembers(transformedMembers);
         } catch (error) {
@@ -149,9 +112,9 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                 <ModalHeader className="flex flex-col gap-1">
                     <div className="flex items-center justify-between w-full">
                         <div>
-                            <h2 className="text-xl font-semibold">Équipe de {selectedMember.city}</h2>
+                            <h2 className="text-xl font-semibold">Équipe de {selectedMember.villeEpicu && selectedMember.villeEpicu.length > 0 ? selectedMember.villeEpicu[0] : "Ville non définie"}</h2>
                             <p className="text-sm text-gray-500">
-                                Membres de l&apos;équipe basés à {selectedMember.city}
+                                Membres de l&apos;équipe basés à {selectedMember.villeEpicu && selectedMember.villeEpicu.length > 0 ? selectedMember.villeEpicu[0] : "Ville non définie"}
                             </p>
                         </div>
 
@@ -186,17 +149,17 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                                         base: "ring-2 ring-gray-200 dark:ring-gray-700",
                                         img: "object-cover",
                                     }}
-                                    name={selectedMember.name}
-                                    src={selectedMember.avatar}
+                                    name={`${selectedMember.prenom} ${selectedMember.nom}`}
+                                    src={selectedMember.trombi?.[0]?.url}
                                 />
                                 <h3 className="font-semibold text-lg mb-1">
-                                    {selectedMember.name}
+                                    {selectedMember.prenom} {selectedMember.nom}
                                 </h3>
                                 <p className="text-sm font-light text-gray-600 dark:text-gray-400 mb-1">
                                     {selectedMember.role}
                                 </p>
                                 <p className="text-sm font-light text-gray-500 dark:text-gray-500">
-                                    {selectedMember.city}
+                                    {selectedMember.villeEpicu && selectedMember.villeEpicu.length > 0 ? selectedMember.villeEpicu[0] : "Ville non définie"}
                                 </p>
                             </div>
 
@@ -218,17 +181,17 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                                                     base: "ring-2 ring-gray-200 dark:ring-gray-700",
                                                     img: "object-cover",
                                                 }}
-                                                name={member.name}
-                                                src={member.avatar}
+                                                name={`${member.prenom} ${member.nom}`}
+                                                src={member.trombi?.[0]?.url}
                                             />
                                             <h3 className="font-semibold text-sm mb-1">
-                                                {member.name}
+                                                {member.prenom} {member.nom}
                                             </h3>
                                             <p className="text-sm font-light text-gray-600 dark:text-gray-400 mb-1">
                                                 {member.role}
                                             </p>
                                             <p className="text-xs font-light text-gray-500 dark:text-gray-500">
-                                                {member.city}
+                                                {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                                             </p>
                                         </div>
                                     ))}

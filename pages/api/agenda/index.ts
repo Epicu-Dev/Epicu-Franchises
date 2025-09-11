@@ -44,10 +44,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Type',
         'Description',
         'Collaborateur',
+        'Établissements',
       ];
 
       // Construire la formule de filtrage si besoin
-      const filters: string[] = [];
+      // const filters: string[] = [];
 
       if (collaborator) {
         // filterByFormula to match collaborator reference
@@ -74,6 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const type = r.get('Type') || '';
         const description = r.get('Description') || '';
         const collaborators = r.get('Collaborateur') || [];
+        const etablissements = r.get('Établissements') || [];
 
         return {
           id: r.id,
@@ -82,8 +84,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type,
           description,
           collaborators,
+          etablissements,
         };
       });
+
+      // Récupérer les catégories d'établissement pour tous les événements
+      const establishmentIds = Array.from(new Set(mapped.flatMap((ev: any) => ev.etablissements || [])));
+      let establishmentCategories: Record<string, string[]> = {};
+
+      if (establishmentIds.length > 0) {
+        try {
+          const establishmentRecords = await base('ÉTABLISSEMENTS')
+            .select({
+              filterByFormula: `OR(${establishmentIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
+              fields: ['Catégorie'],
+              pageSize: Math.min(establishmentIds.length, 100),
+              maxRecords: establishmentIds.length,
+            })
+            .all();
+
+          // Collecter tous les IDs de catégories
+          const categoryIds = new Set<string>();
+
+          establishmentRecords.forEach((est: any) => {
+            const categories = est.get('Catégorie') || [];
+
+            categories.forEach((catId: string) => categoryIds.add(catId));
+          });
+
+          // Récupérer les noms des catégories
+          const categoryNames: Record<string, string> = {};
+
+          if (categoryIds.size > 0) {
+            const categoryRecords = await base('CATÉGORIES')
+              .select({
+                filterByFormula: `OR(${Array.from(categoryIds).map(id => `RECORD_ID() = '${id}'`).join(',')})`,
+                fields: ['Name'],
+                maxRecords: categoryIds.size,
+              })
+              .all();
+
+            categoryRecords.forEach((cat: any) => {
+              categoryNames[cat.id] = cat.get('Name') || '';
+            });
+          }
+
+          // Mapper les catégories d'établissement avec leurs noms
+          establishmentRecords.forEach((est: any) => {
+            const categoryIds = est.get('Catégorie') || [];
+            const categoryNamesForEst = categoryIds.map((catId: string) => categoryNames[catId]).filter(Boolean);
+
+            establishmentCategories[est.id] = categoryNamesForEst;
+          });
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Erreur lors de la récupération des catégories d\'établissement:', error);
+          // Ignorer les erreurs de récupération des catégories d'établissement
+        }
+      }
 
       // filtrage par date/client côté serveur (après mapping)
       let filtered = mapped.filter((ev: any) => {
@@ -117,7 +175,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const page = filtered.slice(offset, offset + limit);
 
-      res.status(200).json({ events: page, total: filtered.length });
+      // Enrichir les événements avec les catégories d'établissement
+      const enrichedEvents = page.map((event: any) => {
+        const eventEstablishmentIds = event.etablissements || [];
+        const eventCategories = eventEstablishmentIds.flatMap((id: string) => establishmentCategories[id] || []);
+        
+        // Log pour debug
+        if (eventCategories.length > 0) {
+          // eslint-disable-next-line no-console
+          console.log(`Event ${event.id} (${event.task}): categories =`, eventCategories);
+        }
+        
+        return {
+          ...event,
+          establishmentCategories: eventCategories,
+        };
+      });
+
+      res.status(200).json({ events: enrichedEvents, total: filtered.length });
 
       return;
     }
@@ -146,6 +221,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (collPayload) {
         if (Array.isArray(collPayload)) fieldsToCreate['Collaborateur'] = collPayload;
         else fieldsToCreate['Collaborateur'] = [collPayload];
+      }
+
+      // Établissements linkage: expect an array of record ids or single id
+      const etablissementPayload = body['Établissements'] || body.etablissement || body.etablissements || body.establishment || body.establishments;
+
+      if (etablissementPayload) {
+        if (Array.isArray(etablissementPayload)) fieldsToCreate['Établissements'] = etablissementPayload;
+        else fieldsToCreate['Établissements'] = [etablissementPayload];
       }
 
       const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
@@ -193,6 +276,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      // Établissements linkage: accept array, single id, null (to clear)
+      if (Object.prototype.hasOwnProperty.call(body, 'Établissements') || Object.prototype.hasOwnProperty.call(body, 'etablissement') || Object.prototype.hasOwnProperty.call(body, 'etablissements') || Object.prototype.hasOwnProperty.call(body, 'establishment') || Object.prototype.hasOwnProperty.call(body, 'establishments')) {
+        const etablissementPayload = body['Établissements'] ?? body.etablissement ?? body.etablissements ?? body.establishment ?? body.establishments;
+
+        if (etablissementPayload === null) {
+          // clear links
+          fieldsToUpdate['Établissements'] = [];
+        } else if (Array.isArray(etablissementPayload)) {
+          fieldsToUpdate['Établissements'] = etablissementPayload;
+        } else if (etablissementPayload) {
+          fieldsToUpdate['Établissements'] = [etablissementPayload];
+        } else {
+          // empty string or falsy -> clear
+          fieldsToUpdate['Établissements'] = [];
+        }
+      }
+
       if (Object.keys(fieldsToUpdate).length === 0) {
         return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
       }
@@ -219,7 +319,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
-    console.error('pages/api/agenda error:', error?.message || error);
     res.status(500).json({ error: 'Erreur serveur', details: error?.message || String(error) });
   }
 }

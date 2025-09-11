@@ -227,26 +227,12 @@ export default function ProfilPage() {
     );
   }
 
-  if (!userProfile) {
-    return (
-      <div className="w-full">
-        <Card className="w-full bg-white dark:bg-gray-900">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full text-primary">
       <Card className="w-full bg-white shadow-none text-primary">
         <CardBody className="p-6">
           {/* Onglets */}
-          <Tabs
+          {/* <Tabs
             className="w-full pt-3 mb-2"
             classNames={{
               cursor: "w-[50px]  left-[12px] h-1   rounded",
@@ -268,9 +254,9 @@ export default function ProfilPage() {
               key="historique"
               title="Historique"
             />
-          </Tabs>
+          </Tabs> */}
 
-          {loading ? (
+          {loading || !userProfile ? (
             <div className="flex justify-center items-center h-64">
               <Spinner className="text-black dark:text-white" size="lg" />
             </div>
@@ -286,7 +272,7 @@ export default function ProfilPage() {
                         className="w-20 h-20"
                         name={`${userProfile.firstname} ${userProfile.lastname}`}
                         size="lg"
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+                        src={userProfile.trombi?.[0]?.url}
                       />
                       <div>
                         <h2 className="text-2xl font-semibold">

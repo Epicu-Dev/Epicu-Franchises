@@ -13,13 +13,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/modal";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
   ArrowRightIcon,
@@ -32,47 +25,17 @@ import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge } from "@/components/badges";
 import { ProspectModal } from "@/components/prospect-modal";
+import ConvertProspectModal from "@/components/convert-prospect-modal";
 import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
 import { useUser } from "@/contexts/user-context";
-
-interface Prospect {
-  id: string;
-  siret: string;
-  nomEtablissement: string;
-  ville: string;
-  telephone: string;
-  categorie: "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY";
-  statut: "a_contacter" | "en_discussion" | "glacial";
-  datePremierRendezVous: string;
-  dateRelance: string;
-  vientDeRencontrer: boolean;
-  commentaire: string;
-  suiviPar: string;
-  email?: string;
-  adresse?: string;
-}
-
-interface ApiProspect {
-  id: string;
-  nomEtablissement: string;
-  categorie: string;
-  ville: string;
-  suiviPar: string;
-  commentaires: string;
-  dateRelance: string;
-  telephone?: string;
-  datePremierRendezVous?: string;
-  vientDeRencontrer?: boolean;
-  email?: string;
-  adresse?: string;
-  siret?: string;
-}
-
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { Prospect } from "@/types/prospect";
 
 export default function ProspectsPage() {
   const { userProfile } = useUser();
-  const [prospects, setProspects] = useState<ApiProspect[]>([]);
+  const { authFetch } = useAuthFetch();
+  const [prospects, setProspects] = useState<Prospect[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
   const [nextOffset, setNextOffset] = useState<number | null>(0);
@@ -89,7 +52,7 @@ export default function ProspectsPage() {
   const [prospectToConvert, setProspectToConvert] = useState<Prospect | null>(null);
   const [selectedTab, setSelectedTab] = useState("a_contacter");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [, setViewCount] = useState<number | null>(null);
+
   const previousTabRef = useRef(selectedTab);
 
   // Variables pour les filtres
@@ -101,7 +64,7 @@ export default function ProspectsPage() {
     const fetchFilters = async () => {
       try {
         // Récupérer les collaborateurs
-        const collabResponse = await fetch('/api/collaborateurs?limit=200&offset=0');
+        const collabResponse = await authFetch('/api/collaborateurs?limit=200&offset=0');
 
         if (collabResponse.ok) {
           const collabData = await collabResponse.json();
@@ -132,7 +95,7 @@ export default function ProspectsPage() {
           setCategories(catData.results || []);
         }
       } catch (err) {
-        console.error('Erreur lors de la récupération des filtres:', err);
+        // console.error('Erreur lors de la récupération des filtres:', err);
       }
     };
 
@@ -221,7 +184,7 @@ export default function ProspectsPage() {
         setNextOffset(data.pagination?.nextOffset || null);
 
       } else {
-        // Onglet "À contacter" - utiliser l'API des prospects normaux
+        // Onglet "Contacté" - utiliser l'API des prospects normaux
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
 
@@ -310,21 +273,19 @@ export default function ProspectsPage() {
 
 
 
-  const handleEditProspect = (prospect: ApiProspect) => {
+  const handleEditProspect = (prospect: Prospect) => {
     setError(null);
     // Convertir ApiProspect en Prospect pour l'édition
     const prospectForEdit: Prospect = {
       id: prospect.id,
-      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: prospect.datePremierRendezVous || '',
+      datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: prospect.vientDeRencontrer || false,
-      commentaire: prospect.commentaires,
+      commentaires: prospect.commentaires,
       suiviPar: prospect.suiviPar,
       email: prospect.email,
       adresse: prospect.adresse,
@@ -334,49 +295,50 @@ export default function ProspectsPage() {
     setIsProspectModalOpen(true);
   };
 
-  const handleConvertToClient = async () => {
-    if (!prospectToConvert) return;
-
-    try {
-      const response = await fetch(`/api/prospects/${prospectToConvert.id}/convert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la conversion en client");
-      }
-
-      // Fermer le modal et réinitialiser
-      setIsConvertModalOpen(false);
-      setProspectToConvert(null);
-
-      // Recharger les prospects
-      fetchProspects();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
-
-  const openConvertModal = (prospect: ApiProspect) => {
+  const openConvertModal = (prospect: Prospect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
       id: prospect.id,
-      siret: prospect.siret || '',
       nomEtablissement: prospect.nomEtablissement,
       ville: prospect.ville,
       telephone: prospect.telephone || '',
       categorie: prospect.categorie as any,
       statut: selectedTab as any,
-      datePremierRendezVous: prospect.datePremierRendezVous || '',
+      datePriseContact: prospect.datePriseContact || '',
       dateRelance: prospect.dateRelance,
-      vientDeRencontrer: prospect.vientDeRencontrer || false,
-      commentaire: prospect.commentaires,
+      commentaires: prospect.commentaires,
       suiviPar: prospect.suiviPar,
       email: prospect.email,
       adresse: prospect.adresse,
+    };
+
+    // Initialiser les données du client avec les données du prospect
+    const clientData = {
+      id: '',
+      raisonSociale: prospect.nomEtablissement,
+      ville: prospect.ville,
+      categorie: prospect.categorie,
+      telephone: prospect.telephone || '',
+      nomEtablissement: prospect.nomEtablissement,
+      email: prospect.email || '',
+      datePriseContact: '',
+      datePublicationContenu: '',
+      datePublicationFacture: '',
+      statutPaiementContenu: 'En attente' as const,
+      montantFactureContenu: '',
+      montantPaye: '',
+      dateReglementFacture: '',
+      restantDu: '',
+      montantSponsorisation: '',
+      montantAddition: '',
+      factureContenu: '',
+      facturePublication: '',
+      commentaire: prospect.commentaires,
+      commentaireCadeauGerant: '',
+      montantCadeau: '',
+      tirageAuSort: false,
+      adresse: prospect.adresse,
+      statut: 'actif' as const,
     };
 
     setProspectToConvert(prospectForConvert);
@@ -400,7 +362,7 @@ export default function ProspectsPage() {
               variant="underlined"
               onSelectionChange={(key) => setSelectedTab(key as string)}
             >
-              <Tab key="a_contacter" title="À contacter" />
+              <Tab key="a_contacter" title="Contacté" />
               <Tab key="en_discussion" title="En discussion" />
               <Tab key="glacial" title="Glacial" />
             </Tabs>
@@ -450,7 +412,7 @@ export default function ProspectsPage() {
               </StyledSelect>
 
               <StyledSelect
-                className="w-32"
+                className="w-45"
                 placeholder="Suivi par"
                 selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
                 onSelectionChange={(keys) =>
@@ -516,14 +478,8 @@ export default function ProspectsPage() {
                 shadow="none"
               >
                 <TableHeader className="mb-4">
-                  <TableColumn className="font-light text-sm">Basculer en client</TableColumn>
+                  <TableColumn className="font-light text-sm">Basculer</TableColumn>
                   <TableColumn className="font-light text-sm">Modifier</TableColumn>
-
-                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-                  <TableColumn className="font-light text-sm">SIRET</TableColumn>
-                  <TableColumn className="font-light text-sm">Ville</TableColumn>
-                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
-                  <TableColumn className="font-light text-sm">Date premier rendez-vous</TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="categorie"
@@ -533,6 +489,9 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
+                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm">Date premier contact</TableColumn>
+
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
                       field="dateRelance"
@@ -551,15 +510,17 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
-                  <TableColumn className="font-light text-sm">Vient de rencontrer</TableColumn>
-                  <TableColumn className="font-light text-sm">Email</TableColumn>
-                  <TableColumn className="font-light text-sm">Adresse</TableColumn>
+                  <TableColumn className="font-light text-sm">Ville</TableColumn>
+
+                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+
+                  <TableColumn className="font-light text-sm">Mail</TableColumn>
                   <TableColumn className="font-light text-sm">Commentaire</TableColumn>
                 </TableHeader>
                 <TableBody className="mt-4">
                   {prospects.length === 0 ? (
                     <TableRow>
-                      <TableCell className="text-center" colSpan={14}>
+                      <TableCell className="text-center" colSpan={11}>
                         <div className="py-20 text-gray-500">
                           {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
                             <div>
@@ -607,7 +568,7 @@ export default function ProspectsPage() {
                             color="primary"
                             variant="bordered"
                             size="sm"
-                            endContent={<ArrowRightIcon></ArrowRightIcon>}
+                            endContent={<ArrowRightIcon className="h-4 w-4" />}
                             onPress={() => openConvertModal(prospect)}
                           >
                             Convertir
@@ -625,24 +586,28 @@ export default function ProspectsPage() {
                             <PencilIcon className="h-4 w-4" />
                           </Button>
                         </TableCell>
+                        <TableCell className="font-light">
+                          <CategoryBadge category={prospect.categorie[0]} />
+                          {
+                            prospect.categorie.length > 1 && (
+                              <CategoryBadge className="ml-2" category={prospect.categorie[1] || ''} />
+                            )
+                          }
+
+                        </TableCell>
+
                         <TableCell className="font-light py-5">
                           {prospect.nomEtablissement}
                         </TableCell>
-                        <TableCell className="font-light">{prospect.siret}</TableCell>
-                        <TableCell className="font-light">{prospect.ville}</TableCell>
-                        <TableCell className="font-light">{prospect.telephone}</TableCell>
                         <TableCell className="font-light">
-                          {prospect.datePremierRendezVous
-                            ? new Date(prospect.datePremierRendezVous).toLocaleDateString('fr-FR', {
+                          {prospect.datePriseContact
+                            ? new Date(prospect.datePriseContact).toLocaleDateString('fr-FR', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
                             }).replace(/\//g, '.')
                             : "-"
                           }
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <CategoryBadge category={prospect.categorie} />
                         </TableCell>
                         <TableCell className="font-light">
                           {prospect.dateRelance
@@ -655,9 +620,12 @@ export default function ProspectsPage() {
                           }
                         </TableCell>
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
-                        <TableCell className="font-light">{prospect.vientDeRencontrer ? 'Oui' : 'Non'}</TableCell>
+
+                        <TableCell className="font-light">{prospect.ville}</TableCell>
+                        <TableCell className="font-light min-w-32">{prospect.telephone}</TableCell>
+
+
                         <TableCell className="font-light">{prospect.email}</TableCell>
-                        <TableCell className="font-light">{prospect.adresse}</TableCell>
                         <TableCell className="font-light">{prospect.commentaires}</TableCell>
 
 
@@ -673,67 +641,17 @@ export default function ProspectsPage() {
 
 
 
-      {/* Modal de confirmation de conversion */}
-      <Modal isOpen={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
-        <ModalContent>
-          <ModalHeader className="flex justify-center">Confirmer la conversion</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4 text-primary">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <svg className="h-12 w-12 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium">
-                    Convertir ce prospect en client ?
-                  </h3>
-                  <p className="text-sm mt-1">
-                    Cette action va convertir <strong>{prospectToConvert?.nomEtablissement}</strong> en client.
-                    Le prospect sera supprimé de la liste des prospects.
-                  </p>
-                </div>
-              </div>
-
-              {prospectToConvert && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium mb-2">
-                    Informations du prospect :
-                  </h4>
-                  <div className="space-y-1 text-sm">
-                    <p><strong>Établissement :</strong> {prospectToConvert.nomEtablissement}</p>
-                    <p><strong>Ville :</strong> {prospectToConvert.ville}</p>
-                    <p><strong>Téléphone :</strong> {prospectToConvert.telephone}</p>
-                    <p><strong>Catégorie :</strong> {prospectToConvert.categorie}</p>
-                    {prospectToConvert.email && <p><strong>Email :</strong> {prospectToConvert.email}</p>}
-                    {prospectToConvert.adresse && <p><strong>Adresse :</strong> {prospectToConvert.adresse}</p>}
-                  </div>
-                </div>
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className="border-1"
-              color='primary'
-              variant="bordered"
-              onPress={() => {
-                setIsConvertModalOpen(false);
-                setProspectToConvert(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              color='primary'
-              onPress={handleConvertToClient}
-            >
-              Confirmer la conversion
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Modal de conversion de prospect en client */}
+      <ConvertProspectModal
+        isOpen={isConvertModalOpen}
+        prospect={prospectToConvert}
+        onOpenChange={(open) => {
+          setIsConvertModalOpen(open);
+          if (!open) {
+            setProspectToConvert(null);
+          }
+        }}
+      />
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
       <ProspectModal

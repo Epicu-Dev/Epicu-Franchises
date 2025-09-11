@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Tabs, Tab } from "@heroui/tabs";
@@ -18,6 +18,17 @@ import {
 
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
+import { getValidAccessToken } from "../../utils/auth";
+
+// Interface pour les données de l'API
+interface ApiResource {
+  id: string;
+  objet: string;
+  onglet: string;
+  commentaires: string;
+  lien: string;
+  dateAjout: string;
+}
 
 interface ResourceItem {
   id: string;
@@ -29,133 +40,120 @@ interface ResourceItem {
   icon: React.ComponentType<any>;
 }
 
-const resourcesData: ResourceItem[] = [
-  {
-    id: "1",
-    title: "LE DRIVE PARTAGÉ",
-    description: "Stockage centralisé pour tous les documents EPICU (dossiers, contrats, visuels, ressources)",
-    link: "https://drive.epicu.com",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: FolderIcon
-  },
-  {
-    id: "2",
-    title: "LE DASHBOARD EPICU",
-    description: "Gestion des prospects et clients, suivi des performances",
-    link: "https://dashboard.epicu.com",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: ChartBarIcon
-  },
-  {
-    id: "3",
-    title: "LA BOÎTE MAIL EPICU",
-    description: "Gestion des emails professionnels via Infomaniak et centralisation des communications",
-    link: "https://mail.epicu.com",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: EnvelopeIcon
-  },
-  {
-    id: "4",
-    title: "WORDPRESS EPICU",
-    description: "Gestion du contenu du site et des pages partenaires",
-    link: "https://wordpress.epicu.com",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: GlobeAltIcon
-  },
-  {
-    id: "5",
-    title: "BOARDS",
-    description: "Création et utilisation de raccourcis clavier pour l'automatisation et l'accélération des réponses/publications",
-    link: "https://boards.epicu.com",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: StarIcon
-  },
-  {
-    id: "6",
-    title: "GOOGLE FORMS - FORMULAIRE",
-    description: "Formulaire pour les établissements (restaurants, boutiques, hébergements) avant le tournage pour collecter les infos nécessaires à la préparation vidéo",
-    link: "https://forms.google.com/epicu",
-    dateAdded: "12.08.2025",
-    category: "liens-importants",
-    icon: DocumentTextIcon
-  },
-  // Ressources Canva
-  {
-    id: "7",
-    title: "Page de Garde pour les Dossiers de Rendez-vous",
-    description: "À utiliser pour habiller les dossiers professionnels lors des rendez-vous avec des prospects.",
-    link: "https://canva.com/page-garde",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "8",
-    title: "Télécharger la photo de profil d'un compte Instagram",
-    description: "Gabarits pour publier des stories engageantes et harmonisées avec l'identité EPICU.",
-    link: "https://canva.com/photo-profil",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "9",
-    title: "Templates pour les Stories Instagram",
-    description: "Gabarits pour publier des stories engageantes et harmonisées avec l'identité EPICU.",
-    link: "https://canva.com/stories",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "10",
-    title: "Fichiers Ressources",
-    description: "Regroupe tous les éléments graphiques nécessaires à la création de contenus EPICU.",
-    link: "https://canva.com/fichiers-ressources",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "11",
-    title: "Miniature Instagram pour un Réel",
-    description: "À utiliser comme couverture pour les vidéos Instagram afin d'optimiser le visuel sur le feed.",
-    link: "https://canva.com/miniature",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "12",
-    title: "Story Sponsorisée « Tu es de..»",
-    description: "Story publicitaire ciblée pour promouvoir EPICU localement.",
-    link: "https://canva.com/story-sponsorisee",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  },
-  {
-    id: "13",
-    title: "Signature Mail personnalisée",
-    description: "Signature professionnelle à intégrer aux emails pour un branding cohérent et professionnel.",
-    link: "https://canva.com/signature-mail",
-    dateAdded: "12.08.2025",
-    category: "ressources-canva",
-    icon: PaintBrushIcon
-  }
-];
-
 export default function RessourcesPage() {
   const [selectedTab, setSelectedTab] = useState<ResourceCategory>("liens-importants");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm] = useState("");
-  const [resources, setResources] = useState<ResourceItem[]>(resourcesData);
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fonction pour formater les dates
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) {
+      return new Date().toLocaleDateString('fr-FR');
+    }
+
+    try {
+      // Essayer de parser la date directement
+      const date = new Date(dateString);
+      
+      // Vérifier si la date est valide
+      if (isNaN(date.getTime())) {
+        // Si la date n'est pas valide, essayer d'autres formats
+        // Format DD.MM.YYYY
+        if (dateString.includes('.')) {
+          const parts = dateString.split('.');
+          if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            const isoDate = `${year}-${month}-${day}`;
+            const parsedDate = new Date(isoDate);
+            if (!isNaN(parsedDate.getTime())) {
+              return parsedDate.toLocaleDateString('fr-FR');
+            }
+          }
+        }
+        
+        // Si aucun format ne fonctionne, retourner la date actuelle
+        return new Date().toLocaleDateString('fr-FR');
+      }
+      
+      return date.toLocaleDateString('fr-FR');
+    } catch {
+      // En cas d'erreur, retourner la date actuelle
+      return new Date().toLocaleDateString('fr-FR');
+    }
+  };
+
+  // Fonction pour récupérer les données de l'API
+  const fetchResources = async (category: ResourceCategory) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('No access token');
+      }
+
+      // Déterminer l'endpoint selon la catégorie
+      let endpoint = '';
+      switch (category) {
+        case 'liens-importants':
+          endpoint = '/api/ressources/link-importants';
+          break;
+        case 'ressources-canva':
+          endpoint = '/api/ressources/canva';
+          break;
+        case 'materiel':
+          endpoint = '/api/ressources/materiel';
+          break;
+        default:
+          endpoint = '/api/ressources/link-importants';
+      }
+
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Transformer les données de l'API en format ResourceItem
+      const transformedResources: ResourceItem[] = data.results.map((item: ApiResource) => ({
+        id: item.id,
+        title: item.objet,
+        description: item.commentaires || '',
+        link: item.lien || '',
+        dateAdded: formatDate(item.dateAjout),
+        category: category,
+        icon: getIconComponent(item.objet)
+      }));
+
+      setResources(transformedResources);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Erreur lors de la récupération des ressources:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      setResources([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Charger les données au montage du composant et lors du changement d'onglet
+  useEffect(() => {
+    fetchResources(selectedTab);
+  }, [selectedTab]);
 
   const handleSort = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -169,35 +167,110 @@ export default function RessourcesPage() {
   );
 
   const sortedResources = [...filteredResources].sort((a, b) => {
-    const dateA = new Date(a.dateAdded.split('.').reverse().join('-'));
-    const dateB = new Date(b.dateAdded.split('.').reverse().join('-'));
+    // Parser les dates formatées (format DD/MM/YYYY)
+    const parseDate = (dateStr: string): Date => {
+      try {
+        // Si la date contient des points, les remplacer par des slashes
+        const normalizedDate = dateStr.replace(/\./g, '/');
+        const parts = normalizedDate.split('/');
+        
+        if (parts.length === 3) {
+          // Format DD/MM/YYYY -> YYYY-MM-DD pour le constructeur Date
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          return new Date(`${year}-${month}-${day}`);
+        }
+        
+        return new Date(normalizedDate);
+      } catch {
+        return new Date();
+      }
+    };
+
+    const dateA = parseDate(a.dateAdded);
+    const dateB = parseDate(b.dateAdded);
 
     return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
   });
 
-  const handleAddResource = (resourceData: Omit<Resource, "id" | "dateAdded">) => {
-    const newResource: ResourceItem = {
-      ...resourceData,
-      id: Date.now().toString(),
-      dateAdded: new Date().toLocaleDateString('fr-FR'),
-      icon: resourceData.icon ? getIconComponent(resourceData.icon) : FolderIcon
-    };
+  const handleAddResource = async (resourceData: Omit<Resource, "id" | "dateAdded">) => {
+    try {
+      const token = await getValidAccessToken();
+      if (!token) {
+        throw new Error('No access token');
+      }
 
-    setResources(prev => [...prev, newResource]);
+      // Utiliser la catégorie sélectionnée dans le modal
+      const category = resourceData.category || selectedTab;
+
+      // Déterminer l'endpoint selon la catégorie
+      let endpoint = '';
+      switch (category) {
+        case 'liens-importants':
+          endpoint = '/api/ressources/link-importants';
+          break;
+        case 'ressources-canva':
+          endpoint = '/api/ressources/canva';
+          break;
+        case 'materiel':
+          endpoint = '/api/ressources/materiel';
+          break;
+        default:
+          endpoint = '/api/ressources/link-importants';
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Objet: resourceData.title,
+          Commentaires: resourceData.description,
+          Lien: resourceData.link,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      // Recharger les données de la catégorie sélectionnée
+      await fetchResources(category);
+      
+      // Si la catégorie ajoutée est différente de l'onglet actuel, changer d'onglet
+      if (category !== selectedTab) {
+        setSelectedTab(category);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Erreur lors de l\'ajout de la ressource:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors de l\'ajout');
+    }
   };
 
-  const getIconComponent = (iconName: string): React.ComponentType<any> => {
-    const iconMap: Record<string, React.ComponentType<any>> = {
-      'FolderIcon': FolderIcon,
-      'ChartBarIcon': ChartBarIcon,
-      'EnvelopeIcon': EnvelopeIcon,
-      'GlobeAltIcon': GlobeAltIcon,
-      'StarIcon': StarIcon,
-      'DocumentTextIcon': DocumentTextIcon,
-      'PaintBrushIcon': PaintBrushIcon,
-    };
-
-    return iconMap[iconName] || FolderIcon;
+  const getIconComponent = (title: string): React.ComponentType<any> => {
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('drive') || titleLower.includes('stockage')) {
+      return FolderIcon;
+    } else if (titleLower.includes('dashboard') || titleLower.includes('performance')) {
+      return ChartBarIcon;
+    } else if (titleLower.includes('mail') || titleLower.includes('email')) {
+      return EnvelopeIcon;
+    } else if (titleLower.includes('wordpress') || titleLower.includes('site')) {
+      return GlobeAltIcon;
+    } else if (titleLower.includes('boards') || titleLower.includes('raccourci')) {
+      return StarIcon;
+    } else if (titleLower.includes('form') || titleLower.includes('formulaire')) {
+      return DocumentTextIcon;
+    } else if (titleLower.includes('canva') || titleLower.includes('template') || titleLower.includes('story') || titleLower.includes('signature')) {
+      return PaintBrushIcon;
+    } else {
+      return FolderIcon;
+    }
   };
 
   return (
@@ -244,83 +317,102 @@ export default function RessourcesPage() {
         </CardHeader>
 
         <CardBody >
-          <Table aria-label="Table des ressources" shadow="none" >
-            <TableHeader>
-              <TableColumn className="font-light text-sm">Objet</TableColumn>
-              <TableColumn className="font-light text-sm">Commentaires</TableColumn>
-              <TableColumn className="font-light text-sm">Lien</TableColumn>
-              <TableColumn>
-                <button
-                  className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
-                  type="button"
-                  onClick={handleSort}
-                  onKeyDown={(e) => e.key === "Enter" && handleSort()}
-                >
-                  Date d&apos;ajout
-                  <span className="ml-1">
-                    {sortOrder === "asc" ? "↑" : "↓"}
-                  </span>
-                </button>
-              </TableColumn>
-            </TableHeader>
-            <TableBody>
-              {sortedResources.map((resource) => (
-                <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
-                  <TableCell className="py-5">
-                    <span className="font-light">
-                      {resource.title}
+          {loading && (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-gray-500">Chargement des ressources...</div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="flex justify-center items-center py-8">
+              <div className="text-red-500">Erreur: {error}</div>
+            </div>
+          )}
+          
+          {!loading && !error && (
+            <Table aria-label="Table des ressources" shadow="none" >
+              <TableHeader>
+                <TableColumn className="font-light text-sm">Objet</TableColumn>
+                <TableColumn className="font-light text-sm">Commentaires</TableColumn>
+                <TableColumn className="font-light text-sm">Lien</TableColumn>
+                <TableColumn>
+                  <button
+                    className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
+                    type="button"
+                    onClick={handleSort}
+                    onKeyDown={(e) => e.key === "Enter" && handleSort()}
+                  >
+                    Date d&apos;ajout
+                    <span className="ml-1">
+                      {sortOrder === "asc" ? "↑" : "↓"}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-light">
-                      {resource.description}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      as="a"
-                      className="rounded-full font-light text-sm border-1"
-                      color='primary'
-                      href={resource.link}
-                      rel="noopener noreferrer"
-                      size="sm"
-                      target="_blank"
-                      variant="bordered"
-                    >
-                      {resource.title.includes("DRIVE") ? "Le drive →" :
-                        resource.title.includes("DASHBOARD") ? "Le dashboard →" :
-                          resource.title.includes("MAIL") ? "Boîte mail →" :
-                            resource.title.includes("WORDPRESS") ? "Wordpress →" :
-                              resource.title.includes("BOARDS") ? "Boards →" :
-                                resource.title.includes("FORMS") ? "Google forms →" :
-                                  resource.title.includes("Page de Garde") ? "Page de garde →" :
-                                    resource.title.includes("photo de profil") ? "Photo de profil →" :
-                                      resource.title.includes("Stories Instagram") ? "Stories →" :
-                                        resource.title.includes("Fichiers Ressources") ? "Fichiers ressources →" :
-                                          resource.title.includes("Miniature Instagram") ? "Miniature →" :
-                                            resource.title.includes("Story Sponsorisée") ? "Story sponsorisée →" :
-                                              resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-light">
-                      {new Date(resource.dateAdded).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      }).replace(/\//g, '.')}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </button>
+                </TableColumn>
+              </TableHeader>
+              <TableBody>
+                {sortedResources.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                      Aucune ressource trouvée pour cet onglet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sortedResources.map((resource) => (
+                    <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
+                      <TableCell className="py-5">
+                        <span className="font-light">
+                          {resource.title}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-light">
+                          {resource.description}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          as="a"
+                          className="rounded-full font-light text-sm border-1"
+                          color='primary'
+                          href={resource.link}
+                          rel="noopener noreferrer"
+                          size="sm"
+                          target="_blank"
+                          variant="bordered"
+                        >
+                          {resource.title.includes("DRIVE") ? "Le drive →" :
+                            resource.title.includes("DASHBOARD") ? "Le dashboard →" :
+                              resource.title.includes("MAIL") ? "Boîte mail →" :
+                                resource.title.includes("WORDPRESS") ? "Wordpress →" :
+                                  resource.title.includes("BOARDS") ? "Boards →" :
+                                    resource.title.includes("FORMS") ? "Google forms →" :
+                                      resource.title.includes("Page de Garde") ? "Page de garde →" :
+                                        resource.title.includes("photo de profil") ? "Photo de profil →" :
+                                          resource.title.includes("Stories Instagram") ? "Stories →" :
+                                            resource.title.includes("Fichiers Ressources") ? "Fichiers ressources →" :
+                                              resource.title.includes("Miniature Instagram") ? "Miniature →" :
+                                                resource.title.includes("Story Sponsorisée") ? "Story sponsorisée →" :
+                                                  resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-light">
+                          {resource.dateAdded}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardBody>
       </Card>
 
       <ResourceModal
         isOpen={isModalOpen}
         mode="create"
+        currentCategory={selectedTab}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddResource}
       />

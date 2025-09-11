@@ -15,8 +15,6 @@ import { Input } from "@heroui/input";
 import { SelectItem } from "@heroui/select";
 import { Textarea } from "@heroui/input";
 import {
-  ChartBarIcon,
-  EyeIcon,
   UsersIcon,
   ShoppingCartIcon,
   CalendarIcon,
@@ -29,6 +27,7 @@ import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
+import { StatsGrid } from "@/components/stats-grid";
 import { AgendaModals } from "@/components/agenda-modals";
 import { EventModal } from "@/components/event-modal";
 import { AgendaSection } from "@/components/agenda-section";
@@ -65,6 +64,18 @@ export default function HomeAdminPage() {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
   // États pour les données dynamiques
+  const [statistics, setStatistics] = useState<{
+    totalAbonnes: number;
+    totalVues: number;
+    totalProspectsSignes: number;
+    tauxConversion: number;
+    totalClients: number;
+    totalFranchises: number;
+    totalProspects: number;
+    totalPosts: number;
+    totalPrestations: number;
+  } | null>(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
 
   // Mettre à jour le profil utilisateur chargé
   useEffect(() => {
@@ -73,166 +84,125 @@ export default function HomeAdminPage() {
     }
   }, [userProfile, setUserProfileLoaded]);
 
-  // Transformation des événements pour l'affichage
+  // Fonction pour récupérer les statistiques
+  const fetchStatistics = async () => {
+    try {
+      setStatisticsLoading(true);
 
-  const getMetricsForPeriod = (period: "month" | "year") => {
-    const monthMetrics = [
-      {
-        value: "759k€",
-        label: "Chiffres d'affaires global",
-        icon: <ChartBarIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-green-stats/40",
-        iconColor: "text-custom-green-stats",
-        city: "overview",
-        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-      },
-      {
-        value: "760",
-        label: "Clients signés",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-rose/40",
-        iconColor: "text-custom-rose",
-        city: "nantes",
-        categories: ["FOOD", "SHOP"],
-      },
-      {
-        value: "1243",
-        label: "Prospects",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-yellow-100",
-        iconColor: "text-yellow-400",
-        city: "saint-brieuc",
-        categories: ["TRAVEL", "FUN"],
-      },
-      {
-        value: "31",
-        label: "Franchises",
-        icon: <ShoppingCartIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-orange-food/40",
-        iconColor: "text-custom-orange-food",
-        city: "overview",
-        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-      },
-      {
-        value: "75",
-        label: "Posts publiés",
-        icon: <DocumentTextIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-blue-select/40",
-        iconColor: "text-custom-blue-select",
-        city: "nantes",
-        categories: ["BEAUTY", "FOOD"],
-      },
-      {
-        value: "35",
-        label: "Prestations Studio",
-        icon: <ShoppingCartIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-purple-studio/40",
-        iconColor: "text-custom-purple-studio",
-        city: "saint-brieuc",
-        categories: ["SHOP", "TRAVEL"],
-      },
-      {
-        value: "190k",
-        label: "Abonnés",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-green-stats/40",
-        iconColor: "text-custom-green-stats",
-        city: "nantes",
-        categories: ["FUN", "BEAUTY"],
-      },
-      {
-        value: "175k",
-        label: "Vues",
-        icon: <EyeIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-rose/40",
-        iconColor: "text-custom-rose",
-        city: "saint-brieuc",
-        categories: ["FOOD", "SHOP"],
-      },
-    ];
+      // Calculer la plage de dates pour la période sélectionnée
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
 
-    const yearMetrics = [
-      {
-        value: "8.2M€",
-        label: "Chiffres d'affaires global",
-        icon: <ChartBarIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-green-stats/40",
-        iconColor: "text-custom-green-stats",
-        city: "overview",
-        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-      },
-      {
-        value: "8920",
-        label: "Clients signés",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-rose/40",
-        iconColor: "text-custom-rose",
-        city: "nantes",
-        categories: ["FOOD", "SHOP"],
-      },
-      {
-        value: "15420",
-        label: "Prospects",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-yellow-100",
-        iconColor: "text-yellow-400",
-        city: "saint-brieuc",
-        categories: ["TRAVEL", "FUN"],
-      },
-      {
-        value: "372",
-        label: "Franchises",
-        icon: <ShoppingCartIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-orange-food/40",
-        iconColor: "text-custom-orange-food",
-        city: "overview",
-        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-      },
-      {
-        value: "890",
-        label: "Posts publiés",
-        icon: <DocumentTextIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-blue-select/40",
-        iconColor: "text-custom-blue-select",
-        city: "nantes",
-        categories: ["BEAUTY", "FOOD"],
-      },
-      {
-        value: "420",
-        label: "Prestations Studio",
-        icon: <ShoppingCartIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-purple-studio/40",
-        iconColor: "text-custom-purple-studio",
-        city: "saint-brieuc",
-        categories: ["SHOP", "TRAVEL"],
-      },
-      {
-        value: "2.1M",
-        label: "Abonnés",
-        icon: <UsersIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-green-stats/40",
-        iconColor: "text-custom-green-stats",
-        city: "nantes",
-        categories: ["FUN", "BEAUTY"],
-      },
-      {
-        value: "1.8M",
-        label: "Vues",
-        icon: <EyeIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-rose/40",
-        iconColor: "text-custom-rose",
-        city: "saint-brieuc",
-        categories: ["FOOD", "SHOP"],
-      },
-    ];
+      // Construire les paramètres de requête pour l'API /api/data/data
+      const params = new URLSearchParams();
+      params.set('date', monthYear);
+      params.set('ville', 'all'); // Pour l'admin, on récupère toutes les données
 
-    return period === "month" ? monthMetrics : yearMetrics;
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Récupérer les données des clients et prospects pour les métriques supplémentaires
+        const [clientsResponse, prospectsResponse] = await Promise.all([
+          authFetch('/api/clients'),
+          authFetch('/api/prospects')
+        ]);
+
+        let totalClients = 0;
+        let totalProspects = 0;
+
+        if (clientsResponse.ok) {
+          const clientsData = await clientsResponse.json();
+          totalClients = clientsData.clients?.length || 0;
+        }
+
+        if (prospectsResponse.ok) {
+          const prospectsData = await prospectsResponse.json();
+          totalProspects = prospectsData.prospects?.length || 0;
+        }
+
+        setStatistics({
+          totalAbonnes: data.totalAbonnes || 0,
+          totalVues: data.totalVues || 0,
+          totalProspectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
+          tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
+          totalClients,
+          totalProspects,
+          totalFranchises: 0, // À implémenter si nécessaire
+          totalPosts: 0, // À implémenter si nécessaire
+          totalPrestations: 0, // À implémenter si nécessaire
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques:', error);
+      setStatistics(null);
+    } finally {
+      setStatisticsLoading(false);
+    }
   };
 
-  const allMetrics = getMetricsForPeriod(selectedPeriod);
+  // Effet pour charger les statistiques au montage et quand la période change
+  useEffect(() => {
+    fetchStatistics();
+  }, [selectedPeriod, selectedDate]);
+
+  // Transformation des événements pour l'affichage
+
+  const getAdditionalMetrics = () => {
+    const formatNumber = (num: number) => {
+      if (num >= 1000000) {
+        return `${(num / 1000000).toFixed(1)}M`;
+      } else if (num >= 1000) {
+        return `${(num / 1000).toFixed(0)}k`;
+      }
+      return num.toString();
+    };
+
+    return [
+      {
+        value: statisticsLoading ? "..." : statistics ? statistics.totalClients.toString() : "0",
+        label: "Clients",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-blue-select/40",
+        iconColor: "text-custom-blue-select",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: statisticsLoading ? "..." : statistics ? statistics.totalProspects.toString() : "0",
+        label: "Prospects",
+        icon: <UsersIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-purple-studio/40",
+        iconColor: "text-custom-purple-studio",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: statisticsLoading ? "..." : statistics ? statistics.totalFranchises.toString() : "0",
+        label: "Franchises",
+        icon: <ShoppingCartIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-orange-food/40",
+        iconColor: "text-custom-orange-food",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: statisticsLoading ? "..." : statistics ? statistics.totalPosts.toString() : "0",
+        label: "Posts publiés",
+        icon: <DocumentTextIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-blue-select/40",
+        iconColor: "text-custom-blue-select",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+    ];
+  };
+
+  const additionalMetrics = getAdditionalMetrics();
 
   // Filtrer les métriques selon l'onglet actif et la catégorie sélectionnée
-  const metrics = allMetrics.filter((metric) => {
+  const metrics = additionalMetrics.filter((metric) => {
     // Filtre par ville (onglet)
     if (activeTab !== "overview" && metric.city !== activeTab && metric.city !== "overview") {
       return false;
@@ -290,22 +260,31 @@ export default function HomeAdminPage() {
           </div>
 
 
-          {/* Main Layout - Metrics Grid on left, Agenda on right */}
-          <div className="flex flex-row gap-6">
-            {/* Left side - 4x2 Metrics Grid */}
-            <div className="flex-1">
-              <div className="grid grid-cols-2 gap-6">
-                {metrics.map((metric, index) => (
-                  <MetricCard
-                    key={index}
-                    icon={metric.icon}
-                    iconBgColor={metric.iconBgColor}
-                    iconColor={metric.iconColor}
-                    label={metric.label}
-                    value={metric.value}
-                  />
-                ))}
-              </div>
+          {/* Main Layout - Stats Grid and Additional Metrics */}
+          <div className="space-y-6">
+            {/* Stats Grid - 4 principales métriques */}
+            <StatsGrid
+              statistics={statistics ? {
+                abonnes: statistics.totalAbonnes,
+                vues: statistics.totalVues,
+                prospectsSignes: statistics.totalProspectsSignes,
+                tauxConversion: statistics.tauxConversion
+              } : null}
+              loading={statisticsLoading}
+            />
+
+            {/* Additional Metrics Grid */}
+            <div className="grid grid-cols-2 gap-6">
+              {metrics.map((metric, index) => (
+                <MetricCard
+                  key={index}
+                  icon={metric.icon}
+                  iconBgColor={metric.iconBgColor}
+                  iconColor={metric.iconColor}
+                  label={metric.label}
+                  value={metric.value}
+                />
+              ))}
             </div>
           </div>
 
@@ -399,7 +378,7 @@ export default function HomeAdminPage() {
                       setNewProspect({ ...newProspect, statut: selectedKey });
                     }}
                   >
-                    <SelectItem key="a_contacter">À contacter</SelectItem>
+                    <SelectItem key="a_contacter">Contacté</SelectItem>
                     <SelectItem key="en_discussion">En discussion</SelectItem>
                     <SelectItem key="glacial">Glacial</SelectItem>
                   </StyledSelect>

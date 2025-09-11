@@ -7,10 +7,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Input } from "@heroui/input";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -20,7 +18,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { Card, CardBody } from "@heroui/card";
 import { Spinner } from "@heroui/spinner";
@@ -28,15 +26,16 @@ import { Spinner } from "@heroui/spinner";
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
-import { AgendaModals } from "@/components/agenda-modals";
-import { AgendaDropdown } from "@/components/agenda-dropdown";
+import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { ProspectModal } from "@/components/prospect-modal";
 import { AgendaSection } from "@/components/agenda-section";
 import { TodoBadge } from "@/components/badges";
-import { FormLabel } from "@/components";
+import InvoiceModal from "@/components/invoice-modal";
+import TodoModal from "@/components/todo-modal";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { Invoice } from "@/types/invoice";
 
 // Types pour les données réelles
 type AgendaEvent = {
@@ -72,11 +71,6 @@ export default function HomePage() {
     onOpen: onAddTodoModalOpen,
     onClose: onAddTodoModalClose,
   } = useDisclosure();
-  const [newTodo, setNewTodo] = useState({
-    mission: "",
-    deadline: "",
-    status: "En cours" as "En cours" | "En retard" | "Terminé",
-  });
 
   // État pour le filtre de ville
   const [selectedCity, setSelectedCity] = useState<string>("tout");
@@ -88,13 +82,12 @@ export default function HomePage() {
   ]);
 
   // États pour les données dynamiques
-  const [prospects, setProspects] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [agendaLoading, setAgendaLoading] = useState(false);
   const [todoLoading, setTodoLoading] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [statistics, setStatistics] = useState<{
     prospectsSignes: number;
     tauxConversion: number;
@@ -102,12 +95,19 @@ export default function HomePage() {
     vues: number;
   } | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
+  
+  // État de loading global pour la navigation par mois
+  const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Ref pour annuler les requêtes en cours
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // États pour les modals d'agenda
-  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
-  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+  // États pour le modal unifié d'agenda
+  const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
+  const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   // Mettre à jour les villes disponibles basées sur le profil utilisateur
   useEffect(() => {
@@ -121,16 +121,29 @@ export default function HomePage() {
       }));
 
       // Mettre à jour la liste des villes avec celles de l'utilisateur
-      setCities([
-        { key: "tout", label: "Tout" },
+      const newCities = [
+        ...(userVilles.length > 1 ? [{ key: "tout", label: "Tout" }] : []),
         ...userCities,
         { key: "national", label: "National" }
-      ]);
+      ];
+      
+      setCities(newCities);
+
+      // Si l'utilisateur n'a qu'une seule ville, la sélectionner par défaut
+      if (userVilles.length === 1 && selectedCity === "tout") {
+        setSelectedCity(userCities[0].key);
+      }
 
       // Signal que le profil est chargé
       setUserProfileLoaded(true);
+    } else {
+      // Si pas de profil, utiliser des villes par défaut
+      setCities([
+        { key: "tout", label: "Tout" },
+        { key: "national", label: "National" }
+      ]);
     }
-  }, [userProfile, setUserProfileLoaded]);
+  }, [userProfile, setUserProfileLoaded, selectedCity]);
 
   // Fonction pour récupérer les données agenda
   const fetchAgenda = async () => {
@@ -160,9 +173,10 @@ export default function HomePage() {
         const eventsData = await eventsResponse.json();
 
         setEvents(eventsData.events || []);
+      } else {
+        setEvents([]);
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération de l\'agenda:', error);
+    } catch {
       setEvents([]);
     } finally {
       setAgendaLoading(false);
@@ -204,12 +218,64 @@ export default function HomePage() {
         }) || [];
 
         setTodoItems(filteredTodos);
+      } else {
+        setTodoItems([]);
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des todos:', error);
+    } catch {
       setTodoItems([]);
     } finally {
       setTodoLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les factures (paiements) du mois sélectionné
+  const fetchInvoices = async () => {
+    try {
+      setInvoicesLoading(true);
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      );
+
+      const params = new URLSearchParams();
+
+      params.set("limit", "100");
+      params.set("status", "payee");
+
+      const response = await authFetch(`/api/facturation?${params.toString()}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const list: Invoice[] = data.invoices || [];
+
+        const filtered = list.filter((inv) => {
+          if (!inv.date) return false;
+
+          const d = new Date(inv.date);
+
+          return d >= startOfMonth && d <= endOfMonth;
+        });
+
+        setInvoices(filtered);
+      } else {
+        setInvoices([]);
+      }
+    } catch {
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
     }
   };
 
@@ -222,98 +288,161 @@ export default function HomePage() {
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
       const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
 
-      // Construire les paramètres de requête
+      // Construire les paramètres de requête pour l'API /api/data/data
       const params = new URLSearchParams();
-      params.set('q', monthYear); // Rechercher par mois-année
 
-      // Ajouter le filtre de ville si nécessaire
+      params.set('date', monthYear);
+
+      // Déterminer le paramètre ville
+      let villeParam = 'all';
+
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
-          // Pour "National", exclure les villes locales de l'utilisateur
-
-          // On ne peut pas exclure directement, on filtrera côté client
+          // Pour "National", on utilise 'all' et on filtrera côté client
+          villeParam = 'all';
         } else {
-          // Pour une ville spécifique
+          // Pour une ville spécifique, on utilise l'ID de la ville
           const selectedCityData = cities.find(c => c.key === selectedCity);
+
           if (selectedCityData) {
-            params.set('q', `${monthYear} ${selectedCityData.label}`);
+            // Chercher l'ID de la ville dans le profil utilisateur
+            const userVille = userProfile?.villes?.find(v => 
+              v.ville.toLowerCase() === selectedCityData.label.toLowerCase()
+            );
+
+            if (userVille?.id) {
+              villeParam = userVille.id;
+            } else {
+              // Si pas d'ID trouvé, utiliser le nom de la ville
+              villeParam = selectedCityData.label;
+            }
           }
         }
       }
+      params.set('ville', villeParam);
 
-      const response = await authFetch(`/api/statistiques?${params.toString()}`);
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
 
-        // Traiter les données selon le filtre de ville
-        let filteredData = data.statistiques || [];
-
+        // L'API /api/data/data retourne déjà les données agrégées
         if (selectedCity === "national") {
-          // Exclure les villes locales de l'utilisateur
-          const userVilles = userProfile?.villes || [];
-          const localVilleNames = userVilles.map(v => v.ville);
-          filteredData = filteredData.filter((item: any) =>
-            !localVilleNames.some(localVille =>
-              item.villeEpicu && item.villeEpicu.toLowerCase().includes(localVille.toLowerCase())
-            )
-          );
+          // Pour "National", on doit exclure les villes locales de l'utilisateur
+          // On récupère d'abord toutes les données puis on filtre
+          const allParams = new URLSearchParams();
+
+          allParams.set('date', monthYear);
+          allParams.set('ville', 'all');
+          
+          const allResponse = await authFetch(`/api/data/data?${allParams.toString()}`);
+
+          if (allResponse.ok) {
+            const allData = await allResponse.json();
+            
+            // Récupérer les données des villes locales de l'utilisateur
+            const userVilles = userProfile?.villes || [];
+
+            let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
+            
+            for (const ville of userVilles) {
+              if (ville.id) {
+                const localParams = new URLSearchParams();
+
+                localParams.set('date', monthYear);
+                localParams.set('ville', ville.id);
+                
+                const localResponse = await authFetch(`/api/data/data?${localParams.toString()}`);
+
+                if (localResponse.ok) {
+                  const localData = await localResponse.json();
+
+                  localTotals.totalAbonnes += localData.totalAbonnes || 0;
+                  localTotals.totalVues += localData.totalVues || 0;
+                  localTotals.totalProspectsSignes += localData.prospectsSignesDsLeMois || 0;
+                  localTotals.tauxConversion += localData.tauxDeConversion || 0;
+                }
+              }
+            }
+            
+            // Calculer les données nationales (toutes - locales)
+            const nationalData = {
+              totalAbonnes: (allData.totalAbonnes || 0) - localTotals.totalAbonnes,
+              totalVues: (allData.totalVues || 0) - localTotals.totalVues,
+              totalProspectsSignes: (allData.totalProspectsSignes || 0) - localTotals.totalProspectsSignes,
+              tauxConversion: allData.tauxConversion || 0
+            };
+            
+            setStatistics({
+              prospectsSignes: nationalData.totalProspectsSignes,
+              tauxConversion: nationalData.tauxConversion,
+              abonnes: nationalData.totalAbonnes,
+              vues: nationalData.totalVues
+            });
+          }
+        } else {
+          // Pour "tout" ou une ville spécifique, utiliser directement les données
+          const stats = {
+            prospectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
+            tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
+            abonnes: data.totalAbonnes || 0,
+            vues: data.totalVues || 0
+          };
+
+          setStatistics(stats);
         }
-
-        // Calculer les totaux
-        const totals = filteredData.reduce((acc: any, item: any) => {
-          acc.prospectsSignes += parseInt(item.prospectsSignesDsLeMois) || 0;
-          acc.tauxConversion += parseFloat(item.txDeConversion) || 0;
-          acc.abonnes += parseInt(item.totalAbonnes) || 0;
-          acc.vues += parseInt(item.totalVues) || 0;
-          return acc;
-        }, { prospectsSignes: 0, tauxConversion: 0, abonnes: 0, vues: 0 });
-
-        // Calculer la moyenne du taux de conversion
-        const avgTauxConversion = filteredData.length > 0 ? totals.tauxConversion / filteredData.length : 0;
-
+      } else {
+        // Si la réponse n'est pas ok, mettre les statistiques à 0
         setStatistics({
-          prospectsSignes: totals.prospectsSignes,
-          tauxConversion: avgTauxConversion,
-          abonnes: totals.abonnes,
-          vues: totals.vues
+          prospectsSignes: 0,
+          tauxConversion: 0,
+          abonnes: 0,
+          vues: 0
         });
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error);
-      setStatistics(null);
+    } catch {
+      // En cas d'erreur, mettre les statistiques à 0
+      setStatistics({
+        prospectsSignes: 0,
+        tauxConversion: 0,
+        abonnes: 0,
+        vues: 0
+      });
     } finally {
       setStatisticsLoading(false);
     }
   };
 
   // Fonction pour récupérer les données
-  const fetchData = async () => {
+  const fetchData = async (isNavigation = false) => {
+    // Annuler la requête précédente si elle existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Créer un nouveau contrôleur pour cette requête
+    const abortController = new AbortController();
+    
+    abortControllerRef.current = abortController;
+    
+    if (isNavigation) {
+      setIsNavigating(true);
+    }
+    
     try {
-      setLoading(true);
-
-      // Récupération des prospects
-      const prospectsResponse = await authFetch('/api/prospects');
-      const prospectsData = await prospectsResponse.json();
-
-      setProspects(prospectsData.prospects || []);
-
-      // Récupération des clients
-      const clientsResponse = await authFetch('/api/clients');
-      const clientsData = await clientsResponse.json();
-
-      setClients(clientsData.clients || []);
-
       // Récupération des événements d'agenda, todos et statistiques
-      await Promise.all([fetchAgenda(), fetchTodos(), fetchStatistics()]);
-    } catch {
-      // Gestion des erreurs de récupération des données
-      setProspects([]);
-      setClients([]);
-      setEvents([]);
-      setTodoItems([]);
+      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
+    } catch (error) {
+      // Ignorer les erreurs d'annulation
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      throw error;
     } finally {
-      setLoading(false);
+      if (isNavigation) {
+        setIsNavigating(false);
+      }
+      abortControllerRef.current = null;
     }
   };
 
@@ -324,15 +453,22 @@ export default function HomePage() {
 
   // Effet pour recharger agenda, todos et statistiques quand la date change
   useEffect(() => {
-    fetchAgenda();
-    fetchTodos();
-    fetchStatistics();
+    fetchData(true);
   }, [selectedDate]);
 
   // Effet pour recharger les statistiques quand la ville change
   useEffect(() => {
     fetchStatistics();
   }, [selectedCity]);
+
+  // Cleanup pour annuler les requêtes en cours
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Calcul du taux de conversion (maintenant géré par l'API statistiques)
   // const conversionRate = useMemo(() => {
@@ -346,28 +482,28 @@ export default function HomePage() {
 
   const metrics = [
     {
-      value: statisticsLoading ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
       label: "Nombre d'abonnés",
       icon: <ChartBarIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-green-stats/40",
       iconColor: "text-custom-green-stats",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? `+${(statistics.vues / 1000000).toFixed(1)}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-rose/40",
       iconColor: "text-custom-rose",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
       label: "Prospects signés",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
       iconColor: "text-yellow-400",
     },
     {
-      value: statisticsLoading ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
       label: "Taux de conversion",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-orange-food/40",
@@ -401,49 +537,66 @@ export default function HomePage() {
     }));
   }, [todoItems]);
 
-  const handleAddTodo = async () => {
-    if (newTodo.mission.trim()) {
-      try {
+  // Transformation des factures pour l'affichage
+  const displayInvoices = useMemo(() => {
+    return invoices.slice(0, 3).map((inv) => ({
+      id: inv.id,
+      client: inv.nomEtablissement || "Nom client",
+      date: inv.date,
+      montant: inv.montant || 0,
+    }));
+  }, [invoices]);
 
-        // Récupérer l'ID du collaborateur
-        const meRes = await authFetch('/api/auth/me');
+  const formatAmount = (amount: number) =>
+    new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+      amount || 0
+    );
 
-        if (!meRes.ok) return;
-        const me = await meRes.json();
-        const collaboratorId = me.id as string;
+  const handleAddInvoice = async (invoiceData: any) => {
+    try {
+      const response = await authFetch("/api/facturation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      });
 
-        const payload = {
-          'Nom de la tâche': newTodo.mission,
-          'Date de création': new Date().toISOString(),
-          'Statut': newTodo.status,
-          'Type de tâche': 'Général',
-          'Date d\'échéance': newTodo.deadline || '',
-          'Collaborateur': [collaboratorId]
-        };
-
-        const response = await authFetch('/api/todo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          // Réinitialiser le formulaire
-          setNewTodo({
-            mission: "",
-            deadline: "",
-            status: "En cours",
-          });
-
-          onAddTodoModalClose();
-
-          // Recharger les todos
-          await fetchTodos();
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'ajout du todo:', error);
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
       }
+    } catch {
+      // ignore
     }
+  };
+
+  const handleEditInvoice = async (invoiceData: any) => {
+    try {
+      if (!selectedInvoice) return;
+
+      const response = await authFetch(`/api/facturation?id=${encodeURIComponent(selectedInvoice.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleTodoAdded = async () => {
+    // Recharger les todos
+    await fetchTodos();
+  };
+
+  // Fonctions pour ouvrir le modal unifié avec le bon type
+  const openUnifiedModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
+    setCurrentEventType(type);
+    setIsUnifiedModalOpen(true);
   };
 
   return (
@@ -463,19 +616,21 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between">
               {/* Location Filters - Design avec "Tout" séparé et villes groupées */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {/* Bouton "Tout" séparé */}
-                <Button
-                  className={
-                    selectedCity === "tout"
-                      ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
-                  }
-                  size="sm"
-                  variant="solid"
-                  onPress={() => setSelectedCity("tout")}
-                >
-                  Tout
-                </Button>
+                {/* Bouton "Tout" séparé - affiché seulement si l'utilisateur a plusieurs villes */}
+                {userProfile?.villes && userProfile.villes.length > 1 && (
+                  <Button
+                    className={
+                      selectedCity === "tout"
+                        ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
+                    }
+                    size="sm"
+                    variant="solid"
+                    onPress={() => setSelectedCity("tout")}
+                  >
+                    Tout
+                  </Button>
+                )}
 
                 {/* Groupe des villes locales de l'utilisateur */}
                 {cities.filter(city => city.key !== "tout" && city.key !== "national").length > 0 && (
@@ -549,9 +704,12 @@ export default function HomePage() {
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
 
-            {selectedDate
-              .toDate(getLocalTimeZone())
-              .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            <div className="flex items-center gap-2">
+              {selectedDate
+                .toDate(getLocalTimeZone())
+                .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </div>
+            
             <Button
               isIconOnly
               className="text-gray-600"
@@ -590,10 +748,10 @@ export default function HomePage() {
               {/* Agenda Section */}
               <AgendaSection
                 events={agendaEvents}
-                loading={agendaLoading}
-                onPublicationSelect={() => setIsPublicationModalOpen(true)}
-                onRendezVousSelect={() => setIsRdvModalOpen(true)}
-                onTournageSelect={() => setIsTournageModalOpen(true)}
+                loading={agendaLoading || isNavigating}
+                onPublicationSelect={() => openUnifiedModal("publication")}
+                onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
+                onTournageSelect={() => openUnifiedModal("tournage")}
               />
 
               {/* To do Section */}
@@ -612,7 +770,7 @@ export default function HomePage() {
                   </Button>
                 </div>
                 <div className="space-y-2 lg:space-y-3">
-                  {todoLoading ? (
+                  {(todoLoading || isNavigating) ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="text-sm text-gray-500"><Spinner /></div>
                     </div>
@@ -644,6 +802,51 @@ export default function HomePage() {
                   )}
                 </div>
               </div>
+
+              {/* Paiement Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Paiement
+                  </h3>
+                  <Button
+                    isIconOnly
+                    color='primary'
+                    size="sm"
+                    onPress={() => {
+                      setSelectedInvoice(null);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2 lg:space-y-3">
+                  {(invoicesLoading || isNavigating) ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500"><Spinner /></div>
+                    </div>
+                  ) : displayInvoices.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500">Pas de résultat</div>
+                    </div>
+                  ) : (
+                    displayInvoices.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between py-4 border-b border-gray-100">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-light text-primary">{inv.client}</p>
+                          <p className="text-xs text-primary-light">
+                            {new Date(inv.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
+                          </p>
+                        </div>
+                        <span className="text-xs px-3 py-1 rounded-md bg-green-100 text-green-600">
+                          {formatAmount(inv.montant)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </CardBody>
@@ -670,72 +873,18 @@ export default function HomePage() {
       </Modal>
 
       {/* Modal d'ajout de tâche ToDo */}
-      <Modal
+      <TodoModal
         isOpen={isAddTodoModalOpen}
-        placement="center"
-        onClose={onAddTodoModalClose}
-      >
-        <ModalContent>
-          <ModalHeader className="flex justify-center">
-            Ajouter une nouvelle tâche
-          </ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <FormLabel htmlFor="mission" isRequired={true}>
-                Mission
-              </FormLabel>
-              <Input
-                isRequired
-                id="mission"
-                placeholder="Titre de la tâche"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newTodo.mission}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, mission: e.target.value }))
-                }
-              />
-              <FormLabel htmlFor="deadline" isRequired={true}>
-                Deadline
-              </FormLabel>
-              <Input
-                id="deadline"
-                type="date"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newTodo.deadline}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter className="flex justify-between">
-            <Button className="flex-1 border-1" color='primary' variant="bordered" onPress={onAddTodoModalClose}>
-              Annuler
-            </Button>
-            <Button
-              className="flex-1"
-              color='primary'
-              onPress={handleAddTodo}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        onOpenChange={onAddTodoModalClose}
+        onTodoAdded={handleTodoAdded}
+      />
 
-      {/* Modals d'agenda */}
-      <AgendaModals
-        isPublicationModalOpen={isPublicationModalOpen}
-        isRdvModalOpen={isRdvModalOpen}
-        isTournageModalOpen={isTournageModalOpen}
-        setIsPublicationModalOpen={setIsPublicationModalOpen}
-        setIsRdvModalOpen={setIsRdvModalOpen}
-        setIsTournageModalOpen={setIsTournageModalOpen}
+      {/* Modal unifié pour tous les types d'événements */}
+      <UnifiedEventModal
+        eventType={currentEventType}
+        isOpen={isUnifiedModalOpen}
         onEventAdded={fetchData}
+        onOpenChange={setIsUnifiedModalOpen}
       />
 
       {/* Modal d'ajout de prospect */}
@@ -743,6 +892,15 @@ export default function HomePage() {
         isOpen={isProspectModalOpen}
         onClose={() => setIsProspectModalOpen(false)}
         onProspectAdded={fetchData}
+      />
+
+      {/* Modal d'ajout de facture */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        selectedInvoice={selectedInvoice}
+        onEdit={handleEditInvoice}
+        onOpenChange={setIsInvoiceModalOpen}
+        onSave={handleAddInvoice}
       />
     </DashboardLayout>
   );

@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const records = await base('COLLABORATEURS')
       .select({
-        filterByFormula: `{Email EPICU} = '${email}'`,
+        filterByFormula: `{Email perso} = '${email}'`,
         maxRecords: 1,
       })
       .firstPage();
@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: accessToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 15 * 60 * 1000).toISOString(), // 15 min
+          expires_at: new Date(now + 4 * 60 * 60 * 1000).toISOString(), // 4 heures
         },
       },
     ]);
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: refreshToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
+          expires_at: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 jours
         },
       },
     ]);
@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Connexion réussie',
       user: {
         id: user.id,
-        email: user.get('Email EPICU'),
+        email: user.get('Email perso'),
         firstname: user.get('Prénom'),
         lastname: user.get('Nom'),
         villes: villesEpicu,

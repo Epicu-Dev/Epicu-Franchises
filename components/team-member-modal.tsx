@@ -21,7 +21,7 @@ interface TeamMember {
   name: string;
   role: string;
   location: string;
-  avatar: string;
+  avatar?: string;
   category: "siege" | "franchise" | "prestataire";
   city: string;
   firstName: string;

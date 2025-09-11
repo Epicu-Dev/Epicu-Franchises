@@ -2,11 +2,11 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Card } from "@heroui/card";
 import { CardBody } from "@heroui/card";
 import { CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
+import { Avatar } from "@heroui/avatar";
 import {
   HomeIcon,
   ChartBarIcon,
@@ -16,7 +16,6 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
   BuildingStorefrontIcon,
-  CubeIcon,
   Cog6ToothIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
@@ -26,10 +25,10 @@ import {
   ArrowRightIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 import { useUser } from "../contexts/user-context";
 import { useLoading } from "../contexts/loading-context";
-import { UserProfile } from "../types/user";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -39,7 +38,7 @@ interface SidebarProps {
 export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { userProfile, userType, setUserType } = useUser();
+  const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -211,25 +210,23 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             </Button>
           </div>
 
+
+
           {/* User Profile Section */}
           <CardHeader className="p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  <Image
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                    height={40}
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-                    width={40}
-                  />
-                </div>
+                <Avatar
+                  className="w-10 h-10 flex-shrink-0"
+                  name={userProfile ? `${userProfile.firstname || 'Prénom'} ${userProfile.lastname || 'Nom'}` : 'Utilisateur'}
+                  src={userProfile?.trombi?.[0]?.url}
+                />
                 <div className="flex flex-col">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {userProfile ? `${userProfile.firstname || 'Prénom'} ${userProfile.lastname || 'Nom'}` : 'Chargement...'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userProfile?.role || 'Chargement du rôle...'}
+                    {userProfile?.role ? userProfile.role : 'Rôle non défini'}
                   </p>
                 </div>
               </div>
@@ -323,7 +320,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
 
           </div>
           <div className="flex justify-center items-center pb-6">
-            <img alt="logo" height={42} src="/images/logo-e.png" width={42} />
+            <Image alt="logo" height={42} src="/images/logo-e.png" width={42} />
           </div>
         </CardBody>
       </Card>

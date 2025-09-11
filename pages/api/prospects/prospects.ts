@@ -85,6 +85,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Date de prise de contact',
         'Commentaires',
         'Date de relance',
+        'Téléphone',
+        'Email',
+        'Adresse',
       ];
 
       const allowedOrderBy = new Set(fields);
@@ -163,19 +166,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const prospects = pageRecords.map((record: any) => {
         const catIds = record.get('Catégorie') || [];
-        const catName = Array.isArray(catIds) && catIds.length > 0 ? (categoryNames[catIds[0]] || catIds[0]) : '';
+        const catName = catIds.length > 0 ? catIds.map((id: string) => categoryNames[id]) : [];
         const spIds = record.get('Suivi par') || [];
         const suiviPar = Array.isArray(spIds) && spIds.length > 0 ? (suiviNames[spIds[0]] || spIds[0]) : '';
+
         return {
           id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
           categorie: catName,
           ville: record.get('Ville'),
-          telephone: record.get('Téléphone') || null,
+          telephone: record.get('Téléphone'),
           suiviPar,
           datePriseContact: record.get('Date de prise de contact'),
           commentaires: record.get('Commentaires'),
           dateRelance: record.get('Date de relance'),
+          email: record.get('Email'),
+          adresse: record.get('Adresse'),
         };
       });
 
@@ -191,33 +197,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const body = req.body || {};
         const nom = body["Nom de l'établissement"];
-        const villeRaw = body['Ville EPICU'];
-        const telephone = body['Téléphone'];
-        const categorieRaw = body['Catégorie'];
-        const datePrise = body['Date de prise de contact'];
-        const dateRelance = body['Date de relance'];
-        const commentaires = body['Commentaires'];
-        const email = body['Email'];
-        const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'];
+        const ville = body['Ville'] || body.ville || null;
+        const villeEpicu = body['Ville EPICU'] || null;
+        const telephone = body['Téléphone'] || body.telephone || null;
+        const categorieRaw = body['Catégorie'] || body.categorie || null;
+        const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
+        const dateRelance = body['Date de relance'] || body.dateRelance || null;
+        const commentaires = body['Commentaires'] || body.commentaires || null;
+        const email = body['Email'] || body.email || null;
+        const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'] || body.suivi || null;
 
-        const missing: string[] = [];
-        if (!nom) missing.push("Nom de l'établissement");
-        if (!villeRaw) missing.push('Ville EPICU');
-        if (!telephone) missing.push('Téléphone');
-        if (!categorieRaw) missing.push('Catégorie');
-        if (!dateRelance) missing.push('Date de relance');
-        if (missing.length > 0) return res.status(400).json({ error: 'Champs requis manquants', missing });
+        // Require establishment name and both date fields
+        if (!nom) return res.status(400).json({ error: `Champs requis: Nom de l'établissement` });
+        if (!datePrise) return res.status(400).json({ error: `Champs requis: Date de prise de contact` });
 
         const fieldsToCreate: any = {};
         fieldsToCreate["Nom de l'établissement"] = nom;
-        fieldsToCreate['Téléphone'] = telephone;
+        if (telephone) fieldsToCreate['Téléphone'] = telephone;
         if (email) fieldsToCreate['Email'] = email;
         if (datePrise) fieldsToCreate['Date de prise de contact'] = datePrise;
-        fieldsToCreate['Date de relance'] = dateRelance;
         if (commentaires) fieldsToCreate['Commentaires'] = commentaires;
+        if (dateRelance) fieldsToCreate['Date de relance'] = dateRelance;
+        if (ville) fieldsToCreate['Ville'] = ville;
 
-        const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
-        if (villeId) fieldsToCreate['Ville'] = [villeId];
+        if (villeEpicu) {
+          const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicu, ['Ville', 'Name']);
+          if (villeId) fieldsToCreate['Ville EPICU'] = [villeId];
+        }
 
         const catIds = await resolveCategoryIds(categorieRaw);
         if (catIds.length > 0) fieldsToCreate['Catégorie'] = catIds;
@@ -226,7 +232,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (suiviIds.length > 0) fieldsToCreate['Suivi par'] = suiviIds;
 
         const created = await base(TABLE_NAME).create([{ fields: fieldsToCreate }]);
-        return res.status(201).json({ id: created[0].id, fields: created[0].fields });
+        const createdId = created[0].id;
+
+        // Fetch the created record and return it in the same shape as GET
+        const record = await base(TABLE_NAME).find(createdId);
+
+        // resolve category & suivi names
+        const catIdsOnRecord = record.get('Catégorie') || [];
+        const suiviIdsOnRecord = record.get('Suivi par') || [];
+
+        const categoryNames: Record<string, string> = {};
+        if (Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0) {
+          const catRecords = await base('Catégories').select({ filterByFormula: `OR(${catIdsOnRecord.map((id: string) => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Name'], maxRecords: catIdsOnRecord.length }).all();
+          catRecords.forEach((c: any) => { categoryNames[c.id] = c.get('Name'); });
+        }
+
+        const suiviNames: Record<string, string> = {};
+        if (Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0) {
+          const collabRecords = await base('Collaborateurs').select({ filterByFormula: `OR(${suiviIdsOnRecord.map((id: string) => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Prénom', 'Nom'], maxRecords: suiviIdsOnRecord.length }).all();
+          collabRecords.forEach((c: any) => { suiviNames[c.id] = `${c.get('Prénom') || ''} ${c.get('Nom') || ''}`.trim(); });
+        }
+
+        const catName = Array.isArray(catIdsOnRecord) && catIdsOnRecord.length > 0
+          ? catIdsOnRecord.map((id: string) => categoryNames[id])
+          : [];
+        const spName = Array.isArray(suiviIdsOnRecord) && suiviIdsOnRecord.length > 0
+          ? (suiviNames[suiviIdsOnRecord[0]] || suiviIdsOnRecord[0])
+          : '';
+
+        const prospect = {
+          id: record.id,
+          nomEtablissement: record.get("Nom de l'établissement"),
+          categorie: catName,
+          ville: record.get('Ville'),
+          telephone: record.get('Téléphone'),
+          suiviPar: spName,
+          datePriseContact: record.get('Date de prise de contact'),
+          dateRelance: record.get('Date de relance'),
+          commentaires: record.get('Commentaires'),
+          email: record.get('Email'),
+          adresse: record.get('Adresse'),
+        };
+
+        return res.status(201).json({ prospect });
       } catch (err: any) {
         console.error('prospects POST error', err);
         return res.status(500).json({ error: 'Erreur création prospect', details: err?.message || String(err) });
@@ -239,18 +287,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const id = (req.query.id as string) || body.id;
         if (!id) return res.status(400).json({ error: 'id requis' });
 
+        // Fetch existing to determine current date fields
+        const existing = await base(TABLE_NAME).find(id);
+        const existingDatePrise = existing.get('Date de prise de contact') || null;
+        const existingDateRelance = existing.get('Date de relance') || null;
+
         const fieldsToUpdate: any = {};
         if (Object.prototype.hasOwnProperty.call(body, "Nom de l'établissement")) fieldsToUpdate["Nom de l'établissement"] = body["Nom de l'établissement"];
         if (Object.prototype.hasOwnProperty.call(body, 'Téléphone')) fieldsToUpdate['Téléphone'] = body['Téléphone'];
         if (Object.prototype.hasOwnProperty.call(body, 'Date de prise de contact')) fieldsToUpdate['Date de prise de contact'] = body['Date de prise de contact'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) fieldsToUpdate['Date de relance'] = body['Date de relance'];
         if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
         if (Object.prototype.hasOwnProperty.call(body, 'Email')) fieldsToUpdate['Email'] = body['Email'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) fieldsToUpdate['Date de relance'] = body['Date de relance'];
 
+        // Gérer le champ Ville (texte libre)
+        if (Object.prototype.hasOwnProperty.call(body, 'Ville')) {
+          fieldsToUpdate['Ville'] = body['Ville'];
+        }
+
+        // Gérer le champ Ville EPICU (relation vers VILLES EPICU)
         if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
-          const villeRaw = body['Ville EPICU'];
-          const villeId = await ensureRelatedRecord('VILLES EPICU', villeRaw, ['Ville', 'Name']);
-          if (villeId) fieldsToUpdate['Ville'] = [villeId]; else fieldsToUpdate['Ville'] = [];
+          const villeEpicuRaw = body['Ville EPICU'];
+          if (villeEpicuRaw) {
+            const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicuRaw, ['Ville', 'Name']);
+            if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
+          } else {
+            fieldsToUpdate['Ville EPICU'] = [];
+          }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, 'Catégorie')) {
@@ -263,6 +326,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const raw = body['Suivi par'] || body['suiviPar'];
           const suiviIds = await resolveCollaboratorIds(raw);
           if (suiviIds.length > 0) fieldsToUpdate['Suivi par'] = suiviIds; else fieldsToUpdate['Suivi par'] = [];
+        }
+
+        const resultingDatePrise = Object.prototype.hasOwnProperty.call(fieldsToUpdate, 'Date de prise de contact') ? fieldsToUpdate['Date de prise de contact'] : existingDatePrise;
+        const resultingDateRelance = Object.prototype.hasOwnProperty.call(fieldsToUpdate, 'Date de relance') ? fieldsToUpdate['Date de relance'] : existingDateRelance;
+
+        // Validation : la date de prise de contact est requise seulement si elle est fournie dans la requête
+        if (Object.prototype.hasOwnProperty.call(body, 'Date de prise de contact') && !body['Date de prise de contact']) {
+          return res.status(400).json({ error: `Champs requis: Date de prise de contact` });
         }
 
         if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });

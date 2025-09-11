@@ -8,7 +8,7 @@ La page prospects est une interface complète pour la gestion des prospects de l
 
 ### 🎯 Fonctionnalités principales
 
-- **Onglets par statut** : Organisation en 3 onglets (À contacter, En discussion, Glacial)
+- **Onglets par statut** : Organisation en 3 onglets (Contacté, En discussion, Glacial)
 - **Tableau des prospects** : Affichage des informations prospects dans un tableau responsive
 - **Recherche** : Recherche par nom d'établissement ou email
 - **Filtrage double** : Filtrage par catégorie et par responsable de suivi
@@ -40,7 +40,7 @@ La page prospects est une interface complète pour la gestion des prospects de l
 
 ### 🏷️ Statuts des prospects
 
-- **À contacter** : Prospects à contacter pour la première fois
+- **Contacté** : Prospects Contacté pour la première fois
 - **En discussion** : Prospects avec qui une discussion est en cours
 - **Glacial** : Prospects froids ou peu réactifs
 
@@ -120,7 +120,7 @@ L'application utilise actuellement des données mock pour la démonstration :
 ### 🚀 Accès à la page
 
 1. Naviguer vers `/prospects` dans l'application
-2. La page s'affiche avec l'onglet "À contacter" actif par défaut
+2. La page s'affiche avec l'onglet "Contacté" actif par défaut
 3. Utiliser les onglets pour naviguer entre les différents statuts
 
 ### ➕ Ajouter un prospect
@@ -147,7 +147,7 @@ L'application utilise actuellement des données mock pour la démonstration :
 
 ### 📋 Navigation par onglets
 
-- **À contacter** : Prospects à contacter pour la première fois
+- **Contacté** : Prospects Contacté pour la première fois
 - **En discussion** : Prospects avec qui une discussion est en cours
 - **Glacial** : Prospects froids ou peu réactifs
 

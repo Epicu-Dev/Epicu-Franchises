@@ -13,24 +13,13 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 
+import { useUser } from "../contexts/user-context";
+import { useAuthFetch } from "../hooks/use-auth-fetch";
+
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
-
-interface Prospect {
-  id?: string;
-  siret: string;
-  nomEtablissement: string;
-  ville: string;
-  telephone: string;
-  categorie: string;
-  statut: string;
-  datePremierRendezVous: string;
-  dateRelance: string;
-  vientDeRencontrer: boolean;
-  commentaire: string;
-  email?: string;
-  adresse?: string;
-}
+import { Prospect } from "@/types/prospect";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface ProspectModalProps {
   isOpen: boolean;
@@ -47,20 +36,24 @@ export function ProspectModal({
   editingProspect = null,
   isEditing = false
 }: ProspectModalProps) {
+  const { authFetch } = useAuthFetch();
+  const { userProfile } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string; villes?: string[] }[]>([]);
   const [newProspect, setNewProspect] = useState<Prospect>({
-    siret: "",
+    id: "",
     nomEtablissement: "",
     ville: "",
+    villeEpicu: "",
     telephone: "",
-    categorie: "",
-    statut: "",
-    datePremierRendezVous: "",
+    categorie: ["FOOD"],
+    statut: "a_contacter",
+    datePriseContact: "",
     dateRelance: "",
-    vientDeRencontrer: false,
-    commentaire: "",
+    commentaires: "",
+    suiviPar: "",
     email: "",
     adresse: "",
   });
@@ -68,27 +61,70 @@ export function ProspectModal({
   // Initialiser le formulaire avec les données du prospect à éditer
   useEffect(() => {
     if (isEditing && editingProspect) {
-      setNewProspect(editingProspect);
+      // Si le prospect a un suiviPar (nom), trouver l'ID correspondant
+      let prospectToSet = { ...editingProspect };
+      if (editingProspect.suiviPar && collaborateurs.length > 0) {
+        const collaborateur = collaborateurs.find(collab => collab.nomComplet === editingProspect.suiviPar);
+        if (collaborateur) {
+          prospectToSet.suiviPar = collaborateur.id;
+        }
+      }
+      setNewProspect(prospectToSet);
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       setNewProspect({
-        siret: "",
+        id: "",
         nomEtablissement: "",
         ville: "",
+        villeEpicu: "",
         telephone: "",
-        categorie: "FOOD",
+        categorie: ["FOOD"],
         statut: "a_contacter",
-        datePremierRendezVous: "",
+        datePriseContact: "",
         dateRelance: "",
-        vientDeRencontrer: false,
-        commentaire: "",
+        commentaires: "",
+        suiviPar: "",
         email: "",
         adresse: "",
       });
     }
     setError(null);
     setFieldErrors({});
-  }, [isEditing, editingProspect, isOpen]);
+  }, [isEditing, editingProspect, isOpen, collaborateurs]);
+
+  // Récupérer la liste des collaborateurs au chargement du modal
+  useEffect(() => {
+    const fetchCollaborateurs = async () => {
+      try {
+        const response = await authFetch('/api/collaborateurs?limit=200&offset=0');
+        if (response.ok) {
+          const data = await response.json();
+          let allCollaborateurs = data.results || [];
+
+          // Filtrer les collaborateurs selon les villes de l'utilisateur connecté
+          if (userProfile?.villes && userProfile.villes.length > 0) {
+            const userVilles = userProfile.villes.map(v => v.ville);
+            allCollaborateurs = allCollaborateurs.filter((collab: any) => {
+              // Si le collaborateur a des villes, vérifier qu'il y a au moins une intersection
+              if (collab.villes && collab.villes.length > 0) {
+                return collab.villes.some((ville: string) => userVilles.includes(ville));
+              }
+              // Si le collaborateur n'a pas de villes spécifiées, l'inclure (probablement un admin)
+              return true;
+            });
+          }
+
+          setCollaborateurs(allCollaborateurs);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération des collaborateurs:', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchCollaborateurs();
+    }
+  }, [isOpen, userProfile?.villes]);
 
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
@@ -115,19 +151,16 @@ export function ProspectModal({
           delete errors.telephone;
         }
         break;
-      case 'datePremierRendezVous':
+      case 'datePriseContact':
         if (!value) {
-          errors.datePremierRendezVous = 'La date du premier rendez-vous est requise';
+          errors.datePriseContact = 'La date de prise de contact est requise';
         } else {
-          delete errors.datePremierRendezVous;
+          delete errors.datePriseContact;
         }
         break;
       case 'dateRelance':
-        if (!value) {
-          errors.dateRelance = 'La date de relance est requise';
-        } else {
-          delete errors.dateRelance;
-        }
+        // La date de relance est optionnelle, pas de validation requise
+        delete errors.dateRelance;
         break;
     }
 
@@ -137,7 +170,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePremierRendezVous', 'dateRelance'];
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -164,19 +197,30 @@ export function ProspectModal({
 
       // Adapter les données pour l'API Airtable
       const prospectData: Record<string, any> = {
-        'SIRET': newProspect.siret,
         "Nom de l'établissement": newProspect.nomEtablissement,
-        'Ville EPICU': newProspect.ville,
+        'Ville': newProspect.ville,
         'Téléphone': newProspect.telephone,
         'Catégorie': newProspect.categorie,
         'Statut': newProspect.statut,
-        'Date du premier contact': newProspect.datePremierRendezVous,
+        'Date de prise de contact': newProspect.datePriseContact,
         'Date de relance': newProspect.dateRelance,
-        'Je viens de le rencontrer (bool)': newProspect.vientDeRencontrer,
-        'Commentaires': newProspect.commentaire,
+        'Commentaires': newProspect.commentaires,
         'Email': newProspect.email,
         'Adresse': newProspect.adresse,
       };
+
+      // Gérer la ville Epicu : si l'utilisateur n'a qu'une seule ville, l'envoyer automatiquement
+      // Sinon, utiliser la sélection du dropdown
+      if (userProfile?.villes && userProfile.villes.length === 1) {
+        prospectData['Ville EPICU'] = userProfile.villes[0].ville;
+      } else if (newProspect.villeEpicu) {
+        prospectData['Ville EPICU'] = newProspect.villeEpicu;
+      }
+
+      // Gérer le suivi par : envoyer comme un tableau avec l'ID du collaborateur
+      if (newProspect.suiviPar) {
+        prospectData['Suivi par'] = [newProspect.suiviPar];
+      }
 
 
 
@@ -209,16 +253,17 @@ export function ProspectModal({
 
       // Réinitialiser le formulaire et fermer le modal
       setNewProspect({
-        siret: "",
+        id: "",
         nomEtablissement: "",
         ville: "",
+        villeEpicu: "",
         telephone: "",
-        categorie: "",
-        statut: "",
-        datePremierRendezVous: "",
+        categorie: ["FOOD"],
+        statut: "a_contacter",
+        datePriseContact: "",
         dateRelance: "",
-        vientDeRencontrer: false,
-        commentaire: "",
+        commentaires: "",
+        suiviPar: "",
         email: "",
         adresse: "",
       });
@@ -237,16 +282,17 @@ export function ProspectModal({
     setError(null);
     setFieldErrors({});
     setNewProspect({
-      siret: "",
+      id: "",
       nomEtablissement: "",
       ville: "",
+      villeEpicu: "",
       telephone: "",
-      categorie: "",
-      statut: "",
-      datePremierRendezVous: "",
+      categorie: ["FOOD"],
+      statut: "a_contacter",
+      datePriseContact: "",
       dateRelance: "",
-      vientDeRencontrer: false,
-      commentaire: "",
+      commentaires: "",
+      suiviPar: "",
       email: "",
       adresse: "",
     });
@@ -266,21 +312,53 @@ export function ProspectModal({
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4">
-            <FormLabel htmlFor="siret" isRequired={true}>
-              N° SIRET
+            <FormLabel htmlFor="categorie" isRequired={true}>
+              Catégorie 1
             </FormLabel>
-            <Input
+            <StyledSelect
               isRequired
-              id="siret"
-              classNames={{
-                inputWrapper: "bg-page-bg",
+              id="categorie1"
+              selectedKeys={[newProspect.categorie[0] ?? ""]}
+              onSelectionChange={(keys) => {
+                const selected = Array.from(keys).filter(
+                  (key): key is "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" =>
+                    ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"].includes(key as string)
+                );
+                // Always keep categorie as a tuple of length 1 (for categorie1)
+                setNewProspect((prev) => ({
+                  ...prev,
+                  categorie: [selected[0] ?? prev.categorie[0]],
+                }));
               }}
-              placeholder="12345678901234"
-              value={newProspect.siret}
-              onChange={(e) =>
-                setNewProspect((prev) => ({ ...prev, siret: e.target.value }))
-              }
-            />
+            >
+              <SelectItem key="FOOD">FOOD</SelectItem>
+              <SelectItem key="SHOP">SHOP</SelectItem>
+              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+              <SelectItem key="FUN">FUN</SelectItem>
+              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+            </StyledSelect>
+            {newProspect.categorie.length > 1 ? (
+              <div>
+                <FormLabel htmlFor="categorie" isRequired={false}>
+                  Catégorie 2
+                </FormLabel>
+                <StyledSelect
+                  id="categorie2"
+                  selectedKeys={[newProspect.categorie[1] || ""]}
+                  onSelectionChange={(keys) =>
+                    Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none') == "none" ? setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] })) : setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0], ...Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY")] }))
+                  }
+                >
+                  <SelectItem key="none">Aucune</SelectItem>
+                  <SelectItem key="FOOD">FOOD</SelectItem>
+                  <SelectItem key="SHOP">SHOP</SelectItem>
+                  <SelectItem key="TRAVEL">TRAVEL</SelectItem>
+                  <SelectItem key="FUN">FUN</SelectItem>
+                  <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                </StyledSelect>
+              </div>
+            ) : <Button endContent={<PlusIcon className="h-4 w-4" />} color='primary' variant="bordered" className="border-1" onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie (Optionnel)</Button>}
+           
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>
@@ -304,6 +382,32 @@ export function ProspectModal({
                 validateField('nomEtablissement', value);
               }}
             />
+
+            <FormLabel htmlFor="suiviPar" isRequired={true}>
+              Suivi par
+            </FormLabel>
+            <StyledSelect
+              id="suiviPar"
+              placeholder="Sélectionner un suivi"
+              selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
+              onSelectionChange={(keys) => {
+                const selectedSuiviPar = Array.from(keys)[0] as string;
+                setNewProspect((prev) => ({ ...prev, suiviPar: selectedSuiviPar }));
+              }}
+            >
+              {collaborateurs.length > 0 ? (
+                <>
+                  {collaborateurs.map((collab) => (
+                    <SelectItem key={collab.id}>
+                      {collab.nomComplet}
+                    </SelectItem>
+                  ))}
+                </>
+              ) : (
+                <SelectItem key="loading">Chargement...</SelectItem>
+              )}
+            </StyledSelect>
+
             <FormLabel htmlFor="ville" isRequired={true}>
               Ville
             </FormLabel>
@@ -315,15 +419,42 @@ export function ProspectModal({
               errorMessage={fieldErrors.ville}
               id="ville"
               isInvalid={!!fieldErrors.ville}
-              placeholder="Paris"
+              placeholder="Nom de la ville"
               value={newProspect.ville}
               onChange={(e) => {
                 const value = e.target.value;
 
-                setNewProspect((prev) => ({ ...prev, ville: value }));
+                setNewProspect((prev) => ({
+                  ...prev,
+                  ville: value,
+                }));
                 validateField('ville', value);
               }}
             />
+
+            {userProfile?.villes && userProfile.villes.length > 1 && (
+              <>
+                <FormLabel htmlFor="villeEpicu" isRequired={false}>
+                  Ville Epicu
+                </FormLabel>
+                <StyledSelect
+                  id="villeEpicu"
+                  placeholder="Sélectionner une ville Epicu"
+                  selectedKeys={newProspect.villeEpicu ? [newProspect.villeEpicu] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedVilleEpicu = Array.from(keys)[0] as string;
+
+                    setNewProspect((prev) => ({ ...prev, villeEpicu: selectedVilleEpicu }));
+                  }}
+                >
+                  {userProfile.villes.map((ville) => (
+                    <SelectItem key={ville.ville}>
+                      {ville.ville}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
+              </>
+            )}
             <FormLabel htmlFor="telephone" isRequired={true}>
               Téléphone
             </FormLabel>
@@ -348,72 +479,53 @@ export function ProspectModal({
               }}
             />
 
-            <FormLabel htmlFor="categorie" isRequired={true}>
-              Catégorie
+            <FormLabel htmlFor="email" isRequired={true}>
+              Mail
             </FormLabel>
-            <StyledSelect
-              isRequired
-              id="categorie"
-              selectedKeys={[newProspect.categorie]}
-              onSelectionChange={(keys) =>
+            <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              id="email"
+              placeholder="contact@etablissement.fr"
+              type="email"
+              value={newProspect.email || ""}
+              onChange={(e) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  categorie: Array.from(keys)[0] as string,
+                  email: e.target.value,
                 }))
               }
-            >
-              <SelectItem key="FOOD">FOOD</SelectItem>
-              <SelectItem key="SHOP">SHOP</SelectItem>
-              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-              <SelectItem key="FUN">FUN</SelectItem>
-              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
-            </StyledSelect>
-            <FormLabel htmlFor="statut" isRequired={true}>
-              Statut
-            </FormLabel>
-            <StyledSelect
-              isRequired
-              id="statut"
-              selectedKeys={[newProspect.statut]}
-              onSelectionChange={(keys) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  statut: Array.from(keys)[0] as string,
-                }))
-              }
-            >
-              <SelectItem key="a_contacter">À contacter</SelectItem>
-              <SelectItem key="en_discussion">En discussion</SelectItem>
-              <SelectItem key="glacial">Glacial</SelectItem>
-            </StyledSelect>
-            <FormLabel htmlFor="datePremierRendezVous" isRequired={true}>
-              Date du premier rendez-vous
+            />
+
+
+            <FormLabel htmlFor="datePriseContact" isRequired={true}>
+              Date de prise de contact
             </FormLabel>
             <Input
               isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              errorMessage={fieldErrors.datePremierRendezVous}
-              id="datePremierRendezVous"
-              isInvalid={!!fieldErrors.datePremierRendezVous}
+              errorMessage={fieldErrors.datePriseContact}
+              id="datePriseContact"
+              isInvalid={!!fieldErrors.datePriseContact}
               type="date"
-              value={newProspect.datePremierRendezVous}
+              value={newProspect.datePriseContact}
               onChange={(e) => {
                 const value = e.target.value;
 
                 setNewProspect((prev) => ({
                   ...prev,
-                  datePremierRendezVous: value,
+                  datePriseContact: value,
                 }));
-                validateField('datePremierRendezVous', value);
+                validateField('datePriseContact', value);
               }}
             />
-            <FormLabel htmlFor="dateRelance" isRequired={true}>
+            <FormLabel htmlFor="dateRelance" isRequired={false}>
               Date de la relance
             </FormLabel>
             <Input
-              isRequired
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
@@ -432,76 +544,48 @@ export function ProspectModal({
                 validateField('dateRelance', value);
               }}
             />
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">
-                Je viens de le rencontrer
-              </span>
-              <input
-                checked={newProspect.vientDeRencontrer}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                type="checkbox"
-                onChange={(e) =>
-                  setNewProspect((prev) => ({
-                    ...prev,
-                    vientDeRencontrer: e.target.checked,
-                  }))
+
+            <FormLabel htmlFor="statut" >
+              Etat du prospect
+            </FormLabel>
+            <div>
+
+              <Input
+                isReadOnly
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                id="statut"
+                value={
+                  newProspect.statut === "a_contacter" ? "Contacté" :
+                    newProspect.statut === "en_discussion" ? "En discussion" :
+                      newProspect.statut === "glacial" ? "Glacial" :
+                        newProspect.statut
                 }
               />
+              <p className="text-xs mt-2">
+                Pour changer l&apos;état du prospect, utilisez le bouton &quot;Convertir&quot;
+              </p>
             </div>
-            <FormLabel htmlFor="commentaire" isRequired={false}>
+
+            <FormLabel htmlFor="commentaires" isRequired={false}>
               Commentaire
             </FormLabel>
             <Textarea
-              id="commentaire"
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
+              id="commentaires"
               placeholder="..."
-              value={newProspect.commentaire}
+              value={newProspect.commentaires}
               onChange={(e) =>
                 setNewProspect((prev) => ({
                   ...prev,
-                  commentaire: e.target.value,
+                  commentaires: e.target.value,
                 }))
               }
             />
 
-            <FormLabel htmlFor="email" isRequired={false}>
-              Email
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="email"
-              placeholder="contact@etablissement.fr"
-              type="email"
-              value={newProspect.email || ""}
-              onChange={(e) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  email: e.target.value,
-                }))
-              }
-            />
-
-            <FormLabel htmlFor="adresse" isRequired={false}>
-              Adresse
-            </FormLabel>
-            <Textarea
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="adresse"
-              placeholder="123 Rue de l'établissement, 75001 Ville"
-              value={newProspect.adresse || ""}
-              onChange={(e) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  adresse: e.target.value,
-                }))
-              }
-            />
           </div>
         </ModalBody>
         <ModalFooter className="flex flex-col gap-3">
@@ -526,7 +610,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePremierRendezVous || !newProspect.dateRelance}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact}
               isLoading={isLoading}
               onPress={handleSubmit}
             >

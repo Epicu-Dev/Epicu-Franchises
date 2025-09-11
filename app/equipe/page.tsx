@@ -29,56 +29,22 @@ import { getValidAccessToken } from "../../utils/auth";
 import { TeamMemberModal } from "../../components/team-member-modal";
 import { FranchiseTeamModal } from "../../components/franchise-team-modal";
 import { useUser } from "../../contexts/user-context";
+import { TrombiAttachment } from "../../types/user";
 
 interface TeamMember {
   id: string;
-  name: string;
-  role: string;
-  location: string;
-  avatar: string;
-  category: "siege" | "franchise" | "prestataire";
-  city: string;
-  firstName: string;
-  lastName: string;
-  identifier: string;
-  password: string;
-  birthDate: string;
-  personalEmail: string;
-  franchiseEmail: string;
-  phone: string;
-  postalAddress: string;
-  siret: string;
-  dipSignatureDate: string;
-  franchiseContractSignatureDate: string;
-  trainingCertificateSignatureDate: string;
-}
-
-interface AdminTeamMember {
-  id: string;
-  city: string;
-  firstName: string;
-  lastName: string;
-  identifier: string;
-  password: string;
-  birthDate: string;
-  personalEmail: string;
-  franchiseEmail: string;
-  phone: string;
-  postalAddress: string;
-  siret: string;
-  dipSignatureDate: string;
-  franchiseContractSignatureDate: string;
-  trainingCertificateSignatureDate: string;
+  nom: string;
+  prenom: string;
+  villeEpicu: string[];
+  emailEpicu: string | null;
+  role: string | null;
+  etablissements: string[];
+  trombi: TrombiAttachment[] | null;
 }
 
 
 
-// Interface pour les données de l'API collaborateurs
-interface Collaborateur {
-  id: string;
-  nomComplet: string;
-  villes: string[];
-}
+
 
 export default function EquipePage() {
   const { userProfile, userType } = useUser();
@@ -92,128 +58,6 @@ export default function EquipePage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
 
-  // Données d'exemple pour la vue tableau (admin) - gardées car pas d'API équivalente
-  const mockAdminData: AdminTeamMember[] = [
-    {
-      id: "1",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "2",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "3",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "4",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "5",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "6",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-    {
-      id: "7",
-      city: "Saint-Malo",
-      firstName: "Sylvain",
-      lastName: "Binouz",
-      identifier: "s.binouz",
-      password: "75QCmT87U8rfhc",
-      birthDate: "04.04.1998",
-      personalEmail: "sylvain.binouz@gmail.com",
-      franchiseEmail: "saint-malo@epicu.fr",
-      phone: "0648596769",
-      postalAddress: "1 place de Mairie, Tourcoing",
-      siret: "87450934562398",
-      dipSignatureDate: "12.07.2024",
-      franchiseContractSignatureDate: "02.12.2024",
-      trainingCertificateSignatureDate: "02.12.2024",
-    },
-  ];
 
   // Wrapper fetch avec authentification
   const authFetch = async (input: RequestInfo, init?: RequestInit) => {
@@ -241,7 +85,7 @@ export default function EquipePage() {
         params.set('q', searchTerm);
       }
 
-      const response = await authFetch(`/api/collaborateurs?${params}`);
+      const response = await authFetch(`/api/equipe?${params}`);
 
       if (!response.ok) {
         throw new Error(
@@ -250,94 +94,31 @@ export default function EquipePage() {
       }
 
       const data = await response.json();
-      const collaborateurs: Collaborateur[] = data.results || [];
 
-      // Transformer les données de l'API en format TeamMember
-      const transformedMembers: TeamMember[] = collaborateurs.map((collab, index) => {
-        // Déterminer la catégorie basée sur les villes ou l'index
-        let category: "siege" | "franchise" | "prestataire" = "siege";
-
-        if (index >= 10 && index < 25) category = "franchise";
-        else if (index >= 25) category = "prestataire";
-
-        // Déterminer le rôle basé sur la catégorie
-        let role = "Collaborateur";
-
-        if (category === "siege") role = "Collaborateur Siège";
-        else if (category === "franchise") role = "Franchisé";
-        else if (category === "prestataire") role = "Prestataire";
-
-        // Déterminer la localisation
-        let location = "Siège";
-
-        if (category === "franchise" || category === "prestataire") {
-          location = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-        }
-
-        // Extraire le prénom et nom du nom complet
-        const nomComplet = collab.nomComplet || `Collaborateur ${index + 1}`;
-        const nameParts = nomComplet.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        // Déterminer la ville (première ville de la liste ou ville par défaut)
-        const city = collab.villes && collab.villes.length > 0 ? collab.villes[0] : "Ville non définie";
-
-        // Générer un identifiant basé sur le nom
-        const identifier = `${firstName.toLowerCase().charAt(0)}.${lastName.toLowerCase()}`;
-
-        // Générer un mot de passe temporaire
-        const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-        // Date de naissance par défaut (peut être modifiée plus tard)
-        const birthDate = "01.01.1990";
-
-        // Générer des emails basés sur le nom et la ville
-        const personalEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-        const franchiseEmail = `${city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
-
-        // Générer des données pour les nouveaux champs
-        const phone = "0648596769"; // Téléphone par défaut
-        const postalAddress = "1 place de Mairie, Tourcoing"; // Adresse par défaut
-        const siret = "87450934562398"; // SIRET par défaut
-        const dipSignatureDate = "12.07.2024"; // Date signature DIP par défaut
-        const franchiseContractSignatureDate = "02.12.2024"; // Date signature contrat par défaut
-        const trainingCertificateSignatureDate = "02.12.2024"; // Date signature attestation par défaut
-
-        return {
-          id: collab.id,
-          name: collab.nomComplet || `Collaborateur ${index + 1}`,
-          role,
-          location,
-          avatar: `/api/placeholder/150/150`,
-          category,
-          city,
-          firstName,
-          lastName,
-          identifier,
-          password,
-          birthDate,
-          personalEmail,
-          franchiseEmail,
-          phone,
-          postalAddress,
-          siret,
-          dipSignatureDate,
-          franchiseContractSignatureDate,
-          trainingCertificateSignatureDate,
-        };
-      });
+      // Utiliser directement les données de l'API
+      const members: TeamMember[] = data.results || [];
 
       // Filtrer par catégorie si sélectionnée
-      let filteredMembers = transformedMembers;
+      let filteredMembers = members;
 
       if (selectedCategory && selectedCategory !== "tout") {
-        filteredMembers = transformedMembers.filter(member => member.category === selectedCategory);
+        filteredMembers = members.filter(member => {
+          const roleLower = (member.role || "").toLowerCase();
+          if (selectedCategory === "siege") {
+            return !roleLower.includes("franchise") && !roleLower.includes("franchisé") && !roleLower.includes("prestataire");
+          } else if (selectedCategory === "franchise") {
+            return roleLower.includes("franchise") || roleLower.includes("franchisé");
+          } else if (selectedCategory === "prestataire") {
+            return roleLower.includes("prestataire");
+          }
+          return true;
+        });
       }
 
       setMembers(filteredMembers);
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Erreur lors de la récupération des membres:', error);
       // En cas d'erreur, on garde les données existantes ou on vide la liste
       setMembers([]);
@@ -366,6 +147,7 @@ export default function EquipePage() {
     // Vérifier aussi le rôle dans le profil utilisateur
     if (userProfile?.role) {
       const role = userProfile.role.toLowerCase();
+
       return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
     }
 
@@ -457,13 +239,13 @@ export default function EquipePage() {
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                   }}
-                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   endContent={
                     searchTerm && (
                       <XMarkIcon className="h-4 w-4 cursor-pointer" onClick={() => setSearchTerm("")} />
                     )
                   }
                   placeholder="Rechercher..."
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
@@ -495,12 +277,12 @@ export default function EquipePage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
+                    aria-label={`Voir l'équipe de ${member.prenom} ${member.nom} à ${member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}`}
                     className="group relative flex flex-col items-center text-center cursor-pointer hover:scale-105 transition-transform"
-                    onClick={() => handleMemberClick(member)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Voir l'équipe de ${member.name} à ${member.city}`}
+                    onClick={() => handleMemberClick(member)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
                   >
                     <Avatar
                       className="w-16 h-16 mb-3"
@@ -508,17 +290,17 @@ export default function EquipePage() {
                         base: "ring-2 ring-gray-200 dark:ring-gray-700",
                         img: "object-cover",
                       }}
-                      name={member.name}
-                      src={member.avatar}
+                      name={`${member.prenom} ${member.nom}`}
+                      src={member.trombi?.[0]?.url}
                     />
                     <h3 className="font-semibold  text-sm mb-1">
-                      {member.name}
+                      {member.prenom} {member.nom}
                     </h3>
                     <p className="text-sm font-light ">
                       {member.role}
                     </p>
                     <p className="text-xs font-light ">
-                      {member.location}
+                      {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                     </p>
                   </div>
                 ))}
@@ -568,7 +350,7 @@ export default function EquipePage() {
                               </Tooltip>
                             </TableCell>
                             <TableCell className="font-light">
-                              {member.city}
+                              {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                             </TableCell>
                             <TableCell className="font-light">
                               <span className="font-light">
@@ -577,73 +359,73 @@ export default function EquipePage() {
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.firstName}
+                                {member.prenom}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.lastName}
+                                {member.nom}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.identifier}
+                                {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell className="font-light">
                               <span >
-                                {member.password}
+                                {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.birthDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <a
                                 className="font-light underline"
-                                href={`mailto:${member.personalEmail}`}
+                                href={`mailto:${member.emailEpicu || ""}`}
                               >
-                                {member.personalEmail}
+                                {member.emailEpicu || "Non défini"}
                               </a>
                             </TableCell>
                             <TableCell>
                               <a
                                 className="font-light underline"
-                                href={`mailto:${member.franchiseEmail}`}
+                                href={`mailto:${member.emailEpicu || ""}`}
                               >
-                                {member.franchiseEmail}
+                                {member.emailEpicu || "Non défini"}
                               </a>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.phone}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.postalAddress}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.siret}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.dipSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.franchiseContractSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                {member.trainingCertificateSignatureDate}
+                                Non défini
                               </span>
                             </TableCell>
                           </TableRow>
@@ -686,18 +468,18 @@ export default function EquipePage() {
       {/* Modal pour ajouter/modifier un membre - visible uniquement pour les admins */}
       {isAdmin() && (
         <TeamMemberModal
+          isEditing={false}
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onMemberAdded={handleMemberAdded}
-          isEditing={false}
         />
       )}
 
       {/* Modal pour afficher l'équipe du franchisé */}
       <FranchiseTeamModal
         isOpen={isFranchiseTeamModalOpen}
-        onClose={handleFranchiseTeamModalClose}
         selectedMember={selectedMember}
+        onClose={handleFranchiseTeamModalClose}
       />
     </div>
   );

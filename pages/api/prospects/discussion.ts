@@ -24,6 +24,9 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Suivi par',
       'Commentaires',
       'Date de relance',
+      'Téléphone',
+      'Email',
+      'Adresse',
     ];
     const allowedOrderBy = new Set([...fields]);
     const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
@@ -40,8 +43,8 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     };
 
     // Optional filters: full-text q + category (linked record id) + suivi (linked collaborator id)
-  const categoryFilter = (req.query.category as string) || (req.query.categorie as string) || null;
-  const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
+    const categoryFilter = (req.query.category as string) || (req.query.categorie as string) || null;
+    const suiviFilter = (req.query.suivi as string) || (req.query.suiviPar as string) || null;
 
     const formulaParts: string[] = [];
 
@@ -155,9 +158,8 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     const discussions = pageRecords.map((record: any) => {
       const catIds = record.get('Catégorie') || [];
-      const catName = Array.isArray(catIds) && catIds.length > 0
-        ? (categoryNames[catIds[0]] || catIds[0])
-        : '';
+      const catName = catIds.length > 0 ? catIds.map((id: string) => categoryNames[id]) : [];
+
 
       const spIds = record.get('Suivi par') || [];
       const suiviPar = Array.isArray(spIds) && spIds.length > 0
@@ -165,12 +167,17 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         : '';
 
       return {
+        id: record.id,
         nomEtablissement: record.get("Nom de l'établissement"),
         categorie: catName,
         ville: record.get('Ville'),
         suiviPar,
         commentaires: record.get('Commentaires'),
+        datePriseContact: record.get('Date de prise de contact'),
         dateRelance: record.get('Date de relance'),
+        telephone: record.get('Téléphone'),
+        email: record.get('Email'),
+        adresse: record.get('Adresse'),
       };
     });
 

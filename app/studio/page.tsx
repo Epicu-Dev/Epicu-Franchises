@@ -6,7 +6,9 @@ import { Button } from '@heroui/button';
 import { Tabs, Tab } from '@heroui/tabs';
 import { ArrowUpRightIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
-import { Select, SelectItem } from '@heroui/select';
+import { SelectItem } from '@heroui/select';
+
+import { StyledSelect } from '@/components/styled-select';
 import { Input } from '@heroui/input';
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/table';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -393,13 +395,13 @@ export default function StudioPage() {
               >
                 Accéder au drive
               </Button>
-              <Button
+              {/* <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
                 onClick={handleOpenPrestationModal}
               >
                 Demander une prestation
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -468,7 +470,7 @@ export default function StudioPage() {
                   {/* Header with filters */}
                   <div className="flex justify-between items-center p-4">
                     <div className="flex items-center gap-4">
-                      <Select
+                      <StyledSelect
                         className="w-48"
                         placeholder="Statut"
                         selectedKeys={selectedStatus ? [selectedStatus] : []}
@@ -478,7 +480,7 @@ export default function StudioPage() {
                         <SelectItem key="en_cours">En cours</SelectItem>
                         <SelectItem key="terminee">Terminé</SelectItem>
                         <SelectItem key="en_attente">En attente</SelectItem>
-                      </Select>
+                      </StyledSelect>
                     </div>
 
                     <div className="relative">

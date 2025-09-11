@@ -13,6 +13,11 @@ export { EventModal } from './event-modal';
 export { HelpModal } from './help-modal';
 export { default as ResourceModal } from './resource-modal';
 export { FranchiseTeamModal } from './franchise-team-modal';
+export { UnifiedEventModal } from './unified-event-modal';
+export { SubscribersEditModal } from './subscribers-edit-modal';
+export { default as InvoiceModal } from './invoice-modal';
+export { default as PublicationModal } from './publication-modal';
+export { default as SlotSelectionModal } from './slot-selection-modal';
 
 // Composants de badges
 export { 
@@ -27,6 +32,7 @@ export {
 
 // Composants d'interface
 export { MetricCard } from './metric-card';
+export { StatsGrid } from './stats-grid';
 export { default as MessageAlert } from './message-alert';
 export { default as GlobalToastContainer } from './global-toast-container';
 export { default as ToastContainer } from './toast-container';

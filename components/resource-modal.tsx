@@ -5,10 +5,12 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 
 import { Resource, ResourceCategory } from "../types/resource";
 
 import { FormLabel } from "./form-label";
+import { StyledSelect } from "./styled-select";
 
 interface ResourceModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface ResourceModalProps {
   onSave: (resource: Omit<Resource, "id" | "dateAdded">) => void;
   resource?: Resource;
   mode: "create" | "edit";
+  currentCategory?: ResourceCategory;
 }
 
 export default function ResourceModal({
@@ -23,15 +26,23 @@ export default function ResourceModal({
   onClose,
   onSave,
   resource,
-  mode
+  mode,
+  currentCategory
 }: ResourceModalProps) {
   const [formData, setFormData] = useState({
     title: resource?.title || "",
     description: resource?.description || "",
     link: resource?.link || "",
-    category: resource?.category || "liens-importants" as ResourceCategory,
+    category: resource?.category || currentCategory || "liens-importants" as ResourceCategory,
     icon: resource?.icon || "",
   });
+
+  // Options pour le dropdown des catégories
+  const categoryOptions = [
+    { key: "liens-importants", label: "Liens importants" },
+    { key: "ressources-canva", label: "Ressources Canva" },
+    { key: "materiel", label: "Matériel" }
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +57,13 @@ export default function ResourceModal({
     }));
   };
 
+  const handleCategoryChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      category: value as ResourceCategory
+    }));
+  };
+
   return (
     <Modal isOpen={isOpen} size="lg" onClose={onClose}>
       <ModalContent>
@@ -55,6 +73,29 @@ export default function ResourceModal({
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
+              <FormLabel htmlFor="category" isRequired={true}>
+                Type de ressource
+              </FormLabel>
+              <StyledSelect
+                isRequired
+                classNames={{
+                  trigger: "bg-page-bg",
+                }}
+                id="category"
+                placeholder="Sélectionner un type"
+                selectedKeys={[formData.category]}
+                onSelectionChange={(keys) => {
+                  const selectedKey = Array.from(keys)[0] as string;
+                  handleCategoryChange(selectedKey);
+                }}
+              >
+                {categoryOptions.map((option) => (
+                  <SelectItem key={option.key} value={option.key}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </StyledSelect>
+
               <FormLabel htmlFor="title" isRequired={true}>
                 Nom du document
               </FormLabel>

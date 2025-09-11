@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
 import { UserProfile, UserType } from '../types/user';
 import { getValidAccessToken } from '../utils/auth';
 
@@ -26,19 +27,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Charger le type d'utilisateur depuis localStorage au montage
   useEffect(() => {
     const savedUserType = localStorage.getItem("userType") as UserType;
+
     if (savedUserType && (savedUserType === "admin" || savedUserType === "franchise")) {
       setUserTypeState(savedUserType);
     }
     
     // Charger immédiatement le profil utilisateur depuis le localStorage
     const cachedProfile = localStorage.getItem('userProfile');
+
     if (cachedProfile) {
       try {
         const parsed = JSON.parse(cachedProfile);
+
         setUserProfile(parsed);
         // Ne pas marquer comme chargé pour permettre la mise à jour via l'API
       } catch (e) {
-        console.error('Erreur lors du parsing du profil en cache:', e);
+        // Erreur lors du parsing du profil en cache, on continue
       }
     }
     
@@ -61,34 +65,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Vérifier si on a déjà les données en cache
-      const cachedProfile = localStorage.getItem('userProfile');
-      if (cachedProfile) {
-        try {
-          const parsed = JSON.parse(cachedProfile);
-          // Vérifier si le cache n'est pas trop vieux (1 heure)
-          const cacheTime = localStorage.getItem('userProfileCacheTime');
-          if (cacheTime && Date.now() - parseInt(cacheTime) < 3600000) {
-            setUserProfile(parsed);
-            setIsLoading(false);
-            return;
-          }
-        } catch (e) {
-          // Cache invalide, on continue avec l'API
-        }
-      }
-
       const accessToken = await getValidAccessToken();
+
       if (!accessToken) {
         setError('Token d\'accès non trouvé');
         setIsLoading(false);
+
         return;
       }
 
-      const response = await fetch('/api/auth/me', {
+      // Toujours faire un appel API pour s'assurer d'avoir les données les plus récentes
+      // Ajouter un timestamp pour éviter le cache
+      const response = await fetch(`/api/auth/me?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
 
@@ -101,32 +95,38 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // Transformer les données Airtable en format UserProfile
       const transformedProfile: UserProfile = {
         id: userData.id,
-        email: userData['Email EPICU'] || '',
+        email: userData['Email perso'] || '',
         firstname: userData['Prénom'] || '',
         lastname: userData['Nom'] || '',
         role: userData['Rôle'] || '',
         villes: userData['villes'] || [],
         telephone: userData['Téléphone'] || '',
-        identifier: userData['Identifiant'] || ''
+        identifier: userData['Identifiant'] || '',
+        trombi: userData['Trombi'] || undefined
       };
 
       setUserProfile(transformedProfile);
       
-      // Mettre en cache les données utilisateur
+      // Mettre en cache les données utilisateur avec un cache plus court (5 minutes)
       localStorage.setItem('userProfile', JSON.stringify(transformedProfile));
       localStorage.setItem('userProfileCacheTime', Date.now().toString());
       
     } catch (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
       setError(error instanceof Error ? error.message : 'Erreur inconnue');
       
-      // En cas d'erreur, on garde les données en cache si elles existent
+      // En cas d'erreur, utiliser les données en cache si elles existent et ne sont pas trop vieilles
       const cachedProfile = localStorage.getItem('userProfile');
-      if (cachedProfile) {
+      const cacheTime = localStorage.getItem('userProfileCacheTime');
+      
+      if (cachedProfile && cacheTime) {
         try {
           const parsed = JSON.parse(cachedProfile);
-          setUserProfile(parsed);
-        } catch (e) {
+
+          // Utiliser le cache seulement s'il a moins de 30 minutes
+          if (Date.now() - parseInt(cacheTime) < 1800000) {
+            setUserProfile(parsed);
+          }
+        } catch {
           // Cache invalide, on ne fait rien
         }
       }
@@ -139,6 +139,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Supprimer le cache pour forcer un nouveau fetch
     localStorage.removeItem('userProfile');
     localStorage.removeItem('userProfileCacheTime');
+    
+    // Forcer un rechargement immédiat
+    setIsLoading(true);
     await fetchUserProfile();
   };
 

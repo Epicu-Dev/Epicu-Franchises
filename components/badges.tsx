@@ -15,9 +15,12 @@ export const getStatusBadgeColor = (status: string) => {
 };
 
 // Fonction pour obtenir la couleur du badge de catégorie
-export const getCategoryBadgeColor = (category: string) => {
+export const getCategoryBadgeColor = (category?: string) => {
+    if (category === undefined) {
+        return "bg-gray-50/10 text-gray-300 border-gray-200";
+    }
     // Utiliser une approche dynamique pour les catégories
-    const categoryLower = category.toLowerCase();
+    const categoryLower = category?.toLowerCase();
 
     // Mapper les catégories communes à des couleurs
     if (categoryLower.includes('restaurant') || categoryLower.includes('food') || categoryLower.includes('café')) {
@@ -27,13 +30,24 @@ export const getCategoryBadgeColor = (category: string) => {
     } else if (categoryLower.includes('travel') || categoryLower.includes('hôtel') || categoryLower.includes('voyage')) {
         return "bg-custom-green-travel/10 text-custom-green-travel";
     } else if (categoryLower.includes('fun') || categoryLower.includes('loisir') || categoryLower.includes('divertissement')) {
-        return "bg-custom-green-travel/10 text-custom-green-travel";
+        return "bg-custom-red-fun/10 text-custom-red-fun";
     } else if (categoryLower.includes('beauty') || categoryLower.includes('beauté') || categoryLower.includes('esthétique')) {
         return "bg-custom-blue-beauty/10 text-custom-blue-beauty";
     } else {
         // Couleur par défaut pour les nouvelles catégories
         return "bg-gray-50/10 text-gray-300 border-gray-200";
     }
+};
+
+// Fonction pour obtenir la couleur d'un événement basée sur les catégories d'établissement
+export const getEventColorFromEstablishmentCategories = (establishmentCategories?: string[]) => {
+    if (!establishmentCategories || establishmentCategories.length === 0) {
+        return "bg-gray-100 text-gray-800";
+    }
+
+    // Prendre la première catégorie pour déterminer la couleur
+    const firstCategory = establishmentCategories[0];
+    return getCategoryBadgeColor(firstCategory);
 };
 
 // Fonction pour obtenir la couleur du badge de statut de facture
@@ -177,12 +191,11 @@ export const getTodoStatutLabel = (statut: string) => {
     switch (statut) {
         case "À faire":
             return "Pas commencé";
-        case "En cours":
-            return "En cours";
-        case "Validée":
-            return "Validée";
-        case "Annulée":
-            return "Annulée";
+        case "En attente":
+            return "En attente";
+        case "Terminé":
+            return "Terminé";
+
         default:
             return statut;
     }
@@ -193,11 +206,9 @@ export const getTodoStatutBadgeClass = (statut: string) => {
     switch (statut) {
         case "Terminé":
             return "bg-custom-green-success/10 text-custom-green-success";
-        case "En cours":
-            return "bg-blue-100 text-blue-800";
-        case "Annulée":
-            return "bg-red-100 text-red-800";
         case "En attente":
+            return "bg-blue-100 text-blue-800";
+        case "Terminé":
             return "bg-gray-100 text-gray-800";
         default:
             return "bg-gray-50 text-gray-700 border-gray-200";

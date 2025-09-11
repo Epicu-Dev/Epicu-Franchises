@@ -72,18 +72,23 @@ export default function LoginPage() {
         localStorage.setItem("userProfile", JSON.stringify({
           id: data.user.id,
           email: data.user.email,
-          firstname: data.user.firstname,
-          lastname: data.user.lastname,
-          role: data.user.role,
-          villes: data.user.villes,
-          telephone: "",
-          identifier: ""
+          firstname: data.user.firstname || '',
+          lastname: data.user.lastname || '',
+          role: data.user.role || '',
+          villes: data.user.villes || [],
+          telephone: data.user.telephone || "",
+          identifier: data.user.identifier || ""
         }));
         localStorage.setItem("userProfileCacheTime", Date.now().toString());
         
+        // Stocker également le type d'utilisateur par défaut
+        localStorage.setItem("userType", "franchise");
+        
         showMessageWithType("Connexion réussie ! Redirection...", "success");
+        
+        // Forcer un rechargement de la page pour s'assurer que le contexte utilisateur est bien initialisé
         setTimeout(() => {
-          router.push("/home");
+          window.location.href = "/home";
         }, 1500);
       } else {
         // Gestion des erreurs spécifiques

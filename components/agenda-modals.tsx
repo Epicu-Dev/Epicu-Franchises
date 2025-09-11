@@ -716,37 +716,7 @@ export function AgendaModals({
                 />
               </div>
 
-              <FormLabel htmlFor="winner" isRequired={true}>
-                Gagnant
-              </FormLabel>
-              <Input
-                isRequired
-                id="winner"
-                placeholder="Nom Prénom"
-                classNames={{
-                  inputWrapper: "bg-page-bg",
-                }}
-                value={newPublication.winner}
-                onChange={(e) =>
-                  setNewPublication((prev) => ({
-                    ...prev,
-                    winner: e.target.value,
-                  }))
-                }
-              />
-
-              <div className="flex items-center justify-between">
-                <span className="text-base ">Tirage au sort effectué</span>
-                <Switch
-                  isSelected={newPublication.drawCompleted}
-                  onValueChange={(checked) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      drawCompleted: checked,
-                    }))
-                  }
-                />
-              </div>
+              
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">

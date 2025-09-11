@@ -10,9 +10,11 @@ import {
     ModalFooter,
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+import { StyledSelect } from "./styled-select";
 
 import { FormLabel } from "./form-label";
+import { useUser } from "@/contexts/user-context";
 
 interface Event {
     id: string;
@@ -37,6 +39,7 @@ export function EventModal({
     onOpenChange,
     onEventAdded,
 }: EventModalProps) {
+    const { userProfile } = useUser();
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
@@ -137,6 +140,7 @@ export function EventModal({
                 location: newEvent.location || undefined,
                 description: newEvent.description || undefined,
                 category: "siege" as Event["category"], // Par défaut, peut être modifié selon eventFor
+                collaborator: userProfile?.id,
             };
 
             const response = await fetch("/api/agenda", {
@@ -219,7 +223,7 @@ export function EventModal({
                         <FormLabel htmlFor="eventType" isRequired={true}>
                             Type d&apos;événement
                         </FormLabel>
-                        <Select
+                        <StyledSelect
                             isRequired
                             errorMessage={fieldErrors['eventType']}
                             isInvalid={!!fieldErrors['eventType']}
@@ -239,12 +243,12 @@ export function EventModal({
                             <SelectItem key="formation">Formation</SelectItem>
                             <SelectItem key="reunion">Réunion</SelectItem>
                             <SelectItem key="autre">Autre</SelectItem>
-                        </Select>
+                        </StyledSelect>
 
                         <FormLabel htmlFor="eventFor" isRequired={true}>
                             Pour qui
                         </FormLabel>
-                        <Select
+                        <StyledSelect
                             isRequired
                             errorMessage={fieldErrors['eventFor']}
                             isInvalid={!!fieldErrors['eventFor']}
@@ -262,7 +266,7 @@ export function EventModal({
                             <SelectItem key="franchises">Franchisés</SelectItem>
                             <SelectItem key="sieges">Sièges</SelectItem>
                             <SelectItem key="partenaires">Partenaires</SelectItem>
-                        </Select>
+                        </StyledSelect>
 
                         <FormLabel htmlFor="eventDate" isRequired={true}>
                             Date de l&apos;événement

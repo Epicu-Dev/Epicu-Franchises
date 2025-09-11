@@ -24,7 +24,7 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
       const timer = setTimeout(() => {
         setIsLoading(false);
         setUserProfileLoaded(true);
-      }, 500);
+      }, 300); // Réduit de 500ms à 300ms
       
       return () => clearTimeout(timer);
     }
@@ -38,7 +38,7 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         setUserProfileLoaded(true);
       }
-    }, 10000); // 10 secondes de timeout
+    }, 5000); // Réduit de 10 secondes à 5 secondes
     
     return () => clearTimeout(safetyTimer);
   }, [userLoading]);
