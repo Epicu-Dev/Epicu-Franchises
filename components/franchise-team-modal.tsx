@@ -5,39 +5,29 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Button } from "@heroui/button";
 import { Avatar } from "@heroui/avatar";
 import { Spinner } from "@heroui/spinner";
-import { XMarkIcon } from "@heroicons/react/24/outline";
-import { getValidAccessToken } from "../utils/auth";
-import { TrombiAttachment } from "../types/user";
 
-// Interface TeamMember pour la compatibilité avec la page équipe
-interface TeamMember {
-    id: string;
-    nom: string;
-    prenom: string;
-    villeEpicu: string[];
-    emailEpicu: string | null;
-    role: string | null;
-    etablissements: string[];
-    trombi: TrombiAttachment[] | null;
-}
+import { getValidAccessToken } from "../utils/auth";
+import { Collaborator } from "../types/collaborator";
 
 interface FranchiseTeamModalProps {
     isOpen: boolean;
     onClose: () => void;
-    selectedMember: TeamMember | null;
+    selectedMember: Collaborator | null;
 }
 
 export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: FranchiseTeamModalProps) {
-    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [teamMembers, setTeamMembers] = useState<Collaborator[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Wrapper fetch avec authentification
     const authFetch = async (input: RequestInfo, init?: RequestInit) => {
         const token = await getValidAccessToken();
+
         if (!token) throw new Error('No access token');
 
         const headers = new Headers((init?.headers as HeadersInit) || {});
+
         headers.set('Authorization', `Bearer ${token}`);
         const merged: RequestInit = { ...init, headers };
 
@@ -51,7 +41,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
             setLoading(true);
             setError(null);
 
-            const response = await authFetch(`/api/collaborateurs?limit=100&offset=0`);
+            const response = await authFetch(`/api/equipe?limit=100&offset=0`);
 
             if (!response.ok) {
                 throw new Error("Erreur lors de la récupération des membres de l'équipe");
@@ -61,13 +51,14 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
             const collaborateurs = data.results || [];
 
             // Utiliser directement les données de l'API et filtrer par ville
-            const transformedMembers: TeamMember[] = collaborateurs
+            const transformedMembers: Collaborator[] = collaborateurs
                 .filter((collab: any) => {
                     const collabVilles = collab.villeEpicu || [];
                     const selectedVilles = selectedMember.villeEpicu || [];
+
                     return collabVilles.some((ville: string) => selectedVilles.includes(ville));
                 })
-                .map((collab: any): TeamMember => ({
+                .map((collab: any): Collaborator => ({
                     id: collab.id,
                     nom: collab.nom || '',
                     prenom: collab.prenom || '',
@@ -80,6 +71,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
 
             setTeamMembers(transformedMembers);
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Erreur lors de la récupération des membres:', error);
             setError("Erreur lors de la récupération des membres de l'équipe");
         } finally {
@@ -104,9 +96,9 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
     return (
         <Modal
             isOpen={isOpen}
-            onClose={handleClose}
-            size="3xl"
             scrollBehavior="inside"
+            size="3xl"
+            onClose={handleClose}
         >
             <ModalContent>
                 <ModalHeader className="flex flex-col gap-1">
@@ -133,10 +125,10 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                                 Réessayer
                             </Button>
                         </div>
-                    ) : teamMembers.length === 0 ? (
+                    ) : teamMembers.filter(member => member.id !== selectedMember.id).length === 0 ? (
                         <div className="text-center py-8">
                             <div className="text-gray-500">
-                                Aucun autre membre trouvé dans cette ville
+                                Aucune équipe
                             </div>
                         </div>
                     ) : (
@@ -164,7 +156,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                             </div>
 
                             {/* Séparateur */}
-                            <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                            <div className="border-t border-gray-200 dark:border-gray-700" />
 
                             {/* Grille des membres de l'équipe */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -200,9 +192,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
                     )}
                 </ModalBody>
 
-                <ModalFooter>
-
-                </ModalFooter>
+                <ModalFooter />
             </ModalContent>
         </Modal>
     );

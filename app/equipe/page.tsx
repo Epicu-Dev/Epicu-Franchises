@@ -29,18 +29,7 @@ import { getValidAccessToken } from "../../utils/auth";
 import { TeamMemberModal } from "../../components/team-member-modal";
 import { FranchiseTeamModal } from "../../components/franchise-team-modal";
 import { useUser } from "../../contexts/user-context";
-import { TrombiAttachment } from "../../types/user";
-
-interface TeamMember {
-  id: string;
-  nom: string;
-  prenom: string;
-  villeEpicu: string[];
-  emailEpicu: string | null;
-  role: string | null;
-  etablissements: string[];
-  trombi: TrombiAttachment[] | null;
-}
+import { Collaborator } from "../../types/collaborator";
 
 
 
@@ -48,14 +37,14 @@ interface TeamMember {
 
 export default function EquipePage() {
   const { userProfile, userType } = useUser();
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [members, setMembers] = useState<Collaborator[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFranchiseTeamModalOpen, setIsFranchiseTeamModalOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Collaborator | null>(null);
 
 
 
@@ -96,7 +85,7 @@ export default function EquipePage() {
       const data = await response.json();
 
       // Utiliser directement les données de l'API
-      const members: TeamMember[] = data.results || [];
+      const members: Collaborator[] = data.results || [];
 
       // Filtrer par catégorie si sélectionnée
       let filteredMembers = members;
@@ -104,6 +93,7 @@ export default function EquipePage() {
       if (selectedCategory && selectedCategory !== "tout") {
         filteredMembers = members.filter(member => {
           const roleLower = (member.role || "").toLowerCase();
+
           if (selectedCategory === "siege") {
             return !roleLower.includes("franchise") && !roleLower.includes("franchisé") && !roleLower.includes("prestataire");
           } else if (selectedCategory === "franchise") {
@@ -111,6 +101,7 @@ export default function EquipePage() {
           } else if (selectedCategory === "prestataire") {
             return roleLower.includes("prestataire");
           }
+
           return true;
         });
       }
@@ -178,7 +169,7 @@ export default function EquipePage() {
     fetchMembers();
   };
 
-  const handleMemberClick = (member: TeamMember) => {
+  const handleMemberClick = (member: Collaborator) => {
     setSelectedMember(member);
     setIsFranchiseTeamModalOpen(true);
   };
