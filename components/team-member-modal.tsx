@@ -47,7 +47,7 @@ export function TeamMemberModal({
   const [newMember, setNewMember] = useState<Partial<Collaborator>>({
     nom: "",
     prenom: "",
-    role: "Collaborateur Siège",
+    role: "Franchisé",
     villeEpicu: [],
     emailEpicu: "",
     emailPerso: "",
@@ -105,7 +105,7 @@ export function TeamMemberModal({
       setNewMember({
         nom: "",
         prenom: "",
-        role: "Collaborateur Siège",
+        role: "Franchisé",
         villeEpicu: [],
         emailEpicu: "",
         emailPerso: "",
@@ -260,7 +260,7 @@ export function TeamMemberModal({
       setNewMember({
         nom: "",
         prenom: "",
-        role: "Collaborateur Siège",
+        role: "Franchisé",
         villeEpicu: [],
         emailEpicu: "",
         emailPerso: "",
@@ -292,7 +292,7 @@ export function TeamMemberModal({
     setNewMember({
       nom: "",
       prenom: "",
-      role: "Collaborateur Siège",
+      role: "Franchisé",
       villeEpicu: [],
       emailEpicu: "",
       emailPerso: "",
@@ -402,9 +402,12 @@ export function TeamMemberModal({
                 setNewMember((prev) => ({ ...prev, role }));
               }}
             >
-              <SelectItem key="Collaborateur Siège">Collaborateur Siège</SelectItem>
+              <SelectItem key="Admin">Admin</SelectItem>
               <SelectItem key="Franchisé">Franchisé</SelectItem>
-              <SelectItem key="Prestataire">Prestataire</SelectItem>
+              <SelectItem key="Nouveau franchisé">Nouveau franchisé</SelectItem>
+              <SelectItem key="Studio">Studio</SelectItem>
+              <SelectItem key="Photographe/Vidéaste">Photographe/Vidéaste</SelectItem>
+              <SelectItem key="Community Manager">Community Manager</SelectItem>
             </StyledSelect>
 
             <FormLabel htmlFor="telephone" isRequired={true}>
