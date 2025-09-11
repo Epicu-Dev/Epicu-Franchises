@@ -50,6 +50,7 @@ export function TeamMemberModal({
     role: "Collaborateur Siège",
     villeEpicu: [],
     emailEpicu: "",
+    emailPerso: "",
     etablissements: [],
     trombi: null,
     dateNaissance: null,
@@ -107,6 +108,7 @@ export function TeamMemberModal({
         role: "Collaborateur Siège",
         villeEpicu: [],
         emailEpicu: "",
+        emailPerso: "",
         etablissements: [],
         trombi: null,
         dateNaissance: null,
@@ -224,7 +226,8 @@ export function TeamMemberModal({
         'Prénom': memberWithCity.prenom,
         'Rôle': memberWithCity.role,
         'Ville EPICU': memberWithCity.villeEpicu,
-        'Email Epicu': memberWithCity.emailEpicu,
+        'Email EPICU': memberWithCity.emailEpicu,
+        'Email perso': memberWithCity.emailPerso,
         'Date de naissance': memberWithCity.dateNaissance,
         'Téléphone': memberWithCity.telephone,
         'Adresse': memberWithCity.adresse,
@@ -260,6 +263,7 @@ export function TeamMemberModal({
         role: "Collaborateur Siège",
         villeEpicu: [],
         emailEpicu: "",
+        emailPerso: "",
         etablissements: [],
         trombi: null,
         dateNaissance: null,
@@ -291,6 +295,7 @@ export function TeamMemberModal({
       role: "Collaborateur Siège",
       villeEpicu: [],
       emailEpicu: "",
+      emailPerso: "",
       etablissements: [],
       trombi: null,
       dateNaissance: null,
@@ -454,6 +459,24 @@ export function TeamMemberModal({
 
                 setNewMember((prev) => ({ ...prev, emailEpicu: value }));
                 validateField('emailEpicu', value);
+              }}
+            />
+
+            <FormLabel htmlFor="emailPerso" isRequired={false}>
+              Email personnel
+            </FormLabel>
+            <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              id="emailPerso"
+              placeholder="prenom.nom@gmail.com"
+              type="email"
+              value={newMember.emailPerso || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                setNewMember((prev) => ({ ...prev, emailPerso: value }));
               }}
             />
 

@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (isAdmin) {
-        selectOptions.fields.push('Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Franchise signée le', "Attestation formation initiale");
+        selectOptions.fields.push('Email perso', 'Date de naissance', 'Téléphone', 'Adresse', 'Siret', 'Date DIP', 'Franchise signée le', "Attestation formation initiale");
       }
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -108,6 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
 
         if (isAdmin) {
+          baseObj.emailPerso = r.get('Email perso') || null;
           baseObj.dateNaissance = r.get('Date de naissance') || null;
           baseObj.telephone = r.get('Téléphone') || null;
           baseObj.adresse = r.get('Adresse') || null;

@@ -8,6 +8,7 @@ export type Collaborator = {
     etablissements: string[];
     trombi: any[] | null;
     // Champs additionnels pour les admins
+    emailPerso?: string | null;
     dateNaissance?: string | null;
     telephone?: string | null;
     adresse?: string | null;
