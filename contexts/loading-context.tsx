@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
 import { useUser } from './user-context';
 
 interface LoadingContextType {
@@ -20,13 +21,23 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   // L'application est considérée comme chargée quand le profil utilisateur est chargé
   useEffect(() => {
     if (!userLoading) {
-      // Petit délai pour une transition plus fluide
-      const timer = setTimeout(() => {
+      // Vérifier si on a déjà un profil en cache pour éviter le délai
+      const cachedProfile = localStorage.getItem('userProfile');
+      const cacheTime = localStorage.getItem('userProfileCacheTime');
+      
+      // Si on a un profil en cache récent (moins de 5 minutes), on charge immédiatement
+      if (cachedProfile && cacheTime && (Date.now() - parseInt(cacheTime) < 300000)) {
         setIsLoading(false);
         setUserProfileLoaded(true);
-      }, 300); // Réduit de 500ms à 300ms
-      
-      return () => clearTimeout(timer);
+      } else {
+        // Petit délai pour une transition plus fluide seulement si pas de cache
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+          setUserProfileLoaded(true);
+        }, 100); // Réduit encore plus le délai
+        
+        return () => clearTimeout(timer);
+      }
     }
   }, [userLoading]);
 
@@ -34,7 +45,6 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (userLoading) {
-        console.log('Timeout de sécurité - arrêt du loading');
         setIsLoading(false);
         setUserProfileLoaded(true);
       }

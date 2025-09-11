@@ -104,7 +104,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 const body = req.body || {};
                 const id = (req.query.id as string) || body.id;
-                console.log('PATCH creneaux - ID:', id, 'Body:', body);
                 if (!id) return res.status(400).json({ error: 'id requis pour PATCH' });
 
                 const userId = await requireValidAccessToken(req, res);
@@ -114,9 +113,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 let existing: any = null;
                 try {
                     existing = await base(TABLE_NAME).find(id);
-                    console.log('Créneau trouvé:', existing.id, existing.fields);
                 } catch (e) {
-                    console.error('Créneau introuvable:', id, e);
                     return res.status(404).json({ error: 'Créneau introuvable' });
                 }
 
@@ -151,12 +148,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
-                console.log('Mise à jour des champs:', fields);
                 const updated = await base(TABLE_NAME).update([{ id, fields }]);
-                console.log('Créneau mis à jour avec succès:', updated[0].id);
                 return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
             } catch (err: any) {
-                console.error('creneaux PATCH error', err);
                 return res.status(500).json({ error: 'Erreur mise à jour créneau', details: err?.message || String(err) });
             }
         }
@@ -164,7 +158,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.setHeader('Allow', ['GET', 'PATCH']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     } catch (error: any) {
-        console.error('Airtable error (creneaux):', error?.message || error);
         res.status(500).json({ error: 'Erreur Airtable', details: error?.message || String(error) });
     }
 }

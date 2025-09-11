@@ -24,7 +24,7 @@ export function Header() {
         {/* Token Status Indicator */}
         <div className="flex items-center gap-4">
           {/* Search Bar */}
-          <div className="relative">
+          {/* <div className="relative">
             <Input
               className="w-64 pr-4 pl-10"
               classNames={{
@@ -35,7 +35,7 @@ export function Header() {
               startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
               type="text"
             />
-          </div>
+          </div> */}
 
           {/* Theme Switch */}
           {/* <ThemeSwitch /> */}
