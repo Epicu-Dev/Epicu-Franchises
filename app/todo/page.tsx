@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
-import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
+
+import { StyledSelect } from "@/components/styled-select";
 import {
   Table,
   TableHeader,
@@ -13,7 +14,6 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
 import {
   Modal,
   ModalContent,
@@ -21,52 +21,33 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Checkbox } from "@heroui/checkbox";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
-interface Todo {
-  id: string;
-  titre: string;
-  description: string;
-  priorite: "basse" | "moyenne" | "haute" | "urgente";
-  statut: "a_faire" | "en_cours" | "terminee" | "annulee";
-  assigne: string;
-  dateEcheance: string;
-  dateCreation: string;
-  tags: string[];
-}
+import { TodoBadge } from "../../components/badges";
+import { SortableColumnHeader } from "@/components";
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
+import TodoModal from "@/components/todo-modal";
+import { Todo } from "@/types/todo";
+
+
+
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  const [itemsPerPage] = useState(50);
   const [searchTerm] = useState("");
   const [selectedStatut, setSelectedStatut] = useState("");
-  const [sortField, setSortField] = useState<string>("");
+  const [sortField, setSortField] = useState<string>("Date d'échéance");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
-
-  const [newTodo, setNewTodo] = useState({
-    titre: "",
-    statut: "a_faire" as Todo["statut"],
-    dateEcheance: "",
-  });
+  const [todoToEdit, setTodoToEdit] = useState<Todo | null>(null);
+  const [isDeletingTodo, setIsDeletingTodo] = useState(false);
 
   const fetchTodos = async () => {
     try {
@@ -74,15 +55,20 @@ export default function TodoPage() {
       setError(null);
 
       const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
-        search: searchTerm,
-        statut: selectedStatut,
-        sortBy: sortField,
-        sortOrder: sortDirection,
+        limit: itemsPerPage.toString(),
+        offset: '0',
       });
 
-      const response = await fetch(`/api/todos?${params}`);
+      if (searchTerm) params.set('q', searchTerm);
+      if (selectedStatut && selectedStatut !== 'tous') params.set('status', selectedStatut);
+
+      // Ajouter les paramètres de tri
+      if (sortField) {
+        params.set('orderBy', sortField);
+        params.set('order', sortDirection);
+      }
+
+      const response = await fetch(`/api/todo?${params}`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des tâches");
@@ -90,8 +76,7 @@ export default function TodoPage() {
 
       const data = await response.json();
 
-      setTodos(data.todos);
-      setPagination(data.pagination);
+      setTodos(data.todos || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -102,7 +87,6 @@ export default function TodoPage() {
   useEffect(() => {
     fetchTodos();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedStatut,
     sortField,
@@ -118,38 +102,24 @@ export default function TodoPage() {
     }
   };
 
-  const handleAddTodo = async () => {
-    try {
-      const response = await fetch("/api/todos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTodo),
-      });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de la tâche");
-      }
 
-      // Réinitialiser le formulaire et fermer le modal
-      setNewTodo({
-        titre: "",
-        statut: "a_faire",
-        dateEcheance: "",
-      });
-      setIsAddModalOpen(false);
+  const handleTodoAdded = () => {
+    // Recharger les tâches
+    fetchTodos();
+  };
 
-      // Recharger les tâches
-      fetchTodos();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
+  const handleTodoEdited = () => {
+    // Recharger les tâches
+    fetchTodos();
   };
 
   const handleDeleteTodo = async (todoId: string) => {
     try {
-      const response = await fetch(`/api/todos/${todoId}`, {
+      setIsDeletingTodo(true);
+      setError(null);
+
+      const response = await fetch(`/api/todo?id=${todoId}`, {
         method: "DELETE",
       });
 
@@ -161,6 +131,8 @@ export default function TodoPage() {
       fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsDeletingTodo(false);
     }
   };
 
@@ -178,97 +150,24 @@ export default function TodoPage() {
       setTodoToDelete(null);
     } catch {
       // L'erreur est déjà gérée dans handleDeleteTodo
+    } finally {
+      setIsDeletingTodo(false);
     }
   };
 
-  const handleStatusChange = async (
-    todoId: string,
-    newStatus: Todo["statut"]
-  ) => {
-    try {
-      // Optimistic update - mettre à jour l'état local immédiatement
-      setTodos((prevTodos) =>
-        prevTodos.map((todo) =>
-          todo.id === todoId ? { ...todo, statut: newStatus } : todo
-        )
-      );
-
-      const response = await fetch(`/api/todos/${todoId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ statut: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la modification du statut");
-      }
-
-      // Pas besoin de recharger toutes les tâches, l'état local est déjà à jour
-    } catch (err) {
-      // En cas d'erreur, remettre l'état précédent
-      setTodos((prevTodos) =>
-        prevTodos.map((todo) =>
-          todo.id === todoId
-            ? {
-                ...todo,
-                statut: todo.statut === "terminee" ? "a_faire" : "terminee",
-              }
-            : todo
-        )
-      );
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
+  const openEditModal = (todo: Todo) => {
+    setTodoToEdit(todo);
+    setError(null);
+    setIsEditModalOpen(true);
   };
 
-  const getStatutLabel = (statut: string) => {
-    switch (statut) {
-      case "a_faire":
-        return "Pas commencé";
-      case "en_cours":
-        return "En cours";
-      case "terminee":
-        return "Validée";
-      case "annulee":
-        return "Annulée";
-      default:
-        return statut;
-    }
-  };
 
-  const getStatutBadgeClass = (statut: string) => {
-    switch (statut) {
-      case "terminee":
-        return "bg-green-100 text-green-800";
-      case "en_cours":
-        return "bg-blue-100 text-blue-800";
-      case "annulee":
-        return "bg-red-100 text-red-800";
-      case "a_faire":
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
-  if (loading && todos.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -281,12 +180,12 @@ export default function TodoPage() {
 
   return (
     <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+      <Card className="w-full" shadow="none">
+        <CardBody >
           {/* Header with filters */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
-              <Select
+              <StyledSelect
                 className="w-48"
                 placeholder="État"
                 selectedKeys={selectedStatut ? [selectedStatut] : []}
@@ -295,18 +194,21 @@ export default function TodoPage() {
                 }
               >
                 <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
-                <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
-              </Select>
+                <SelectItem key="À faire">Pas commencé</SelectItem>
+                <SelectItem key="Terminé">Terminé</SelectItem>
+                <SelectItem key="En attente">En attente</SelectItem>
+              </StyledSelect>
+
             </div>
 
             <div className="relative">
               <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                startContent={<PlusIcon className="h-4 w-4" />}
-                onPress={() => setIsAddModalOpen(true)}
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => {
+                  setError(null);
+                  setIsAddModalOpen(true);
+                }}
               >
                 Ajouter une tâche
               </Button>
@@ -314,204 +216,140 @@ export default function TodoPage() {
           </div>
 
           {/* Table */}
-          <Table aria-label="Tableau des tâches">
-            <TableHeader>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("titre")}
-                >
-                  Tâches
-                  {sortField === "titre" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("dateEcheance")}
-                >
-                  Deadline
-                  {sortField === "dateEcheance" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("statut")}
-                >
-                  État
-                  {sortField === "statut" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
-              <TableColumn>Actions</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {todos.map((todo) => (
-                <TableRow key={todo.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        className="text-black"
-                        isDisabled={todo.statut === "annulee"}
-                        isSelected={todo.statut === "terminee"}
-                        onValueChange={(checked) => {
-                          const newStatus = checked ? "terminee" : "a_faire";
+          {
+            loading ?
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
+              </div>
+              :
+              <Table aria-label="Tableau des tâches" shadow="none">
+                <TableHeader>
+                  <TableColumn className="font-light text-sm">
+                    <></>
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
 
-                          handleStatusChange(todo.id, newStatus);
-                        }}
-                      />
-                      <span>{todo.titre}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{todo.dateEcheance}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatutBadgeClass(todo.statut)}`}
-                    >
-                      {getStatutLabel(todo.statut)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      color="danger"
-                      size="sm"
-                      variant="light"
-                      onPress={() => openDeleteConfirmation(todo)}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    Tâches
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    <SortableColumnHeader
+                      field="Date d'échéance"
+                      label="Deadline"
+                      sortDirection={sortDirection}
+                      sortField={sortField}
+                      onSort={handleSort}
+                    />
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">
+                    État
+                  </TableColumn>
+                  <TableColumn className="font-light text-sm">Actions</TableColumn>
+                </TableHeader>
+                <TableBody>
+                  {todos.map((todo) => (
+                    <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
+                      <TableCell className="font-light py-5">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="light"
+                          onPress={() => openEditModal(todo)}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-light py-5">
+                        <div className="flex items-center gap-2">
+                          <span>{todo.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-light">
+                        {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        }).replace(/\//g, '.') : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <TodoBadge status={todo.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
 
-          {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {todos.length} tâche(s) sur {pagination.totalItems} au
-            total
-          </div>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => openDeleteConfirmation(todo)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>}
+
         </CardBody>
       </Card>
 
       {/* Modal d'ajout de tâche */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>Ajouter une nouvelle tâche</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <Input
-                isRequired
-                label="Titre"
-                placeholder="Titre de la tâche"
-                value={newTodo.titre}
-                onChange={(e) =>
-                  setNewTodo((prev) => ({ ...prev, titre: e.target.value }))
-                }
-              />
-              <Input
-                label="Date d'échéance"
-                type="date"
-                value={newTodo.dateEcheance}
-                onChange={(e) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    dateEcheance: e.target.value,
-                  }))
-                }
-              />
-              <Select
-                label="État"
-                selectedKeys={[newTodo.statut]}
-                onSelectionChange={(keys) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "a_faire"
-                      | "en_cours"
-                      | "terminee"
-                      | "annulee",
-                  }))
-                }
-              >
-                <SelectItem key="a_faire">Pas commencé</SelectItem>
-                <SelectItem key="en_cours">En cours</SelectItem>
-                <SelectItem key="terminee">Validée</SelectItem>
-                <SelectItem key="annulee">Annulée</SelectItem>
-              </Select>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddTodo}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <TodoModal
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onTodoAdded={handleTodoAdded}
+      />
 
       {/* Modal de confirmation de suppression */}
       <Modal isOpen={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <ModalContent>
-          <ModalHeader>Confirmer la suppression</ModalHeader>
+          <ModalHeader className="flex justify-center">Confirmer la suppression</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}
-              <strong>&ldquo;{todoToDelete?.titre}&rdquo;</strong> ?
+              <strong>&quot;{todoToDelete?.name}&quot;</strong> ?
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Cette action est irréversible.
             </p>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsDeleteModalOpen(false)}>
+          <ModalFooter className="flex justify-between">
+            <Button className="flex-1 border-1"
+              color='primary'
+              isDisabled={isDeletingTodo}
+              variant="bordered"
+              onPress={() => setIsDeleteModalOpen(false)}>
               Annuler
             </Button>
-            <Button color="danger" onPress={confirmDelete}>
-              Supprimer
+            <Button
+              className="flex-1"
+              color="danger"
+              isDisabled={isDeletingTodo}
+              onPress={confirmDelete}>
+              {isDeletingTodo ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  Suppression...
+                </div>
+              ) : (
+                "Supprimer"
+              )}
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal d'édition de tâche */}
+      <TodoModal
+        isEditMode={true}
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onTodoAdded={handleTodoAdded}
+        onTodoEdited={handleTodoEdited}
+        selectedTodo={todoToEdit}
+      />
     </div>
   );
 }

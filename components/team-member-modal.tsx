@@ -13,22 +13,37 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 
-import { Collaborator } from "../types/collaborator";
-import { getValidAccessToken } from "../utils/auth";
-
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 
-interface City {
-  id: string;
-  ville: string;
+interface TeamMember {
+  id?: string;
+  name: string;
+  role: string;
+  location: string;
+  avatar?: string;
+  category: "siege" | "franchise" | "prestataire";
+  city: string;
+  firstName: string;
+  lastName: string;
+  identifier: string;
+  password: string;
+  birthDate: string;
+  personalEmail: string;
+  franchiseEmail: string;
+  phone: string;
+  postalAddress: string;
+  siret: string;
+  dipSignatureDate: string;
+  franchiseContractSignatureDate: string;
+  trainingCertificateSignatureDate: string;
 }
 
 interface TeamMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMemberAdded: () => void;
-  editingMember?: Collaborator | null;
+  editingMember?: TeamMember | null;
   isEditing?: boolean;
 }
 
@@ -42,82 +57,55 @@ export function TeamMemberModal({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [cities, setCities] = useState<City[]>([]);
-  const [selectedCityId, setSelectedCityId] = useState<string>("");
-  const [newMember, setNewMember] = useState<Partial<Collaborator>>({
-    nom: "",
-    prenom: "",
+  const [newMember, setNewMember] = useState<TeamMember>({
+    name: "",
     role: "Collaborateur Siège",
-    villeEpicu: [],
-    emailEpicu: "",
-    etablissements: [],
-    trombi: null,
-    dateNaissance: null,
-    telephone: null,
-    adresse: null,
-    siret: null,
-    dateDIP: null,
-    dateSignatureContrat: null,
-    dateSignatureAttestation: null,
+    location: "Siège",
+    avatar: "/api/placeholder/150/150",
+    category: "siege",
+    city: "",
+    firstName: "",
+    lastName: "",
+    identifier: "",
+    password: "",
+    birthDate: "",
+    personalEmail: "",
+    franchiseEmail: "",
+    phone: "",
+    postalAddress: "",
+    siret: "",
+    dipSignatureDate: "",
+    franchiseContractSignatureDate: "",
+    trainingCertificateSignatureDate: "",
   });
-
-  // Récupérer les villes Epicu
-  const fetchCities = async () => {
-    try {
-      const token = await getValidAccessToken();
-
-      if (!token) throw new Error('No access token');
-
-      const response = await fetch('/api/villes?limit=100', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des villes');
-      }
-
-      const data = await response.json();
-
-      setCities(data.results || []);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Erreur lors de la récupération des villes:', error);
-    }
-  };
 
   // Initialiser le formulaire avec les données du membre à éditer
   useEffect(() => {
-    if (isOpen) {
-      fetchCities();
-    }
-
     if (isEditing && editingMember) {
       setNewMember(editingMember);
-      // Si le membre a des villes Epicu, sélectionner la première
-      if (editingMember.villeEpicu && editingMember.villeEpicu.length > 0) {
-        setSelectedCityId(editingMember.villeEpicu[0]);
-      }
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       setNewMember({
-        nom: "",
-        prenom: "",
+        name: "",
         role: "Collaborateur Siège",
-        villeEpicu: [],
-        emailEpicu: "",
-        etablissements: [],
-        trombi: null,
-        dateNaissance: null,
-        telephone: null,
-        adresse: null,
-        siret: null,
-        dateDIP: null,
-        dateSignatureContrat: null,
-        dateSignatureAttestation: null,
+        location: "Siège",
+        avatar: "/api/placeholder/150/150",
+        category: "siege",
+        city: "",
+        firstName: "",
+        lastName: "",
+        identifier: "",
+        password: "",
+        birthDate: "",
+        personalEmail: "",
+        franchiseEmail: "",
+        phone: "",
+        postalAddress: "",
+        siret: "",
+        dipSignatureDate: "",
+        franchiseContractSignatureDate: "",
+        trainingCertificateSignatureDate: "",
       });
-      setSelectedCityId("");
     }
     setError(null);
     setFieldErrors({});
@@ -127,41 +115,50 @@ export function TeamMemberModal({
     const errors = { ...fieldErrors };
 
     switch (fieldName) {
-      case 'prenom':
+      case 'firstName':
         if (!value || !value.trim()) {
-          errors.prenom = 'Le prénom est requis';
+          errors.firstName = 'Le prénom est requis';
         } else {
-          delete errors.prenom;
+          delete errors.firstName;
         }
         break;
-      case 'nom':
+      case 'lastName':
         if (!value || !value.trim()) {
-          errors.nom = 'Le nom est requis';
+          errors.lastName = 'Le nom est requis';
         } else {
-          delete errors.nom;
+          delete errors.lastName;
         }
         break;
-      case 'villeEpicu':
-        if (!value || value.length === 0) {
-          errors.villeEpicu = 'La ville Epicu est requise';
+      case 'city':
+        if (!value || !value.trim()) {
+          errors.city = 'La ville est requise';
         } else {
-          delete errors.villeEpicu;
+          delete errors.city;
         }
         break;
-      case 'telephone':
+      case 'phone':
         if (!value || !value.trim()) {
-          errors.telephone = 'Le téléphone est requis';
+          errors.phone = 'Le téléphone est requis';
         } else {
-          delete errors.telephone;
+          delete errors.phone;
         }
         break;
-      case 'emailEpicu':
+      case 'personalEmail':
         if (!value || !value.trim()) {
-          errors.emailEpicu = 'L\'email Epicu est requis';
+          errors.personalEmail = 'L\'email personnel est requis';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.emailEpicu = 'Format d\'email invalide';
+          errors.personalEmail = 'Format d\'email invalide';
         } else {
-          delete errors.emailEpicu;
+          delete errors.personalEmail;
+        }
+        break;
+      case 'franchiseEmail':
+        if (!value || !value.trim()) {
+          errors.franchiseEmail = 'L\'email franchise est requis';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.franchiseEmail = 'Format d\'email invalide';
+        } else {
+          delete errors.franchiseEmail;
         }
         break;
       case 'siret':
@@ -176,101 +173,97 @@ export function TeamMemberModal({
     }
 
     setFieldErrors(errors);
-
     return Object.keys(errors).length === 0;
   };
 
   const validateAllFields = (member: any) => {
-    const fields = ['prenom', 'nom', 'villeEpicu', 'telephone', 'emailEpicu', 'siret'];
+    const fields = ['firstName', 'lastName', 'city', 'phone', 'personalEmail', 'franchiseEmail', 'siret'];
     let isValid = true;
 
     fields.forEach(field => {
       const fieldValid = validateField(field, member[field]);
-
       if (!fieldValid) isValid = false;
     });
 
     return isValid;
   };
 
+  const handleCategoryChange = (category: string) => {
+    let role = "Collaborateur Siège";
+    let location = "Siège";
+
+    if (category === "franchise") {
+      role = "Franchisé";
+      location = newMember.city || "Ville non définie";
+    } else if (category === "prestataire") {
+      role = "Prestataire";
+      location = newMember.city || "Ville non définie";
+    }
+
+    setNewMember(prev => ({
+      ...prev,
+      category: category as "siege" | "franchise" | "prestataire",
+      role,
+      location
+    }));
+  };
 
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Mettre à jour les villes Epicu avec la ville sélectionnée
-      const memberWithCity = {
-        ...newMember,
-        villeEpicu: selectedCityId ? [selectedCityId] : []
-      };
-
       // Validation complète avant soumission
-      if (!validateAllFields(memberWithCity)) {
+      if (!validateAllFields(newMember)) {
         setError("Veuillez corriger les erreurs dans le formulaire");
-
         setIsLoading(false);
-
         return;
       }
 
-      const token = await getValidAccessToken();
-
-      if (!token) throw new Error('No access token');
-
-      // Préparer les données pour l'API Airtable
-      const apiData = {
-        'Nom': memberWithCity.nom,
-        'Prénom': memberWithCity.prenom,
-        'Rôle': memberWithCity.role,
-        'Ville EPICU': memberWithCity.villeEpicu,
-        'Email Epicu': memberWithCity.emailEpicu,
-        'Date de naissance': memberWithCity.dateNaissance,
-        'Téléphone': memberWithCity.telephone,
-        'Adresse': memberWithCity.adresse,
-        'Siret': memberWithCity.siret,
-        'Date DIP': memberWithCity.dateDIP,
-        'Franchise signée le': memberWithCity.dateSignatureContrat,
-        'Attestation formation initiale': memberWithCity.dateSignatureAttestation,
-      };
-
-      // Appel API pour créer/modifier le collaborateur
-      const method = isEditing ? 'PATCH' : 'POST';
-      const url = isEditing ? `/api/collaborateurs/${editingMember?.id}` : '/api/collaborateurs';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(apiData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        throw new Error(errorData.error || 'Erreur lors de la sauvegarde');
+      // Générer l'identifiant automatiquement si vide
+      if (!newMember.identifier) {
+        const identifier = `${newMember.firstName.toLowerCase().charAt(0)}.${newMember.lastName.toLowerCase()}`;
+        setNewMember(prev => ({ ...prev, identifier }));
       }
+
+      // Générer le mot de passe automatiquement si vide
+      if (!newMember.password) {
+        const password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        setNewMember(prev => ({ ...prev, password }));
+      }
+
+      // Générer l'email franchise si vide
+      if (!newMember.franchiseEmail) {
+        const franchiseEmail = `${newMember.city.toLowerCase().replace(/\s+/g, '-')}@epicu.fr`;
+        setNewMember(prev => ({ ...prev, franchiseEmail }));
+      }
+
+      // Ici vous pouvez ajouter l'appel API pour sauvegarder le membre
+      // Pour l'instant, on simule une sauvegarde réussie
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Réinitialiser le formulaire et fermer le modal
       setNewMember({
-        nom: "",
-        prenom: "",
+        name: "",
         role: "Collaborateur Siège",
-        villeEpicu: [],
-        emailEpicu: "",
-        etablissements: [],
-        trombi: null,
-        dateNaissance: null,
-        telephone: null,
-        adresse: null,
-        siret: null,
-        dateDIP: null,
-        dateSignatureContrat: null,
-        dateSignatureAttestation: null,
+        location: "Siège",
+        avatar: "/api/placeholder/150/150",
+        category: "siege",
+        city: "",
+        firstName: "",
+        lastName: "",
+        identifier: "",
+        password: "",
+        birthDate: "",
+        personalEmail: "",
+        franchiseEmail: "",
+        phone: "",
+        postalAddress: "",
+        siret: "",
+        dipSignatureDate: "",
+        franchiseContractSignatureDate: "",
+        trainingCertificateSignatureDate: "",
       });
-      setSelectedCityId("");
       setError(null);
       setFieldErrors({});
       setIsLoading(false);
@@ -286,22 +279,26 @@ export function TeamMemberModal({
     setError(null);
     setFieldErrors({});
     setNewMember({
-      nom: "",
-      prenom: "",
+      name: "",
       role: "Collaborateur Siège",
-      villeEpicu: [],
-      emailEpicu: "",
-      etablissements: [],
-      trombi: null,
-      dateNaissance: null,
-      telephone: null,
-      adresse: null,
-      siret: null,
-      dateDIP: null,
-      dateSignatureContrat: null,
-      dateSignatureAttestation: null,
+      location: "Siège",
+      avatar: "/api/placeholder/150/150",
+      category: "siege",
+      city: "",
+      firstName: "",
+      lastName: "",
+      identifier: "",
+      password: "",
+      birthDate: "",
+      personalEmail: "",
+      franchiseEmail: "",
+      phone: "",
+      postalAddress: "",
+      siret: "",
+      dipSignatureDate: "",
+      franchiseContractSignatureDate: "",
+      trainingCertificateSignatureDate: "",
     });
-    setSelectedCityId("");
     onClose();
   };
 
@@ -318,105 +315,100 @@ export function TeamMemberModal({
         </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4">
-            <FormLabel htmlFor="prenom" isRequired={true}>
+            <FormLabel htmlFor="firstName" isRequired={true}>
               Prénom
             </FormLabel>
             <Input
               isRequired
-              errorMessage={fieldErrors.prenom}
-              id="prenom"
-              isInvalid={!!fieldErrors.prenom}
+              errorMessage={fieldErrors.firstName}
+              id="firstName"
+              isInvalid={!!fieldErrors.firstName}
               placeholder="Prénom"
-              value={newMember.prenom || ""}
+              value={newMember.firstName}
               onChange={(e) => {
                 const value = e.target.value;
-
                 setNewMember((prev) => ({
                   ...prev,
-                  prenom: value
+                  firstName: value,
+                  name: `${value} ${prev.lastName}`.trim()
                 }));
-                validateField('prenom', value);
+                validateField('firstName', value);
               }}
             />
 
-            <FormLabel htmlFor="nom" isRequired={true}>
+            <FormLabel htmlFor="lastName" isRequired={true}>
               Nom
             </FormLabel>
             <Input
               isRequired
-              errorMessage={fieldErrors.nom}
-              id="nom"
-              isInvalid={!!fieldErrors.nom}
+              errorMessage={fieldErrors.lastName}
+              id="lastName"
+              isInvalid={!!fieldErrors.lastName}
               placeholder="Nom"
-              value={newMember.nom || ""}
+              value={newMember.lastName}
               onChange={(e) => {
                 const value = e.target.value;
-
                 setNewMember((prev) => ({
                   ...prev,
-                  nom: value
+                  lastName: value,
+                  name: `${prev.firstName} ${value}`.trim()
                 }));
-                validateField('nom', value);
+                validateField('lastName', value);
               }}
             />
 
-            <FormLabel htmlFor="villeEpicu" isRequired={true}>
-              Ville Epicu
+            <FormLabel htmlFor="city" isRequired={true}>
+              Ville
+            </FormLabel>
+            <Input
+              isRequired
+              errorMessage={fieldErrors.city}
+              id="city"
+              isInvalid={!!fieldErrors.city}
+              placeholder="Ville"
+              value={newMember.city}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewMember((prev) => ({
+                  ...prev,
+                  city: value,
+                  location: prev.category === "siege" ? "Siège" : value
+                }));
+                validateField('city', value);
+              }}
+            />
+
+            <FormLabel htmlFor="category" isRequired={true}>
+              Catégorie
             </FormLabel>
             <StyledSelect
               isRequired
-              errorMessage={fieldErrors.villeEpicu}
-              id="villeEpicu"
-              isInvalid={!!fieldErrors.villeEpicu}
-              placeholder="Sélectionner une ville"
-              selectedKeys={selectedCityId ? [selectedCityId] : []}
+              id="category"
+              selectedKeys={[newMember.category]}
               onSelectionChange={(keys) => {
-                const cityId = Array.from(keys)[0] as string;
-
-                setSelectedCityId(cityId);
-                validateField('villeEpicu', cityId ? [cityId] : []);
+                const category = Array.from(keys)[0] as string;
+                handleCategoryChange(category);
               }}
             >
-              {cities.map((city) => (
-                <SelectItem key={city.id}>
-                  {city.ville}
-                </SelectItem>
-              ))}
+              <SelectItem key="siege">Siège</SelectItem>
+              <SelectItem key="franchise">Franchisé</SelectItem>
+              <SelectItem key="prestataire">Prestataire</SelectItem>
             </StyledSelect>
 
-            <FormLabel htmlFor="role" isRequired={true}>
-              Rôle
-            </FormLabel>
-            <StyledSelect
-              isRequired
-              id="role"
-              selectedKeys={[newMember.role || ""]}
-              onSelectionChange={(keys) => {
-                const role = Array.from(keys)[0] as string;
-
-                setNewMember((prev) => ({ ...prev, role }));
-              }}
-            >
-              <SelectItem key="Collaborateur Siège">Collaborateur Siège</SelectItem>
-              <SelectItem key="Franchisé">Franchisé</SelectItem>
-              <SelectItem key="Prestataire">Prestataire</SelectItem>
-            </StyledSelect>
-
-            <FormLabel htmlFor="telephone" isRequired={true}>
+            <FormLabel htmlFor="phone" isRequired={true}>
               Téléphone
             </FormLabel>
             <Input
               isRequired
-              errorMessage={fieldErrors.telephone}
-              id="telephone"
-              isInvalid={!!fieldErrors.telephone}
+              errorMessage={fieldErrors.phone}
+              id="phone"
+              isInvalid={!!fieldErrors.phone}
               placeholder="01 23 45 67 89"
-              value={newMember.telephone || ""}
+              value={newMember.phone}
               onChange={(e) => {
                 const value = e.target.value;
-
-                setNewMember((prev) => ({ ...prev, telephone: value }));
-                validateField('telephone', value);
+                setNewMember((prev) => ({ ...prev, phone: value }));
+                validateField('phone', value);
               }}
             />
 
@@ -429,106 +421,152 @@ export function TeamMemberModal({
               id="siret"
               isInvalid={!!fieldErrors.siret}
               placeholder="12345678901234"
-              value={newMember.siret || ""}
+              value={newMember.siret}
               onChange={(e) => {
                 const value = e.target.value;
-
                 setNewMember((prev) => ({ ...prev, siret: value }));
                 validateField('siret', value);
               }}
             />
 
-            <FormLabel htmlFor="emailEpicu" isRequired={true}>
-              Email Epicu
+            <FormLabel htmlFor="personalEmail" isRequired={true}>
+              Email personnel
             </FormLabel>
             <Input
               isRequired
-              errorMessage={fieldErrors.emailEpicu}
-              id="emailEpicu"
-              isInvalid={!!fieldErrors.emailEpicu}
-              placeholder="prenom.nom@epicu.fr"
+              errorMessage={fieldErrors.personalEmail}
+              id="personalEmail"
+              isInvalid={!!fieldErrors.personalEmail}
+              placeholder="prenom.nom@gmail.com"
               type="email"
-              value={newMember.emailEpicu || ""}
+              value={newMember.personalEmail}
               onChange={(e) => {
                 const value = e.target.value;
-
-                setNewMember((prev) => ({ ...prev, emailEpicu: value }));
-                validateField('emailEpicu', value);
+                setNewMember((prev) => ({ ...prev, personalEmail: value }));
+                validateField('personalEmail', value);
               }}
             />
 
-            <FormLabel htmlFor="dateNaissance" isRequired={false}>
+            <FormLabel htmlFor="franchiseEmail" isRequired={true}>
+              Email franchise
+            </FormLabel>
+            <Input
+              isRequired
+              errorMessage={fieldErrors.franchiseEmail}
+              id="franchiseEmail"
+              isInvalid={!!fieldErrors.franchiseEmail}
+              placeholder="ville@epicu.fr"
+              type="email"
+              value={newMember.franchiseEmail}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewMember((prev) => ({ ...prev, franchiseEmail: value }));
+                validateField('franchiseEmail', value);
+              }}
+            />
+
+            <FormLabel htmlFor="birthDate" isRequired={false}>
               Date de naissance
             </FormLabel>
             <Input
+              id="birthDate"
+              type="date"
+              value={newMember.birthDate}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="dateNaissance"
-              type="date"
-              value={newMember.dateNaissance || ""}
               onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateNaissance: e.target.value }));
+                setNewMember((prev) => ({ ...prev, birthDate: e.target.value }));
               }}
             />
 
-            <FormLabel htmlFor="dateDIP" isRequired={false}>
+            <FormLabel htmlFor="identifier" isRequired={false}>
+              Identifiant
+            </FormLabel>
+            <Input
+              id="identifier"
+              placeholder="p.nom"
+              value={newMember.identifier}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              onChange={(e) => {
+                setNewMember((prev) => ({ ...prev, identifier: e.target.value }));
+              }}
+            />
+
+            <FormLabel htmlFor="dipSignatureDate" isRequired={false}>
               Date signature DIP
             </FormLabel>
             <Input
+              id="dipSignatureDate"
+              type="date"
+              value={newMember.dipSignatureDate}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="dateDIP"
-              type="date"
-              value={newMember.dateDIP || ""}
               onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateDIP: e.target.value }));
+                setNewMember((prev) => ({ ...prev, dipSignatureDate: e.target.value }));
               }}
             />
 
-            <FormLabel htmlFor="dateSignatureContrat" isRequired={false}>
+            <FormLabel htmlFor="franchiseContractSignatureDate" isRequired={false}>
               Date signature contrat
             </FormLabel>
             <Input
+              id="franchiseContractSignatureDate"
+              type="date"
+              value={newMember.franchiseContractSignatureDate}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="dateSignatureContrat"
-              type="date"
-              value={newMember.dateSignatureContrat || ""}
               onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateSignatureContrat: e.target.value }));
+                setNewMember((prev) => ({ ...prev, franchiseContractSignatureDate: e.target.value }));
               }}
             />
 
-            <FormLabel htmlFor="dateSignatureAttestation" isRequired={false}>
+            <FormLabel htmlFor="trainingCertificateSignatureDate" isRequired={false}>
               Date signature formation
             </FormLabel>
             <Input
+              id="trainingCertificateSignatureDate"
+              type="date"
+              value={newMember.trainingCertificateSignatureDate}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="dateSignatureAttestation"
-              type="date"
-              value={newMember.dateSignatureAttestation || ""}
               onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateSignatureAttestation: e.target.value }));
+                setNewMember((prev) => ({ ...prev, trainingCertificateSignatureDate: e.target.value }));
               }}
             />
 
-            <FormLabel htmlFor="adresse" isRequired={false}>
-              Adresse postale
+            <FormLabel htmlFor="password" isRequired={false}>
+              Mot de passe
             </FormLabel>
-            <Textarea
+            <Input
+              id="password"
+              placeholder="Généré automatiquement"
+              value={newMember.password}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              id="adresse"
-              placeholder="123 Rue de l'établissement, 75001 Ville"
-              value={newMember.adresse || ""}
               onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, adresse: e.target.value }));
+                setNewMember((prev) => ({ ...prev, password: e.target.value }));
+              }}
+            />
+
+            <FormLabel htmlFor="postalAddress" isRequired={false}>
+              Adresse postale
+            </FormLabel>
+            <Textarea
+              id="postalAddress"
+              placeholder="123 Rue de l'établissement, 75001 Ville"
+              value={newMember.postalAddress}
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              onChange={(e) => {
+                setNewMember((prev) => ({ ...prev, postalAddress: e.target.value }));
               }}
             />
           </div>
@@ -555,7 +593,7 @@ export function TeamMemberModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.prenom || !newMember.nom || !selectedCityId || !newMember.telephone || !newMember.emailEpicu || !newMember.siret}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.firstName || !newMember.lastName || !newMember.city || !newMember.phone || !newMember.personalEmail || !newMember.franchiseEmail || !newMember.siret}
               isLoading={isLoading}
               onPress={handleSubmit}
             >

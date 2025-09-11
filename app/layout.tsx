@@ -3,8 +3,9 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
-import GlobalToastContainer from "@/components/global-toast-container";
 
+import GlobalToastContainer from "@/components/global-toast-container";
+import { AppWrapper } from "@/components/app-wrapper";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 
@@ -41,8 +42,10 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-          {children}
-          <GlobalToastContainer />
+          <AppWrapper>
+            {children}
+            <GlobalToastContainer />
+          </AppWrapper>
         </Providers>
       </body>
     </html>

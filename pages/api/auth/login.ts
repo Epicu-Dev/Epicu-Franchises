@@ -1,7 +1,10 @@
 // pages/api/login.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import crypto from 'crypto';
+
 import bcrypt from 'bcrypt';
+
 import { base } from '../constants';
 
 function generateToken(length = 64): string {
@@ -22,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const records = await base('COLLABORATEURS')
       .select({
-        filterByFormula: `{Email EPICU} = '${email}'`,
+        filterByFormula: `{Email perso} = '${email}'`,
         maxRecords: 1,
       })
       .firstPage();
@@ -50,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: accessToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 15 * 60 * 1000).toISOString(), // 15 min
+          expires_at: new Date(now + 4 * 60 * 60 * 1000).toISOString(), // 4 heures
         },
       },
     ]);
@@ -61,16 +64,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: [user.id],
           token: refreshToken,
           created_at: new Date(now).toISOString(),
-          expires_at: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
+          expires_at: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 jours
         },
       },
     ]);
+
+    // fetch only villes epicu linked to this user (id + Ville EPICU)
+    let villesEpicu: { id: string; ville: string }[] = [];
+
+    try {
+      const linked = user.get('Ville EPICU');
+      let linkedIds: string[] = [];
+
+      if (linked) {
+        if (Array.isArray(linked)) linkedIds = linked;
+        else if (typeof linked === 'string') linkedIds = [linked];
+      }
+      if (linkedIds.length > 0) {
+        const v = await base('VILLES EPICU')
+          .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
+          .all();
+
+        villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
+      }
+    } catch (e) {
+      // ignore failures to fetch villes
+    }
 
     return res.status(200).json({
       message: 'Connexion réussie',
       user: {
         id: user.id,
-        email: user.get('Email EPICU'),
+        email: user.get('Email perso'),
+        firstname: user.get('Prénom'),
+        lastname: user.get('Nom'),
+        villes: villesEpicu,
+        role: user.get('Rôle')
       },
       accessToken,
       refreshToken,

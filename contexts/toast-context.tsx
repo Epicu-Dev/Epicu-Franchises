@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
+
 import { useToast, Toast } from "@/hooks/use-toast";
 
 interface ToastContextType {
@@ -28,8 +29,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToastContext() {
   const context = useContext(ToastContext);
+
   if (context === undefined) {
     throw new Error("useToastContext must be used within a ToastProvider");
   }
+
   return context;
 }

@@ -7,11 +7,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -21,319 +18,844 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
+import { Card, CardBody } from "@heroui/card";
+import { Spinner } from "@heroui/spinner";
 
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
+import { UnifiedEventModal } from "@/components/unified-event-modal";
+import { ProspectModal } from "@/components/prospect-modal";
+import { AgendaSection } from "@/components/agenda-section";
+import { TodoBadge } from "@/components/badges";
+import InvoiceModal from "@/components/invoice-modal";
+import TodoModal from "@/components/todo-modal";
+import { useUser } from "@/contexts/user-context";
+import { useLoading } from "@/contexts/loading-context";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { Invoice } from "@/types/invoice";
+
+// Types pour les données réelles
+type AgendaEvent = {
+  id: string;
+  task: string;
+  date: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+};
+
+type TodoItem = {
+  id: string;
+  name: string;
+  createdAt: string;
+  dueDate?: string;
+  status: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+};
 
 export default function HomePage() {
+  const { userProfile } = useUser();
+  const { setUserProfileLoaded } = useLoading();
+  const { authFetch } = useAuthFetch();
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
     today(getLocalTimeZone())
   );
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onClose } = useDisclosure();
   const {
     isOpen: isAddTodoModalOpen,
     onOpen: onAddTodoModalOpen,
     onClose: onAddTodoModalClose,
   } = useDisclosure();
-  const [newTodo, setNewTodo] = useState({
-    mission: "",
-    deadline: "",
-    status: "En cours" as "En cours" | "En retard" | "Terminé",
-    color: "bg-blue-100 text-blue-800",
-  });
+
+  // État pour le filtre de ville
+  const [selectedCity, setSelectedCity] = useState<string>("tout");
+
+  // Données des villes disponibles - maintenant dynamiques basées sur l'utilisateur
+  const [cities, setCities] = useState([
+    { key: "tout", label: "Tout" },
+    { key: "national", label: "National" },
+  ]);
+
+  // États pour les données dynamiques
+  const [events, setEvents] = useState<AgendaEvent[]>([]);
+  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
+  const [agendaLoading, setAgendaLoading] = useState(false);
+  const [todoLoading, setTodoLoading] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [statistics, setStatistics] = useState<{
+    prospectsSignes: number;
+    tauxConversion: number;
+    abonnes: number;
+    vues: number;
+  } | null>(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
+  
+  // État de loading global pour la navigation par mois
+  const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Ref pour annuler les requêtes en cours
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // États pour le modal unifié d'agenda
+  const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
+  const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  // Mettre à jour les villes disponibles basées sur le profil utilisateur
+  useEffect(() => {
+    if (userProfile) {
+      const userVilles = userProfile.villes || [];
+
+      // Transformer les villes de l'utilisateur
+      const userCities = userVilles.map((ville: any) => ({
+        key: ville.ville.toLowerCase().replace(/\s+/g, '-'),
+        label: ville.ville
+      }));
+
+      // Mettre à jour la liste des villes avec celles de l'utilisateur
+      const newCities = [
+        ...(userVilles.length > 1 ? [{ key: "tout", label: "Tout" }] : []),
+        ...userCities,
+        { key: "national", label: "National" }
+      ];
+      
+      setCities(newCities);
+
+      // Si l'utilisateur n'a qu'une seule ville, la sélectionner par défaut
+      if (userVilles.length === 1 && selectedCity === "tout") {
+        setSelectedCity(userCities[0].key);
+      }
+
+      // Signal que le profil est chargé
+      setUserProfileLoaded(true);
+    } else {
+      // Si pas de profil, utiliser des villes par défaut
+      setCities([
+        { key: "tout", label: "Tout" },
+        { key: "national", label: "National" }
+      ]);
+    }
+  }, [userProfile, setUserProfileLoaded, selectedCity]);
+
+  // Fonction pour récupérer les données agenda
+  const fetchAgenda = async () => {
+    try {
+      setAgendaLoading(true);
+
+      // Récupérer l'ID du collaborateur
+      const meRes = await authFetch('/api/auth/me');
+
+      if (!meRes.ok) return;
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
+      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
+
+      // Récupérer les événements d'agenda
+      const params = new URLSearchParams();
+
+      params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
+      params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
+      params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
+
+      const eventsResponse = await authFetch(`/api/agenda?${params.toString()}`);
+
+      if (eventsResponse.ok) {
+        const eventsData = await eventsResponse.json();
+
+        setEvents(eventsData.events || []);
+      } else {
+        setEvents([]);
+      }
+    } catch {
+      setEvents([]);
+    } finally {
+      setAgendaLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les données todo
+  const fetchTodos = async () => {
+    try {
+      setTodoLoading(true);
+
+      // Récupérer l'ID du collaborateur
+      const meRes = await authFetch('/api/auth/me');
+
+      if (!meRes.ok) return;
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
+      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
+
+      // Récupérer les todos
+      const params = new URLSearchParams();
+
+      params.set('limit', '10'); // Limiter à 10 todos pour l'affichage
+
+      const todosResponse = await authFetch(`/api/todo?${params.toString()}`);
+
+      if (todosResponse.ok) {
+        const todosData = await todosResponse.json();
+
+        // Filtrer les todos côté client pour la plage de dates
+        const filteredTodos = todosData.todos?.filter((todo: TodoItem) => {
+          if (!todo.dueDate) return true; // Inclure les todos sans date d'échéance
+
+          const todoDate = new Date(todo.dueDate);
+
+          return todoDate >= startOfMonth && todoDate <= endOfMonth;
+        }) || [];
+
+        setTodoItems(filteredTodos);
+      } else {
+        setTodoItems([]);
+      }
+    } catch {
+      setTodoItems([]);
+    } finally {
+      setTodoLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les factures (paiements) du mois sélectionné
+  const fetchInvoices = async () => {
+    try {
+      setInvoicesLoading(true);
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const startOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        selectedDateObj.getFullYear(),
+        selectedDateObj.getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      );
+
+      const params = new URLSearchParams();
+
+      params.set("limit", "100");
+      params.set("status", "payee");
+
+      const response = await authFetch(`/api/facturation?${params.toString()}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const list: Invoice[] = data.invoices || [];
+
+        const filtered = list.filter((inv) => {
+          if (!inv.date) return false;
+
+          const d = new Date(inv.date);
+
+          return d >= startOfMonth && d <= endOfMonth;
+        });
+
+        setInvoices(filtered);
+      } else {
+        setInvoices([]);
+      }
+    } catch {
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les statistiques
+  const fetchStatistics = async () => {
+    try {
+      setStatisticsLoading(true);
+
+      // Calculer la plage de dates pour le mois sélectionné
+      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+      const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
+
+      // Construire les paramètres de requête pour l'API /api/data/data
+      const params = new URLSearchParams();
+
+      params.set('date', monthYear);
+
+      // Déterminer le paramètre ville
+      let villeParam = 'all';
+
+      if (selectedCity !== "tout") {
+        if (selectedCity === "national") {
+          // Pour "National", on utilise 'all' et on filtrera côté client
+          villeParam = 'all';
+        } else {
+          // Pour une ville spécifique, on utilise l'ID de la ville
+          const selectedCityData = cities.find(c => c.key === selectedCity);
+
+          if (selectedCityData) {
+            // Chercher l'ID de la ville dans le profil utilisateur
+            const userVille = userProfile?.villes?.find(v => 
+              v.ville.toLowerCase() === selectedCityData.label.toLowerCase()
+            );
+
+            if (userVille?.id) {
+              villeParam = userVille.id;
+            } else {
+              // Si pas d'ID trouvé, utiliser le nom de la ville
+              villeParam = selectedCityData.label;
+            }
+          }
+        }
+      }
+      params.set('ville', villeParam);
+
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // L'API /api/data/data retourne déjà les données agrégées
+        if (selectedCity === "national") {
+          // Pour "National", on doit exclure les villes locales de l'utilisateur
+          // On récupère d'abord toutes les données puis on filtre
+          const allParams = new URLSearchParams();
+
+          allParams.set('date', monthYear);
+          allParams.set('ville', 'all');
+          
+          const allResponse = await authFetch(`/api/data/data?${allParams.toString()}`);
+
+          if (allResponse.ok) {
+            const allData = await allResponse.json();
+            
+            // Récupérer les données des villes locales de l'utilisateur
+            const userVilles = userProfile?.villes || [];
+
+            let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
+            
+            for (const ville of userVilles) {
+              if (ville.id) {
+                const localParams = new URLSearchParams();
+
+                localParams.set('date', monthYear);
+                localParams.set('ville', ville.id);
+                
+                const localResponse = await authFetch(`/api/data/data?${localParams.toString()}`);
+
+                if (localResponse.ok) {
+                  const localData = await localResponse.json();
+
+                  localTotals.totalAbonnes += localData.totalAbonnes || 0;
+                  localTotals.totalVues += localData.totalVues || 0;
+                  localTotals.totalProspectsSignes += localData.prospectsSignesDsLeMois || 0;
+                  localTotals.tauxConversion += localData.tauxDeConversion || 0;
+                }
+              }
+            }
+            
+            // Calculer les données nationales (toutes - locales)
+            const nationalData = {
+              totalAbonnes: (allData.totalAbonnes || 0) - localTotals.totalAbonnes,
+              totalVues: (allData.totalVues || 0) - localTotals.totalVues,
+              totalProspectsSignes: (allData.totalProspectsSignes || 0) - localTotals.totalProspectsSignes,
+              tauxConversion: allData.tauxConversion || 0
+            };
+            
+            setStatistics({
+              prospectsSignes: nationalData.totalProspectsSignes,
+              tauxConversion: nationalData.tauxConversion,
+              abonnes: nationalData.totalAbonnes,
+              vues: nationalData.totalVues
+            });
+          }
+        } else {
+          // Pour "tout" ou une ville spécifique, utiliser directement les données
+          const stats = {
+            prospectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
+            tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
+            abonnes: data.totalAbonnes || 0,
+            vues: data.totalVues || 0
+          };
+
+          setStatistics(stats);
+        }
+      } else {
+        // Si la réponse n'est pas ok, mettre les statistiques à 0
+        setStatistics({
+          prospectsSignes: 0,
+          tauxConversion: 0,
+          abonnes: 0,
+          vues: 0
+        });
+      }
+    } catch {
+      // En cas d'erreur, mettre les statistiques à 0
+      setStatistics({
+        prospectsSignes: 0,
+        tauxConversion: 0,
+        abonnes: 0,
+        vues: 0
+      });
+    } finally {
+      setStatisticsLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les données
+  const fetchData = async (isNavigation = false) => {
+    // Annuler la requête précédente si elle existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Créer un nouveau contrôleur pour cette requête
+    const abortController = new AbortController();
+    
+    abortControllerRef.current = abortController;
+    
+    if (isNavigation) {
+      setIsNavigating(true);
+    }
+    
+    try {
+      // Récupération des événements d'agenda, todos et statistiques
+      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
+    } catch (error) {
+      // Ignorer les erreurs d'annulation
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      throw error;
+    } finally {
+      if (isNavigation) {
+        setIsNavigating(false);
+      }
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Effet pour charger les données au montage du composant
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Effet pour recharger agenda, todos et statistiques quand la date change
+  useEffect(() => {
+    fetchData(true);
+  }, [selectedDate]);
+
+  // Effet pour recharger les statistiques quand la ville change
+  useEffect(() => {
+    fetchStatistics();
+  }, [selectedCity]);
+
+  // Cleanup pour annuler les requêtes en cours
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Calcul du taux de conversion (maintenant géré par l'API statistiques)
+  // const conversionRate = useMemo(() => {
+  //   const totalProspects = filteredProspects.length;
+  //   const convertedClients = filteredClients.length;
+
+  //   if (totalProspects === 0) return "0%";
+
+  //   return `${Math.round((convertedClients / totalProspects) * 100)}%`;
+  // }, [filteredProspects, filteredClients]);
 
   const metrics = [
     {
-      value: "+59k",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
       label: "Nombre d'abonnés",
       icon: <ChartBarIcon className="h-6 w-6" />,
-      iconBgColor: "bg-green-100",
-      iconColor: "text-green-600",
+      iconBgColor: "bg-custom-green-stats/40",
+      iconColor: "text-custom-green-stats",
     },
     {
-      value: "+10M",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
       label: "Nombre de vues",
       icon: <EyeIcon className="h-6 w-6" />,
-      iconBgColor: "bg-pink-100",
-      iconColor: "text-pink-600",
+      iconBgColor: "bg-custom-rose/40",
+      iconColor: "text-custom-rose",
     },
     {
-      value: "143",
-      label: "Prospects",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
+      label: "Prospects signés",
       icon: <UsersIcon className="h-6 w-6" />,
       iconBgColor: "bg-yellow-100",
-      iconColor: "text-yellow-600",
+      iconColor: "text-yellow-400",
     },
     {
-      value: "14.70%",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
       label: "Taux de conversion",
       icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-orange-100",
-      iconColor: "text-orange-600",
+      iconBgColor: "bg-custom-orange-food/40",
+      iconColor: "text-custom-orange-food",
     },
   ];
 
-  const agendaEvents = [
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Tournage",
-      color: "bg-pink-100 text-pink-800",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Rendez-vous",
-      color: "bg-purple-100 text-purple-800",
-    },
-    {
-      clientName: "Nom client",
-      date: "12.07.2025",
-      type: "Evènement",
-      color: "bg-orange-100 text-orange-800",
-    },
-  ];
+  // Transformation des événements filtrés pour l'affichage
+  const agendaEvents = useMemo(() => {
+    return events.slice(0, 3).map(event => ({
+      clientName: event.task || "Nom client",
+      date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
+      type: event.type === "rendez-vous" ? "Rendez-vous" :
+        event.type === "tournage" ? "Tournage" :
+          event.type === "publication" ? "Publication" : "Evènement",
+    }));
+  }, [events]);
 
-  const [todoItems, setTodoItems] = useState([
-    {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En cours",
-      color: "bg-blue-100 text-blue-800",
-    },
-    {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En retard",
-      color: "bg-red-100 text-red-800",
-    },
-    {
-      mission: "Mission",
-      deadline: "Deadline",
-      status: "En cours",
-      color: "bg-blue-100 text-blue-800",
-    },
-  ]);
+  // Transformation des todos pour l'affichage
+  const displayTodoItems = useMemo(() => {
+    return todoItems.slice(0, 3).map(todo => ({
+      id: todo.id,
+      titre: todo.name,
+      description: todo.description || todo.name,
+      priorite: 'moyenne',
+      statut: todo.status,
+      assigne: 'À assigner',
+      dateEcheance: todo.dueDate || new Date().toISOString().split('T')[0],
+      dateCreation: todo.createdAt,
+      tags: []
+    }));
+  }, [todoItems]);
 
-  const handleAddTodo = () => {
-    if (newTodo.mission.trim()) {
-      const colorMap = {
-        "En cours": "bg-blue-100 text-blue-800",
-        "En retard": "bg-red-100 text-red-800",
-        Terminé: "bg-green-100 text-green-800",
-      };
+  // Transformation des factures pour l'affichage
+  const displayInvoices = useMemo(() => {
+    return invoices.slice(0, 3).map((inv) => ({
+      id: inv.id,
+      client: inv.nomEtablissement || "Nom client",
+      date: inv.date,
+      montant: inv.montant || 0,
+    }));
+  }, [invoices]);
 
-      const todoToAdd = {
-        ...newTodo,
-        color: colorMap[newTodo.status],
-      };
+  const formatAmount = (amount: number) =>
+    new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+      amount || 0
+    );
 
-      setTodoItems((prev) => [...prev, todoToAdd]);
-
-      // Réinitialiser le formulaire
-      setNewTodo({
-        mission: "",
-        deadline: "",
-        status: "En cours",
-        color: "bg-blue-100 text-blue-800",
+  const handleAddInvoice = async (invoiceData: any) => {
+    try {
+      const response = await authFetch("/api/facturation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
       });
 
-      onAddTodoModalClose();
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
+      }
+    } catch {
+      // ignore
     }
+  };
+
+  const handleEditInvoice = async (invoiceData: any) => {
+    try {
+      if (!selectedInvoice) return;
+
+      const response = await authFetch(`/api/facturation?id=${encodeURIComponent(selectedInvoice.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (response.ok) {
+        setIsInvoiceModalOpen(false);
+        await fetchInvoices();
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleTodoAdded = async () => {
+    // Recharger les todos
+    await fetchTodos();
+  };
+
+  // Fonctions pour ouvrir le modal unifié avec le bon type
+  const openUnifiedModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
+    setCurrentEventType(type);
+    setIsUnifiedModalOpen(true);
   };
 
   return (
     <DashboardLayout>
       {/* Greeting */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Re, Clémence!
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-4xl">
+          Re, <span className="font-semibold">{userProfile?.firstname || '...'}</span> !
         </h1>
       </div>
+      <Card className="w-full rounded-2xl" shadow="none" >
+        <CardBody className="p-6">
+          {/* Location Filters and Add Prospect Button */}
+          <div className="mb-4 lg:mb-6">
 
-      {/* Location Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Button
-          className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-0"
-          size="sm"
-        >
-          Tout
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Vannes
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Nantes
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          Saint-Brieuc
-        </Button>
-        <Button
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          size="sm"
-          variant="bordered"
-        >
-          National
-        </Button>
-      </div>
 
-      {/* Date Navigation */}
-      <div className="flex items-center justify-start gap-4 mb-6">
-        <Button
-          isIconOnly
-          className="text-gray-600"
-          size="sm"
-          variant="light"
-          onPress={() => {
-            const newDate = selectedDate.subtract({ months: 1 });
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between">
+              {/* Location Filters - Design avec "Tout" séparé et villes groupées */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {/* Bouton "Tout" séparé - affiché seulement si l'utilisateur a plusieurs villes */}
+                {userProfile?.villes && userProfile.villes.length > 1 && (
+                  <Button
+                    className={
+                      selectedCity === "tout"
+                        ? "bg-custom-blue-select/14 text-custom-blue-select  border-0 flex-shrink-0 rounded-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
+                    }
+                    size="sm"
+                    variant="solid"
+                    onPress={() => setSelectedCity("tout")}
+                  >
+                    Tout
+                  </Button>
+                )}
 
-            setSelectedDate(newDate);
-          }}
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1 rounded-md"
-          variant="light"
-          onPress={onOpen}
-        >
-          {selectedDate
-            .toDate(getLocalTimeZone())
-            .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-        </Button>
-        <Button
-          isIconOnly
-          className="text-gray-600"
-          size="sm"
-          variant="light"
-          onPress={() => {
-            const newDate = selectedDate.add({ months: 1 });
+                {/* Groupe des villes locales de l'utilisateur */}
+                {cities.filter(city => city.key !== "tout" && city.key !== "national").length > 0 && (
+                  <div className="flex rounded-md overflow-hidden flex-shrink-0">
+                    {cities.filter(city => city.key !== "tout" && city.key !== "national").map((city) => {
+                      const isSelected = selectedCity === city.key;
+                      const isUserCity = userProfile?.villes?.some(v =>
+                        v.ville.toLowerCase() === city.label.toLowerCase()
+                      );
 
-            setSelectedDate(newDate);
-          }}
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </Button>
-      </div>
+                      return (
+                        <Button
+                          key={city.key}
+                          className={
+                            isSelected
+                              ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none"
+                          }
+                          size="sm"
+                          title={isUserCity ? `Ville de ${userProfile?.firstname || 'l\'utilisateur'}` : undefined}
+                          variant="solid"
+                          onPress={() => setSelectedCity(city.key)}
+                        >
+                          {city.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
 
-      {/* Main Layout - 2x2 grid on left, stacked sections on right */}
-      <div className="flex flex-row gap-6">
-        {/* Left side - 2x2 Metrics Grid */}
-        <div className="flex-2">
-          <div className="grid grid-cols-2 gap-6">
-            {metrics.map((metric, index) => (
-              <MetricCard
-                key={index}
-                icon={metric.icon}
-                iconBgColor={metric.iconBgColor}
-                iconColor={metric.iconColor}
-                label={metric.label}
-                value={metric.value}
+                {/* Bouton "National" séparé */}
+                <Button
+                  className={
+                    selectedCity === "national"
+                      ? "bg-custom-blue-select/14 text-custom-blue-select border-0 flex-shrink-0 rounded-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 flex-shrink-0 rounded-md"
+                  }
+                  size="sm"
+                  variant="solid"
+                  onPress={() => setSelectedCity("national")}
+                >
+                  National
+                </Button>
+              </div>
+
+              {/* Add Prospect Button */}
+              <Button
+                className="flex-shrink-0"
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                onPress={() => setIsProspectModalOpen(true)}
+              >
+                Ajouter un prospect
+              </Button>
+            </div>
+          </div>
+
+          {/* Date Navigation */}
+          <div className="flex items-center justify-start gap-2 lg:gap-4 mb-4 lg:mb-6">
+            <Button
+              isIconOnly
+              className="text-gray-600"
+              size="sm"
+              variant="light"
+              onPress={() => {
+                const newDate = selectedDate.subtract({ months: 1 });
+
+                setSelectedDate(newDate);
+              }}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {selectedDate
+                .toDate(getLocalTimeZone())
+                .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            </div>
+            
+            <Button
+              isIconOnly
+              className="text-gray-600"
+              size="sm"
+              variant="light"
+              onPress={() => {
+                const newDate = selectedDate.add({ months: 1 });
+
+                setSelectedDate(newDate);
+              }}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Main Layout - Responsive: stacked on mobile, side-by-side on desktop */}
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            {/* Metrics Grid - Responsive: 1 column on mobile, 2 columns on tablet, 2 columns on desktop */}
+            <div className="flex-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+                {metrics.map((metric, index) => (
+                  <MetricCard
+                    key={index}
+                    icon={metric.icon}
+                    iconBgColor={metric.iconBgColor}
+                    iconColor={metric.iconColor}
+                    label={metric.label}
+                    value={metric.value}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Stacked sections - Full width on mobile, sidebar on desktop */}
+            <div className="flex-1 space-y-4 lg:space-y-6">
+              {/* Agenda Section */}
+              <AgendaSection
+                events={agendaEvents}
+                loading={agendaLoading || isNavigating}
+                onPublicationSelect={() => openUnifiedModal("publication")}
+                onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
+                onTournageSelect={() => openUnifiedModal("tournage")}
               />
-            ))}
-          </div>
-        </div>
 
-        {/* Right side - Stacked sections */}
-        <div className="flex-1 space-y-6">
-          {/* Agenda Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Agenda
-              </h3>
-              <Button
-                isIconOnly
-                className="bg-black dark:bg-white text-white dark:text-black"
-                size="sm"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {agendaEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {event.clientName}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {event.date}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${event.color}`}
+              {/* To do Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    To do
+                  </h3>
+                  <Button
+                    isIconOnly
+                    color='primary'
+                    size="sm"
+                    onPress={onAddTodoModalOpen}
                   >
-                    {event.type}
-                  </span>
+                    <PlusIcon className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="space-y-2 lg:space-y-3">
+                  {(todoLoading || isNavigating) ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500"><Spinner /></div>
+                    </div>
+                  ) : displayTodoItems.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500">Pas de résultat</div>
+                    </div>
+                  ) : (
+                    displayTodoItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between py-4 border-b border-gray-100"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-light text-primary">
+                            {item.titre}
+                          </p>
+                          <p className="text-xs text-primary-light">
+                            {new Date(item.dateEcheance).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(/\//g, '.')}
+                          </p>
+                        </div>
+                        <TodoBadge status={item.statut} />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-          {/* To do Section */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                To do
-              </h3>
-              <Button
-                isIconOnly
-                className="bg-black dark:bg-white text-white dark:text-black"
-                size="sm"
-                onPress={onAddTodoModalOpen}
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {todoItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {item.mission}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {item.deadline}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${item.color}`}
+              {/* Paiement Section */}
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Paiement
+                  </h3>
+                  <Button
+                    isIconOnly
+                    color='primary'
+                    size="sm"
+                    onPress={() => {
+                      setSelectedInvoice(null);
+                      setIsInvoiceModalOpen(true);
+                    }}
                   >
-                    {item.status}
-                  </span>
+                    <PlusIcon className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
+                <div className="space-y-2 lg:space-y-3">
+                  {(invoicesLoading || isNavigating) ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500"><Spinner /></div>
+                    </div>
+                  ) : displayInvoices.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500">Pas de résultat</div>
+                    </div>
+                  ) : (
+                    displayInvoices.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between py-4 border-b border-gray-100">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-light text-primary">{inv.client}</p>
+                          <p className="text-xs text-primary-light">
+                            {new Date(inv.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
+                          </p>
+                        </div>
+                        <span className="text-xs px-3 py-1 rounded-md bg-green-100 text-green-600">
+                          {formatAmount(inv.montant)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* Calendar Modal */}
       <Modal isOpen={isOpen} placement="center" onClose={onClose}>
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
+          <ModalHeader className="flex justify-center">
             Sélectionner une date
           </ModalHeader>
           <ModalBody>
@@ -351,66 +873,35 @@ export default function HomePage() {
       </Modal>
 
       {/* Modal d'ajout de tâche ToDo */}
-      <Modal
+      <TodoModal
         isOpen={isAddTodoModalOpen}
-        placement="center"
-        onClose={onAddTodoModalClose}
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            Ajouter une nouvelle tâche
-          </ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <Input
-                isRequired
-                label="Mission"
-                placeholder="Titre de la tâche"
-                value={newTodo.mission}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, mission: e.target.value }))
-                }
-              />
-              <Input
-                label="Deadline"
-                type="date"
-                value={newTodo.deadline}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTodo((prev) => ({ ...prev, deadline: e.target.value }))
-                }
-              />
-              <Select
-                label="Statut"
-                selectedKeys={[newTodo.status]}
-                onSelectionChange={(keys: any) =>
-                  setNewTodo((prev) => ({
-                    ...prev,
-                    status: Array.from(keys)[0] as
-                      | "En cours"
-                      | "En retard"
-                      | "Terminé",
-                  }))
-                }
-              >
-                <SelectItem key="En cours">En cours</SelectItem>
-                <SelectItem key="En retard">En retard</SelectItem>
-                <SelectItem key="Terminé">Terminé</SelectItem>
-              </Select>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onAddTodoModalClose}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddTodo}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        onOpenChange={onAddTodoModalClose}
+        onTodoAdded={handleTodoAdded}
+      />
+
+      {/* Modal unifié pour tous les types d'événements */}
+      <UnifiedEventModal
+        eventType={currentEventType}
+        isOpen={isUnifiedModalOpen}
+        onEventAdded={fetchData}
+        onOpenChange={setIsUnifiedModalOpen}
+      />
+
+      {/* Modal d'ajout de prospect */}
+      <ProspectModal
+        isOpen={isProspectModalOpen}
+        onClose={() => setIsProspectModalOpen(false)}
+        onProspectAdded={fetchData}
+      />
+
+      {/* Modal d'ajout de facture */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        selectedInvoice={selectedInvoice}
+        onEdit={handleEditInvoice}
+        onOpenChange={setIsInvoiceModalOpen}
+        onSave={handleAddInvoice}
+      />
     </DashboardLayout>
   );
 }

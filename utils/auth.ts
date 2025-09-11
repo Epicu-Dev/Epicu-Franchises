@@ -37,7 +37,9 @@ export async function getValidAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) {
-      localStorage.clear();
+      // Ne pas vider le localStorage immédiatement, laisser le dashboard-layout gérer
+      // console.warn('Échec du refresh token, mais on ne vide pas le localStorage');
+
       return null;
     }
 
@@ -51,7 +53,9 @@ export async function getValidAccessToken(): Promise<string | null> {
     return data.accessToken;
   } catch (err) {
     console.error('Erreur lors du refresh token :', err);
-    localStorage.clear();
+    // Ne pas vider le localStorage immédiatement, laisser le dashboard-layout gérer
+    // console.warn('Erreur réseau lors du refresh, mais on ne vide pas le localStorage');
+
     return null;
   }
 }
@@ -66,5 +70,30 @@ export function isUserLoggedIn(): boolean {
   const expirationDate = new Date(expiresAtAccess);
   
   return expirationDate > now;
+}
+
+/**
+ * Vérifie si le token va expirer dans les 30 prochaines minutes
+ * et le rafraîchit automatiquement si nécessaire
+ */
+export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
+  const accessToken = localStorage.getItem('accessToken');
+  const expiresAtAccess = localStorage.getItem('expiresAtAccess');
+  
+  if (!accessToken || !expiresAtAccess) return false;
+  
+  const now = new Date();
+  const expirationDate = new Date(expiresAtAccess);
+  const timeUntilExpiry = expirationDate.getTime() - now.getTime();
+  
+  // Si le token expire dans moins de 30 minutes, le rafraîchir
+  if (timeUntilExpiry < 30 * 60 * 1000) {
+    // console.log('Token expire bientôt, rafraîchissement automatique...');
+    const newToken = await getValidAccessToken();
+
+    return newToken !== null;
+  }
+  
+  return true;
 }
   

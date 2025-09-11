@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { SelectItem } from "@heroui/select";
 import {
   Table,
   TableHeader,
@@ -13,94 +13,126 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { Pagination } from "@heroui/pagination";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/modal";
-import { Textarea } from "@heroui/input";
-import { MagnifyingGlassIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import { Switch } from "@heroui/switch";
 
-interface Client {
-  id: string;
-  raisonSociale: string;
-  ville: string;
-  categorie: string;
-  telephone: string;
-  email: string;
-  numeroSiret: string;
-  dateSignatureContrat: string;
-  datePublicationContenu: string;
-  datePublicationFacture: string;
-  statutPaiementContenu: "Payée" | "En attente" | "En retard";
-  montantFactureContenu: string;
-  montantPaye: string;
-  dateReglementFacture: string;
-  restantDu: string;
-  montantSponsorisation: string;
-  montantAddition: string;
-  factureContenu: string;
-  facturePublication: string;
-  commentaire: string;
-  commentaireCadeauGerant: string;
-  montantCadeau: string;
-  tirageAuSort: boolean;
-  adresse?: string;
-  statut?: "actif" | "inactif" | "prospect";
-}
+import { CategoryBadge, StatusBadge } from "@/components/badges";
+import { SortableColumnHeader } from "@/components";
+import { StyledSelect } from "@/components/styled-select";
+import ClientModal from "@/components/client-modal";
+import { ToastContainer } from "@/components";
+import { useToast } from "@/hooks/use-toast";
+import { Client } from "@/types/client";
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
 
 export default function ClientsPage() {
+  const { showWarning } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  });
+  // Variables pour le LazyLoading
+  const [hasMore, setHasMore] = useState(true);
+  const [nextOffset, setNextOffset] = useState<number | null>(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("tous");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [categories, setCategories] = useState<Array<{ id: string, name: string }>>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [newClient, setNewClient] = useState({
-    raisonSociale: "",
-    email: "",
-    telephone: "",
-    adresse: "",
-    commentaire: "",
-    statut: "actif" as "actif" | "inactif" | "prospect",
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRdvMode, setIsRdvMode] = useState(false);
 
-  const fetchClients = async () => {
+  // Effet pour mettre à jour les colonnes visibles quand le mode RDV change
+  useEffect(() => {
+    if (isRdvMode) {
+      // Mode RDV activé : sélectionner toutes les colonnes RDV
+      const rdvColumns = new Set(rdvColumnConfig.map(col => col.key));
+
+      setVisibleColumns(rdvColumns);
+    } else {
+      // Mode normal : vider la sélection pour afficher toutes les colonnes
+      setVisibleColumns(new Set());
+    }
+  }, [isRdvMode]);
+
+  const [, setViewCount] = useState<number | null>(null);
+
+  // Configuration des colonnes du tableau
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
+
+  const columnConfig = [
+    { key: 'modifier', label: 'Modifier', sortable: false },
+    { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: false },
+    { key: 'raisonSociale', label: 'Raison sociale', sortable: false },
+    { key: 'siret', label: 'Numéro SIRET', sortable: false, field: 'siret' },
+    { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
+    { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
+    { key: 'email', label: 'Mail', sortable: false, field: 'email' },
+    { key: 'nombreAbonnesFood', label: 'Nombre abonnés food', sortable: false },
+    { key: 'dateSignatureContrat', label: 'Date signature contrat', sortable: true, field: 'dateSignatureContrat' },
+    { key: 'datePublicationContenu', label: 'Date de publication', sortable: true, field: 'datePublicationContenu' },
+    { key: 'datePublicationFacture', label: 'Envoie facture contenu', sortable: true, field: 'datePublicationFacture' },
+    { key: 'montantFactureTournage', label: 'Montant facture tournage', sortable: true, field: 'montantFactureTournage' },
+    { key: 'factureTournage', label: 'Facture tournage', sortable: false },
+    { key: 'dateEnvoiFacturePublication', label: 'Envoie de facture publication', sortable: false },
+    { key: 'montantFacturePublication', label: 'Montant facture publication', sortable: false },
+    { key: 'facturePublication', label: 'Facture publication', sortable: false },
+    { key: 'montantSponsorisation', label: 'Montant de la sponsorisation', sortable: false },
+    { key: 'montantEdition', label: 'Montant de l\'édition', sortable: false },
+    { key: 'benefice', label: 'Bénéfices', sortable: false },
+    { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
+    { key: 'tirageAuSort', label: 'Tirage au sort', sortable: false },
+    { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
+    { key: 'nombreAbonnes', label: 'Nombre d\'abonnés', sortable: false },
+    { key: 'commentaire', label: 'Commentaire', sortable: false },
+  ];
+
+  // Configuration pour le mode RDV
+  const rdvColumnConfig = [
+    { key: 'modifier', label: 'Modifier', sortable: false },
+    { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: false },
+    { key: 'ville', label: 'Ville', sortable: false },
+    { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
+    { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
+    { key: 'nombreAbonnes', label: 'Nombre abonnés', sortable: false },
+  ];
+
+
+  const fetchClients = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      const params = new URLSearchParams({
-        page: pagination.currentPage.toString(),
-        limit: pagination.itemsPerPage.toString(),
-        search: searchTerm,
-        category: selectedCategory,
-        sortBy: sortField,
-        sortOrder: sortDirection,
-      });
+      // Construire les paramètres de requête pour l'API Airtable
+      const params = new URLSearchParams();
 
-      const response = await fetch(`/api/clients?${params}`);
+      if (searchTerm) params.append('q', searchTerm);
+      if (selectedCategoryId && selectedCategoryId !== '') {
+        params.append('category', selectedCategoryId);
+      }
+      if (sortField) params.append('orderBy', sortField);
+      if (sortDirection) params.append('order', sortDirection);
+
+      const limit = 20;
+      const offset = isLoadMore ? (nextOffset || 0) : 0;
+
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
+
+      const queryString = params.toString();
+      const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des clients");
@@ -108,24 +140,59 @@ export default function ClientsPage() {
 
       const data = await response.json();
 
-      setClients(data.clients);
-      setPagination(data.pagination);
+      if (isLoadMore) {
+        setClients(prev => [...prev, ...(data.clients || [])]);
+      } else {
+        setClients(data.clients || []);
+      }
+
+      setViewCount(data.viewCount ?? null);
+
+      // Mettre à jour la pagination pour le LazyLoading
+      setHasMore(data.pagination?.hasMore || false);
+      setNextOffset(data.pagination?.nextOffset || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Fonction pour récupérer les catégories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+
+      if (response.ok) {
+        const data = await response.json();
+
+        setCategories(data.results || []);
+      }
+    } catch {
+      // Erreur silencieuse lors de la récupération des catégories
+    }
+  };
+
+  // Fonction pour charger plus de données
+  const loadMore = () => {
+    if (hasMore && !loadingMore && nextOffset !== null) {
+      fetchClients(true);
     }
   };
 
   useEffect(() => {
     fetchClients();
   }, [
-    pagination.currentPage,
     searchTerm,
     selectedCategory,
     sortField,
     sortDirection,
   ]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -136,37 +203,7 @@ export default function ClientsPage() {
     }
   };
 
-  const handleAddClient = async () => {
-    try {
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newClient),
-      });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du client");
-      }
-
-      // Réinitialiser le formulaire et fermer le modal
-      setNewClient({
-        raisonSociale: "",
-        email: "",
-        telephone: "",
-        adresse: "",
-        commentaire: "",
-        statut: "actif",
-      });
-      setIsAddModalOpen(false);
-
-      // Recharger les clients
-      fetchClients();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client);
@@ -177,786 +214,665 @@ export default function ClientsPage() {
     if (!editingClient) return;
 
     try {
-      const response = await fetch(`/api/clients/${editingClient.id}`, {
-        method: "PUT",
+      setIsLoading(true);
+      setError(null);
+
+      // Validation côté client
+      if (!editingClient.raisonSociale?.trim()) {
+        setError("La raison sociale est requise");
+        setIsLoading(false);
+
+        return;
+      }
+
+      // Vérifier que l'ID existe
+      if (!editingClient.id) {
+        setError("ID du client manquant");
+        setIsLoading(false);
+
+        return;
+      }
+
+      // Pour l'édition, utiliser PATCH avec l'ID dans l'URL
+      const url = `/api/clients/clients?id=${editingClient.id}`;
+
+      // Préparer les données pour l'API (mapping des champs frontend vers API)
+      const apiData = {
+        "Nom de l'établissement": editingClient.nomEtablissement,
+        "Raison sociale": editingClient.raisonSociale,
+        "Email": editingClient.email,
+        "Téléphone": editingClient.telephone,
+        "Ville": editingClient.ville,
+        "SIRET": editingClient.siret,
+        "Catégorie": editingClient.categorie,
+      };
+
+      const response = await fetch(url, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editingClient),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la modification du client");
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
       // Fermer le modal et recharger les clients
       setIsEditModalOpen(false);
       setEditingClient(null);
+      setError(null);
       fetchClients();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "En attente":
-        return "bg-yellow-100 text-yellow-800";
-      case "Payée":
-        return "bg-green-100 text-green-800";
-      case "En retard":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  // Fonction de réinitialisation de tous les filtres
+  const resetAllFilters = () => {
+    setSelectedCategory('tous');
+    setSelectedCategoryId('');
+    setVisibleColumns(new Set());
+    setSearchTerm('');
+    setIsRdvMode(false);
   };
 
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "food":
-        return "bg-orange-100 text-orange-800";
-      case "shop":
-        return "bg-purple-100 text-purple-800";
-      case "service":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-purple-100 text-purple-800";
-    }
-  };
-
-  if (loading && clients.length === 0) {
-    return (
-      <div className="w-full">
-        <Card className="w-full">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full">
-        <Card className="w-full">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <div className="text-red-500">Erreur: {error}</div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="w-full">
-      <Card className="w-full">
-        <CardBody className="p-6">
+    <div className="w-full text-primary">
+      <Card className="w-full" shadow="none">
+        <CardBody className="p-2" >
           {/* Header with filters */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-4">
-              <Select
-                className="w-48"
+              {/* Bouton de réinitialisation de tous les filtres */}
+              {(selectedCategoryId || visibleColumns.size > 0 || searchTerm) && (
+                <Button
+                  isIconOnly
+                  size="md"
+                  className="bg-page-bg"
+                  title="Réinitialiser tous les filtres"
+                  onPress={resetAllFilters}
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              )}
+
+              <StyledSelect
+                className="w-40"
                 placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tous">Tous</SelectItem>
-                <SelectItem key="shop">Shop</SelectItem>
-                <SelectItem key="food">Food</SelectItem>
-                <SelectItem key="service">Service</SelectItem>
-              </Select>
-            </div>
+                selectedKeys={selectedCategoryId ? [selectedCategoryId] : []}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as string;
 
-            <div className="relative">
-              <Input
-                className="w-64 pr-4 pl-10"
-                classNames={{
-                  input:
-                    "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
-                  inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-white dark:bg-gray-800",
+                  if (selected === 'tous') {
+                    setSelectedCategory('tous');
+                    setSelectedCategoryId('');
+                  } else {
+                    const category = categories.find(cat => cat.id === selected);
+
+                    setSelectedCategory(category?.name || '');
+                    setSelectedCategoryId(selected);
+                  }
                 }}
-                placeholder="Rechercher..."
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+              >
+                <SelectItem key="tous">Toutes</SelectItem>
+                {categories.length > 0 ? (
+                  <>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                ) : (
+                  <SelectItem key="loading">Chargement...</SelectItem>
+                )}
+              </StyledSelect>
+
+              {/* Dropdown de sélection des colonnes */}
+              <StyledSelect
+                className="w-64"
+                placeholder={`Colonnes (${visibleColumns.size === 0 ? (isRdvMode ? rdvColumnConfig.length : columnConfig.length) : visibleColumns.size})`}
+                selectedKeys={visibleColumns}
+                selectionMode="multiple"
+                onSelectionChange={(keys) => {
+                  // Always include 'modifier' column, and add all selected keys
+                  const newVisibleColumns = new Set(['modifier', ...Array.from(keys as Set<string> | string[])]);
+
+                  setVisibleColumns(newVisibleColumns);
+                }}
+              >
+                {(isRdvMode ? rdvColumnConfig : columnConfig).filter((column) => column.key !== 'modifier').map((column) => (
+                  <SelectItem key={column.key}>
+                    {column.label}
+                  </SelectItem>
+                ))}
+              </StyledSelect>
+              <div className="flex items-center gap-4 font-light text-sm">
+                <span>Mode RDV</span>
+                <Switch
+                  isSelected={isRdvMode}
+                  onValueChange={() => setIsRdvMode(!isRdvMode)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+
+
+              <div className="relative">
+                  <Input
+                  className="w-64 pr-4 pl-10"
+                  classNames={{
+                    inputWrapper:
+                      "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
+                  }}
+                  endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
+                  placeholder="Rechercher..."
+                  startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Table */}
-          <Table aria-label="Tableau des clients">
-            <TableHeader>
-              <TableColumn>Client</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("categorie")}
-                >
-                  Catégorie
-                  {sortField === "categorie" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
-              <TableColumn>Nom établissement</TableColumn>
-              <TableColumn>Raison sociale</TableColumn>
-              <TableColumn>
-                <Button
-                  className="p-0 h-auto font-semibold text-gray-700 dark:text-gray-300"
-                  variant="light"
-                  onPress={() => handleSort("dateSignatureContrat")}
-                >
-                  Date signature contrat
-                  {sortField === "dateSignatureContrat" && (
-                    <span className="ml-1">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              </TableColumn>
-              <TableColumn>Facture contenu</TableColumn>
-              <TableColumn>Facture publication</TableColumn>
-              <TableColumn>Modifier</TableColumn>
-              <TableColumn>Commentaire</TableColumn>
-            </TableHeader>
-            <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>{client.id}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${getCategoryBadgeColor(client.categorie || "Shop")}`}
-                    >
-                      {client.categorie || "Shop"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-medium">L&apos;ambiance</TableCell>
-                  <TableCell className="font-medium">
-                    {client.raisonSociale}
-                  </TableCell>
-                  <TableCell>{client.dateSignatureContrat}</TableCell>
-                  <TableCell>{client.factureContenu}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(client.facturePublication)}`}
-                    >
-                      {client.facturePublication}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      className="text-gray-600 hover:text-gray-800"
-                      size="sm"
-                      variant="light"
-                      onPress={() => handleEditClient(client)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>{client.commentaire}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-6">
-            <Pagination
-              showControls
-              classNames={{
-                wrapper: "gap-2",
-                item: "w-8 h-8 text-sm",
-                cursor:
-                  "bg-black text-white dark:bg-white dark:text-black font-bold",
-              }}
-              page={pagination.currentPage}
-              total={pagination.totalPages}
-              onChange={(page) =>
-                setPagination((prev) => ({ ...prev, currentPage: page }))
-              }
-            />
-          </div>
 
-          {/* Info sur le nombre total d'éléments */}
-          <div className="text-center mt-4 text-sm text-gray-500">
-            Affichage de {clients.length} client(s) sur {pagination.totalItems}{" "}
-            au total
-          </div>
+          {/* Table avec LazyLoading */}
+          {loading ? <div className="w-full">
+            <Card className="w-full" shadow="none">
+              <CardBody className="p-6">
+                <div className="flex justify-center items-center h-64">
+                  <Spinner className="text-black dark:text-white" size="lg" />
+                </div>
+              </CardBody>
+            </Card>
+          </div> :
+
+            error ? <div className="flex justify-center items-center h-64">
+              <div className="text-red-500">Erreur: {error}</div>
+            </div> :
+
+              clients.length === 0 ?
+                <div className="py-20 text-gray-500 flex justify-center flex-col items-center">
+                  <div className="text-lg mb-2">Aucun client trouvé</div>
+                  <div className="text-sm">Essayez de modifier vos filtres</div>
+                  <Button
+                    className="mt-4"
+                    color="primary"
+                    onPress={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('tous');
+                      setSelectedCategoryId('');
+                    }}
+                  >
+                    Réinitialiser les filtres
+                  </Button>
+
+                </div> :
+                <Table aria-label="Tableau des clients" bottomContent={
+                  hasMore && (
+                    <div className="flex justify-center py-4">
+                      <Button
+                        color="primary"
+                        disabled={loadingMore}
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                      >
+                        {loadingMore ? 'Chargement...' : 'Charger plus'}
+                      </Button>
+                    </div>
+                  )
+                }
+                  shadow="none"
+                >
+                  <TableHeader>
+
+                    {/* Autres colonnes selon la sélection et le mode RDV */}
+                    {
+
+                      (isRdvMode ? rdvColumnConfig : columnConfig)
+                        .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                        .map((column) => {
+                          if (column.sortable) {
+                            return (
+                              <TableColumn key={column.key} className="font-light text-sm">
+                                <SortableColumnHeader
+                                  field={column.field!}
+                                  label={column.label}
+                                  sortDirection={sortDirection}
+                                  sortField={sortField}
+                                  onSort={handleSort}
+                                />
+                              </TableColumn>
+                            );
+                          }
+
+                          return (
+                            <TableColumn key={column.key} className="font-light text-sm">
+                              {column.label}
+                            </TableColumn>
+                          );
+                        })}
+                  </TableHeader>
+                  <TableBody className="mt-4">
+                    {(
+                      clients.map((client, index) => (
+                        <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
+                          {(() => {
+                            const cells: JSX.Element[] = [];
+
+                            // Cellule Modifier toujours visible en premier
+                            const hasFactures = client.invoices && client.invoices.length > 0;
+
+                            cells.push(
+                              <TableCell key="modifier" className="font-light">
+                                <div className="relative">
+                                  <Button
+                                    isIconOnly
+                                    aria-label={hasFactures ? `Client ${client.raisonSociale} lié à la facturation - Modification désactivée` : `Modifier le client ${client.raisonSociale}`}
+                                    className={hasFactures ? "text-gray-&ÀÀ cursor-not-allowed" : "text-gray-600 hover:text-gray-800"}
+                                    size="sm"
+                                    variant="light"
+                                    onPress={() => {
+                                      if (hasFactures) {
+                                        showWarning(`Le client ${client.raisonSociale} est lié à une facture et ne peut plus être modifié.`);
+                                      } else {
+                                        handleEditClient(client);
+                                      }
+                                    }}
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                  </Button>
+                                  {hasFactures && (
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                      Client lié à la facturation
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+
+                            // Autres cellules selon la sélection et le mode RDV
+                            (isRdvMode ? rdvColumnConfig : columnConfig)
+                              .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                              .forEach((column) => {
+
+                                switch (column.key) {
+                                  case 'categorie':
+
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light py-5">
+                                        <CategoryBadge category={client.categorie || ""} />
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nomEtablissement':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.nomEtablissement}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'raisonSociale':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.raisonSociale}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'ville':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.ville}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'telephone':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light min-w-32">
+                                        {client.telephone}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'email':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.email}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'siret':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.siret}
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'dateSignatureContrat':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.dateSignatureContrat
+                                          ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          }).replace(/\//g, '.')
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'datePublicationContenu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {
+                                          client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.datePublication || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'datePublicationFacture':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {
+                                          client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.dateEnvoiFactureCreation || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                        }
+
+                                      </TableCell>
+                                    );
+                                    break;
+
+                                  case 'montantFactureTournage':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantFactureTournage || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantFactureContenu':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.invoices && client.invoices.length > 0
+                                          ? client.invoices.map((invoice, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {invoice.montant || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+
+                                  case 'montantSponsorisation':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantSponsorisation || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantAddition':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantAddition || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantCadeau':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantCadeau || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'tirageAuSort':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.tirageEffectue ? "Oui" : "Non"}
+                                            </div>
+                                          ))
+                                          : '-'
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'commentaire':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.commentaire || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'commentaireCadeauGerant':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.cadeauGerant || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreVues':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.nombreVues || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreAbonnes':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.nombreAbonnes || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'nombreAbonnesFood':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        -
+
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'factureTournage':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              <StatusBadge status={pub.factureTournage || "En attente"} />
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'dateEnvoiFacturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.dateEnvoiFacturePublication
+                                                ? new Date(pub.dateEnvoiFacturePublication).toLocaleDateString('fr-FR', {
+                                                  day: '2-digit',
+                                                  month: '2-digit',
+                                                  year: 'numeric'
+                                                }).replace(/\//g, '.')
+                                                : "-"
+                                              }
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantFacturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantFacturePublication || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'facturePublication':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              <StatusBadge status={pub.facturePublication || "En attente"} />
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'montantEdition':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.montantAddition || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+                                  case 'benefice':
+                                    cells.push(
+                                      <TableCell key={column.key} className="font-light">
+                                        {client.publications && client.publications.length > 0
+                                          ? client.publications.map((pub, idx) => (
+                                            <div key={idx} className="text-sm">
+                                              {pub.benefice || "-"}
+                                            </div>
+                                          ))
+                                          : "-"
+                                        }
+                                      </TableCell>
+                                    );
+                                    break;
+
+                                }
+                              });
+
+                            return cells;
+                          })()}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>}
+
+
         </CardBody>
       </Card>
 
-      {/* Modal d'ajout de client */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>Ajouter un nouveau client</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <Input
-                isRequired
-                label="Raison sociale"
-                placeholder="Nom de l'entreprise"
-                value={newClient.raisonSociale}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    raisonSociale: e.target.value,
-                  }))
-                }
-              />
-              <Input
-                label="Email"
-                placeholder="contact@entreprise.fr"
-                type="email"
-                value={newClient.email}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, email: e.target.value }))
-                }
-              />
-              <Input
-                label="Téléphone"
-                placeholder="01 23 45 67 89"
-                value={newClient.telephone}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    telephone: e.target.value,
-                  }))
-                }
-              />
-              <Input
-                label="Adresse"
-                placeholder="123 Rue de l'entreprise, 75001 Paris"
-                value={newClient.adresse}
-                onChange={(e) =>
-                  setNewClient((prev) => ({ ...prev, adresse: e.target.value }))
-                }
-              />
-              <Select
-                label="Statut"
-                selectedKeys={[newClient.statut]}
-                onSelectionChange={(keys) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    statut: Array.from(keys)[0] as
-                      | "actif"
-                      | "inactif"
-                      | "prospect",
-                  }))
-                }
-              >
-                <SelectItem key="actif">Actif</SelectItem>
-                <SelectItem key="inactif">Inactif</SelectItem>
-                <SelectItem key="prospect">Prospect</SelectItem>
-              </Select>
-              <Textarea
-                label="Commentaire"
-                placeholder="Informations supplémentaires..."
-                value={newClient.commentaire}
-                onChange={(e) =>
-                  setNewClient((prev) => ({
-                    ...prev,
-                    commentaire: e.target.value,
-                  }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsAddModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddClient}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
       {/* Modal d'édition de client */}
-      <Modal
+      <ClientModal
+        categories={categories}
+        editingClient={editingClient}
+        error={error}
+        isLoading={isLoading}
         isOpen={isEditModalOpen}
-        scrollBehavior="inside"
-        size="2xl"
+        setEditingClient={setEditingClient}
         onOpenChange={setIsEditModalOpen}
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <h2>Modifier le client</h2>
-            <p className="text-sm text-gray-500 font-normal">
-              {editingClient?.raisonSociale}
-            </p>
-          </ModalHeader>
-          <ModalBody className="max-h-[70vh] overflow-y-auto">
-            {editingClient && (
-              <div className="space-y-6">
-                {/* Informations générales */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Informations générales
-                  </h3>
+        onUpdateClient={handleUpdateClient}
+      />
 
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Nom établissement"
-                    placeholder="Nom de l'établissement"
-                    value={editingClient.raisonSociale}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, raisonSociale: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Ville"
-                    placeholder="Paris"
-                    value={editingClient.ville || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, ville: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Select
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                    }}
-                    label="Catégorie"
-                    placeholder="Sélectionner une catégorie"
-                    selectedKeys={
-                      editingClient.categorie ? [editingClient.categorie] : []
-                    }
-                    onSelectionChange={(keys) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              categorie: Array.from(keys)[0] as string,
-                            }
-                          : null
-                      )
-                    }
-                  >
-                    <SelectItem key="shop">Shop</SelectItem>
-                    <SelectItem key="food">Food</SelectItem>
-                    <SelectItem key="service">Service</SelectItem>
-                  </Select>
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Téléphone"
-                    placeholder="01 23 45 67 89"
-                    value={editingClient.telephone || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, telephone: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Mail"
-                    placeholder="contact@etablissement.fr"
-                    type="email"
-                    value={editingClient.email || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, email: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Numéro de SIRET"
-                    placeholder="12345678901234"
-                    value={editingClient.numeroSiret || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, numeroSiret: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Commentaire */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Commentaire
-                  </h3>
-
-                  <Textarea
-                    classNames={{
-                      input: "text-sm",
-                    }}
-                    minRows={3}
-                    placeholder="..."
-                    value={editingClient.commentaire || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, commentaire: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Prestations */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Prestations
-                  </h3>
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date de signature du contrat"
-                    type="date"
-                    value={editingClient.dateSignatureContrat || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, dateSignatureContrat: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Button
-                    className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    startContent={<span>📥</span>}
-                  >
-                    Télécharger
-                  </Button>
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date de publication"
-                    type="date"
-                    value={editingClient.datePublicationContenu || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, datePublicationContenu: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date d'envoie facture création de contenu"
-                    type="date"
-                    value={editingClient.datePublicationFacture || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, datePublicationFacture: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Select
-                    classNames={{
-                      label: "text-sm font-medium",
-                    }}
-                    label="Statut du paiement"
-                    selectedKeys={
-                      editingClient.statutPaiementContenu
-                        ? [editingClient.statutPaiementContenu]
-                        : []
-                    }
-                    onSelectionChange={(keys) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              statutPaiementContenu: Array.from(keys)[0] as
-                                | "Payée"
-                                | "En attente"
-                                | "En retard",
-                            }
-                          : null
-                      )
-                    }
-                  >
-                    <SelectItem key="Payée">Payée</SelectItem>
-                    <SelectItem key="En attente">En attente</SelectItem>
-                    <SelectItem key="En retard">En retard</SelectItem>
-                  </Select>
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Montant facturé"
-                    placeholder="1750€"
-                    value={editingClient.montantFactureContenu || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, montantFactureContenu: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Montant payé"
-                    placeholder="750€"
-                    value={editingClient.montantPaye || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, montantPaye: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Date du règlement de la facture"
-                    type="date"
-                    value={editingClient.dateReglementFacture || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, dateReglementFacture: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Restant dû"
-                    placeholder="1750€"
-                    value={editingClient.restantDu || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, restantDu: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Montant de la sponsorisation"
-                    placeholder="1750€"
-                    value={editingClient.montantSponsorisation || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, montantSponsorisation: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Montant de l'addition"
-                    placeholder="1750€"
-                    value={editingClient.montantAddition || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, montantAddition: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Commentaire */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Commentaire
-                  </h3>
-
-                  <Textarea
-                    classNames={{
-                      input: "text-sm",
-                    }}
-                    minRows={4}
-                    placeholder="..."
-                    value={editingClient.commentaire || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, commentaire: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Cadeau du gérant pour le jeu concours */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Cadeau du gérant pour le jeu concours
-                  </h3>
-
-                  <Textarea
-                    classNames={{
-                      input: "text-sm",
-                    }}
-                    minRows={4}
-                    placeholder="..."
-                    value={editingClient.commentaireCadeauGerant || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev
-                          ? { ...prev, commentaireCadeauGerant: e.target.value }
-                          : null
-                      )
-                    }
-                  />
-
-                  <Input
-                    isRequired
-                    classNames={{
-                      label: "text-sm font-medium",
-                      input: "text-sm",
-                    }}
-                    label="Montant du cadeau"
-                    placeholder="150€"
-                    value={editingClient.montantCadeau || ""}
-                    onChange={(e) =>
-                      setEditingClient((prev) =>
-                        prev ? { ...prev, montantCadeau: e.target.value } : null
-                      )
-                    }
-                  />
-
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <span className="text-sm font-medium">
-                      Tirage au sort effectué
-                    </span>
-                    <div className="flex gap-2 ml-auto">
-                      <Button
-                        className={
-                          editingClient.tirageAuSort === false
-                            ? "bg-gray-200"
-                            : ""
-                        }
-                        size="sm"
-                        variant="light"
-                        onPress={() =>
-                          setEditingClient((prev) =>
-                            prev ? { ...prev, tirageAuSort: false } : null
-                          )
-                        }
-                      >
-                        Annuler
-                      </Button>
-                      <Button
-                        className="bg-black text-white dark:bg-white dark:text-black"
-                        size="sm"
-                        onPress={() =>
-                          setEditingClient((prev) =>
-                            prev ? { ...prev, tirageAuSort: true } : null
-                          )
-                        }
-                      >
-                        Ajouter
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => {
-                setIsEditModalOpen(false);
-                setEditingClient(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleUpdateClient}
-            >
-              Modifier
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }

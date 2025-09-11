@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import crypto from 'crypto';
+
 import { base } from '../constants';
 
 
@@ -59,8 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const newRefreshToken = generateToken(48);
     const now = Date.now();
 
-    const expiresAtAccess = new Date(now + 60 * 60 * 1000).toISOString(); // 1h
-    const expiresAtRefresh = new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 jours
+    const expiresAtAccess = new Date(now + 4 * 60 * 60 * 1000).toISOString(); // 4 heures
+    const expiresAtRefresh = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 jours
 
     await base('AUTH_ACCESS_TOKEN').create([
       {
@@ -82,14 +84,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     ]);
 
+    // Récupérer les infos utilisateur à retourner (similaire à /api/auth/login)
+    let userInfo = null;
+
+    try {
+      const userRecord = await base('COLLABORATEURS').find(userId);
+
+      // construire la liste des villes liées à l'utilisateur
+      let villesEpicu: { id: string; ville: string }[] = [];
+
+      try {
+        const linked = userRecord.get('Ville EPICU');
+        let linkedIds: string[] = [];
+
+        if (linked) {
+          if (Array.isArray(linked)) linkedIds = linked;
+          else if (typeof linked === 'string') linkedIds = [linked];
+        }
+        if (linkedIds.length > 0) {
+          const v = await base('VILLES EPICU')
+            .select({ filterByFormula: `OR(${linkedIds.map(id => `RECORD_ID() = '${id}'`).join(',')})`, fields: ['Ville EPICU'], maxRecords: linkedIds.length })
+            .all();
+
+          villesEpicu = v.map((r: any) => ({ id: r.id, ville: r.get('Ville EPICU') }));
+        }
+      } catch (e) {
+        // ignore failures to fetch villes
+      }
+
+      userInfo = {
+        id: userRecord.id,
+        email: userRecord.get('Email perso'),
+        firstname: userRecord.get('Prénom'),
+        lastname: userRecord.get('Nom'),
+        villes: villesEpicu,
+        role: userRecord.get('Rôle')
+      };
+    } catch (e) {
+      // ignore if user fetch fails
+    }
+
     return res.status(200).json({
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresAtAccess,
       expiresAtRefresh,
+      user: userInfo,
     });
   } catch (error) {
     console.error('Erreur lors du refresh :', error);
+
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

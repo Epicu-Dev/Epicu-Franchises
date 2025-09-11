@@ -7,211 +7,211 @@ import { Input } from '@heroui/input';
 import { Tabs, Tab } from '@heroui/tabs';
 import { Avatar } from '@heroui/avatar';
 import {
-  PencilIcon,
-  DocumentTextIcon,
-  ClockIcon
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@heroui/table';
+import {
+  ArrowDownTrayIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 
-interface UserProfile {
-  id: string;
-  identifier: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: string;
-  avatar?: string;
-}
+import { SortableColumnHeader } from '@/components/sortable-column-header';
+import { useSortableTable } from '@/hooks/use-sortable-table';
+import { InvoiceStatusBadge } from '@/components/badges';
+import { FormLabel } from '@/components';
+import { useUser } from '@/contexts/user-context';
+import { UserProfile, VilleEpicu } from '@/types/user';
 
 interface Invoice {
   id: string;
-  number: string;
+  etat: 'Validée' | 'En attente';
   date: string;
-  amount: number;
-  status: 'payee' | 'en_attente' | 'retard';
+  montant: string;
+  typeFacture: string;
 }
 
 interface Document {
   id: string;
-  name: string;
   type: string;
-  uploadDate: string;
-  size: string;
+  dateAjout: string;
 }
 
 interface HistoryItem {
   id: string;
+  personne: string;
   action: string;
   date: string;
-  description: string;
+  heure: string;
 }
 
 export default function ProfilPage() {
+  const { userProfile, refreshUserProfile } = useUser();
   const [activeTab, setActiveTab] = useState<string>('informations');
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [profile, setProfile] = useState<UserProfile>({
-    id: '1',
-    identifier: '',
-    firstName: 'Dominique',
-    lastName: 'Durand',
-    email: 'rennes@epicu.fr',
-    phone: '06 00 00 00 00',
-    role: 'Franchisé'
-  });
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  const fetchProfileData = async () => {
+  // Hook pour le tri du tableau historique
+  const { sortField, sortDirection, handleSort, sortedData } = useSortableTable<HistoryItem>(history);
+
+  // Hook pour le tri du tableau documents
+  const {
+    sortField: docSortField,
+    sortDirection: docSortDirection,
+    handleSort: handleDocSort,
+    sortedData: sortedDocData
+  } = useSortableTable<Document>(documents);
+
+  // Hook pour le tri du tableau factures
+  const {
+    sortField: invoiceSortField,
+    sortDirection: invoiceSortDirection,
+    handleSort: handleInvoiceSort,
+    sortedData: sortedInvoiceData
+  } = useSortableTable<Invoice>(invoices);
+
+  // Charger les données mock au montage
+  useEffect(() => {
+    // Données mock pour les factures (à remplacer par de vraies données API plus tard)
+    setInvoices([
+      {
+        id: '1',
+        etat: 'Validée',
+        date: '10.07.2025',
+        montant: '1450€67',
+        typeFacture: 'Redevance annuelle'
+      },
+      {
+        id: '2',
+        etat: 'Validée',
+        date: '10.07.2025',
+        montant: '1450€67',
+        typeFacture: 'Redevance annuelle'
+      },
+      {
+        id: '3',
+        etat: 'Validée',
+        date: '10.07.2025',
+        montant: '1450€67',
+        typeFacture: 'Redevance annuelle'
+      },
+      {
+        id: '4',
+        etat: 'En attente',
+        date: '10.07.2025',
+        montant: '1450€67',
+        typeFacture: 'Redevance mensuelle'
+      },
+      {
+        id: '5',
+        etat: 'Validée',
+        date: '10.07.2025',
+        montant: '1450€67',
+        typeFacture: 'Droit d\'entrée'
+      }
+    ]);
+
+    // Données mock pour les documents (à remplacer par de vraies données API plus tard)
+    setDocuments([
+      {
+        id: '1',
+        type: 'DIP',
+        dateAjout: '12.08.2025'
+      },
+      {
+        id: '2',
+        type: 'Contrat de franchisé',
+        dateAjout: '12.08.2025'
+      },
+      {
+        id: '3',
+        type: 'Autre',
+        dateAjout: '12.08.2025'
+      }
+    ]);
+
+    // Données mock pour l'historique (à remplacer par de vraies données API plus tard)
+    setHistory([
+      {
+        id: '1',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Modification du profil',
+        date: '12.07.2025',
+        heure: '14:30'
+      },
+      {
+        id: '2',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Connexion',
+        date: '12.07.2025',
+        heure: '09:15'
+      },
+      {
+        id: '3',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Modification du profil',
+        date: '12.07.2025',
+        heure: '16:45'
+      },
+      {
+        id: '4',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Connexion',
+        date: '12.07.2025',
+        heure: '08:30'
+      },
+      {
+        id: '5',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Modification du profil',
+        date: '12.07.2025',
+        heure: '11:20'
+      },
+      {
+        id: '6',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Connexion',
+        date: '12.07.2025',
+        heure: '13:15'
+      },
+      {
+        id: '7',
+        personne: userProfile?.firstname || 'Utilisateur',
+        action: 'Ajout d\'un prospect',
+        date: '12.07.2025',
+        heure: '18:45'
+      }
+    ]);
+  }, [userProfile?.firstname]);
+
+  const handleSaveProfile = async () => {
     try {
       setLoading(true);
+      // TODO: Implémenter la sauvegarde via l'API Epicu
+      // Pour l'instant, on simule la sauvegarde
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsEditing(false);
+
+      // Rafraîchir les données utilisateur
+      await refreshUserProfile();
+
+      // Afficher un message de succès temporaire
       setError(null);
-
-      // Simuler le chargement des données
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Données mock pour les factures
-      setInvoices([
-        {
-          id: '1',
-          number: 'FAC-2025-001',
-          date: '2025-06-15',
-          amount: 1457.98,
-          status: 'payee'
-        },
-        {
-          id: '2',
-          number: 'FAC-2025-002',
-          date: '2025-06-20',
-          amount: 2340.50,
-          status: 'en_attente'
-        },
-        {
-          id: '3',
-          number: 'FAC-2025-003',
-          date: '2025-06-25',
-          amount: 890.25,
-          status: 'retard'
-        }
-      ]);
-
-      // Données mock pour les documents
-      setDocuments([
-        {
-          id: '1',
-          name: 'Contrat de franchise.pdf',
-          type: 'PDF',
-          uploadDate: '2025-01-15',
-          size: '2.5 MB'
-        },
-        {
-          id: '2',
-          name: 'Guide utilisateur.docx',
-          type: 'DOCX',
-          uploadDate: '2025-02-20',
-          size: '1.8 MB'
-        },
-        {
-          id: '3',
-          name: 'Certificat formation.pdf',
-          type: 'PDF',
-          uploadDate: '2025-03-10',
-          size: '3.2 MB'
-        }
-      ]);
-
-      // Données mock pour l'historique
-      setHistory([
-        {
-          id: '1',
-          action: 'Connexion',
-          date: '2025-06-15 14:30',
-          description: 'Connexion réussie depuis l\'adresse IP 192.168.1.100'
-        },
-        {
-          id: '2',
-          action: 'Modification profil',
-          date: '2025-06-10 09:15',
-          description: 'Mise à jour des informations personnelles'
-        },
-        {
-          id: '3',
-          action: 'Téléchargement document',
-          date: '2025-06-05 16:45',
-          description: 'Téléchargement du guide utilisateur'
-        }
-      ]);
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
-
-  const handleSaveProfile = async () => {
-    try {
-      // Simuler la sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsEditing(false);
-      // Ici on pourrait appeler l'API pour sauvegarder
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
-    }
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'payee':
-        return 'Payée';
-      case 'en_attente':
-        return 'En attente';
-      case 'retard':
-        return 'Retard';
-      default:
-        return status;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full bg-white dark:bg-gray-900">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -228,14 +228,15 @@ export default function ProfilPage() {
   }
 
   return (
-    <div className="w-full">
-      <Card className="w-full bg-white dark:bg-gray-900 shadow-none">
+    <div className="w-full text-primary">
+      <Card className="w-full bg-white shadow-none text-primary">
         <CardBody className="p-6">
           {/* Onglets */}
-          <Tabs
-            className="w-full mb-6"
+          {/* <Tabs
+            className="w-full pt-3 mb-2"
             classNames={{
-              cursor: "w-[50px] left-[12px] h-1",
+              cursor: "w-[50px]  left-[12px] h-1   rounded",
+              tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
             }}
             selectedKey={activeTab}
             variant='underlined'
@@ -246,10 +247,6 @@ export default function ProfilPage() {
               title="Mes informations"
             />
             <Tab
-              key="factures"
-              title="Mes factures Epicu"
-            />
-            <Tab
               key="documents"
               title="Mes documents"
             />
@@ -257,222 +254,291 @@ export default function ProfilPage() {
               key="historique"
               title="Historique"
             />
-          </Tabs>
+          </Tabs> */}
 
-          {/* Contenu des onglets */}
-          {activeTab === 'informations' && (
-            <div className="space-y-6">
-              {/* En-tête du profil */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar
-                    className="w-20 h-20"
-                    name={`${profile.firstName} ${profile.lastName}`}
-                    size="lg"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-                  />
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                      {profile.firstName} {profile.lastName}
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">{profile.role}</p>
-                  </div>
-                </div>
-                <Button
-                  className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                  startContent={<PencilIcon className="h-4 w-4" />}
-                  onPress={() => setIsEditing(!isEditing)}
-                >
-                  Modifier
-                </Button>
-              </div>
-
-              {/* Formulaire d'informations */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Identifiant"
-                  placeholder="Identifiant"
-                  value={profile.identifier}
-                  onChange={(e) => setProfile(prev => ({ ...prev, identifier: e.target.value }))}
-                />
-
-                <Input
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Mot de passe"
-                  placeholder="••••••••"
-                  type="password"
-                />
-
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Nom*"
-                  placeholder="Nom"
-                  value={profile.lastName}
-                  onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
-                />
-
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Prénom*"
-                  placeholder="Prénom"
-                  value={profile.firstName}
-                  onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
-                />
-
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Email de la ville*"
-                  placeholder="email@epicu.fr"
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                />
-
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Tel*"
-                  placeholder="06 00 00 00 00"
-                  value={profile.phone}
-                  onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                />
-
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
-                    label: "text-gray-700 dark:text-gray-300 font-medium"
-                  }}
-                  isReadOnly={!isEditing}
-                  label="Rôle*"
-                  placeholder="Rôle"
-                  value={profile.role}
-                  onChange={(e) => setProfile(prev => ({ ...prev, role: e.target.value }))}
-                />
-              </div>
-
-              {/* Bouton de sauvegarde */}
-              {isEditing && (
-                <div className="flex justify-center pt-6">
-                  <Button
-                    className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                    size="lg"
-                    onPress={handleSaveProfile}
-                  >
-                    Mettre à jour
-                  </Button>
-                </div>
-              )}
+          {loading || !userProfile ? (
+            <div className="flex justify-center items-center h-64">
+              <Spinner className="text-black dark:text-white" size="lg" />
             </div>
-          )}
-
-          {activeTab === 'factures' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes factures Epicu</h3>
-              <div className="space-y-3">
-                {invoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-4">
+          ) : (
+            <div>
+              {/* Contenu des onglets */}
+              {activeTab === 'informations' && (
+                <div className="space-y-10 p-4">
+                  {/* En-tête du profil */}
+                  <div className="flex items-center justify-between text-primary">
+                    <div className="flex items-center space-x-8">
+                      <Avatar
+                        className="w-20 h-20"
+                        name={`${userProfile.firstname} ${userProfile.lastname}`}
+                        size="lg"
+                        src={userProfile.trombi?.[0]?.url}
+                      />
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">{invoice.number}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatDate(invoice.date)}</p>
+                        <h2 className="text-2xl font-semibold">
+                          {userProfile.firstname} {userProfile.lastname}
+                        </h2>
+                        <p className='font-light'>{userProfile.role}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        {formatAmount(invoice.amount)}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${invoice.status === 'payee' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-                        invoice.status === 'en_attente' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
-                          'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                        }`}>
-                        {getStatusLabel(invoice.status)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'documents' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Mes documents</h3>
-              <div className="space-y-3">
-                {documents.map((document) => (
-                  <div key={document.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <DocumentTextIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" />
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">{document.name}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {document.type} • {document.size} • {formatDate(document.uploadDate)}
-                        </p>
-                      </div>
+                  </div>
+
+                  {/* Formulaire d'informations */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4 text-primary-light/20">
+
+                      <FormLabel htmlFor="identifier" isRequired={false}>
+                        Email de connexion
+                      </FormLabel>
+                      <Input
+                        classNames={{
+                          input: "text-primary-light/20 placeholder:text-primary-light/20",
+                          inputWrapper: "bg-page-bg",
+                        }}
+                        id="identifier"
+                        isReadOnly={!isEditing}
+                        placeholder="Email de connexion"
+                        value={userProfile.identifier || ''}
+                      />
                     </div>
+
+                    <div className="space-y-4 text-primary-light/20">
+                      <FormLabel htmlFor="password" isRequired={false}>
+                        Mot de passe
+                      </FormLabel>
+                      <Input
+                        classNames={{
+                          input: "text-primary-light/20 placeholder:text-primary-light/20",
+                          inputWrapper: "bg-page-bg",
+                        }}
+                        id="password"
+                        placeholder="••••••••"
+                        type="password"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+
+                      <FormLabel htmlFor="lastName" isRequired={true}>
+                        Nom
+                      </FormLabel>
+                      <Input
+                        isRequired
+                        classNames={{
+                          input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          label: "text-gray-700 dark:text-gray-300 font-medium"
+                        }}
+                        id="lastName"
+                        isReadOnly={!isEditing}
+                        placeholder="Nom"
+                        value={userProfile.lastname}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+
+                      <FormLabel htmlFor="firstName" isRequired={true}>
+                        Prénom
+                      </FormLabel>
+                      <Input
+                        isRequired
+                        classNames={{
+                          input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          label: "text-gray-700 dark:text-gray-300 font-medium"
+                        }}
+                        id="firstName"
+                        isReadOnly={!isEditing}
+                        placeholder="Prénom"
+                        value={userProfile.firstname}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+
+                      <FormLabel htmlFor="email" isRequired={true}>
+                        Email de la ville
+                      </FormLabel>
+                      <Input
+                        isRequired
+                        classNames={{
+                          input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          label: "text-gray-700 dark:text-gray-300 font-medium"
+                        }}
+                        id="email"
+                        isReadOnly={!isEditing}
+                        placeholder="email@epicu.fr"
+                        type="email"
+                        value={userProfile.email}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+
+                      <FormLabel htmlFor="phone" isRequired={true}>
+                        Tel
+                      </FormLabel>
+                      <Input
+                        isRequired
+                        classNames={{
+                          input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
+                          inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
+                          label: "text-gray-700 dark:text-gray-300 font-medium"
+                        }}
+                        id="phone"
+                        isReadOnly={!isEditing}
+                        placeholder="06 00 00 00 00"
+                        value={userProfile.telephone || ''}
+                      />
+                    </div>
+
+                  </div>
+
+                  {/* Bouton de sauvegarde */}
+
+                  <div className="flex justify-center pt-6">
                     <Button
-                      className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      size="sm"
-                      variant="light"
+                      className='w-100'
+                      color='primary'
+                      onPress={handleSaveProfile}
                     >
-                      Télécharger
+                      Mettre à jour
                     </Button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {activeTab === 'historique' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Historique des activités</h3>
-              <div className="space-y-3">
-                {history.map((item) => (
-                  <div key={item.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-1" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">{item.action}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{item.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {activeTab === 'factures' && (
+                <div className="space-y-4">
+                  <Table aria-label="Tableau des factures" shadow="none">
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="etat"
+                          label="Etat"
+                          sortDirection={invoiceSortDirection}
+                          sortField={invoiceSortField}
+                          onSort={handleInvoiceSort}
+                        />
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="date"
+                          label="Date"
+                          sortDirection={invoiceSortDirection}
+                          sortField={invoiceSortField}
+                          onSort={handleInvoiceSort}
+                        />
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm">Montant</TableColumn>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="typeFacture"
+                          label="Type de facture"
+                          sortDirection={invoiceSortDirection}
+                          sortField={invoiceSortField}
+                          onSort={handleInvoiceSort}
+                        />
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm">Télécharger</TableColumn>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedInvoiceData.map((invoice) => (
+                        <TableRow key={invoice.id} className="border-t border-gray-100 dark:border-gray-700">
+                          <TableCell className="font-light text-sm py-3">
+                            <InvoiceStatusBadge status={invoice.etat} />
+                          </TableCell>
+                          <TableCell className="font-light text-sm">{invoice.date}</TableCell>
+                          <TableCell className="font-light text-sm">{invoice.montant}</TableCell>
+                          <TableCell className="font-light text-sm">{invoice.typeFacture}</TableCell>
+                          <TableCell className="font-light text-sm">
+                            <Button
+                              isIconOnly
+                              aria-label={`Télécharger la facture ${invoice.id}`}
+                              size="md"
+                              variant="light"
+                            >
+                              <ArrowDownTrayIcon className="w-5 h-5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {activeTab === 'documents' && (
+                <div className="space-y-4">
+                  <Table aria-label="Tableau des documents" shadow="none">
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="type"
+                          label="Type de documents"
+                          sortDirection={docSortDirection}
+                          sortField={docSortField}
+                          onSort={handleDocSort}
+                        />
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm">Date d&apos;ajout</TableColumn>
+                      <TableColumn className="font-light text-sm">Télécharger</TableColumn>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedDocData.map((document) => (
+                        <TableRow key={document.id} className="border-t border-gray-100 dark:border-gray-700">
+                          <TableCell className="font-light text-sm py-3">{document.type}</TableCell>
+                          <TableCell className="font-light text-sm">{document.dateAjout}</TableCell>
+                          <TableCell className="font-light text-sm">
+                            <Button
+                              isIconOnly
+                              aria-label={`Télécharger ${document.type}`}
+                              size="sm"
+                              variant="light"
+                            >
+                              <ArrowDownTrayIcon className="w-5 h-5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {activeTab === 'historique' && (
+                <div className="space-y-4">
+                  <Table aria-label="Tableau de l'historique" shadow="none">
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm">Personne</TableColumn>
+                      <TableColumn className="font-light text-sm">Action réalis&eacute;e</TableColumn>
+                      <TableColumn className="font-light text-sm">Date de l&apos;action</TableColumn>
+                      <TableColumn className="font-light text-sm">
+                        <SortableColumnHeader
+                          field="heure"
+                          label="Heure de l'action"
+                          sortDirection={sortDirection}
+                          sortField={sortField}
+                          onSort={handleSort}
+                        />
+                      </TableColumn>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedData.map((item) => (
+                        <TableRow key={item.id} className="border-t border-gray-100 dark:border-gray-700">
+                          <TableCell className="font-light text-sm py-3">{item.personne}</TableCell>
+                          <TableCell className="font-light text-sm">{item.action}</TableCell>
+                          <TableCell className="font-light text-sm">{item.date}</TableCell>
+                          <TableCell className="font-light text-sm">{item.heure}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           )}
         </CardBody>

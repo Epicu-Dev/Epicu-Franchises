@@ -3,22 +3,20 @@
 import { useState, useEffect } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/modal";
-import { Select, SelectItem } from "@heroui/select";
-import { Chip } from "@heroui/chip";
+import { Spinner } from "@heroui/spinner";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  Bars3Icon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
-import { Spinner } from "@heroui/spinner";
+
+import { GoogleCalendarSync } from "@/components/google-calendar-sync";
+import { UnifiedEventModal } from "@/components/unified-event-modal";
+import { EventDetailModal } from "@/components/event-detail-modal";
+import { getValidAccessToken } from "@/utils/auth";
+import { GoogleCalendarEvent } from "@/types/googleCalendar";
+import { getEventColorFromEstablishmentCategories } from "@/components/badges";
+import { useUser } from "@/contexts/user-context";
 
 interface Event {
   id: string;
@@ -30,6 +28,9 @@ interface Event {
   location?: string;
   description?: string;
   category: "siege" | "franchises" | "prestataires";
+  isGoogleEvent?: boolean; // Marqueur pour identifier les événements Google Calendar
+  htmlLink?: string; // Lien vers l'événement dans Google Calendar
+  establishmentCategories?: string[]; // Catégories des établissements associés
 }
 
 interface CalendarDay {
@@ -48,57 +49,206 @@ interface WeekDay {
   events: Event[];
 }
 
+// Interface pour les données de l'API agenda
+interface ApiEvent {
+  id: string;
+  task: string;
+  date: string;
+  type: string;
+  description?: string;
+  collaborators?: string[];
+  establishmentCategories?: string[];
+}
+
 export default function AgendaPage() {
+  const { userProfile } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"tout" | "semaine" | "mois">("tout");
-  const [selectedCategory, setSelectedCategory] = useState<string>("tout");
+  const [view] = useState<"semaine" | "mois">("mois");
+  const [selectedCategory] = useState<string>("tout");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingGoogleConnection, setIsCheckingGoogleConnection] = useState(true);
 
-  // États pour les différents modals
-  const [isTournageModalOpen, setIsTournageModalOpen] = useState(false);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
-  const [isRdvModalOpen, setIsRdvModalOpen] = useState(false);
+  // États pour la modal unifiée
+  const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
+  const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
 
-  // États pour les formulaires spécifiques
-  const [newTournage, setNewTournage] = useState({
-    establishmentName: "",
-    shootingDate: "",
-    publicationDate: "",
-    photographers: false,
-    videographers: false,
-  });
+  // États pour la modal de détail d'événement
+  const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  const [newPublication, setNewPublication] = useState({
-    categoryName: "",
-    establishmentName: "",
-    publicationDate: "",
-    shootingDate: "",
-    winner: "",
-    drawCompleted: false,
-  });
+  // Fonction pour vérifier si l'utilisateur peut ajouter des événements (même logique que la sidebar)
+  const canAddEvents = () => {
+    if (!userProfile?.role) {
+      return false;
+    }
 
-  const [newRdv, setNewRdv] = useState({
-    categoryName: "",
-    establishmentName: "",
-    appointmentType: "",
-    appointmentDate: "",
-  });
+    // Mapper les rôles de l'API vers les permissions
+    const roleMapping: { [key: string]: boolean } = {
+      'Admin': true,
+      'Franchisé': false,
+      'Collaborateur': false,
+    };
+
+    return roleMapping[userProfile.role] || false;
+  };
+
+  // Gestionnaires pour Google Calendar
+  const handleGoogleEventsFetched = (events: GoogleCalendarEvent[]) => {
+    setGoogleEvents(events);
+  };
+
+  const handleGoogleEventCreated = (event: GoogleCalendarEvent) => {
+    // Ajouter l'événement créé à la liste locale
+    setGoogleEvents(prev => [event, ...prev]);
+  };
+
+  // Fonctions pour ouvrir les modals avec le bon type
+  const openModal = (type: "tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar") => {
+    setCurrentEventType(type);
+    setIsUnifiedModalOpen(true);
+  };
+
+  // Fonction pour ouvrir la modal de détail d'événement
+  const openEventDetailModal = (event: Event) => {
+    setSelectedEvent(event);
+    setIsEventDetailModalOpen(true);
+  };
+
+  // Fonction appelée après suppression d'un événement
+  const handleEventDeleted = () => {
+    // Recharger les événements
+    fetchEvents();
+  };
+
+  // Fonction pour connecter à Google Calendar
+  const connectToGoogleCalendar = async () => {
+    try {
+      const response = await fetch('/api/google-calendar/auth');
+
+      if (response.ok) {
+        const { authUrl } = await response.json();
+
+        window.location.href = authUrl;
+      }
+    } catch {
+      // Erreur lors de la connexion
+      setError('Erreur lors de la connexion à Google Calendar');
+    }
+  };
+
+  // Vérifier le statut de Google Calendar
+  const checkGoogleCalendarStatus = async () => {
+    try {
+      setIsCheckingGoogleConnection(true);
+      const response = await fetch('/api/google-calendar/status');
+
+      if (response.ok) {
+        const status = await response.json();
+
+        setIsGoogleConnected(status.isConnected);
+      } else {
+        setIsGoogleConnected(false);
+      }
+    } catch {
+      // Erreur lors de la vérification du statut
+      setIsGoogleConnected(false);
+    } finally {
+      setIsCheckingGoogleConnection(false);
+    }
+  };
+
+  // Fonction pour transformer les événements Google Calendar en format compatible
+  const transformGoogleEvents = (googleEvents: GoogleCalendarEvent[]): Event[] => {
+    return googleEvents.map((googleEvent) => {
+      const startDate = googleEvent.start.dateTime
+        ? new Date(googleEvent.start.dateTime)
+        : googleEvent.start.date
+          ? new Date(googleEvent.start.date)
+          : new Date();
+
+      const endDate = googleEvent.end.dateTime
+        ? new Date(googleEvent.end.dateTime)
+        : googleEvent.end.date
+          ? new Date(googleEvent.end.date)
+          : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
+
+      const startTime = startDate.toTimeString().slice(0, 5);
+      const endTime = endDate.toTimeString().slice(0, 5);
+
+      return {
+        id: `google-${googleEvent.id || Date.now()}`,
+        title: googleEvent.summary,
+        type: "evenement" as Event['type'], // Type par défaut pour Google Calendar
+        date: startDate.toISOString().split('T')[0],
+        startTime,
+        endTime,
+        location: googleEvent.location,
+        description: googleEvent.description,
+        category: "siege" as Event['category'], // Catégorie par défaut
+        isGoogleEvent: true, // Marqueur pour identifier les événements Google Calendar
+        htmlLink: googleEvent.htmlLink,
+      };
+    });
+  };
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Vérifier d'abord le statut Google Calendar
+      await checkGoogleCalendarStatus();
+
+      // Récupérer le token d'authentification
+      const token = await getValidAccessToken();
+
+      if (!token) {
+        throw new Error("Non authentifié");
+      }
+
+      // Calculer les dates de début et fin selon la vue
+      let dateStart: string;
+      let dateEnd: string;
+
+      if (view === "semaine") {
+        const startOfWeek = new Date(currentDate);
+
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        dateStart = startOfWeek.toISOString().split('T')[0];
+        dateEnd = endOfWeek.toISOString().split('T')[0];
+      } else {
+        // Vue mois
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        dateStart = startOfMonth.toISOString().split('T')[0];
+        dateEnd = endOfMonth.toISOString().split('T')[0];
+      }
+
       const params = new URLSearchParams({
-        month: (currentDate.getMonth() + 1).toString(),
-        year: currentDate.getFullYear().toString(),
-        view,
-        category: selectedCategory,
+        dateStart,
+        dateEnd,
+        limit: '100', // Récupérer plus d'événements pour couvrir la période
       });
 
-      const response = await fetch(`/api/agenda?${params}`);
+      const response = await fetch(`/api/agenda?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des événements");
@@ -106,7 +256,58 @@ export default function AgendaPage() {
 
       const data = await response.json();
 
-      setEvents(data.events);
+      // Transformer les données de l'API en format Event
+      const transformedEvents: Event[] = (data.events || []).map((apiEvent: ApiEvent) => {
+        const eventDate = new Date(apiEvent.date);
+        const startTime = eventDate.toTimeString().slice(0, 5);
+
+        // Calculer l'heure de fin (par défaut +1h)
+        const endDate = new Date(eventDate);
+
+        endDate.setHours(endDate.getHours() + 1);
+        const endTime = endDate.toTimeString().slice(0, 5);
+
+        // Mapper le type de l'API vers le type de l'interface
+        let mappedType: Event['type'] = "evenement";
+
+        if (apiEvent.type.toLowerCase().includes("rendez") || apiEvent.type.toLowerCase().includes("rdv")) {
+          mappedType = "rendez-vous";
+        } else if (apiEvent.type.toLowerCase().includes("tournage")) {
+          mappedType = "tournage";
+        } else if (apiEvent.type.toLowerCase().includes("publication")) {
+          mappedType = "publication";
+        }
+
+        // Déterminer la catégorie (par défaut siège)
+        let category: Event['category'] = "siege";
+
+        if (apiEvent.type.toLowerCase().includes("franchise")) {
+          category = "franchises";
+        } else if (apiEvent.type.toLowerCase().includes("prestataire")) {
+          category = "prestataires";
+        }
+
+
+
+        return {
+          id: apiEvent.id,
+          title: apiEvent.task,
+          type: mappedType,
+          date: apiEvent.date.split('T')[0], // Extraire juste la date
+          startTime,
+          endTime,
+          description: apiEvent.description,
+          category,
+          establishmentCategories: apiEvent.establishmentCategories,
+        };
+      });
+
+      // Filtrer par catégorie si nécessaire
+      const filteredEvents = selectedCategory === "tout"
+        ? transformedEvents
+        : transformedEvents.filter(event => event.category === selectedCategory);
+
+      setEvents(filteredEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -144,153 +345,6 @@ export default function AgendaPage() {
 
       return newDate;
     });
-  };
-
-  const handleAddTournage = async () => {
-    try {
-      const tournageEvent = {
-        title: `Tournage - ${newTournage.establishmentName}`,
-        type: "tournage" as Event["type"],
-        date: newTournage.shootingDate,
-        startTime: "09:00",
-        endTime: "17:00",
-        location: newTournage.establishmentName,
-        description: `Tournage avec ${newTournage.photographers ? "photographe" : ""}${newTournage.photographers && newTournage.videographers ? " et " : ""}${newTournage.videographers ? "vidéaste" : ""}`,
-        category: "siege" as Event["category"],
-      };
-
-      const response = await fetch("/api/agenda", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(tournageEvent),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du tournage");
-      }
-
-      setNewTournage({
-        establishmentName: "",
-        shootingDate: "",
-        publicationDate: "",
-        photographers: false,
-        videographers: false,
-      });
-      setIsTournageModalOpen(false);
-      fetchEvents();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
-
-  const handleAddPublication = async () => {
-    try {
-      const publicationEvent = {
-        title: `Publication - ${newPublication.establishmentName}`,
-        type: "publication" as Event["type"],
-        date: newPublication.publicationDate,
-        startTime: "09:00",
-        endTime: "10:00",
-        location: newPublication.establishmentName,
-        description: `Publication ${newPublication.categoryName} - Gagnant: ${newPublication.winner || "À déterminer"} - Tirage: ${newPublication.drawCompleted ? "Effectué" : "En attente"}`,
-        category: "siege" as Event["category"],
-      };
-
-      const response = await fetch("/api/agenda", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(publicationEvent),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout de la publication");
-      }
-
-      setNewPublication({
-        categoryName: "",
-        establishmentName: "",
-        publicationDate: "",
-        shootingDate: "",
-        winner: "",
-        drawCompleted: false,
-      });
-      setIsPublicationModalOpen(false);
-      fetchEvents();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
-
-  const handleAddRdv = async () => {
-    try {
-      const rdvEvent = {
-        title: `RDV - ${newRdv.establishmentName}`,
-        type: "rendez-vous" as Event["type"],
-        date: newRdv.appointmentDate,
-        startTime: "09:00",
-        endTime: "10:00",
-        location: newRdv.establishmentName,
-        description: `Rendez-vous ${newRdv.appointmentType} - Catégorie: ${newRdv.categoryName}`,
-        category: "siege" as Event["category"],
-      };
-
-      const response = await fetch("/api/agenda", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(rdvEvent),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du rendez-vous");
-      }
-
-      setNewRdv({
-        categoryName: "",
-        establishmentName: "",
-        appointmentType: "",
-        appointmentDate: "",
-      });
-      setIsRdvModalOpen(false);
-      fetchEvents();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-    }
-  };
-
-  const getEventTypeColor = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "primary";
-      case "tournage":
-        return "secondary";
-      case "publication":
-        return "success";
-      case "evenement":
-        return "warning";
-      default:
-        return "default";
-    }
-  };
-
-  const getEventTypeLabel = (type: Event["type"]) => {
-    switch (type) {
-      case "rendez-vous":
-        return "Rendez-vous";
-      case "tournage":
-        return "Tournage";
-      case "publication":
-        return "Publication";
-      case "evenement":
-        return "Événement";
-      default:
-        return type;
-    }
   };
 
   const formatMonthYear = (date: Date) => {
@@ -345,6 +399,75 @@ export default function AgendaPage() {
     }
   };
 
+  // Fonction pour dédupliquer les événements (priorité à Airtable)
+  const deduplicateEvents = (airtableEvents: Event[], googleEvents: Event[]) => {
+    const combinedEvents = [...airtableEvents, ...googleEvents];
+    const uniqueEvents = new Map<string, Event>();
+
+    combinedEvents.forEach(event => {
+      // Créer une clé unique basée sur la date et le nom
+      const eventDate = new Date(event.date).toDateString();
+      const key = `${eventDate}-${event.title}`;
+
+      if (!uniqueEvents.has(key)) {
+        // Premier événement avec cette clé, l'ajouter
+        uniqueEvents.set(key, event);
+      } else {
+        // Événement existant trouvé, vérifier la priorité
+        const existingEvent = uniqueEvents.get(key)!;
+
+        // Priorité : Airtable (isGoogleEvent = false) > Google Calendar (isGoogleEvent = true)
+        if (!event.isGoogleEvent && existingEvent.isGoogleEvent) {
+          // L'événement actuel est d'Airtable et l'existant est de Google Calendar
+          uniqueEvents.set(key, event);
+        }
+        // Sinon, garder l'événement existant (déjà prioritaire)
+      }
+    });
+
+    return Array.from(uniqueEvents.values());
+  };
+
+  // Fonction helper pour obtenir la couleur d'un événement
+  const getEventColor = (event: Event) => {
+    if(event.isGoogleEvent) {
+      return "bg-custom-text-color/14 text-custom-text-color";
+    }
+    // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
+    switch (event.type) {
+      case "tournage":
+        return "bg-custom-red-filming/14 text-custom-red-filming";
+      case "publication":
+        return "bg-custom-purple-publication/14 text-custom-purple-publication";
+      case "evenement":
+        return "bg-custom-orange-event/14 text-custom-orange-event";
+      case "rendez-vous":
+        return "bg-custom-blue-meeting/14 text-custom-blue-meeting";
+      default:
+        return "bg-custom-text-color text-custom-text-color";
+    }
+  };
+  // Fonction helper pour obtenir la couleur d'un événement
+  const getEventBorderColor = (event: Event) => {
+    if(event.isGoogleEvent) {
+      return "border-custom-text-color";
+    }
+    
+    // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
+    switch (event.type) {
+      case "tournage":
+        return "border-custom-red-filming";
+      case "publication":
+        return "border-custom-purple-publication";
+      case "evenement":
+        return "border-custom-orange-event";
+      case "rendez-vous":
+        return "border-custom-blue-meeting";
+      default:
+        return "border-black";
+    }
+  };
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -357,8 +480,14 @@ export default function AgendaPage() {
     const days: CalendarDay[] = [];
     const currentDate = new Date(startDate);
 
+    // Transformer les événements Google Calendar
+    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
+
+    // Dédupliquer les événements (priorité à Airtable)
+    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+
     while (currentDate <= lastDay || days.length < 42) {
-      const dayEvents = events.filter((event) => {
+      const dayEvents = allEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -394,12 +523,18 @@ export default function AgendaPage() {
       "Dimanche",
     ];
 
+    // Transformer les événements Google Calendar
+    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
+
+    // Dédupliquer les événements (priorité à Airtable)
+    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startOfWeek);
 
       currentDate.setDate(startOfWeek.getDate() + i);
 
-      const dayEvents = events.filter((event) => {
+      const dayEvents = allEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -444,22 +579,20 @@ export default function AgendaPage() {
         </div>
 
         {/* Grille du calendrier */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 ">
           {days.map((day, index) => (
             <div
               key={index}
-              className={`min-h-24 p-2 border border-gray-200 ${
-                day.isCurrentMonth ? "bg-white" : "bg-gray-50"
-              } ${day.isToday ? "ring-2 ring-red-500" : ""}`}
+              className={`min-h-32 p-2 border border-gray-100 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+                } `}
             >
               <div
-                className={`text-sm font-medium ${
-                  day.isToday
-                    ? "text-red-600"
-                    : day.isCurrentMonth
-                      ? "text-gray-900"
-                      : "text-gray-400"
-                }`}
+                className={`text-sm w-8 h-8 flex items-center justify-center font-medium ${day.isToday
+                  ? "text-white bg-red-500 rounded-full  flex items-center justify-center "
+                  : day.isCurrentMonth
+                    ? "text-gray-900"
+                    : "text-gray-400"
+                  }`}
               >
                 {day.dayNumber}
               </div>
@@ -468,23 +601,35 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded truncate ${
-                      event.type === "rendez-vous"
-                        ? "bg-blue-100 text-blue-800"
-                        : event.type === "tournage"
-                          ? "bg-pink-100 text-pink-800"
-                          : event.type === "publication"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-orange-100 text-orange-800"
-                    }`}
-                    title={event.title}
+                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
+                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
+                    role={event.isGoogleEvent ? "button" : undefined}
+                    tabIndex={event.isGoogleEvent ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        window.open(event.htmlLink, '_blank');
+                      }
+                    }}
+                    onClick={() => openEventDetailModal(event)}
                   >
-                    {event.title}
+                    <div className="font-light truncate flex items-center gap-1">
+                      {event.title}
+
+                    </div>
+                    {event.startTime && (
+                      <div className="text-xs opacity-75">
+                        {event.startTime}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {day.events.length > 3 && (
                   <div className="text-xs text-gray-500">
                     +{day.events.length - 3} autres
+                    {day.events.some(e => e.isGoogleEvent) && (
+                      <span className="text-blue-600 ml-1">• GC</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -503,37 +648,44 @@ export default function AgendaPage() {
       <div className="w-full overflow-x-auto">
         <div className="min-w-[800px]">
           {/* En-têtes des jours */}
-          <div className="grid grid-cols-8 gap-1 mb-2">
-            <div className="p-2 text-center font-medium text-gray-600 text-sm">
-              Heure
-            </div>
+          <div className="grid grid-cols-8  mb-2">
+            <div className="p-2 text-center font-medium text-gray-600 text-sm" />
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center font-medium text-gray-600 text-sm"
+                className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
               >
-                <div className="font-bold">{day.dayName}</div>
                 <div
-                  className={`text-lg ${day.isToday ? "text-red-600 font-bold" : "text-gray-900"}`}
+                  className={` w-8 h-8 flex items-center justify-center ${day.isToday
+                    ? "text-white bg-red-500 rounded-full flex items-center justify-center"
+                    : ""
+                    }`}
                 >
                   {day.dayNumber}
                 </div>
+                <div >{day.dayName}</div>
+
               </div>
             ))}
           </div>
 
           {/* Grille horaire */}
-          <div className="grid grid-cols-8 gap-1">
+          <div className="grid grid-cols-8 ">
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-200">
+                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100 h-20 flex items-center justify-end">
                   {hour}:00
                 </div>
 
                 {/* Cellules des jours */}
                 {weekDays.map((day) => {
                   const hourEvents = day.events.filter((event) => {
+                    // Vérifier que startTime existe et n'est pas undefined
+                    if (!event.startTime) {
+                      return false;
+                    }
+
                     const eventStartHour = parseInt(
                       event.startTime.split(":")[0]
                     );
@@ -544,25 +696,32 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`min-h-16 p-1 border border-gray-200 relative ${
-                        day.isToday ? "bg-red-50" : "bg-white"
-                      }`}
+                      className={`h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                        }`}
                     >
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 truncate ${
-                            event.type === "rendez-vous"
-                              ? "bg-blue-100 text-blue-800"
-                              : event.type === "tournage"
-                                ? "bg-pink-100 text-pink-800"
-                                : event.type === "publication"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-orange-100 text-orange-800"
-                          }`}
-                          title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
+                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
+                          role={event.isGoogleEvent ? "button" : undefined}
+                          tabIndex={event.isGoogleEvent ? 0 : undefined}
+                          onKeyDown={(e) => {
+                            if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              window.open(event.htmlLink, '_blank');
+                            }
+                          }}
+                          onClick={() => openEventDetailModal(event)}
                         >
-                          {event.title}
+                          <div className="font-medium truncate flex items-center gap-1">
+                            {event.title}
+                          </div>
+                          {event.startTime && event.endTime && (
+                            <div className="text-xs opacity-75 mt-0.5">
+                              {event.startTime} - {event.endTime}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -576,69 +735,43 @@ export default function AgendaPage() {
     );
   };
 
-  const renderTimelineView = () => {
+  // Afficher le loading général pendant la vérification de connexion Google
+  if (isCheckingGoogleConnection) {
     return (
       <div className="w-full">
-        <div className="space-y-4">
-          {events
-            .filter((event) => {
-              if (selectedCategory !== "tout") {
-                return event.category === selectedCategory;
-              }
-
-              return true;
-            })
-            .sort(
-              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-            )
-            .map((event) => {
-              const eventDate = new Date(event.date);
-              const formattedDate = eventDate.toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-              });
-
-              return (
-                <div
-                  key={event.id}
-                  className="flex items-center space-x-4 p-3 bg-white rounded-lg border"
-                >
-                  <div className="flex-shrink-0 w-20 text-sm text-gray-600">
-                    {formattedDate}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <Chip
-                        color={getEventTypeColor(event.type)}
-                        size="sm"
-                        variant="flat"
-                      >
-                        {getEventTypeLabel(event.type)}
-                      </Chip>
-                      <span className="font-medium">{event.title}</span>
-                    </div>
-
-                    <div className="text-sm text-gray-500 mt-1">
-                      {event.startTime} - {event.endTime}
-                      {event.location && ` • ${event.location}`}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
-              <Spinner className="text-black dark:text-white" size="lg" />
+              <div className="text-center">
+                <Spinner className="text-black dark:text-white mb-4" size="lg" />
+                <div className="text-lg mb-2">Vérification de la connexion Google Calendar...</div>
+                <div className="text-sm text-gray-600">Veuillez patienter pendant que nous vérifions votre connexion</div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  // Afficher le message d'invitation si Google Calendar n'est pas connecté
+  if (isGoogleConnected === false) {
+    return (
+      <div className="w-full">
+        <Card className="w-full" shadow="none">
+          <CardBody className="p-6">
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="text-lg mb-2">Google Calendar non connecté</div>
+                <div className="text-sm mb-4">Connectez-vous à Google Calendar pour avoir accès à l&apos;agenda</div>
+                <Button
+                  className="mt-4"
+                  color="primary"
+                  onPress={connectToGoogleCalendar}
+                >
+                  Se connecter à Google Calendar
+                </Button>
+              </div>
             </div>
           </CardBody>
         </Card>
@@ -649,7 +782,7 @@ export default function AgendaPage() {
   if (error) {
     return (
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full" shadow="none">
           <CardBody className="p-6">
             <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
@@ -660,397 +793,124 @@ export default function AgendaPage() {
     );
   }
 
+
   return (
-    <div className="w-full">
-      <Card className="w-full">
+    <div className="w-full text-primary">
+      <Card className="w-full" shadow="none">
         <CardBody className="p-6">
-          {/* En-tête avec navigation et boutons */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+
+          {/* En-tête avec navigation et boutons - visible seulement pour les admins */}
+          {(
+            <div className="flex justify-end items-center mb-6">
+              <div className="flex items-center space-x-4">
+
                 <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={handlePreviousMonth}
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("tournage")}
                 >
-                  <ChevronLeftIcon className="h-4 w-4" />
+                  Ajouter un tournage
                 </Button>
-                <span className="text-lg font-semibold">
-                  {view === "semaine"
-                    ? formatWeekRange(currentDate)
-                    : formatMonthYear(currentDate)}
-                </span>
-                <Button isIconOnly variant="light" onPress={handleNextMonth}>
-                  <ChevronRightIcon className="h-4 w-4" />
+
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("publication")}
+                >
+                  Ajouter une publication
                 </Button>
+
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  onPress={() => openModal("rendez-vous")}
+                >
+                  Ajouter un rendez-vous
+                </Button>
+
+                {canAddEvents() &&
+                  <Button
+                    color='primary'
+                    endContent={<PlusIcon className="h-4 w-4" />}
+                    onPress={() => openModal("evenement")}
+                  >
+                    Ajouter un événement
+                  </Button>}
               </div>
             </div>
+          )}
+          {/* Synchronisation Google Calendar - seulement si connecté */}
 
-            <div className="flex items-center space-x-4">
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={() => setIsRdvModalOpen(true)}
-              >
-                Créer un rendez-vous
-              </Button>
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={handleAddTournage}
-              >
-                Ajouter un tournage
-              </Button>
-              <Button
-                className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                onPress={() => setIsPublicationModalOpen(true)}
-              >
-                Ajouter une publication
-              </Button>
-            </div>
-          </div>
+
+
+
+
 
           {/* Filtres et vues */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <Select
-                className="w-48"
-                placeholder="Catégorie"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) =>
-                  setSelectedCategory(Array.from(keys)[0] as string)
-                }
-              >
-                <SelectItem key="tout">Tout</SelectItem>
-                <SelectItem key="siege">Siège</SelectItem>
-                <SelectItem key="franchises">Franchisés</SelectItem>
-                <SelectItem key="prestataires">Prestataires</SelectItem>
-              </Select>
-            </div>
+          <div className="flex justify-between items-center mb-6 w-full">
 
-            <div className="flex items-center space-x-2">
-              <Button
-                color={view === "tout" ? "primary" : "default"}
-                size="sm"
-                variant={view === "tout" ? "solid" : "light"}
-                onPress={() => setView("tout")}
-              >
-                Tout
-              </Button>
-              <Button
-                color={view === "semaine" ? "primary" : "default"}
-                size="sm"
-                variant={view === "semaine" ? "solid" : "light"}
-                onPress={() => setView("semaine")}
-              >
-                Semaine
-              </Button>
-              <Button
-                color={view === "mois" ? "primary" : "default"}
-                size="sm"
-                variant={view === "mois" ? "solid" : "light"}
-                onPress={() => setView("mois")}
-              >
-                Mois
-              </Button>
-              <Button isIconOnly size="sm" variant="light">
-                <Bars3Icon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Contenu du calendrier */}
-          <div className="mt-6">
-            {view === "mois" && renderCalendarView()}
-            {view === "semaine" && renderWeekView()}
-            {view === "tout" && renderTimelineView()}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Modal Ajouter un tournage */}
-      <Modal isOpen={isTournageModalOpen} onOpenChange={setIsTournageModalOpen}>
-        <ModalContent>
-          <ModalHeader>Ajouter un tournage</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <Input
-                isRequired
-                label="Nom de l'établissement *"
-                placeholder="Nom de l'établissement"
-                value={newTournage.establishmentName}
-                onChange={(e) =>
-                  setNewTournage((prev) => ({
-                    ...prev,
-                    establishmentName: e.target.value,
-                  }))
-                }
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Date du tournage *"
-                  type="date"
-                  value={newTournage.shootingDate}
-                  onChange={(e) =>
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      shootingDate: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  label="Date de la publication *"
-                  type="date"
-                  value={newTournage.publicationDate}
-                  onChange={(e) =>
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      publicationDate: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Prestataires *</div>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2" htmlFor="photographers-checkbox">
-                    <input
-                      checked={newTournage.photographers}
-                      className="rounded border-gray-300"
-                      id="photographers-checkbox"
-                      type="checkbox"
-                      onChange={(e) =>
-                        setNewTournage((prev) => ({
-                          ...prev,
-                          photographers: e.target.checked,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">Photographe</span>
-                  </label>
-                  <label className="flex items-center space-x-2" htmlFor="videographers-checkbox">
-                    <input
-                      checked={newTournage.videographers}
-                      className="rounded border-gray-300"
-                      id="videographers-checkbox"
-                      type="checkbox"
-                      onChange={(e) =>
-                        setNewTournage((prev) => ({
-                          ...prev,
-                          videographers: e.target.checked,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">Vidéaste</span>
-                  </label>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    onPress={handlePreviousMonth}
+                  >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                  </Button>
+                  <span>
+                    {view === "semaine"
+                      ? formatWeekRange(currentDate)
+                      : formatMonthYear(currentDate)}
+                  </span>
+                  <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => setIsTournageModalOpen(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddTournage}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Modal Ajouter une publication */}
-      <Modal
-        isOpen={isPublicationModalOpen}
-        onOpenChange={setIsPublicationModalOpen}
-      >
-        <ModalContent>
-          <ModalHeader>Ajouter une publication</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Nom catégorie *"
-                  placeholder="FOOD"
-                  value={newPublication.categoryName}
-                  onChange={(e) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      categoryName: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  label="Nom établissement *"
-                  placeholder="Nom de l'établissement"
-                  value={newPublication.establishmentName}
-                  onChange={(e) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      establishmentName: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Date de la publication *"
-                  type="date"
-                  value={newPublication.publicationDate}
-                  onChange={(e) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      publicationDate: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  label="Date du tournage *"
-                  type="date"
-                  value={newPublication.shootingDate}
-                  onChange={(e) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      shootingDate: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <Input
-                isRequired
-                label="Gagnant *"
-                placeholder="Nom Prénom"
-                value={newPublication.winner}
-                onChange={(e) =>
-                  setNewPublication((prev) => ({
-                    ...prev,
-                    winner: e.target.value,
-                  }))
-                }
+            {isGoogleConnected && (
+              <GoogleCalendarSync
+                onEventsFetched={handleGoogleEventsFetched}
+                onEventCreated={handleGoogleEventCreated}
               />
+            )}
+          </div>
 
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium" htmlFor="draw-completed-checkbox">
-                  Tirage au sort effectué
-                </label>
-                <input
-                  checked={newPublication.drawCompleted}
-                  className="rounded border-gray-300"
-                  id="draw-completed-checkbox"
-                  type="checkbox"
-                  onChange={(e) =>
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      drawCompleted: e.target.checked,
-                    }))
-                  }
-                />
+
+          {/* Contenu du calendrier */}
+          {
+            loading ? (
+              <div className="flex justify-center items-center h-64">
+                <Spinner className="text-black dark:text-white" size="lg" />
               </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => setIsPublicationModalOpen(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddPublication}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Modal Créer un rendez-vous */}
-      <Modal isOpen={isRdvModalOpen} onOpenChange={setIsRdvModalOpen}>
-        <ModalContent>
-          <ModalHeader>Créer un rendez-vous</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  isRequired
-                  label="Nom catégorie *"
-                  placeholder="FOOD"
-                  value={newRdv.categoryName}
-                  onChange={(e) =>
-                    setNewRdv((prev) => ({
-                      ...prev,
-                      categoryName: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  isRequired
-                  label="Nom établissement *"
-                  placeholder="Nom de l'établissement"
-                  value={newRdv.establishmentName}
-                  onChange={(e) =>
-                    setNewRdv((prev) => ({
-                      ...prev,
-                      establishmentName: e.target.value,
-                    }))
-                  }
-                />
+            ) : (
+              <div className="mt-6">
+                {view === "mois" && renderCalendarView()}
+                {view === "semaine" && renderWeekView()}
               </div>
+            )
+          }
+        </CardBody>
+      </Card>
 
-              <Input
-                isRequired
-                label="Type de rendez-vous *"
-                placeholder="Fidélisation"
-                value={newRdv.appointmentType}
-                onChange={(e) =>
-                  setNewRdv((prev) => ({
-                    ...prev,
-                    appointmentType: e.target.value,
-                  }))
-                }
-              />
+      {/* Modal unifiée pour tous les types d'événements */}
+      <UnifiedEventModal
+        isOpen={isUnifiedModalOpen}
+        onOpenChange={setIsUnifiedModalOpen}
+        eventType={currentEventType}
+        onEventCreated={handleGoogleEventCreated}
+        onEventAdded={fetchEvents}
+      />
 
-              <Input
-                isRequired
-                label="Date du rendez-vous *"
-                type="date"
-                value={newRdv.appointmentDate}
-                onChange={(e) =>
-                  setNewRdv((prev) => ({
-                    ...prev,
-                    appointmentDate: e.target.value,
-                  }))
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setIsRdvModalOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-              onPress={handleAddRdv}
-            >
-              Ajouter
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Modal de détail d'événement */}
+      <EventDetailModal
+        isOpen={isEventDetailModalOpen}
+        onOpenChange={setIsEventDetailModalOpen}
+        event={selectedEvent}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   );
 }

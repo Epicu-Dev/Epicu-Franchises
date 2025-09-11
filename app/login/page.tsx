@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+
 import MessageAlert from "@/components/message-alert";
+import { FormLabel } from "@/components/form-label";
+import { isUserLoggedIn } from "@/utils/auth";
 
 export default function LoginPage() {
   const [identifiant, setIdentifiant] = useState("");
@@ -13,6 +16,31 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"error" | "success" | "info">("error");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Vérifier si l'utilisateur est déjà connecté et le rediriger
+  useEffect(() => {
+    if (isUserLoggedIn()) {
+      router.push("/home");
+    }
+  }, [router]);
+
+  // Appel de préchauffage Airtable en arrière-plan dès l'arrivée sur la page
+  useEffect(() => {
+    const warmupAirtable = async () => {
+      try {
+        // Appel en arrière-plan sans attendre ni afficher d'erreur à l'utilisateur
+        fetch("/api/warmup", { method: "GET" })
+          .catch(() => {
+            // On ignore silencieusement les erreurs de préchauffage
+            // L'important est que le premier appel "réel" soit plus rapide
+          });
+      } catch (error) {
+        // Ignore silencieusement les erreurs de préchauffage
+      }
+    };
+
+    warmupAirtable();
+  }, []);
 
   const showMessageWithType = (msg: string, type: "error" | "success" | "info") => {
     setMessage(msg);
@@ -39,13 +67,33 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("expiresAtAccess", data.expiresAtAccess);
         localStorage.setItem("expiresAtRefresh", data.expiresAtRefresh);
+        
+        // Stocker les données utilisateur pour éviter le problème de "utilisateur inconnu"
+        localStorage.setItem("userProfile", JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          firstname: data.user.firstname || '',
+          lastname: data.user.lastname || '',
+          role: data.user.role || '',
+          villes: data.user.villes || [],
+          telephone: data.user.telephone || "",
+          identifier: data.user.identifier || ""
+        }));
+        localStorage.setItem("userProfileCacheTime", Date.now().toString());
+        
+        // Stocker également le type d'utilisateur par défaut
+        localStorage.setItem("userType", "franchise");
+        
         showMessageWithType("Connexion réussie ! Redirection...", "success");
+        
+        // Forcer un rechargement de la page pour s'assurer que le contexte utilisateur est bien initialisé
         setTimeout(() => {
-          router.push("/home");
+          window.location.href = "/home";
         }, 1500);
       } else {
         // Gestion des erreurs spécifiques
         let errorMessage = "Erreur de connexion";
+
         if (data.message) {
           if (data.message.includes("Invalid credentials") || data.message.includes("Invalid email or password")) {
             errorMessage = "Identifiant ou mot de passe incorrect";
@@ -62,7 +110,6 @@ export default function LoginPage() {
         showMessageWithType(errorMessage, "error");
       }
     } catch (error) {
-      console.error("Login error:", error);
       showMessageWithType("Erreur de connexion au serveur. Vérifiez votre connexion internet.", "error");
     } finally {
       setIsLoading(false);
@@ -70,27 +117,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex text-primary">
       {/* Left Side - Background Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23f59e0b;stop-opacity:1" /><stop offset="100%" style="stop-color:%23d97706;stop-opacity:1" /></linearGradient></defs><rect width="100%" height="100%" fill="url(%23a)"/><rect x="100" y="200" width="400" height="300" fill="%23ffffff" opacity="0.1" rx="8"/><circle cx="300" cy="350" r="50" fill="%23ffffff" opacity="0.2"/><rect x="150" y="250" width="300" height="20" fill="%23ffffff" opacity="0.3" rx="4"/><rect x="150" y="280" width="250" height="20" fill="%23ffffff" opacity="0.3" rx="4"/><rect x="150" y="310" width="200" height="20" fill="%23ffffff" opacity="0.3" rx="4"/></svg>')`,
+            backgroundImage: `url('/images/login.png')`,
           }}
         />
+        {/* Logo Epicu en bas à gauche */}
+        <div className="absolute bottom-8 left-8">
+          <img
+            alt="Logo Epicu"
+            className="h-30 w-auto "
+            src="/images/logo.png"
+          />
+        </div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-6">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-page-bg px-6 ">
         <div className="w-full max-w-md">
           {/* Login Card */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-3xl shadow-lg shadow-gray-100 p-8">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              <h1 className="text-3xl font-bold mb-2 ">
                 Bienvenue !
               </h1>
-              <p className="text-gray-600 text-sm">
+              <p className=" text-sm pl-8 pr-8 font-light">
                 Votre réseau réuni ici pour vous aider à prendre les meilleures
                 décisions
               </p>
@@ -98,49 +153,47 @@ export default function LoginPage() {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="identifiant">
-                  Identifiant*
-                </label>
+                <FormLabel htmlFor="identifiant" isRequired={true}>
+                  Identifiant
+                </FormLabel>
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black",
+                    input: "bg-white text-black text-sm ",
                     inputWrapper:
-                      "bg-white border-gray-300 hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="identifiant"
                   placeholder="Saisis ton identifiant"
                   size="lg"
                   type="text"
                   value={identifiant}
-                  variant="bordered"
                   onChange={(e) => setIdentifiant(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="password">
-                  Mot de passe*
-                </label>
+                <FormLabel htmlFor="password" isRequired={true}>
+                  Mot de passe
+                </FormLabel>
                 <Input
                   required
                   classNames={{
-                    input: "bg-white text-black",
+                    input: "bg-white text-black text-sm ",
                     inputWrapper:
-                      "bg-white border-gray-300 hover:border-gray-400 focus-within:border-gray-500",
+                      "bg-page-bg hover:border-gray-400 focus-within:border-gray-500",
                   }}
                   id="password"
                   placeholder="Saisis ton mot de passe"
                   size="lg"
                   type="password"
                   value={password}
-                  variant="bordered"
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
               <Button
-                className="w-full bg-gray-800 text-white hover:bg-gray-700"
-                color="default"
+                className="w-full "
+                color="primary"
                 isLoading={isLoading}
                 size="lg"
                 type="submit"
@@ -152,11 +205,11 @@ export default function LoginPage() {
             {/* Message d'erreur/succès amélioré */}
             {message && (
               <MessageAlert
+                autoHide={messageType === "success"}
+                className="mt-6"
                 message={message}
                 type={messageType}
                 onClose={() => setMessage("")}
-                autoHide={messageType === "success"}
-                className="mt-6"
               />
             )}
           </div>

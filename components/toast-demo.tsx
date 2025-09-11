@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/button";
+
 import { useToastContext } from "@/contexts/toast-context";
 
 export default function ToastDemo() {
@@ -29,34 +30,34 @@ export default function ToastDemo() {
       </h3>
       <div className="space-y-3">
         <Button
+          className="w-full"
           color="danger"
           variant="flat"
           onClick={handleShowError}
-          className="w-full"
         >
           Afficher une Erreur
         </Button>
         <Button
+          className="w-full"
           color="success"
           variant="flat"
           onClick={handleShowSuccess}
-          className="w-full"
         >
           Afficher un Succès
         </Button>
         <Button
+          className="w-full"
           color="primary"
           variant="flat"
           onClick={handleShowInfo}
-          className="w-full"
         >
           Afficher une Information
         </Button>
         <Button
+          className="w-full"
           color="warning"
           variant="flat"
           onClick={handleShowWarning}
-          className="w-full"
         >
           Afficher un Avertissement
         </Button>

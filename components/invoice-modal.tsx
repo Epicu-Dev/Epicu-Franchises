@@ -67,7 +67,7 @@ export default function InvoiceModal({
   const [newInvoice, setNewInvoice] = useState({
     category: "shop",
     establishmentName: "",
-    date: "",
+    date: new Date().toISOString().split('T')[0],
     amount: "",
     serviceType: "",
     status: "en_attente",
@@ -85,11 +85,9 @@ export default function InvoiceModal({
   // États pour la sélection de publication
   const [publications, setPublications] = useState<{ id: string; nom: string; datePublication: string }[]>([]);
   const [selectedPublication, setSelectedPublication] = useState<string>("");
-  const [selectedPublicationDisplay, setSelectedPublicationDisplay] = useState<string>("");
 
   // État pour la facture de tournage
   const [tournageFactureStatus, setTournageFactureStatus] = useState<string>("");
-  const [tournageFactureStatusDisplay, setTournageFactureStatusDisplay] = useState<string>("");
 
   // Réinitialiser le formulaire quand le modal s'ouvre
   useEffect(() => {
@@ -115,7 +113,7 @@ export default function InvoiceModal({
         setNewInvoice({
           category: "shop",
           establishmentName: "",
-          date: "",
+          date: new Date().toISOString().split('T')[0],
           amount: "",
           serviceType: "",
           status: "en_attente",
@@ -220,45 +218,14 @@ export default function InvoiceModal({
     setShowClientSearchResults(false);
     // Réinitialiser aussi la sélection de publication et facture de tournage
     setSelectedPublication("");
-    setSelectedPublicationDisplay("");
     setPublications([]);
     setTournageFactureStatus("");
-    setTournageFactureStatusDisplay("");
   };
 
   // Mettre à jour les publications quand selectedClient change
   useEffect(() => {
     setPublications(selectedClient?.publications || []);
-    setSelectedPublication("");
-    setSelectedPublicationDisplay("");
   }, [selectedClient]);
-
-  // Synchroniser l'affichage avec la sélection
-  useEffect(() => {
-    if (selectedPublication && publications.length > 0) {
-      const pub = publications.find(p => p.id === selectedPublication);
-      if (pub) {
-        setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
-      }
-    } else {
-      setSelectedPublicationDisplay("");
-    }
-  }, [selectedPublication, publications]);
-
-  // Synchroniser l'affichage du statut de facture
-  useEffect(() => {
-    if (tournageFactureStatus) {
-      if (tournageFactureStatus === "payee") {
-        setTournageFactureStatusDisplay("✓ Payée");
-      } else if (tournageFactureStatus === "impayee") {
-        setTournageFactureStatusDisplay("✗ Impayée");
-      } else {
-        setTournageFactureStatusDisplay(tournageFactureStatus);
-      }
-    } else {
-      setTournageFactureStatusDisplay("");
-    }
-  }, [tournageFactureStatus]);
 
   // Recherche de clients avec debounce
   useEffect(() => {
@@ -319,44 +286,13 @@ export default function InvoiceModal({
   };
 
   const validateAllFields = (invoice: any) => {
-    // Champs obligatoires : client, publication, prestation, montant et statut de la facture
-    const requiredFields = [
-      { field: 'establishmentName', value: invoice.establishmentName, name: 'Client' },
-      { field: 'serviceType', value: invoice.serviceType, name: 'Prestation' },
-      { field: 'amount', value: invoice.amount, name: 'Montant' }
-    ];
-
+    const fields = ['siret', 'establishmentName', 'date', 'amount', 'serviceType'];
     let isValid = true;
 
-    requiredFields.forEach(({ field, value, name }) => {
-      const fieldValid = validateField(field, value);
-      if (!fieldValid) {
-        isValid = false;
-      }
+    fields.forEach(field => {
+      const fieldValid = validateField(field, invoice[field]);
+      if (!fieldValid) isValid = false;
     });
-
-    // Vérifier la publication et le statut séparément
-    if (!selectedPublication) {
-      setFieldErrors(prev => ({ ...prev, publication: 'La publication est requise' }));
-      isValid = false;
-    } else {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.publication;
-        return newErrors;
-      });
-    }
-
-    if (!tournageFactureStatus) {
-      setFieldErrors(prev => ({ ...prev, status: 'Le statut de la facture est requis' }));
-      isValid = false;
-    } else {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.status;
-        return newErrors;
-      });
-    }
 
     return isValid;
   };
@@ -369,20 +305,8 @@ export default function InvoiceModal({
       }
 
       const invoiceData = {
-        // Champs exactement comme dans l'API
-        'Prestation demandée': newInvoice.serviceType,
-        'Client': newInvoice.establishmentName,
-        "Date d'émission": newInvoice.date,
-        'Statut facture': tournageFactureStatus,
-        'Montant total brut': parseFloat(newInvoice.amount),
-        'Commentaire': newInvoice.comment,
-        // Champs alternatifs pour la compatibilité (comme dans l'API)
-        prestation: newInvoice.serviceType,
-        client: newInvoice.establishmentName,
-        date: newInvoice.date,
-        statut: tournageFactureStatus,
-        montant: parseFloat(newInvoice.amount),
-        commentaire: newInvoice.comment,
+        ...newInvoice,
+        amount: parseFloat(newInvoice.amount),
       };
 
       if (selectedInvoice) {
@@ -395,7 +319,7 @@ export default function InvoiceModal({
       setNewInvoice({
         category: "shop",
         establishmentName: "",
-        date: "",
+        date: new Date().toISOString().split('T')[0],
         amount: "",
         serviceType: "",
         status: "en_attente",
@@ -407,10 +331,8 @@ export default function InvoiceModal({
       setSelectedClient(null);
       setClientSearchTerm("");
       setSelectedPublication("");
-      setSelectedPublicationDisplay("");
       setPublications([]);
       setTournageFactureStatus("");
-      setTournageFactureStatusDisplay("");
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -421,7 +343,7 @@ export default function InvoiceModal({
     setNewInvoice({
       category: "shop",
       establishmentName: "",
-      date: "",
+      date: new Date().toISOString().split('T')[0],
       amount: "",
       serviceType: "",
       status: "en_attente",
@@ -433,10 +355,8 @@ export default function InvoiceModal({
     setSelectedClient(null);
     setClientSearchTerm("");
     setSelectedPublication("");
-    setSelectedPublicationDisplay("");
     setPublications([]);
     setTournageFactureStatus("");
-    setTournageFactureStatusDisplay("");
     onOpenChange(false);
   };
 
@@ -550,66 +470,45 @@ export default function InvoiceModal({
                 <FormLabel htmlFor="publication" isRequired={true}>
                   Publication concernée
                 </FormLabel>
-                {fieldErrors.publication && (
-                  <div className="text-red-500 text-sm mt-1">{fieldErrors.publication}</div>
-                )}
-                <div className="relative">
-                  <Input
-                    isRequired
-                    id="publication"
-                    placeholder="Sélectionnez une publication"
-                    value={selectedPublicationDisplay}
-                    readOnly
-                    classNames={{
-                      inputWrapper: "bg-page-bg cursor-pointer",
-                    }}
-                    onClick={() => {
-                      // Toggle dropdown
-                      const dropdown = document.getElementById('publication-dropdown');
-                      if (dropdown) {
-                        dropdown.classList.toggle('hidden');
-                      }
-                    }}
-                  />
-                  <div
-                    id="publication-dropdown"
-                    className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden"
-                  >
-                    {publications.map((pub) => (
-                      <div
-                        key={pub.id}
-                        className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          setSelectedPublication(pub.id);
-                          setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
-                          // Hide dropdown
-                          const dropdown = document.getElementById('publication-dropdown');
-                          if (dropdown) {
-                            dropdown.classList.add('hidden');
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setSelectedPublication(pub.id);
-                            setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
-                            // Hide dropdown
-                            const dropdown = document.getElementById('publication-dropdown');
-                            if (dropdown) {
-                              dropdown.classList.add('hidden');
-                            }
-                          }
-                        }}
-                      >
-                        {pub.nom || `Publication ${pub.id}`} - {new Date(pub.datePublication).toLocaleDateString('fr-FR')}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <StyledSelect
+                  isRequired
+                  id="publication"
+                  placeholder="Sélectionnez une publication"
+                  selectedKeys={selectedPublication ? [selectedPublication] : []}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    setSelectedPublication(value);
+                  }}
+                >
+                  {publications.map((pub) => (
+                    <SelectItem key={pub.id}>
+                      {pub.nom || `Publication ${pub.id}`} - {new Date(pub.datePublication).toLocaleDateString('fr-FR')}
+                    </SelectItem>
+                  ))}
+                </StyledSelect>
               </>
             )}
 
+            {/* SIRET (caché mais nécessaire pour la validation) */}
+            <input
+              type="hidden"
+              value={newInvoice.siret}
+              onChange={(e) => setNewInvoice(prev => ({ ...prev, siret: e.target.value }))}
+            />
+
+            {/* Nom d'établissement (caché mais nécessaire pour la validation) */}
+            <input
+              type="hidden"
+              value={newInvoice.establishmentName}
+              onChange={(e) => setNewInvoice(prev => ({ ...prev, establishmentName: e.target.value }))}
+            />
+
+            {/* Catégorie (cachée mais nécessaire pour la validation) */}
+            <input
+              type="hidden"
+              value={newInvoice.category}
+              onChange={(e) => setNewInvoice(prev => ({ ...prev, category: e.target.value }))}
+            />
 
             {/* Affichage conditionnel des champs de facturation */}
             {selectedClient && selectedPublication && (
@@ -623,12 +522,12 @@ export default function InvoiceModal({
                   id="serviceType"
                   isInvalid={!!fieldErrors.serviceType}
                   placeholder="Sélectionnez une prestation"
-                  selectedKeys={newInvoice.serviceType ? new Set([newInvoice.serviceType]) : new Set()}
+                  selectedKeys={newInvoice.serviceType ? [newInvoice.serviceType] : []}
                   onSelectionChange={(keys) => {
                     const value = Array.from(keys)[0] as string;
                     setNewInvoice((prev) => ({
                       ...prev,
-                      serviceType: value || "",
+                      serviceType: value,
                     }));
                     validateField('serviceType', value);
                   }}
@@ -659,107 +558,22 @@ export default function InvoiceModal({
                   }}
                 />
 
-                <FormLabel htmlFor="tournageFacture" isRequired={true}>
-                  Statut de la facture
+                <FormLabel htmlFor="date" isRequired={false}>
+                  Date du paiement
                 </FormLabel>
-                {fieldErrors.status && (
-                  <div className="text-red-500 text-sm mt-1">{fieldErrors.status}</div>
-                )}
-                <div className="relative">
-                  <Input
-                    isRequired
-                    id="tournageFacture"
-                    placeholder="Sélectionnez le statut de la facture"
-                    value={tournageFactureStatusDisplay}
-                    readOnly
-                    classNames={{
-                      inputWrapper: "bg-page-bg cursor-pointer",
-                    }}
-                    onClick={() => {
-                      // Toggle dropdown
-                      const dropdown = document.getElementById('status-dropdown');
-                      if (dropdown) {
-                        dropdown.classList.toggle('hidden');
-                      }
-                    }}
-                  />
-                  <div
-                    id="status-dropdown"
-                    className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden"
-                  >
-                    <div
-                      className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setTournageFactureStatus("payee");
-                        setTournageFactureStatusDisplay("✓ Payée");
-                        // Hide dropdown
-                        const dropdown = document.getElementById('status-dropdown');
-                        if (dropdown) {
-                          dropdown.classList.add('hidden');
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          setTournageFactureStatus("payee");
-                          setTournageFactureStatusDisplay("✓ Payée");
-                          // Hide dropdown
-                          const dropdown = document.getElementById('status-dropdown');
-                          if (dropdown) {
-                            dropdown.classList.add('hidden');
-                          }
-                        }
-                      }}
-                    >
-                      <span className="text-green-600 font-medium">✓ Payée</span>
-                    </div>
-                    <div
-                      className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setTournageFactureStatus("impayee");
-                        setTournageFactureStatusDisplay("✗ Impayée");
-                        // Hide dropdown
-                        const dropdown = document.getElementById('status-dropdown');
-                        if (dropdown) {
-                          dropdown.classList.add('hidden');
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          setTournageFactureStatus("impayee");
-                          setTournageFactureStatusDisplay("✗ Impayée");
-                          // Hide dropdown
-                          const dropdown = document.getElementById('status-dropdown');
-                          if (dropdown) {
-                            dropdown.classList.add('hidden');
-                          }
-                        }
-                      }}
-                    >
-                      <span className="text-red-600 font-medium">✗ Impayée</span>
-                    </div>
-                  </div>
-                </div>
-
-                 <FormLabel htmlFor="date" isRequired={false}>
-                   Date du paiement
-                 </FormLabel>
-                 <Input
-                   id="date"
-                   type="date"
-                   classNames={{
-                     inputWrapper: "bg-page-bg",
-                   }}
-                   value={newInvoice.date}
-                   onChange={(e) => {
-                     const value = e.target.value;
-                     setNewInvoice((prev) => ({ ...prev, date: value }));
-                     validateField('date', value);
-                   }}
-                 />
+                <Input
+                  id="date"
+                  type="date"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newInvoice.date}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewInvoice((prev) => ({ ...prev, date: value }));
+                    validateField('date', value);
+                  }}
+                />
 
                 <FormLabel htmlFor="comment" isRequired={false}>
                   Commentaire
@@ -777,6 +591,26 @@ export default function InvoiceModal({
                   }}
                 />
 
+                <FormLabel htmlFor="tournageFacture" isRequired={true}>
+                  Statut de la facture
+                </FormLabel>
+                <StyledSelect
+                  isRequired
+                  id="tournageFacture"
+                  placeholder="Sélectionnez le statut de la facture"
+                  selectedKeys={tournageFactureStatus ? [tournageFactureStatus] : []}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    setTournageFactureStatus(value);
+                  }}
+                >
+                  <SelectItem key="payee">
+                    <span className="text-green-600 font-medium">✓ Payée</span>
+                  </SelectItem>
+                  <SelectItem key="impayee">
+                    <span className="text-red-600 font-medium">✗ Impayée</span>
+                  </SelectItem>
+                </StyledSelect>
               </>
             )}
 
@@ -815,7 +649,7 @@ export default function InvoiceModal({
           <Button
             className="flex-1"
             color='primary'
-            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.establishmentName || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus}
+            isDisabled={Object.keys(fieldErrors).length > 0 || !newInvoice.siret || !newInvoice.establishmentName || !newInvoice.date || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus}
             onPress={handleSave}
           >
             {selectedInvoice ? "Modifier" : "Ajouter"}
