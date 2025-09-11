@@ -97,7 +97,7 @@ const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
 
 const Button = ({ variant = 'primary', className = '', ...rest }: any) => {
   const base = 'px-4 py-2 rounded-xl font-medium transition disabled:opacity-60 disabled:cursor-not-allowed';
-  const styles: Record<string,string> = {
+  const styles: Record<string, string> = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700',
     ghost: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
     success: 'bg-emerald-600 text-white hover:bg-emerald-700',
@@ -163,7 +163,7 @@ export default function TestProspects() {
   const [pUpdateError, setPUpdateError] = useState<string | null>(null);
   const [pUpdateSuccess, setPUpdateSuccess] = useState<string | null>(null);
 
-  
+
 
   // Pagination
   const [lostNextOffset, setLostNextOffset] = useState<number | null>(0);
@@ -257,7 +257,7 @@ export default function TestProspects() {
       if (!res.ok) {
         // surface a clearer message from server when possible
         let text = `Erreur récupération factures (status ${res.status})`;
-        try { const j = await res.json(); if (j?.error) text = j.error; } catch {}
+        try { const j = await res.json(); if (j?.error) text = j.error; } catch { }
         throw new Error(text);
       }
 
@@ -324,7 +324,7 @@ export default function TestProspects() {
 
       if (!res.ok) {
         let text = `Erreur récupération factures (status ${res.status})`;
-        try { const j = await res.json(); if (j?.error) text = j.error; } catch {}
+        try { const j = await res.json(); if (j?.error) text = j.error; } catch { }
         throw new Error(text);
       }
 
@@ -396,14 +396,14 @@ export default function TestProspects() {
     const t = setTimeout(() => fetchVilles(villesQuery), 250);
 
     return () => clearTimeout(t);
-     
+
   }, [villesQuery]);
 
   useEffect(() => {
     const t = setTimeout(() => fetchCategories(categoriesQuery), 250);
 
     return () => clearTimeout(t);
-     
+
   }, [categoriesQuery]);
 
   // when viewing prospects, prefetch defaults
@@ -412,7 +412,7 @@ export default function TestProspects() {
       fetchVilles('');
       fetchCategories('');
     }
-     
+
   }, [selected]);
 
   // fetch invoices when user selects the factures collection
@@ -436,7 +436,7 @@ export default function TestProspects() {
   const [agendaEvents, setAgendaEvents] = useState<{ id: string; description?: string; date: string; task?: string; type?: string }[]>([]);
 
   // Form agenda
-  const [newDate, setNewDate] = useState<string>(() => new Date().toISOString().slice(0,16));
+  const [newDate, setNewDate] = useState<string>(() => new Date().toISOString().slice(0, 16));
   const [newTask, setNewTask] = useState<string>('');
   const [newType, setNewType] = useState<string>('');
   const [newDescription, setNewDescription] = useState<string>('');
@@ -462,7 +462,7 @@ export default function TestProspects() {
 
   // Form TODO (champs requis sauf dueDate + description)
   const [todoName, setTodoName] = useState<string>('');
-  const [todoCreatedAt, setTodoCreatedAt] = useState<string>(() => new Date().toISOString().slice(0,16));
+  const [todoCreatedAt, setTodoCreatedAt] = useState<string>(() => new Date().toISOString().slice(0, 16));
   const [todoDueDate, setTodoDueDate] = useState<string>('');
   const [todoStatus, setTodoStatus] = useState<string>('À faire');
   const [todoType, setTodoType] = useState<string>('Général');
@@ -484,7 +484,7 @@ export default function TestProspects() {
 
   useEffect(() => {
     loadCollection('categories');
-     
+
   }, []);
 
   const buildUrl = (base: string, q: string, offset = 0, limit = PAGE_SIZE) => {
@@ -527,7 +527,7 @@ export default function TestProspects() {
 
   useEffect(() => {
     fetchCollaborateursList();
-     
+
   }, []);
 
   const getParisOffset = (dateObj: Date) => {
@@ -544,7 +544,7 @@ export default function TestProspects() {
 
         return `${sign}${hh}:00`;
       }
-    } catch {}
+    } catch { }
 
     return '+00:00';
   };
@@ -584,7 +584,7 @@ export default function TestProspects() {
 
       setAgendaEvents(data.events || []);
     } catch (err: any) {
-      
+
       setError(err?.message || 'Erreur lors de la récupération de l\'agenda');
     } finally {
       setAgendaLoading(false);
@@ -1069,7 +1069,7 @@ export default function TestProspects() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Nom établissement</th>
-                  <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date de prise</th>
+              <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date de prise</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Catégorie</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Ville</th>
               <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Suivi par...</th>
@@ -1219,7 +1219,7 @@ export default function TestProspects() {
         {createSuccess && <div className="text-emerald-600 mt-2 text-sm">{createSuccess}</div>}
         <div className="flex gap-2 pt-2">
           <Button disabled={creating} onClick={() => createAgendaItem()}>{creating ? 'Création…' : 'Créer'}</Button>
-          <Button variant="ghost" onClick={() => { setNewDate(new Date().toISOString().slice(0,16)); setNewTask(''); setNewType(''); setNewDescription(''); setCreateError(null); setCreateSuccess(null); }}>Annuler</Button>
+          <Button variant="ghost" onClick={() => { setNewDate(new Date().toISOString().slice(0, 16)); setNewTask(''); setNewType(''); setNewDescription(''); setCreateError(null); setCreateSuccess(null); }}>Annuler</Button>
         </div>
       </div>
     </Card>
@@ -1265,7 +1265,7 @@ export default function TestProspects() {
         {todoCreateSuccess && <div className="text-emerald-600 mt-2 text-sm">{todoCreateSuccess}</div>}
         <div className="flex gap-2 pt-2">
           <Button disabled={todoCreating} onClick={() => createTodo()}>{todoCreating ? 'Création…' : 'Créer le TODO'}</Button>
-          <Button variant="ghost" onClick={() => { setTodoName(''); setTodoType('Général'); setTodoStatus('À faire'); setTodoDesc(''); setTodoDueDate(''); setTodoCreatedAt(new Date().toISOString().slice(0,16)); setTodoCreateError(null); setTodoCreateSuccess(null); }}>Annuler</Button>
+          <Button variant="ghost" onClick={() => { setTodoName(''); setTodoType('Général'); setTodoStatus('À faire'); setTodoDesc(''); setTodoDueDate(''); setTodoCreatedAt(new Date().toISOString().slice(0, 16)); setTodoCreateError(null); setTodoCreateSuccess(null); }}>Annuler</Button>
         </div>
       </div>
     </Card>
@@ -1279,7 +1279,7 @@ export default function TestProspects() {
   const createProspect = async () => {
     setPCreateError(null);
     setPCreateSuccess(null);
-  if (!pNom || !pVille || !pTelephone || !pCategorie || !pDatePremier || !pDateRelance) {
+    if (!pNom || !pVille || !pTelephone || !pCategorie || !pDatePremier || !pDateRelance) {
       setPCreateError('Veuillez renseigner tous les champs requis');
 
       return;
@@ -1291,9 +1291,9 @@ export default function TestProspects() {
         'Ville EPICU': pVille,
         'Téléphone': pTelephone,
         'Catégorie': pCategorie,
-  // 'Etat du prospect' removed
-  'Date du premier contact': pDatePremier,
-  'Date de prise de contact': pDatePrise,
+        // 'Etat du prospect' removed
+        'Date du premier contact': pDatePremier,
+        'Date de prise de contact': pDatePrise,
         'Date de relance': pDateRelance,
       };
 
@@ -1317,8 +1317,8 @@ export default function TestProspects() {
       const created = await res.json();
 
       setPCreateSuccess(`Prospect créé (id: ${created.id})`);
-  // reset minimal fields
-  setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDatePrise(''); setPDateRelance(''); setPCommentaires('');
+      // reset minimal fields
+      setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDatePrise(''); setPDateRelance(''); setPCommentaires('');
       // refresh list if showing prospects
       if (selected === 'prospects') loadCollection('prospects');
     } catch (err: any) {
@@ -1344,11 +1344,11 @@ export default function TestProspects() {
       if (pNom) payload["Nom de l'établissement"] = pNom;
       if (pVille) payload['Ville EPICU'] = pVille;
       if (pTelephone) payload['Téléphone'] = pTelephone;
-  if (pEmail) payload['Email'] = pEmail;
-  if (pSuivi) payload['Suivi par'] = [pSuivi];
+      if (pEmail) payload['Email'] = pEmail;
+      if (pSuivi) payload['Suivi par'] = [pSuivi];
       if (pCategorie) payload['Catégorie'] = pCategorie;
       if (pDatePremier) payload['Date du premier contact'] = pDatePremier;
-  if (pDatePrise) payload['Date de prise de contact'] = pDatePrise;
+      if (pDatePrise) payload['Date de prise de contact'] = pDatePrise;
       if (pDateRelance) payload['Date de relance'] = pDateRelance;
       if (pCommentaires) payload['Commentaires'] = pCommentaires;
 
@@ -1423,7 +1423,7 @@ export default function TestProspects() {
     try {
       if (t.dueDate) {
         const d = new Date(t.dueDate);
-        const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+        const isoLocal = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
         setTodoEditDue(isoLocal);
       } else setTodoEditDue('');
@@ -1515,7 +1515,7 @@ export default function TestProspects() {
     // convert ISO-ish date to datetime-local input if possible
     try {
       const d = new Date(ev.date);
-      const isoLocal = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      const isoLocal = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
       setEditDate(isoLocal);
     } catch {
@@ -1605,663 +1605,671 @@ export default function TestProspects() {
 
   return (
     <>
-    <main className="p-8 bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6">Test Prospects</h1>
-      <div className="flex gap-6">
-        {/* ————————————————— Sidebar ————————————————— */}
-        <aside className="w-full md:w-80 space-y-4">
-          <Card title="Collections">
-            <ul className="flex flex-col gap-2">
-              {[
-                { key: 'glacial', label: 'Prospects Glaciaux' },
-                { key: 'prospects', label: 'Prospects' },
-                { key: 'discussion', label: 'En Discussion' },
-                { key: 'factures', label: 'Factures' },
-                { key: 'statistiques', label: 'Statistiques' },
-                { key: 'villes', label: 'Villes Epicu' },
-                { key: 'categories', label: 'Catégories' },
-                { key: 'link-importants', label: 'Liens importants' },
-                { key: 'canva', label: 'Ressources Canva' },
-                { key: 'materiel', label: 'Matériel' },
-                { key: 'clients', label: 'Clients' },
-                { key: 'collaborateurs', label: 'Collaborateurs' },
-                { key: 'agenda', label: 'Agenda' },
-                { key: 'todo', label: 'TODO' },
-              ].map(it => (
-                <li key={it.key}>
-                  <button
-                    className={`w-full text-left px-3 py-2 rounded-xl border transition ${selected === it.key ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}`}
-                    onClick={() => loadCollection(it.key)}
-                  >{it.label}</button>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 flex gap-2">
-              <Input placeholder="Rechercher…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && selected) loadCollection(selected, searchQuery); }} />
-              <Button onClick={() => selected && loadCollection(selected, searchQuery)}>Go</Button>
-            </div>
-          </Card>
-
-          {/* Panneau Agenda */}
-          <AgendaControls />
-
-          {/* Panneau TODO */}
-          <TodoControls />
-          
-          {/* Panneau Prospects (édition test) - inlined to avoid remounts */}
-          <div className="">
-            <div className="bg-white border rounded-2xl shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-gray-900">Prospect — Édition (test)</h4>
+      <main className="p-8 bg-gray-50">
+        <h1 className="text-3xl font-bold mb-6">Test Prospects</h1>
+        <div className="flex gap-6">
+          {/* ————————————————— Sidebar ————————————————— */}
+          <aside className="w-full md:w-80 space-y-4">
+            <Card title="Collections">
+              <ul className="flex flex-col gap-2">
+                {[
+                  { key: 'glacial', label: 'Prospects Glaciaux' },
+                  { key: 'prospects', label: 'Prospects' },
+                  { key: 'discussion', label: 'En Discussion' },
+                  { key: 'factures', label: 'Factures' },
+                  { key: 'statistiques', label: 'Statistiques' },
+                  { key: 'villes', label: 'Villes Epicu' },
+                  { key: 'categories', label: 'Catégories' },
+                  { key: 'link-importants', label: 'Liens importants' },
+                  { key: 'canva', label: 'Ressources Canva' },
+                  { key: 'materiel', label: 'Matériel' },
+                  { key: 'clients', label: 'Clients' },
+                  { key: 'collaborateurs', label: 'Collaborateurs' },
+                  { key: 'agenda', label: 'Agenda' },
+                  { key: 'todo', label: 'TODO' },
+                ].map(it => (
+                  <li key={it.key}>
+                    <button
+                      className={`w-full text-left px-3 py-2 rounded-xl border transition ${selected === it.key ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}`}
+                      onClick={() => loadCollection(it.key)}
+                    >{it.label}</button>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 flex gap-2">
+                <Input placeholder="Rechercher…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && selected) loadCollection(selected, searchQuery); }} />
+                <Button onClick={() => selected && loadCollection(selected, searchQuery)}>Go</Button>
               </div>
-              <div className="space-y-3">
-                <h5 className="font-medium">Modifier un prospect (par id)</h5>
-                                    <p className="text-sm text-gray-600">Collez l&apos;id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="record-id">Record id (rec...)</label>
-                    <Input id="record-id" placeholder="recXXXXXXXXXXXX" type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} />
+            </Card>
+
+            {/* Panneau Agenda */}
+            <AgendaControls />
+
+            {/* Panneau TODO */}
+            <TodoControls />
+
+            {/* Panneau Prospects (édition test) - inlined to avoid remounts */}
+            <div className="">
+              <div className="bg-white border rounded-2xl shadow-sm p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-gray-900">Prospect — Édition (test)</h4>
+                </div>
+                <div className="space-y-3">
+                  <h5 className="font-medium">Modifier un prospect (par id)</h5>
+                  <p className="text-sm text-gray-600">Collez l&apos;id du record (retourné après création) puis renseignez les champs à mettre à jour.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="record-id">Record id (rec...)</label>
+                      <Input id="record-id" placeholder="recXXXXXXXXXXXX" type="text" value={pEditId} onChange={(e) => setPEditId(e.target.value)} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="champ-update">Champ à mettre à jour (ex: Statut)</label>
+                      <Input disabled id="champ-update" placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" type="text" onChange={() => { }} />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="nom-etablissement">Nom de l&apos;établissement</label>
+                      <Input id="nom-etablissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="ville-epicu">Ville EPICU</label>
+                      <Input id="ville-epicu" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                      <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select" value={pVilleId || ''} onChange={(e) => {
+                        const id = e.target.value;
+
+                        if (!id) {
+                          setPVille(''); setPVilleId('');
+
+                          return;
+                        }
+                        const sel = villesOptions.find(v => v.id === id);
+
+                        if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
+                      }}>
+                        <option value="">— Aucun —</option>
+                        {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="categorie">Catégorie</label>
+                      <Input id="categorie" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                      <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select" value={pCategorieId || ''} onChange={(e) => {
+                        const id = e.target.value;
+
+                        if (!id) {
+                          setPCategorie(''); setPCategorieId('');
+
+                          return;
+                        }
+                        const sel = categoriesOptions.find(c => c.id === id);
+
+                        if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
+                      }}>
+                        <option value="">— Aucun —</option>
+                        {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    {/* Etat du prospect removed */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="date-relance">Date de relance</label>
+                      <Input id="date-relance" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium" htmlFor="commentaires">Commentaires</label>
+                      <Textarea id="commentaires" rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="champ-update">Champ à mettre à jour (ex: Statut)</label>
-                    <Input disabled id="champ-update" placeholder="Vous pouvez remplir ci-dessous les champs à mettre à jour" type="text" onChange={() => {}} />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="nom-etablissement">Nom de l&apos;établissement</label>
-                    <Input id="nom-etablissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="ville-epicu">Ville EPICU</label>
-                    <Input id="ville-epicu" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select" value={pVilleId || ''} onChange={(e) => {
-                      const id = e.target.value;
-
-                      if (!id) { setPVille(''); setPVilleId('');
-
- return; }
-                      const sel = villesOptions.find(v => v.id === id);
-
-                      if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
-                    }}>
-                      <option value="">— Aucun —</option>
-                      {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="categorie">Catégorie</label>
-                    <Input id="categorie" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select" value={pCategorieId || ''} onChange={(e) => {
-                      const id = e.target.value;
-
-                      if (!id) { setPCategorie(''); setPCategorieId('');
-
- return; }
-                      const sel = categoriesOptions.find(c => c.id === id);
-
-                      if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
-                    }}>
-                      <option value="">— Aucun —</option>
-                      {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  {/* Etat du prospect removed */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="date-relance">Date de relance</label>
-                    <Input id="date-relance" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium" htmlFor="commentaires">Commentaires</label>
-                    <Textarea id="commentaires" rows={2} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                  {pUpdateError && <div className="text-red-500 text-sm">{pUpdateError}</div>}
+                  {pUpdateSuccess && <div className="text-emerald-600 text-sm">{pUpdateSuccess}</div>}
+                  <div className="flex gap-2 pt-2">
+                    <Button disabled={pUpdateLoading} onClick={() => updateProspect()}>{pUpdateLoading ? 'Mise à jour…' : 'Mettre à jour le prospect'}</Button>
+                    <Button variant="ghost" onClick={() => { setPEditId(''); setPUpdateError(null); setPUpdateSuccess(null); }}>Annuler</Button>
                   </div>
                 </div>
-                {pUpdateError && <div className="text-red-500 text-sm">{pUpdateError}</div>}
-                {pUpdateSuccess && <div className="text-emerald-600 text-sm">{pUpdateSuccess}</div>}
-                <div className="flex gap-2 pt-2">
-                  <Button disabled={pUpdateLoading} onClick={() => updateProspect()}>{pUpdateLoading ? 'Mise à jour…' : 'Mettre à jour le prospect'}</Button>
-                  <Button variant="ghost" onClick={() => { setPEditId(''); setPUpdateError(null); setPUpdateSuccess(null); }}>Annuler</Button>
-                </div>
               </div>
             </div>
-          </div>
-          
-        </aside>
 
-        {/* ————————————————— Contenu ————————————————— */}
-        <section className="flex-1 space-y-6">
-          {loading && <div className="rounded-xl border bg-white p-4">Chargement…</div>}
-          {error && <div className="rounded-xl border bg-red-50 text-red-700 p-4">{error}</div>}
+          </aside>
 
-          {!loading && !error && selected === null && (
-            <div className="rounded-xl border bg-white p-6">Sélectionnez une collection à gauche pour afficher les résultats.</div>
-          )}
+          {/* ————————————————— Contenu ————————————————— */}
+          <section className="flex-1 space-y-6">
+            {loading && <div className="rounded-xl border bg-white p-4">Chargement…</div>}
+            {error && <div className="rounded-xl border bg-red-50 text-red-700 p-4">{error}</div>}
 
-          {/* rendered below with filters when selected === 'prospects' or 'glacial' */}
+            {!loading && !error && selected === null && (
+              <div className="rounded-xl border bg-white p-6">Sélectionnez une collection à gauche pour afficher les résultats.</div>
+            )}
+
+            {/* rendered below with filters when selected === 'prospects' or 'glacial' */}
             {!loading && !error && selected === 'discussion' && (
-            <div className="space-y-4">
-              <Card title="Filtres - En discussion">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="filter-category-discussion">Catégorie</label>
-                    <select className="w-full border rounded-xl px-3 py-2" id="filter-category-discussion" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
-                      <option value="">— Toutes —</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
+              <div className="space-y-4">
+                <Card title="Filtres - En discussion">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="filter-category-discussion">Catégorie</label>
+                      <select className="w-full border rounded-xl px-3 py-2" id="filter-category-discussion" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                        <option value="">— Toutes —</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="collaborator-search-discussion">Suivi par...</label>
-                    <input
-                      className="w-full border rounded-xl px-3 py-2"
-                      id="collaborator-search-discussion"
-                      placeholder="Rechercher collaborateur..."
-                      value={collaboratorSearch}
-                      onChange={(e) => setCollaboratorSearch(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()} // prevent bubbling that may change focus
-                    />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
-                      <option value="">— Aucun (tous) —</option>
-                      {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
-                        <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
-                      )))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="collaborator-search-discussion">Suivi par...</label>
+                      <input
+                        className="w-full border rounded-xl px-3 py-2"
+                        id="collaborator-search-discussion"
+                        placeholder="Rechercher collaborateur..."
+                        value={collaboratorSearch}
+                        onChange={(e) => setCollaboratorSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()} // prevent bubbling that may change focus
+                      />
+                      <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
+                        <option value="">— Aucun (tous) —</option>
+                        {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
+                          <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
+                        )))}
+                      </select>
+                    </div>
 
-                  <div className="flex items-end gap-2">
-                    <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => loadCollection('discussion', searchQuery)}>Appliquer</button>
-                    <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
+                    <div className="flex items-end gap-2">
+                      <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => loadCollection('discussion', searchQuery)}>Appliquer</button>
+                      <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
 
-              {renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
-            </div>
-          )}
-          {!loading && !error && selected === 'statistiques' && (
-            <div className="space-y-4">
-              <Card title="Statistiques mensuelles — Test">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="dateStat" className="text-sm font-medium">Date (mm-yyyy)</label>
-                    <Input id="dateStat" type="text" value={dateStat} onChange={(e) => setDateStat(e.target.value)} />
+                {renderProspectTable(discussions, 'En Discussion', discussionsHasMore)}
+              </div>
+            )}
+            {!loading && !error && selected === 'statistiques' && (
+              <div className="space-y-4">
+                <Card title="Statistiques mensuelles — Test">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="dateStat" className="text-sm font-medium">Date (mm-yyyy)</label>
+                      <Input id="dateStat" type="text" value={dateStat} onChange={(e) => setDateStat(e.target.value)} />
+                    </div>
+                    <div>
+                      <label htmlFor="villeIdStat" className="text-sm font-medium">Ville EPICU (record id) — laisser vide pour &quot;all&quot;</label>
+                      <select id="villeIdStat" className="w-full border rounded-xl px-3 py-2" value={selectedVilleIdStat} onChange={(e) => setSelectedVilleIdStat(e.target.value)}>
+                        <option value="">— all —</option>
+                        {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville} — {v.id}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="villeIdStat" className="text-sm font-medium">Ville EPICU (record id) — laisser vide pour &quot;all&quot;</label>
-                    <select id="villeIdStat" className="w-full border rounded-xl px-3 py-2" value={selectedVilleIdStat} onChange={(e) => setSelectedVilleIdStat(e.target.value)}>
-                      <option value="">— all —</option>
-                      {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville} — {v.id}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="pt-3 flex gap-2">
-                  <Button onClick={async () => {
-                    try {
-                      setStatLoading(true); setStatError(null); setStatResult(null);
-                      const villeQ = selectedVilleIdStat || 'all';
-                      const res = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeQ)}&date=${encodeURIComponent(dateStat)}`);
-                      const json = await res.json();
-                      if (!res.ok) {
-                        setStatError(json?.error || `Erreur ${res.status}`);
+                  <div className="pt-3 flex gap-2">
+                    <Button onClick={async () => {
+                      try {
+                        setStatLoading(true); setStatError(null); setStatResult(null);
+                        const villeQ = selectedVilleIdStat || 'all';
+                        const res = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeQ)}&date=${encodeURIComponent(dateStat)}`);
+                        const json = await res.json();
+                        if (!res.ok) {
+                          setStatError(json?.error || `Erreur ${res.status}`);
+                          setStatResult(null);
+                        } else {
+                          setStatResult(json);
+                        }
+                      } catch (e: any) {
+                        setStatError(e?.message || String(e));
                         setStatResult(null);
-                      } else {
-                        setStatResult(json);
-                      }
-                    } catch (e: any) {
-                      setStatError(e?.message || String(e));
-                      setStatResult(null);
-                    } finally { setStatLoading(false); }
-                  }}>{statLoading ? 'Chargement…' : 'Exécuter'}</Button>
-                  <Button variant="ghost" onClick={() => { setDateStat('09-2025'); setSelectedVilleIdStat(''); setStatResult(null); setStatError(null); }}>Réinitialiser</Button>
-                </div>
-              </Card>
-
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                <h3 className="font-semibold mb-2">Résultat</h3>
-                {statLoading && <div>Chargement…</div>}
-                {statError && <div className="text-red-600">{statError}</div>}
-                {!statLoading && !statError && statResult && (
-                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(statResult, null, 2)}</pre>
-                )}
-                {!statLoading && !statError && !statResult && <div>Aucun résultat</div>}
-              </div>
-            </div>
-          )}
-          {!loading && !error && selected === 'link-importants' && (
-            <div className="space-y-4">
-              <Card title="Liens importants — Test">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Recherche (texte)</label>
-                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                      } finally { setStatLoading(false); }
+                    }}>{statLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                    <Button variant="ghost" onClick={() => { setDateStat('09-2025'); setSelectedVilleIdStat(''); setStatResult(null); setStatError(null); }}>Réinitialiser</Button>
                   </div>
+                </Card>
+
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  <h3 className="font-semibold mb-2">Résultat</h3>
+                  {statLoading && <div>Chargement…</div>}
+                  {statError && <div className="text-red-600">{statError}</div>}
+                  {!statLoading && !statError && statResult && (
+                    <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(statResult, null, 2)}</pre>
+                  )}
+                  {!statLoading && !statError && !statResult && <div>Aucun résultat</div>}
                 </div>
-                <div className="pt-3 flex gap-2">
-                  <Button onClick={async () => {
-                    try {
-                      setLinksLoading(true); setLinksError(null); setLinksResult(null);
-                      const params = new URLSearchParams();
-                      if (searchQuery) params.set('q', searchQuery);
-                      params.set('limit', String(PAGE_SIZE));
-                      const res = await authFetch(`/api/ressources/link-importants?${params.toString()}`);
-                      const json = await res.json();
-                      if (!res.ok) {
-                        setLinksError(json?.error || `Erreur ${res.status}`);
+              </div>
+            )}
+            {!loading && !error && selected === 'link-importants' && (
+              <div className="s pace-y-4">
+                <Card title="Liens importants — Test">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="search-input-1" className="text-sm font-medium">Recherche (texte)</label>
+                      <Input id="search-input-1" type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="pt-3 flex gap-2">
+                    <Button onClick={async () => {
+                      try {
+                        setLinksLoading(true); setLinksError(null); setLinksResult(null);
+                        const params = new URLSearchParams();
+                        if (searchQuery) params.set('q', searchQuery);
+                        params.set('limit', String(PAGE_SIZE));
+                        const res = await authFetch(`/api/ressources/link-importants?${params.toString()}`);
+                        const json = await res.json();
+                        if (!res.ok) {
+                          setLinksError(json?.error || `Erreur ${res.status}`);
+                          setLinksResult(null);
+                        } else {
+                          setLinksResult(json);
+                        }
+                      } catch (e: any) {
+                        setLinksError(e?.message || String(e));
                         setLinksResult(null);
-                      } else {
-                        setLinksResult(json);
-                      }
-                    } catch (e: any) {
-                      setLinksError(e?.message || String(e));
-                      setLinksResult(null);
-                    } finally { setLinksLoading(false); }
-                  }}>{linksLoading ? 'Chargement…' : 'Exécuter'}</Button>
-                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setLinksResult(null); setLinksError(null); }}>{'Réinitialiser'}</Button>
-                </div>
-              </Card>
+                      } finally { setLinksLoading(false); }
+                    }}>{linksLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                    <Button variant="ghost" onClick={() => { setSearchQuery(''); setLinksResult(null); setLinksError(null); }}>{'Réinitialiser'}</Button>
+                  </div>
+                </Card>
 
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                <h3 className="font-semibold mb-2">Résultat Liens importants</h3>
-                {linksLoading && <div>Chargement…</div>}
-                {linksError && <div className="text-red-600">{linksError}</div>}
-                {!linksLoading && !linksError && linksResult && (
-                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(linksResult, null, 2)}</pre>
-                )}
-                {!linksLoading && !linksError && !linksResult && <div>Aucun résultat</div>}
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  <h3 className="font-semibold mb-2">Résultat Liens importants</h3>
+                  {linksLoading && <div>Chargement…</div>}
+                  {linksError && <div className="text-red-600">{linksError}</div>}
+                  {!linksLoading && !linksError && linksResult && (
+                    <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(linksResult, null, 2)}</pre>
+                  )}
+                  {!linksLoading && !linksError && !linksResult && <div>Aucun résultat</div>}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {!loading && !error && selected === 'canva' && (
-            <div className="space-y-4">
-              <Card title="Ressources Canva — Test">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Recherche (texte)</label>
-                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                  </div>
-                </div>
-                <div className="pt-3 flex gap-2">
-                  <Button onClick={async () => {
-                    try {
-                      setCanvaLoading(true); setCanvaError(null); setCanvaResult(null);
-                      const params = new URLSearchParams();
-                      if (searchQuery) params.set('q', searchQuery);
-                      params.set('limit', String(PAGE_SIZE));
-                      const res = await authFetch(`/api/ressources/canva?${params.toString()}`);
-                      const json = await res.json();
-                      if (!res.ok) { setCanvaError(json?.error || `Erreur ${res.status}`); setCanvaResult(null); } else { setCanvaResult(json); }
-                    } catch (e: any) { setCanvaError(e?.message || String(e)); setCanvaResult(null); } finally { setCanvaLoading(false); }
-                  }}>{canvaLoading ? 'Chargement…' : 'Exécuter'}</Button>
-                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setCanvaResult(null); setCanvaError(null); }}>{'Réinitialiser'}</Button>
-                </div>
-              </Card>
-
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                <h3 className="font-semibold mb-2">Résultat Ressources Canva</h3>
-                {canvaLoading && <div>Chargement…</div>}
-                {canvaError && <div className="text-red-600">{canvaError}</div>}
-                {!canvaLoading && !canvaError && canvaResult && (
-                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(canvaResult, null, 2)}</pre>
-                )}
-                {!canvaLoading && !canvaError && !canvaResult && <div>Aucun résultat</div>}
-              </div>
-            </div>
-          )}
-
-          {!loading && !error && selected === 'materiel' && (
-            <div className="space-y-4">
-              <Card title="Matériel — Test">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Recherche (texte)</label>
-                    <Input type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                  </div>
-                </div>
-                <div className="pt-3 flex gap-2">
-                  <Button onClick={async () => {
-                    try {
-                      setMaterielLoading(true); setMaterielError(null); setMaterielResult(null);
-                      const params = new URLSearchParams();
-                      if (searchQuery) params.set('q', searchQuery);
-                      params.set('limit', String(PAGE_SIZE));
-                      const res = await authFetch(`/api/ressources/materiel?${params.toString()}`);
-                      const json = await res.json();
-                      if (!res.ok) { setMaterielError(json?.error || `Erreur ${res.status}`); setMaterielResult(null); } else { setMaterielResult(json); }
-                    } catch (e: any) { setMaterielError(e?.message || String(e)); setMaterielResult(null); } finally { setMaterielLoading(false); }
-                  }}>{materielLoading ? 'Chargement…' : 'Exécuter'}</Button>
-                  <Button variant="ghost" onClick={() => { setSearchQuery(''); setMaterielResult(null); setMaterielError(null); }}>{'Réinitialiser'}</Button>
-                </div>
-              </Card>
-
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                <h3 className="font-semibold mb-2">Résultat Matériel</h3>
-                {materielLoading && <div>Chargement…</div>}
-                {materielError && <div className="text-red-600">{materielError}</div>}
-                {!materielLoading && !materielError && materielResult && (
-                  <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(materielResult, null, 2)}</pre>
-                )}
-                {!materielLoading && !materielError && !materielResult && <div>Aucun résultat</div>}
-              </div>
-            </div>
-          )}
-          {/* Prospects & Glacial filters: reuse same controls when showing those lists */}
-          {!loading && !error && (selected === 'prospects' || selected === 'glacial') && (
-            <div className="space-y-4">
-              <Card title="Filtres">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="filter-category-prospects">Catégorie</label>
-                    <select className="w-full border rounded-xl px-3 py-2" id="filter-category-prospects" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
-                      <option value="">— Toutes —</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="collaborator-search-prospects">Suivi par...</label>
-                    <input
-                      className="w-full border rounded-xl px-3 py-2"
-                      id="collaborator-search-prospects"
-                      placeholder="Rechercher collaborateur..."
-                      value={collaboratorSearch}
-                      onChange={(e) => setCollaboratorSearch(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                    <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
-                      <option value="">— Aucun (tous) —</option>
-                      {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
-                        <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
-                      )))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-end gap-2">
-                    <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => selected && loadCollection(selected, searchQuery)}>Appliquer</button>
-                    <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
-                  </div>
-                </div>
-              </Card>
-
-              {selected === 'prospects' && (
-                <div className="space-y-4">
-                  <div className="bg-white border rounded-2xl shadow-sm p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900">Créer un prospect (test)</h4>
-                    </div>
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L&apos;id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {/* SIRET removed from API - field omitted */}
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="nom-etablissement-create">Nom de l&apos;établissement</label>
-                          <Input id="nom-etablissement-create" placeholder="Nom établissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="ville-epicu-create">Ville EPICU</label>
-                          <Input id="ville-epicu-create" placeholder="Rechercher une ville…" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select-create" value={pVilleId || ''} onChange={(e) => {
-                            const id = e.target.value;
-
-                            if (!id) { setPVille(''); setPVilleId('');
-
- return; }
-                            const sel = villesOptions.find(v => v.id === id);
-
-                            if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
-                          }}>
-                            <option value="">— Aucun —</option>
-                            {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="telephone">Téléphone</label>
-                          <Input id="telephone" placeholder="Téléphone" type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="email">Email</label>
-                          <Input id="email" placeholder="Email" type="email" value={pEmail} onChange={(e) => setPEmail(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="suivi-par">Suivi par</label>
-                          <select id="suivi-par" className="w-full border rounded-xl px-3 py-2" value={pSuivi || ''} onChange={(e) => setPSuivi(e.target.value || '')}>
-                            <option value="">— Aucun —</option>
-                            {collaborateurs.map(c => <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="categorie-create">Catégorie</label>
-                          <Input id="categorie-create" placeholder="Rechercher une catégorie…" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
-                          <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select-create" value={pCategorieId || ''} onChange={(e) => {
-                            const id = e.target.value;
-
-                            if (!id) { setPCategorie(''); setPCategorieId('');
-
- return; }
-                            const sel = categoriesOptions.find(c => c.id === id);
-
-                            if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
-                          }}>
-                            <option value="">— Aucun —</option>
-                            {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                          </select>
-                        </div>
-                        {/* Etat du prospect removed */}
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="date-premier">Date du premier contact</label>
-                          <Input id="date-premier" type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="date-prise">Date de prise de contact</label>
-                          <Input id="date-prise" type="date" value={pDatePrise} onChange={(e) => setPDatePrise(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-sm font-medium" htmlFor="date-relance-create">Date de relance</label>
-                          <Input id="date-relance-create" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
-                        </div>
-                        {/* 'Je viens de le rencontrer' removed from API and UI */}
-                        <div className="flex flex-col gap-1 md:col-span-2">
-                          <label className="text-sm font-medium" htmlFor="commentaires-create">Commentaires</label>
-                          <Textarea id="commentaires-create" rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
-                        </div>
-                      </div>
-                      {pCreateError && <div className="text-red-500 text-sm">{pCreateError}</div>}
-                      {pCreateSuccess && <div className="text-emerald-600 text-sm">{pCreateSuccess}</div>}
-                      <div className="flex gap-2 pt-2">
-                        <Button disabled={pCreating} onClick={() => createProspect()}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
-                        <Button variant="ghost" onClick={() => { setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
-                      </div>
+            {!loading && !error && selected === 'canva' && (
+              <div className="space-y-4">
+                <Card title="Ressources Canva — Test">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="search-input-1" className="text-sm font-medium">Recherche (texte)</label>
+                      <Input id="search-input-1" type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                   </div>
-                  {renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+                  <div className="pt-3 flex gap-2">
+                    <Button onClick={async () => {
+                      try {
+                        setCanvaLoading(true); setCanvaError(null); setCanvaResult(null);
+                        const params = new URLSearchParams();
+                        if (searchQuery) params.set('q', searchQuery);
+                        params.set('limit', String(PAGE_SIZE));
+                        const res = await authFetch(`/api/ressources/canva?${params.toString()}`);
+                        const json = await res.json();
+                        if (!res.ok) { setCanvaError(json?.error || `Erreur ${res.status}`); setCanvaResult(null); } else { setCanvaResult(json); }
+                      } catch (e: any) { setCanvaError(e?.message || String(e)); setCanvaResult(null); } finally { setCanvaLoading(false); }
+                    }}>{canvaLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                    <Button variant="ghost" onClick={() => { setSearchQuery(''); setCanvaResult(null); setCanvaError(null); }}>{'Réinitialiser'}</Button>
+                  </div>
+                </Card>
+
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  <h3 className="font-semibold mb-2">Résultat Ressources Canva</h3>
+                  {canvaLoading && <div>Chargement…</div>}
+                  {canvaError && <div className="text-red-600">{canvaError}</div>}
+                  {!canvaLoading && !canvaError && canvaResult && (
+                    <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(canvaResult, null, 2)}</pre>
+                  )}
+                  {!canvaLoading && !canvaError && !canvaResult && <div>Aucun résultat</div>}
                 </div>
-              )}
-              {selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
-            </div>
-          )}
-          {!loading && !error && selected === 'clients' && renderClientsTable(clients)}
-          {!loading && !error && selected === 'factures' && (
-            <div className="space-y-4">
-              {/* Test form: select établissement + recherche (placed on top of the list) */}
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                  <div>
-                    <label htmlFor="establishment-select" className="text-sm font-medium">Établissement</label>
-                    <select id="establishment-select" className="w-full border rounded-xl px-3 py-2" value={estSelectedId} onChange={(e) => setEstSelectedId(e.target.value)} onFocus={() => { if (clients.length === 0) fetchEstablishmentsList(); }}>
-                      <option value="">— Sélectionner —</option>
-                      {clients.map(c => <option key={c.nomEtablissement || (c as any).id} value={(c as any).id}>{c.nomEtablissement || c.raisonSociale || (c as any).id}</option>)}
-                    </select>
-                  </div>
+              </div>
+            )}
 
-                  <div>
-                    <label htmlFor="search-input" className="text-sm font-medium">Recherche</label>
-                    <Input id="search-input" placeholder="Recherche texte (catégorie / nom)" value={estSearchQuery} onChange={(e) => setEstSearchQuery(e.target.value)} />
+            {!loading && !error && selected === 'materiel' && (
+              <div className="space-y-4">
+                <Card title="Matériel — Test">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="search-input-1" className="text-sm font-medium">Recherche (texte)</label>
+                      <Input id="search-input-1" type="text" placeholder="Recherche sur Objet / Commentaires / Lien" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
                   </div>
+                  <div className="pt-3 flex gap-2">
+                    <Button onClick={async () => {
+                      try {
+                        setMaterielLoading(true); setMaterielError(null); setMaterielResult(null);
+                        const params = new URLSearchParams();
+                        if (searchQuery) params.set('q', searchQuery);
+                        params.set('limit', String(PAGE_SIZE));
+                        const res = await authFetch(`/api/ressources/materiel?${params.toString()}`);
+                        const json = await res.json();
+                        if (!res.ok) { setMaterielError(json?.error || `Erreur ${res.status}`); setMaterielResult(null); } else { setMaterielResult(json); }
+                      } catch (e: any) { setMaterielError(e?.message || String(e)); setMaterielResult(null); } finally { setMaterielLoading(false); }
+                    }}>{materielLoading ? 'Chargement…' : 'Exécuter'}</Button>
+                    <Button variant="ghost" onClick={() => { setSearchQuery(''); setMaterielResult(null); setMaterielError(null); }}>{'Réinitialiser'}</Button>
+                  </div>
+                </Card>
 
-                  <div className="flex items-center gap-2">
-                    <Button onClick={() => fetchInvoicesForEstablishment(estSelectedId, estSearchQuery)}>{invoicesLoading ? 'Chargement…' : 'Rechercher'}</Button>
-                    <Button variant="ghost" onClick={() => { setEstSelectedId(''); setEstSearchQuery(''); setInvoices([]); }}>{'Réinitialiser'}</Button>
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  <h3 className="font-semibold mb-2">Résultat Matériel</h3>
+                  {materielLoading && <div>Chargement…</div>}
+                  {materielError && <div className="text-red-600">{materielError}</div>}
+                  {!materielLoading && !materielError && materielResult && (
+                    <pre className="text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{JSON.stringify(materielResult, null, 2)}</pre>
+                  )}
+                  {!materielLoading && !materielError && !materielResult && <div>Aucun résultat</div>}
+                </div>
+              </div>
+            )}
+            {/* Prospects & Glacial filters: reuse same controls when showing those lists */}
+            {!loading && !error && (selected === 'prospects' || selected === 'glacial') && (
+              <div className="space-y-4">
+                <Card title="Filtres">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="filter-category-prospects">Catégorie</label>
+                      <select className="w-full border rounded-xl px-3 py-2" id="filter-category-prospects" value={filterCategory ?? ''} onChange={(e) => setFilterCategory(e.target.value || null)}>
+                        <option value="">— Toutes —</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="collaborator-search-prospects">Suivi par...</label>
+                      <input
+                        className="w-full border rounded-xl px-3 py-2"
+                        id="collaborator-search-prospects"
+                        placeholder="Rechercher collaborateur..."
+                        value={collaboratorSearch}
+                        onChange={(e) => setCollaboratorSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                      <select className="w-full border rounded-xl px-3 py-2 mt-2" value={filterSuivi ?? ''} onChange={(e) => setFilterSuivi(e.target.value || null)}>
+                        <option value="">— Aucun (tous) —</option>
+                        {(collaborateurs.filter(c => (c.nomComplet || '').toLowerCase().includes(collaboratorSearch.toLowerCase())).map(c => (
+                          <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>
+                        )))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-end gap-2">
+                      <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => selected && loadCollection(selected, searchQuery)}>Appliquer</button>
+                      <button className="bg-gray-100 px-3 py-2 rounded" onClick={() => { setFilterCategory(null); setFilterSuivi(null); setCollaboratorSearch(''); }}>Réinitialiser</button>
+                    </div>
+                  </div>
+                </Card>
+
+                {selected === 'prospects' && (
+                  <div className="space-y-4">
+                    <div className="bg-white border rounded-2xl shadow-sm p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">Créer un prospect (test)</h4>
+                      </div>
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-600">Créer un prospect en respectant les noms de champs exacts. L&apos;id créé est affiché en cas de succès — copiez-le pour tester la mise à jour.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* SIRET removed from API - field omitted */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="nom-etablissement-create">Nom de l&apos;établissement</label>
+                            <Input id="nom-etablissement-create" placeholder="Nom établissement" type="text" value={pNom} onChange={(e) => setPNom(e.target.value)} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="ville-epicu-create">Ville EPICU</label>
+                            <Input id="ville-epicu-create" placeholder="Rechercher une ville…" type="text" value={villesQuery || pVille} onChange={(e) => { setVillesQuery(e.target.value); setPVille(e.target.value); setPVilleId(''); }} />
+                            <select className="w-full border rounded-xl px-3 py-2 mt-2" id="ville-select-create" value={pVilleId || ''} onChange={(e) => {
+                              const id = e.target.value;
+
+                              if (!id) {
+                                setPVille(''); setPVilleId('');
+
+                                return;
+                              }
+                              const sel = villesOptions.find(v => v.id === id);
+
+                              if (sel) { setPVille(sel.ville); setPVilleId(sel.id); setVillesQuery(''); }
+                            }}>
+                              <option value="">— Aucun —</option>
+                              {villesOptions.map(v => <option key={v.id} value={v.id}>{v.ville}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="telephone">Téléphone</label>
+                            <Input id="telephone" placeholder="Téléphone" type="text" value={pTelephone} onChange={(e) => setPTelephone(e.target.value)} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="email">Email</label>
+                            <Input id="email" placeholder="Email" type="email" value={pEmail} onChange={(e) => setPEmail(e.target.value)} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="suivi-par">Suivi par</label>
+                            <select id="suivi-par" className="w-full border rounded-xl px-3 py-2" value={pSuivi || ''} onChange={(e) => setPSuivi(e.target.value || '')}>
+                              <option value="">— Aucun —</option>
+                              {collaborateurs.map(c => <option key={c.id} value={c.id}>{c.nomComplet || c.id}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="categorie-create">Catégorie</label>
+                            <Input id="categorie-create" placeholder="Rechercher une catégorie…" type="text" value={categoriesQuery || pCategorie} onChange={(e) => { setCategoriesQuery(e.target.value); setPCategorie(e.target.value); setPCategorieId(''); }} />
+                            <select className="w-full border rounded-xl px-3 py-2 mt-2" id="categorie-select-create" value={pCategorieId || ''} onChange={(e) => {
+                              const id = e.target.value;
+
+                              if (!id) {
+                                setPCategorie(''); setPCategorieId('');
+
+                                return;
+                              }
+                              const sel = categoriesOptions.find(c => c.id === id);
+
+                              if (sel) { setPCategorie(sel.name); setPCategorieId(sel.id); setCategoriesQuery(''); }
+                            }}>
+                              <option value="">— Aucun —</option>
+                              {categoriesOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                          </div>
+                          {/* Etat du prospect removed */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="date-premier">Date du premier contact</label>
+                            <Input id="date-premier" type="date" value={pDatePremier} onChange={(e) => setPDatePremier(e.target.value)} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="date-prise">Date de prise de contact</label>
+                            <Input id="date-prise" type="date" value={pDatePrise} onChange={(e) => setPDatePrise(e.target.value)} />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium" htmlFor="date-relance-create">Date de relance</label>
+                            <Input id="date-relance-create" type="date" value={pDateRelance} onChange={(e) => setPDateRelance(e.target.value)} />
+                          </div>
+                          {/* 'Je viens de le rencontrer' removed from API and UI */}
+                          <div className="flex flex-col gap-1 md:col-span-2">
+                            <label className="text-sm font-medium" htmlFor="commentaires-create">Commentaires</label>
+                            <Textarea id="commentaires-create" rows={3} value={pCommentaires} onChange={(e) => setPCommentaires(e.target.value)} />
+                          </div>
+                        </div>
+                        {pCreateError && <div className="text-red-500 text-sm">{pCreateError}</div>}
+                        {pCreateSuccess && <div className="text-emerald-600 text-sm">{pCreateSuccess}</div>}
+                        <div className="flex gap-2 pt-2">
+                          <Button disabled={pCreating} onClick={() => createProspect()}>{pCreating ? 'Création…' : 'Créer le prospect'}</Button>
+                          <Button variant="ghost" onClick={() => { setPNom(''); setPVille(''); setPTelephone(''); setPEmail(''); setPSuivi(''); setPCategorie(''); setPDatePremier(new Date().toISOString().split('T')[0]); setPDateRelance(''); setPCommentaires(''); setPCreateError(null); setPCreateSuccess(null); }}>Annuler</Button>
+                        </div>
+                      </div>
+                    </div>
+                    {renderProspectTable(prospects, 'Prospects', prospectsHasMore)}
+                  </div>
+                )}
+                {selected === 'glacial' && renderProspectTable(lostProspects, 'Prospects Glaciaux', lostHasMore)}
+              </div>
+            )}
+            {!loading && !error && selected === 'clients' && renderClientsTable(clients)}
+            {!loading && !error && selected === 'factures' && (
+              <div className="space-y-4">
+                {/* Test form: select établissement + recherche (placed on top of the list) */}
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div>
+                      <label htmlFor="establishment-select" className="text-sm font-medium">Établissement</label>
+                      <select id="establishment-select" className="w-full border rounded-xl px-3 py-2" value={estSelectedId} onChange={(e) => setEstSelectedId(e.target.value)} onFocus={() => { if (clients.length === 0) fetchEstablishmentsList(); }}>
+                        <option value="">— Sélectionner —</option>
+                        {clients.map(c => <option key={c.nomEtablissement || (c as any).id} value={(c as any).id}>{c.nomEtablissement || c.raisonSociale || (c as any).id}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="search-input" className="text-sm font-medium">Recherche</label>
+                      <Input id="search-input" placeholder="Recherche texte (catégorie / nom)" value={estSearchQuery} onChange={(e) => setEstSearchQuery(e.target.value)} />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button onClick={() => fetchInvoicesForEstablishment(estSelectedId, estSearchQuery)}>{invoicesLoading ? 'Chargement…' : 'Rechercher'}</Button>
+                      <Button variant="ghost" onClick={() => { setEstSelectedId(''); setEstSearchQuery(''); setInvoices([]); }}>{'Réinitialiser'}</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-semibold">Factures</h2>
+                <div className="bg-white border rounded-2xl shadow-sm p-4">
+                  {invoicesLoading && <div>Chargement des factures</div>}
+                  {invoicesError && <div className="text-red-600">{invoicesError}</div>}
+                  {!invoicesLoading && invoices.length === 0 && <div>Aucune facture</div>}
+                  {!invoicesLoading && invoices.length > 0 && (
+                    <div className="overflow-auto rounded-xl border">
+                      <table className="min-w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date</th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Etablissement</th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Catégorie</th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Montant</th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Statut</th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Type</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoices.map(inv => (
+                            <tr key={inv.id} className="odd:bg-white even:bg-gray-50">
+                              <td className="px-3 py-2 text-sm">{inv.date}</td>
+                              <td className="px-3 py-2 text-sm">{inv.establishmentName}</td>
+                              <td className="px-3 py-2 text-sm">{inv.category}</td>
+                              <td className="px-3 py-2 text-sm">{inv.amount}</td>
+                              <td className="px-3 py-2 text-sm">{inv.status}</td>
+                              <td className="px-3 py-2 text-sm">{inv.serviceType}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <div className="pt-3 flex gap-2">
+                    <Button onClick={() => fetchInvoices()}>Rafraîchir</Button>
                   </div>
                 </div>
               </div>
+            )}
+            {!loading && !error && selected === 'villes' && renderVillesList(villes, villesHasMore)}
+            {!loading && !error && selected === 'categories' && (
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold">Catégories</h2>
+                <ul className="list-disc pl-6 space-y-1">
+                  {categories.map(c => (
+                    <li key={c.id} className="text-sm"><strong>{c.name}</strong> — id: <code>{c.id}</code></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!loading && !error && selected === 'collaborateurs' && renderCollaborateursTable(collaborateurs, collabHasMore)}
 
-              <h2 className="text-xl font-semibold">Factures</h2>
-              <div className="bg-white border rounded-2xl shadow-sm p-4">
-                {invoicesLoading && <div>Chargement des factures</div>}
-                {invoicesError && <div className="text-red-600">{invoicesError}</div>}
-                {!invoicesLoading && invoices.length === 0 && <div>Aucune facture</div>}
-                {!invoicesLoading && invoices.length > 0 && (
+            {!loading && !error && selected === 'agenda' && (
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold">Agenda</h2>
+                {agendaLoading && <div className="rounded-xl border bg-white p-4">Chargement de l&apos;agenda…</div>}
+                {!agendaLoading && agendaEvents.length === 0 && <div className="rounded-xl border bg-white p-4">Aucun événement</div>}
+                {!agendaLoading && agendaEvents.length > 0 && (
                   <div className="overflow-auto rounded-xl border">
                     <table className="min-w-full">
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date</th>
-                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Etablissement</th>
-                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Catégorie</th>
-                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Montant</th>
-                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Statut</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Tâche</th>
                           <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Type</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Description</th>
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {invoices.map(inv => (
-                          <tr key={inv.id} className="odd:bg-white even:bg-gray-50">
-                            <td className="px-3 py-2 text-sm">{inv.date}</td>
-                            <td className="px-3 py-2 text-sm">{inv.establishmentName}</td>
-                            <td className="px-3 py-2 text-sm">{inv.category}</td>
-                            <td className="px-3 py-2 text-sm">{inv.amount}</td>
-                            <td className="px-3 py-2 text-sm">{inv.status}</td>
-                            <td className="px-3 py-2 text-sm">{inv.serviceType}</td>
+                        {agendaEvents.map(ev => (
+                          <tr key={ev.id} className="odd:bg-white even:bg-gray-50">
+                            <td className="px-3 py-2 text-sm">{ev.date}</td>
+                            <td className="px-3 py-2 text-sm">{ev.task || '-'}</td>
+                            <td className="px-3 py-2 text-sm">{ev.type || '-'}</td>
+                            <td className="px-3 py-2 text-sm">{ev.description || '-'}</td>
+                            <td className="px-3 py-2 text-sm">
+                              <div className="flex gap-2">
+                                <Button variant="ghost" onClick={() => openEditModal(ev)}>Modifier</Button>
+                                <Button variant="danger" onClick={() => confirmDelete(ev.id)}>Supprimer</Button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
-                <div className="pt-3 flex gap-2">
-                  <Button onClick={() => fetchInvoices()}>Rafraîchir</Button>
-                </div>
               </div>
-            </div>
-          )}
-          {!loading && !error && selected === 'villes' && renderVillesList(villes, villesHasMore)}
-          {!loading && !error && selected === 'categories' && (
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold">Catégories</h2>
-              <ul className="list-disc pl-6 space-y-1">
-                {categories.map(c => (
-                  <li key={c.id} className="text-sm"><strong>{c.name}</strong> — id: <code>{c.id}</code></li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {!loading && !error && selected === 'collaborateurs' && renderCollaborateursTable(collaborateurs, collabHasMore)}
+            )}
 
-          {!loading && !error && selected === 'agenda' && (
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold">Agenda</h2>
-              {agendaLoading && <div className="rounded-xl border bg-white p-4">Chargement de l&apos;agenda…</div>}
-              {!agendaLoading && agendaEvents.length === 0 && <div className="rounded-xl border bg-white p-4">Aucun événement</div>}
-              {!agendaLoading && agendaEvents.length > 0 && (
-                <div className="overflow-auto rounded-xl border">
-                  <table className="min-w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Date</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Tâche</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Type</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Description</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-600">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {agendaEvents.map(ev => (
-                        <tr key={ev.id} className="odd:bg-white even:bg-gray-50">
-                          <td className="px-3 py-2 text-sm">{ev.date}</td>
-                          <td className="px-3 py-2 text-sm">{ev.task || '-'}</td>
-                          <td className="px-3 py-2 text-sm">{ev.type || '-'}</td>
-                          <td className="px-3 py-2 text-sm">{ev.description || '-'}</td>
-                          <td className="px-3 py-2 text-sm">
-                            <div className="flex gap-2">
-                              <Button variant="ghost" onClick={() => openEditModal(ev)}>Modifier</Button>
-                              <Button variant="danger" onClick={() => confirmDelete(ev.id)}>Supprimer</Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            {!loading && !error && selected === 'todo' && (
+              <div className="space-y-4">
+                <TodoList />
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+      {/* Edit / Delete Modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
+            <h3 className="text-lg font-semibold mb-3">{editId ? (editLoading ? '...' : 'Modifier / Supprimer') : 'Événement'}</h3>
+            {editError && <div className="text-red-600 mb-2">{editError}</div>}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field required label="Date et heure">
+                <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+              </Field>
+              <Field required label="Type">
+                <Input type="text" value={editType} onChange={(e) => setEditType(e.target.value)} />
+              </Field>
+              <Field required label="Tâche">
+                <Input type="text" value={editTask} onChange={(e) => setEditTask(e.target.value)} />
+              </Field>
+              <Field label="Description">
+                <Textarea rows={3} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+              </Field>
             </div>
-          )}
-
-          {!loading && !error && selected === 'todo' && (
-            <div className="space-y-4">
-              <TodoList />
+            <div className="flex items-center justify-end gap-2 mt-4">
+              <Button disabled={editLoading} variant="danger" onClick={() => handleDelete()}>Supprimer</Button>
+              <Button disabled={editLoading} onClick={() => handleUpdate()}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+              <Button disabled={editLoading} variant="ghost" onClick={() => closeEditModal()}>Annuler</Button>
             </div>
-          )}
-        </section>
-      </div>
-    </main>
-    {/* Edit / Delete Modal */}
-    {isEditOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
-          <h3 className="text-lg font-semibold mb-3">{editId ? (editLoading ? '...' : 'Modifier / Supprimer') : 'Événement'}</h3>
-          {editError && <div className="text-red-600 mb-2">{editError}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field required label="Date et heure">
-              <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
-            </Field>
-            <Field required label="Type">
-              <Input type="text" value={editType} onChange={(e) => setEditType(e.target.value)} />
-            </Field>
-            <Field required label="Tâche">
-              <Input type="text" value={editTask} onChange={(e) => setEditTask(e.target.value)} />
-            </Field>
-            <Field label="Description">
-              <Textarea rows={3} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-            </Field>
-          </div>
-          <div className="flex items-center justify-end gap-2 mt-4">
-            <Button disabled={editLoading} variant="danger" onClick={() => handleDelete()}>Supprimer</Button>
-            <Button disabled={editLoading} onClick={() => handleUpdate()}>{editLoading ? 'En cours…' : 'Mettre à jour'}</Button>
-            <Button disabled={editLoading} variant="ghost" onClick={() => closeEditModal()}>Annuler</Button>
           </div>
         </div>
-      </div>
-    )}
-    {/* TODO Edit / Delete Modal */}
-    {isTodoEditOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
-          <h3 className="text-lg font-semibold mb-3">{todoEditId ? (todoEditLoading ? '...' : 'Modifier / Supprimer TODO') : 'TODO'}</h3>
-          {todoEditError && <div className="text-red-600 mb-2">{todoEditError}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field required label="Nom de la tâche">
-              <Input type="text" value={todoEditName} onChange={(e) => setTodoEditName(e.target.value)} />
-            </Field>
-            <Field label="Date d&apos;échéance">
-              <Input type="datetime-local" value={todoEditDue} onChange={(e) => setTodoEditDue(e.target.value)} />
-            </Field>
-            <Field label="Statut">
-              <Input type="text" value={todoEditStatus} onChange={(e) => setTodoEditStatus(e.target.value)} />
-            </Field>
-            <Field label="Type">
-              <Input type="text" value={todoEditType} onChange={(e) => setTodoEditType(e.target.value)} />
-            </Field>
-            <Field label="Description">
-              <Textarea rows={3} value={todoEditDesc} onChange={(e) => setTodoEditDesc(e.target.value)} />
-            </Field>
-          </div>
-          <div className="flex items-center justify-end gap-2 mt-4">
-            <Button disabled={todoEditLoading} variant="danger" onClick={() => handleTodoDelete()}>Supprimer</Button>
-            <Button disabled={todoEditLoading} onClick={() => handleTodoUpdate()}>{todoEditLoading ? 'En cours…' : 'Mettre à jour'}</Button>
-            <Button disabled={todoEditLoading} variant="ghost" onClick={() => closeTodoEdit()}>Annuler</Button>
+      )}
+      {/* TODO Edit / Delete Modal */}
+      {isTodoEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
+            <h3 className="text-lg font-semibold mb-3">{todoEditId ? (todoEditLoading ? '...' : 'Modifier / Supprimer TODO') : 'TODO'}</h3>
+            {todoEditError && <div className="text-red-600 mb-2">{todoEditError}</div>}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field required label="Nom de la tâche">
+                <Input type="text" value={todoEditName} onChange={(e) => setTodoEditName(e.target.value)} />
+              </Field>
+              <Field label="Date d&apos;échéance">
+                <Input type="datetime-local" value={todoEditDue} onChange={(e) => setTodoEditDue(e.target.value)} />
+              </Field>
+              <Field label="Statut">
+                <Input type="text" value={todoEditStatus} onChange={(e) => setTodoEditStatus(e.target.value)} />
+              </Field>
+              <Field label="Type">
+                <Input type="text" value={todoEditType} onChange={(e) => setTodoEditType(e.target.value)} />
+              </Field>
+              <Field label="Description">
+                <Textarea rows={3} value={todoEditDesc} onChange={(e) => setTodoEditDesc(e.target.value)} />
+              </Field>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-4">
+              <Button disabled={todoEditLoading} variant="danger" onClick={() => handleTodoDelete()}>Supprimer</Button>
+              <Button disabled={todoEditLoading} onClick={() => handleTodoUpdate()}>{todoEditLoading ? 'En cours…' : 'Mettre à jour'}</Button>
+              <Button disabled={todoEditLoading} variant="ghost" onClick={() => closeTodoEdit()}>Annuler</Button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }

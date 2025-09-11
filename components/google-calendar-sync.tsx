@@ -178,8 +178,8 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
               </span>
             ))}
           </div>
-          {syncStatus.message && (
-            <p className="text-xs text-gray-500 mt-1">{syncStatus.message}</p>
+          {syncStatus.error && (
+            <p className="text-xs text-red-500 mt-1">{syncStatus.error}</p>
           )}
         </div>
       )}

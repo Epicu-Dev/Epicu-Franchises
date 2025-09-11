@@ -200,7 +200,7 @@ export function GoogleCalendarCreateEvent({
               type="submit"
               isLoading={isLoading}
             >
-              Créer l'événement
+              Créer l&apos;événement
             </Button>
           </ModalFooter>
         </form>
