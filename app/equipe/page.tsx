@@ -314,7 +314,6 @@ export default function EquipePage() {
                         <TableColumn className="font-light text-sm">Prénom</TableColumn>
                         <TableColumn className="font-light text-sm">Nom</TableColumn>
                         <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                        <TableColumn className="font-light text-sm">Mot de passe</TableColumn>
                         <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
                         <TableColumn className="font-light text-sm">Mail perso</TableColumn>
                         <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
@@ -364,13 +363,13 @@ export default function EquipePage() {
                               </span>
                             </TableCell>
                             <TableCell className="font-light">
-                              <span >
-                                {member.emailEpicu || "Non défini"}
+                              <span>
+                                ••••••••
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -391,32 +390,32 @@ export default function EquipePage() {
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.telephone || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.adresse || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.siret || "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.dateDIP ? new Date(member.dateDIP).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.dateSignatureContrat ? new Date(member.dateSignatureContrat).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-light">
-                                Non défini
+                                {member.dateSignatureAttestation ? new Date(member.dateSignatureAttestation).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
                           </TableRow>
