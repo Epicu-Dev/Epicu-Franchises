@@ -34,34 +34,45 @@ Où `{token}` est le token de signup généré et stocké en base de données.
 
 ## Base de données requise
 
-### Table SIGNUP_TOKENS
+### Table COLLABORATEURS
 
-Créer une table Airtable avec les champs suivants :
+La page utilise les champs existants de la table COLLABORATEURS :
 
-- `user_id` (Single line text) : ID de l'utilisateur dans COLLABORATEURS
-- `token` (Single line text) : Token unique de signup
-- `created_at` (Date) : Date de création du token
-- `expires_at` (Date) : Date d'expiration du token
+- `token_config` (Single line text) : Token de configuration/signup
+- `token_config_expires_at` (Date) : Date d'expiration du token
+- `password` (Single line text) : Mot de passe hashé (mis à jour après initialisation)
+- `Nom` (Single line text) : Nom de famille
+- `Prénom` (Single line text) : Prénom
+- `Email perso` (Email) : Adresse email
+- `Ville EPICU` (Link to another record) : Villes EPICU liées
 
 ## API Endpoints
 
-### GET /api/auth/validate-signup-token
+### POST /api/collaborateurs/validate_token
 
-Valide un token de signup et retourne le nom de l'utilisateur.
+Valide un token de signup et retourne les informations de l'utilisateur.
 
-**Paramètres :**
-- `token` (query) : Token de signup
+**Body :**
+```json
+{
+  "token": "signup_token"
+}
+```
 
 **Réponse :**
 ```json
 {
-  "message": "Token valide",
-  "userName": "Prénom Nom",
-  "userId": "user_id"
+  "id": "user_id",
+  "nom": "Nom",
+  "prenom": "Prénom", 
+  "email": "email@example.com",
+  "villes": [
+    {"id": "ville_id", "ville": "Nom de la ville"}
+  ]
 }
 ```
 
-### POST /api/auth/initialize-password
+### POST /api/collaborateurs/set_password
 
 Initialise le mot de passe d'un utilisateur avec un token valide.
 
@@ -76,7 +87,8 @@ Initialise le mot de passe d'un utilisateur avec un token valide.
 **Réponse :**
 ```json
 {
-  "message": "Mot de passe initialisé avec succès"
+  "id": "user_id",
+  "message": "Password set"
 }
 ```
 

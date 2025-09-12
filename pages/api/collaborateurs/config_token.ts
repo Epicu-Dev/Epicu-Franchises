@@ -31,30 +31,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const body = req.body || {};
-    const collaboratorId = body.collaboratorId as string | undefined;
-    const nomComplet = body.nomComplet as string | undefined;
+    const collaboratorId = (body.collaboratorId || body.id) as string | undefined;
 
-    if (!collaboratorId && !nomComplet) {
-      return res.status(400).json({ error: 'collaboratorId or nomComplet required' });
+    if (!collaboratorId) {
+      return res.status(400).json({ error: 'collaboratorId required' });
     }
 
-    let recordId = collaboratorId;
-
-    // If nomComplet provided, try to find the record
-    if (!recordId && nomComplet) {
-      const escaped = String(nomComplet).replace(/"/g, '\\"');
-      const records = await base(TABLE_NAME)
-        .select({ filterByFormula: `({Nom complet} = "${escaped}")`, maxRecords: 1, fields: ['Nom complet'] })
-        .firstPage();
-
-      if (!records || records.length === 0) {
-        return res.status(404).json({ error: 'Collaborateur non trouvé' });
-      }
-
-      recordId = records[0].id;
+    // Fetch the collaborator by id
+    let collaboratorRecord: any;
+    try {
+      collaboratorRecord = await base(TABLE_NAME).find(collaboratorId);
+    } catch (e) {
+      return res.status(404).json({ error: 'Collaborateur non trouvé' });
     }
 
-    // generate a secure random token
+    // Verify that Nom and Prénom are defined
+    const nom = (collaboratorRecord.get('Nom') || '').toString().trim();
+    const prenom = (collaboratorRecord.get('Prénom') || '').toString().trim();
+
+    if (!nom || !prenom) {
+      return res.status(400).json({ error: 'Le collaborateur doit avoir un Nom et un Prénom définis' });
+    }
+
+    // generate a secure random token and expiry
     const token = crypto.randomBytes(24).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // +1 week
 
@@ -64,9 +63,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       token_config_expires_at: expiresAt,
     };
 
-    await base(TABLE_NAME).update([{ id: recordId as string, fields: fieldsToUpdate }]);
+    try {
+      await base(TABLE_NAME).update([{ id: collaboratorId, fields: fieldsToUpdate }]);
+    } catch (e) {
+      console.error('Unable to update collaborator with token:', e);
+      return res.status(500).json({ error: 'Impossible de mettre à jour le collaborateur' });
+    }
 
-    return res.status(200).json({ id: recordId, token, expiresAt });
+    return res.status(200).json({ id: collaboratorId, token, expiresAt });
   } catch (error: any) {
     console.error('config_token error:', error?.message || error);
     return res.status(500).json({ error: 'Erreur interne', details: error?.message || String(error) });

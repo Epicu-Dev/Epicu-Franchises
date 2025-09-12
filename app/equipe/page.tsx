@@ -6,6 +6,7 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Avatar } from "@heroui/avatar";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import {
   Table,
   TableHeader,
@@ -22,6 +23,7 @@ import {
   Squares2X2Icon,
   XMarkIcon,
   PlusIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
@@ -47,6 +49,10 @@ export default function EquipePage() {
   const [selectedMember, setSelectedMember] = useState<Collaborator | null>(null);
   const [editingMember, setEditingMember] = useState<Collaborator | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string>("");
+  const [tokenMember, setTokenMember] = useState<Collaborator | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
 
 
@@ -185,6 +191,54 @@ export default function EquipePage() {
   const handleFranchiseTeamModalClose = () => {
     setIsFranchiseTeamModalOpen(false);
     setSelectedMember(null);
+  };
+
+  const handleGenerateToken = async (member: Collaborator) => {
+    try {
+      setIsGeneratingToken(true);
+      setTokenMember(member);
+
+      const response = await authFetch("/api/collaborateurs/config_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collaboratorId: member.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || "Erreur lors de la génération du token");
+      }
+
+      const data = await response.json();
+
+      setGeneratedToken(data.token);
+      setIsTokenModalOpen(true);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Erreur lors de la génération du token:", error);
+      // Ici on pourrait afficher un toast d'erreur
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const handleTokenModalClose = () => {
+    setIsTokenModalOpen(false);
+    setGeneratedToken("");
+    setTokenMember(null);
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Ici on pourrait afficher un toast de succès
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Erreur lors de la copie:", error);
+    }
   };
 
 
@@ -336,16 +390,30 @@ export default function EquipePage() {
                         {members.map((member) => (
                           <TableRow key={member.id} className="border-t border-gray-100  dark:border-gray-700">
                             <TableCell className="py-5 font-light">
-                              <Tooltip content="Modifier">
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  onClick={() => handleEdit(member)}
-                                >
-                                  <PencilIcon className="h-4 w-4" />
-                                </Button>
-                              </Tooltip>
+                              <div className="flex gap-2">
+                                <Tooltip content="Générer un lien d'inscription">
+                                  <Button
+                                    isIconOnly
+                                    isLoading={isGeneratingToken && tokenMember?.id === member.id}
+                                    size="sm"
+                                    variant="light"
+                                    onClick={() => handleGenerateToken(member)}
+                                  >
+                                    <KeyIcon className="h-4 w-4" />
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip content="Modifier">
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="light"
+                                    onClick={() => handleEdit(member)}
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                  </Button>
+                                </Tooltip>
+
+                              </div>
                             </TableCell>
                             <TableCell className="font-light">
                               {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
@@ -475,6 +543,48 @@ export default function EquipePage() {
         selectedMember={selectedMember}
         onClose={handleFranchiseTeamModalClose}
       />
+
+      {/* Modal pour afficher le lien d'inscription généré */}
+      <Modal 
+        isOpen={isTokenModalOpen} 
+        placement="center"
+        size="md"
+        onClose={handleTokenModalClose}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Lien d&apos;inscription généré
+          </ModalHeader>
+          <ModalBody>
+            {tokenMember && (
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Lien d&apos;inscription pour <strong>{tokenMember.prenom} {tokenMember.nom}</strong>
+                </p>
+                <div className="bg-gray-100 p-3 rounded-md">
+                  <p className="text-sm font-mono break-all">
+                    https://franchise.epicu.fr/signup?q={generatedToken}
+                  </p>
+                </div>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={handleTokenModalClose}
+            >
+              Fermer
+            </Button>
+            <Button
+              color="primary"
+              onPress={() => copyToClipboard(`https://franchise.epicu.fr/signup?q=${generatedToken}`)}
+            >
+              Copier le lien
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
