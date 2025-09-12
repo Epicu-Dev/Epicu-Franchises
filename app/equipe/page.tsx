@@ -45,6 +45,8 @@ export default function EquipePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFranchiseTeamModalOpen, setIsFranchiseTeamModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Collaborator | null>(null);
+  const [editingMember, setEditingMember] = useState<Collaborator | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
 
 
@@ -152,16 +154,22 @@ export default function EquipePage() {
     }
   };
 
-  const handleEdit = () => {
-    // Ici vous pouvez ajouter la logique pour ouvrir un modal d'édition
+  const handleEdit = (member: Collaborator) => {
+    setEditingMember(member);
+    setIsEditing(true);
+    setIsModalOpen(true);
   };
 
   const handleAddMember = () => {
+    setEditingMember(null);
+    setIsEditing(false);
     setIsModalOpen(true);
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setEditingMember(null);
+    setIsEditing(false);
   };
 
   const handleMemberAdded = () => {
@@ -333,7 +341,7 @@ export default function EquipePage() {
                                   isIconOnly
                                   size="sm"
                                   variant="light"
-                                  onClick={() => handleEdit()}
+                                  onClick={() => handleEdit(member)}
                                 >
                                   <PencilIcon className="h-4 w-4" />
                                 </Button>
@@ -453,7 +461,8 @@ export default function EquipePage() {
       {/* Modal pour ajouter/modifier un membre - visible uniquement pour les admins */}
       {isAdmin() && (
         <TeamMemberModal
-          isEditing={false}
+          editingMember={editingMember}
+          isEditing={isEditing}
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onMemberAdded={handleMemberAdded}
