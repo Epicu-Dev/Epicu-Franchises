@@ -151,6 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (isAdmin) {
         if (body.nom !== undefined) fields['Nom'] = body.nom;
         if (body.prenom !== undefined) fields['Prénom'] = body.prenom;
+        if (body.role !== undefined) fields['Rôle'] = body.role;
         if (body.emailPerso !== undefined) fields['Email perso'] = body.emailPerso;
         if (body.emailEpicu !== undefined) fields['Email EPICU'] = body.emailEpicu;
         if (body.cp !== undefined) fields['CP'] = body.cp;
@@ -221,6 +222,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // writable by admins (and match POST fields)
       if (body.nom !== undefined || body.Nom !== undefined) fields['Nom'] = body.nom ?? body.Nom;
       if (body.prenom !== undefined || body.Prénom !== undefined) fields['Prénom'] = body.prenom ?? body.Prénom;
+      if (body.role !== undefined || body.Rôle !== undefined) fields['Rôle'] = body.role ?? body.Rôle;
       if (body.emailPerso !== undefined || body.emailPerso !== undefined) fields['Email perso'] = body.emailPerso ?? body.emailPerso;
       if (body.emailEpicu !== undefined || body['Email EPICU'] !== undefined) fields['Email EPICU'] = body.emailEpicu ?? body['Email EPICU'];
       if (body.cp !== undefined || body.CP !== undefined) fields['CP'] = body.cp ?? body.CP;
