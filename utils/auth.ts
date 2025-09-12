@@ -55,7 +55,11 @@ export async function getValidAccessToken(): Promise<string | null> {
     console.error('Erreur lors du refresh token :', err);
     // Ne pas vider le localStorage immédiatement, laisser le dashboard-layout gérer
     // console.warn('Erreur réseau lors du refresh, mais on ne vide pas le localStorage');
-
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('expiresAtAccess');
+    localStorage.removeItem('expiresAtRefresh');
+    
     return null;
   }
 }

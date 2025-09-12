@@ -96,10 +96,6 @@ export function TeamMemberModal({
 
     if (isEditing && editingMember) {
       setNewMember(editingMember);
-      // Si le membre a des villes Epicu, sélectionner la première
-      if (editingMember.villeEpicu && editingMember.villeEpicu.length > 0) {
-        setSelectedCityId(editingMember.villeEpicu[0]);
-      }
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       setNewMember({
@@ -124,6 +120,22 @@ export function TeamMemberModal({
     setError(null);
     setFieldErrors({});
   }, [isEditing, editingMember, isOpen]);
+
+  // Effet séparé pour gérer la sélection de la ville après le chargement des villes
+  useEffect(() => {
+    if (isEditing && editingMember && cities.length > 0) {
+      // Si le membre a des villes Epicu, sélectionner la première
+      if (editingMember.villeEpicu && editingMember.villeEpicu.length > 0) {
+        // Trouver l'ID de la ville à partir de son nom
+        const villeName = editingMember.villeEpicu[0];
+        const city = cities.find(c => c.ville === villeName);
+
+        if (city) {
+          setSelectedCityId(city.id);
+        }
+      }
+    }
+  }, [cities, isEditing, editingMember]);
 
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
@@ -459,12 +471,12 @@ export function TeamMemberModal({
              </FormLabel>
              <Input
                isRequired
-               errorMessage={fieldErrors.emailPerso}
-               id="emailPerso"
-               isInvalid={!!fieldErrors.emailPerso}
                classNames={{
                  inputWrapper: "bg-page-bg",
                }}
+               errorMessage={fieldErrors.emailPerso}
+               id="emailPerso"
+               isInvalid={!!fieldErrors.emailPerso}
                placeholder="prenom.nom@gmail.com"
                type="email"
                value={newMember.emailPerso || ""}
@@ -480,12 +492,12 @@ export function TeamMemberModal({
               Email Epicu
             </FormLabel>
             <Input
-              errorMessage={fieldErrors.emailEpicu}
-              id="emailEpicu"
-              isInvalid={!!fieldErrors.emailEpicu}
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
+              errorMessage={fieldErrors.emailEpicu}
+              id="emailEpicu"
+              isInvalid={!!fieldErrors.emailEpicu}
               placeholder="prenom.nom@epicu.fr"
               type="email"
               value={newMember.emailEpicu || ""}
