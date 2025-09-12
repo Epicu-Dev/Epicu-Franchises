@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Tabs, Tab } from '@heroui/tabs';
 import { Avatar } from '@heroui/avatar';
 import {
   Table,
@@ -15,8 +14,7 @@ import {
   TableCell,
 } from '@heroui/table';
 import {
-  ArrowDownTrayIcon,
-  PencilSquareIcon
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { Spinner } from '@heroui/spinner';
 
@@ -25,7 +23,7 @@ import { useSortableTable } from '@/hooks/use-sortable-table';
 import { InvoiceStatusBadge } from '@/components/badges';
 import { FormLabel } from '@/components';
 import { useUser } from '@/contexts/user-context';
-import { UserProfile, VilleEpicu } from '@/types/user';
+import { getValidAccessToken } from '@/utils/auth';
 
 interface Invoice {
   id: string;
@@ -51,10 +49,20 @@ interface HistoryItem {
 
 export default function ProfilPage() {
   const { userProfile, refreshUserProfile } = useUser();
-  const [activeTab, setActiveTab] = useState<string>('informations');
-  const [isEditing, setIsEditing] = useState(false);
+  const [activeTab] = useState<string>('informations');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // État local pour les champs du formulaire
+  const [formData, setFormData] = useState({
+    lastname: '',
+    firstname: '',
+    email_epicu: '',
+    telephone: ''
+  });
+  
+  // État pour les erreurs de validation
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -78,6 +86,18 @@ export default function ProfilPage() {
     handleSort: handleInvoiceSort,
     sortedData: sortedInvoiceData
   } = useSortableTable<Invoice>(invoices);
+
+  // Initialiser les données du formulaire quand le profil utilisateur change
+  useEffect(() => {
+    if (userProfile) {
+      setFormData({
+        lastname: userProfile.lastname || '',
+        firstname: userProfile.firstname || '',
+        email_epicu: userProfile.email_epicu || '',
+        telephone: userProfile.telephone || ''
+      });
+    }
+  }, [userProfile]);
 
   // Charger les données mock au montage
   useEffect(() => {
@@ -193,18 +213,108 @@ export default function ProfilPage() {
     ]);
   }, [userProfile?.firstname]);
 
+  // Fonction de validation des champs
+  const validateField = (fieldName: string, value: any) => {
+    const errors = { ...fieldErrors };
+
+    switch (fieldName) {
+      case 'firstname':
+        if (!value || !value.trim()) {
+          errors.firstname = 'Le prénom est requis';
+        } else {
+          delete errors.firstname;
+        }
+        break;
+      case 'lastname':
+        if (!value || !value.trim()) {
+          errors.lastname = 'Le nom est requis';
+        } else {
+          delete errors.lastname;
+        }
+        break;
+      case 'email_epicu':
+        if (value && value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email_epicu = 'Format d\'email invalide';
+        } else {
+          delete errors.email_epicu;
+        }
+        break;
+      case 'telephone':
+        if (value && value.trim() && !/^[0-9\s\-\+\(\)]+$/.test(value)) {
+          errors.telephone = 'Format de téléphone invalide';
+        } else {
+          delete errors.telephone;
+        }
+        break;
+    }
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
+  // Fonction de gestion des changements de champs
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+    validateField(fieldName, value);
+  };
+
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      // TODO: Implémenter la sauvegarde via l'API Epicu
-      // Pour l'instant, on simule la sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsEditing(false);
+      setError(null);
+
+      // Validation de tous les champs requis
+      const requiredFields = ['firstname', 'lastname'];
+      let hasErrors = false;
+
+      requiredFields.forEach(field => {
+        if (!validateField(field, formData[field as keyof typeof formData])) {
+          hasErrors = true;
+        }
+      });
+
+      if (hasErrors) {
+        setError('Veuillez corriger les erreurs dans le formulaire');
+        setLoading(false);
+
+        return;
+      }
+
+      // Préparer les données pour l'API
+      const updateData = {
+        prenom: formData.firstname,
+        nom: formData.lastname,
+        emailEpicu: formData.email_epicu,
+        telephone: formData.telephone
+      };
+
+      // Appel à l'API équipe pour mettre à jour le profil
+      const token = await getValidAccessToken();
+
+      if (!token) throw new Error('Token d\'accès non trouvé');
+
+      const response = await fetch(`/api/equipe?id=${userProfile?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour du profil');
+      }
 
       // Rafraîchir les données utilisateur
       await refreshUserProfile();
 
-      // Afficher un message de succès temporaire
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
@@ -297,9 +407,8 @@ export default function ProfilPage() {
                           inputWrapper: "bg-page-bg",
                         }}
                         id="identifier"
-                        isReadOnly={!isEditing}
-                        placeholder="Email de connexion"
-                        value={userProfile.identifier || ''}
+                        isReadOnly={true}
+                        placeholder={userProfile.email || ''}
                       />
                     </div>
 
@@ -313,6 +422,8 @@ export default function ProfilPage() {
                           inputWrapper: "bg-page-bg",
                         }}
                         id="password"
+                        isReadOnly={true}
+
                         placeholder="••••••••"
                         type="password"
                       />
@@ -324,16 +435,18 @@ export default function ProfilPage() {
                         Nom
                       </FormLabel>
                       <Input
-                        isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                           inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
+                        errorMessage={fieldErrors.lastname}
                         id="lastName"
-                        isReadOnly={!isEditing}
+                        isInvalid={!!fieldErrors.lastname}
+                        isRequired={true}
                         placeholder="Nom"
-                        value={userProfile.lastname}
+                        value={formData.lastname}
+                        onChange={(e) => handleFieldChange('lastname', e.target.value)}
                       />
                     </div>
 
@@ -343,69 +456,84 @@ export default function ProfilPage() {
                         Prénom
                       </FormLabel>
                       <Input
-                        isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                           inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
+                        errorMessage={fieldErrors.firstname}
                         id="firstName"
-                        isReadOnly={!isEditing}
+                        isInvalid={!!fieldErrors.firstname}
+                        isRequired={true}
                         placeholder="Prénom"
-                        value={userProfile.firstname}
+                        value={formData.firstname}
+                        onChange={(e) => handleFieldChange('firstname', e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-4">
 
-                      <FormLabel htmlFor="email" isRequired={true}>
+                      <FormLabel htmlFor="email_epicu" isRequired={false}>
                         Email de la ville
                       </FormLabel>
                       <Input
-                        isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                           inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
-                        id="email"
-                        isReadOnly={!isEditing}
+                        errorMessage={fieldErrors.email_epicu}
+                        id="email_epicu"
+                        isInvalid={!!fieldErrors.email_epicu}
                         placeholder="email@epicu.fr"
                         type="email"
-                        value={userProfile.email}
+                        value={formData.email_epicu}
+                        onChange={(e) => handleFieldChange('email_epicu', e.target.value)}
                       />
                     </div>
 
                     <div className="space-y-4">
 
-                      <FormLabel htmlFor="phone" isRequired={true}>
+                      <FormLabel htmlFor="phone" isRequired={false}>
                         Tel
                       </FormLabel>
                       <Input
-                        isRequired
                         classNames={{
                           input: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                           inputWrapper: "bg-page-bg border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-gray-400 dark:focus-within:border-gray-400",
                           label: "text-gray-700 dark:text-gray-300 font-medium"
                         }}
+                        errorMessage={fieldErrors.telephone}
                         id="phone"
-                        isReadOnly={!isEditing}
+                        isInvalid={!!fieldErrors.telephone}
                         placeholder="06 00 00 00 00"
-                        value={userProfile.telephone || ''}
+                        value={formData.telephone}
+                        onChange={(e) => handleFieldChange('telephone', e.target.value)}
                       />
                     </div>
 
                   </div>
 
-                  {/* Bouton de sauvegarde */}
+                  {/* Message d'erreur global */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center">
+                      <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path clipRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" fillRule="evenodd" />
+                      </svg>
+                      {error}
+                    </div>
+                  )}
 
+                  {/* Bouton de sauvegarde */}
                   <div className="flex justify-center pt-6">
                     <Button
                       className='w-100'
                       color='primary'
+                      isDisabled={loading || Object.keys(fieldErrors).length > 0 || !formData.firstname || !formData.lastname}
+                      isLoading={loading}
                       onPress={handleSaveProfile}
                     >
-                      Mettre à jour
+                      {loading ? 'Mise à jour...' : 'Mettre à jour'}
                     </Button>
                   </div>
                 </div>

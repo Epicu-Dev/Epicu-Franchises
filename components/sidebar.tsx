@@ -322,6 +322,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
           <div className="flex justify-center items-center pb-6">
             <Image alt="logo" height={42} src="/images/logo-e.png" width={42} />
           </div>
+          <p className="font-light text-xs text-gray-500 dark:text-gray-400 text-center pb-4">
+            V1.0.0
+          </p>
         </CardBody>
       </Card>
     </>

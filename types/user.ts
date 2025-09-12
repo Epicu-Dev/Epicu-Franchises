@@ -21,6 +21,7 @@ export interface TrombiAttachment {
 export interface UserProfile {
   id: string;
   email: string;
+  email_epicu: string;
   firstname: string;
   lastname: string;
   role: string;

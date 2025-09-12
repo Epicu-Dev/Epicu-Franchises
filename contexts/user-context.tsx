@@ -96,6 +96,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const transformedProfile: UserProfile = {
         id: userData.id,
         email: userData['Email perso'] || '',
+        email_epicu: userData['Email EPICU'] || '',
         firstname: userData['Prénom'] || '',
         lastname: userData['Nom'] || '',
         role: userData['Rôle'] || '',
