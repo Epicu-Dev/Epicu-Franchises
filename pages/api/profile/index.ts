@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import bcrypt from 'bcrypt';
 import { base } from '../constants';
 import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
@@ -91,8 +92,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (Object.keys(fields).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
+      // Password change: if provided, hash and add to fields, and later remove tokens
+      const newPassword = (body.password as string | undefined) ?? (body.motDePasse as string | undefined);
+      let hashedPassword: string | null = null;
+      if (newPassword !== undefined) {
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(String(newPassword), saltRounds);
+        fields['password'] = hashedPassword;
+        // clear any config token used for password setup
+        fields['token_config'] = null;
+        fields['token_config_expires_at'] = null;
+      }
+
       try {
         const updated = await base(TABLE_NAME).update([{ id: userId as string, fields }]);
+
+        // If password changed, delete all access and refresh tokens for this user
+        if (hashedPassword) {
+          try {
+            const deleteAllForUser = async (tableName: string) => {
+              // find tokens linked to user (user is a linked field in token tables)
+              const recs = await base(tableName).select({ filterByFormula: `FIND("${userId}", ARRAYJOIN({user}))` }).firstPage();
+              for (const r of recs) {
+                try { await base(tableName).destroy(r.id); } catch (e) { /* ignore per-record errors */ }
+              }
+            };
+
+            await deleteAllForUser('AUTH_ACCESS_TOKEN');
+            await deleteAllForUser('AUTH_REFRESH_TOKEN');
+          } catch (e) {
+            console.warn('Failed to remove auth tokens after password change', e);
+          }
+        }
+
         return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
       } catch (err: any) {
         console.error('profile PATCH error', err);
