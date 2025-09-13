@@ -346,6 +346,9 @@ export function TeamMemberModal({
               Prénom
             </FormLabel>
             <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               isRequired
               errorMessage={fieldErrors.prenom}
               id="prenom"
@@ -433,6 +436,9 @@ export function TeamMemberModal({
               Téléphone
             </FormLabel>
             <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               isRequired
               errorMessage={fieldErrors.telephone}
               id="telephone"
@@ -451,6 +457,9 @@ export function TeamMemberModal({
               SIRET
             </FormLabel>
             <Input
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
               isRequired
               errorMessage={fieldErrors.siret}
               id="siret"
@@ -466,27 +475,27 @@ export function TeamMemberModal({
             />
 
 
-             <FormLabel htmlFor="emailPerso" isRequired={true}>
-               Email personnel
-             </FormLabel>
-             <Input
-               isRequired
-               classNames={{
-                 inputWrapper: "bg-page-bg",
-               }}
-               errorMessage={fieldErrors.emailPerso}
-               id="emailPerso"
-               isInvalid={!!fieldErrors.emailPerso}
-               placeholder="prenom.nom@gmail.com"
-               type="email"
-               value={newMember.emailPerso || ""}
-               onChange={(e) => {
-                 const value = e.target.value;
+            <FormLabel htmlFor="emailPerso" isRequired={true}>
+              Email personnel
+            </FormLabel>
+            <Input
+              isRequired
+              classNames={{
+                inputWrapper: "bg-page-bg",
+              }}
+              errorMessage={fieldErrors.emailPerso}
+              id="emailPerso"
+              isInvalid={!!fieldErrors.emailPerso}
+              placeholder="prenom.nom@gmail.com"
+              type="email"
+              value={newMember.emailPerso || ""}
+              onChange={(e) => {
+                const value = e.target.value;
 
-                 setNewMember((prev) => ({ ...prev, emailPerso: value }));
-                 validateField('emailPerso', value);
-               }}
-             />
+                setNewMember((prev) => ({ ...prev, emailPerso: value }));
+                validateField('emailPerso', value);
+              }}
+            />
 
             <FormLabel htmlFor="emailEpicu" isRequired={false}>
               Email Epicu

@@ -10,13 +10,12 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 
-import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { EventDetailModal } from "@/components/event-detail-modal";
 import { getValidAccessToken } from "@/utils/auth";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
-import { getEventColorFromEstablishmentCategories } from "@/components/badges";
 import { useUser } from "@/contexts/user-context";
+import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 
 interface Event {
   id: string;
@@ -75,6 +74,8 @@ export default function AgendaPage() {
   const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
+  const [hasEpicuCalendar, setHasEpicuCalendar] = useState<boolean>(false);
+  const [googleUserEmail, setGoogleUserEmail] = useState<string>('');
 
   // États pour la modal de détail d'événement
   const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
@@ -97,9 +98,6 @@ export default function AgendaPage() {
   };
 
   // Gestionnaires pour Google Calendar
-  const handleGoogleEventsFetched = (events: GoogleCalendarEvent[]) => {
-    setGoogleEvents(events);
-  };
 
   const handleGoogleEventCreated = (event: GoogleCalendarEvent) => {
     // Ajouter l'événement créé à la liste locale
@@ -140,6 +138,43 @@ export default function AgendaPage() {
     }
   };
 
+  // Fonction pour synchroniser les événements Google Calendar
+  const syncGoogleEvents = async () => {
+    try {
+      const response = await fetch('/api/google-calendar/sync');
+
+      if (response.ok) {
+        const { events } = await response.json();
+        setGoogleEvents(events);
+        // Re-vérifier le statut après synchronisation
+        checkGoogleCalendarStatus();
+      }
+    } catch {
+      // Erreur lors de la synchronisation
+      setError('Erreur lors de la synchronisation avec Google Calendar');
+    }
+  };
+
+  // Fonction pour se déconnecter de Google Calendar
+  const disconnectFromGoogleCalendar = async () => {
+    try {
+      const response = await fetch('/api/google-calendar/disconnect', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        // Réinitialiser les états
+        setIsGoogleConnected(false);
+        setHasEpicuCalendar(false);
+        setGoogleUserEmail('');
+        setGoogleEvents([]);
+      }
+    } catch {
+      // Erreur lors de la déconnexion
+      setError('Erreur lors de la déconnexion de Google Calendar');
+    }
+  };
+
   // Vérifier le statut de Google Calendar
   const checkGoogleCalendarStatus = async () => {
     try {
@@ -150,12 +185,34 @@ export default function AgendaPage() {
         const status = await response.json();
 
         setIsGoogleConnected(status.isConnected);
+
+        // Vérifier s'il y a un calendrier EPICU et extraire l'email
+        if (status.isConnected && status.calendars) {
+          const hasEpicu = status.calendars.some((calendar: any) =>
+            calendar.summary?.toLowerCase().includes('epicu agenda')
+          );
+          setHasEpicuCalendar(hasEpicu);
+
+          // Extraire l'email du calendrier principal (primary)
+          const primaryCalendar = status.calendars.find((calendar: any) => calendar.primary);
+          if (primaryCalendar && primaryCalendar.id) {
+            // L'ID du calendrier principal contient l'email de l'utilisateur
+            setGoogleUserEmail(primaryCalendar.id);
+          }
+        } else {
+          setHasEpicuCalendar(false);
+          setGoogleUserEmail('');
+        }
       } else {
         setIsGoogleConnected(false);
+        setHasEpicuCalendar(false);
+        setGoogleUserEmail('');
       }
     } catch {
       // Erreur lors de la vérification du statut
       setIsGoogleConnected(false);
+      setHasEpicuCalendar(false);
+      setGoogleUserEmail('');
     } finally {
       setIsCheckingGoogleConnection(false);
     }
@@ -430,15 +487,15 @@ export default function AgendaPage() {
 
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
-    if(event.isGoogleEvent) {
+    if (event.isGoogleEvent) {
       return "bg-custom-text-color/14 text-custom-text-color";
     }
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
       case "tournage":
-        return "bg-custom-red-filming/14 text-custom-red-filming";
+        return "bg-custom-green-filming/14 text-custom-green-filming";
       case "publication":
-        return "bg-custom-purple-publication/14 text-custom-purple-publication";
+        return "bg-custom-red-publication/14 text-custom-red-publication";
       case "evenement":
         return "bg-custom-orange-event/14 text-custom-orange-event";
       case "rendez-vous":
@@ -449,16 +506,16 @@ export default function AgendaPage() {
   };
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventBorderColor = (event: Event) => {
-    if(event.isGoogleEvent) {
+    if (event.isGoogleEvent) {
       return "border-custom-text-color";
     }
-    
+
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
       case "tournage":
-        return "border-custom-red-filming";
+        return "border-custom-green-filming";
       case "publication":
-        return "border-custom-purple-publication";
+        return "border-custom-red-publication";
       case "evenement":
         return "border-custom-orange-event";
       case "rendez-vous":
@@ -759,7 +816,7 @@ export default function AgendaPage() {
     return (
       <div className="w-full">
         <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
+          <CardBody className="p-12">
             <div className="flex justify-center items-center h-64">
               <div className="text-center">
                 <div className="text-lg mb-2">Google Calendar non connecté</div>
@@ -771,6 +828,56 @@ export default function AgendaPage() {
                 >
                   Se connecter à Google Calendar
                 </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  // Afficher le message si Google Calendar est connecté mais qu'il n'y a pas de calendrier EPICU
+  if (isGoogleConnected === true && !hasEpicuCalendar) {
+    return (
+      <div className="w-full">
+        <Card className="w-full" shadow="none">
+          <CardBody className="p-12">
+            <div className="flex justify-center items-center">
+              <div className="text-center">
+                <div className="text-lg mb-2">Agenda EPICU non trouvé</div>
+                {googleUserEmail && (
+                  <div className="text-sm text-gray-600 mb-2">
+                    Connecté avec : <span className="font-medium">{googleUserEmail}</span>
+                  </div>
+                )}
+                <div className="text-sm mb-4">Créez un agenda EPICU dans Google Calendar pour synchroniser vos événements</div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-md mx-auto mb-4">
+                  <p className="text-sm text-amber-800 mb-3 font-medium">
+                    Instructions :
+                  </p>
+                  <ol className="text-sm text-amber-800 list-decimal list-inside space-y-2 text-left">
+                    <li>Ouvrez Google Calendar</li>
+                    <li>Cliquez sur le &quot;+&quot; à côté de &quot;Autres calendriers&quot;</li>
+                    <li>Créez un nouveau calendrier nommé &quot;EPICU AGENDA&quot;</li>
+                    <li>Revenez ici et cliquez sur &quot;Synchroniser&quot;</li>
+                  </ol>
+                </div>
+                <div className="flex gap-3 mt-4 justify-center">
+                  <Button
+                    color="primary"
+                    onPress={syncGoogleEvents}
+                  >
+                    Synchroniser maintenant
+                  </Button>
+                  <Button
+                    className="border-1"
+                    color="primary"
+                    variant="bordered"
+                    onPress={disconnectFromGoogleCalendar}
+                  >
+                    Se déconnecter
+                  </Button>
+                </div>
               </div>
             </div>
           </CardBody>
@@ -872,7 +979,7 @@ export default function AgendaPage() {
             </div>
             {isGoogleConnected && (
               <GoogleCalendarSync
-                onEventsFetched={handleGoogleEventsFetched}
+                onEventsFetched={setGoogleEvents}
                 onEventCreated={handleGoogleEventCreated}
               />
             )}

@@ -292,12 +292,12 @@ export default function ProfilPage() {
         telephone: formData.telephone
       };
 
-      // Appel à l'API équipe pour mettre à jour le profil
+      // Appel à l'API profil pour mettre à jour le profil
       const token = await getValidAccessToken();
 
       if (!token) throw new Error('Token d\'accès non trouvé');
 
-      const response = await fetch(`/api/equipe?id=${userProfile?.id}`, {
+      const response = await fetch('/api/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -613,13 +613,20 @@ export function UnifiedEventModal({
                     <FormLabel htmlFor="appointmentType" isRequired={true}>
                       Type de rendez-vous
                     </FormLabel>
-                    <Input
+                    <StyledSelect
                       id="appointmentType"
-                      placeholder="Ex: Fidélisation"
-                      value={formData.appointmentType}
-                      onChange={(e) => handleInputChange('appointmentType', e.target.value)}
+                      placeholder="Sélectionner un type"
+                      selectedKeys={formData.appointmentType ? [formData.appointmentType] : []}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0] as string;
+                        handleInputChange('appointmentType', value);
+                      }}
                       required
-                    />
+                    >
+                      <SelectItem key="prospection">Prospection</SelectItem>
+                      <SelectItem key="post-campagne">Post-campagne</SelectItem>
+                      <SelectItem key="studio">Studio</SelectItem>
+                    </StyledSelect>
                   </>
 
                 )}
@@ -632,6 +639,9 @@ export function UnifiedEventModal({
                     placeholder={
                       "Titre de l'événement"
                     }
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     value={formData.summary}
                     onChange={(e) => handleInputChange('summary', e.target.value)}
                     required
@@ -699,6 +709,9 @@ export function UnifiedEventModal({
                       Lieu
                     </FormLabel>
                     <Input
+                      classNames={{
+                        inputWrapper: "bg-page-bg",
+                      }}
                       id="location"
                       placeholder="Ex: Bureau principal"
                       value={formData.location}

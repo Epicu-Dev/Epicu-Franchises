@@ -14,10 +14,10 @@ interface GoogleCalendarCreateEventProps {
   onEventCreated: (event: GoogleCalendarEvent) => void;
 }
 
-export function GoogleCalendarCreateEvent({ 
-  isOpen, 
-  onOpenChange, 
-  onEventCreated 
+export function GoogleCalendarCreateEvent({
+  isOpen,
+  onOpenChange,
+  onEventCreated
 }: GoogleCalendarCreateEventProps) {
   const [formData, setFormData] = useState({
     summary: '',
@@ -41,18 +41,18 @@ export function GoogleCalendarCreateEvent({
         summary: formData.summary,
         description: formData.description || undefined,
         location: formData.location || undefined,
-        start: formData.allDay 
+        start: formData.allDay
           ? { date: formData.startDate }
-          : { 
-              dateTime: `${formData.startDate}T${formData.startTime}:00`,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            },
+          : {
+            dateTime: `${formData.startDate}T${formData.startTime}:00`,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          },
         end: formData.allDay
           ? { date: formData.endDate || formData.startDate }
-          : { 
-              dateTime: `${formData.endDate || formData.startDate}T${formData.endTime || formData.startTime}:00`,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            }
+          : {
+            dateTime: `${formData.endDate || formData.startDate}T${formData.endTime || formData.startTime}:00`,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }
       };
 
       // Créer l'événement via l'API
@@ -68,7 +68,7 @@ export function GoogleCalendarCreateEvent({
         const createdEvent = await response.json();
         onEventCreated(createdEvent);
         onOpenChange(false);
-        
+
         // Réinitialiser le formulaire
         setFormData({
           summary: '',
@@ -109,6 +109,9 @@ export function GoogleCalendarCreateEvent({
           <ModalBody>
             <div className="space-y-4">
               <Input
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 label="Titre de l'événement *"
                 placeholder="Ex: Réunion équipe"
                 value={formData.summary}
@@ -146,6 +149,9 @@ export function GoogleCalendarCreateEvent({
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
                   label="Date de début *"
                   type="date"
                   value={formData.startDate}
@@ -156,6 +162,9 @@ export function GoogleCalendarCreateEvent({
 
                 {!formData.allDay && (
                   <Input
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     label="Heure de début"
                     type="time"
                     value={formData.startTime}
@@ -168,6 +177,9 @@ export function GoogleCalendarCreateEvent({
               {!formData.allDay && (
                 <div className="grid grid-cols-2 gap-4">
                   <Input
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     label="Date de fin"
                     type="date"
                     value={formData.endDate}
@@ -176,6 +188,9 @@ export function GoogleCalendarCreateEvent({
                   />
 
                   <Input
+                    classNames={{
+                      inputWrapper: "bg-page-bg",
+                    }}
                     label="Heure de fin"
                     type="time"
                     value={formData.endTime}
@@ -188,15 +203,15 @@ export function GoogleCalendarCreateEvent({
           </ModalBody>
 
           <ModalFooter>
-            <Button 
-              color="danger" 
-              variant="light" 
+            <Button
+              color="danger"
+              variant="light"
               onPress={() => onOpenChange(false)}
             >
               Annuler
             </Button>
-            <Button 
-              color="primary" 
+            <Button
+              color="primary"
               type="submit"
               isLoading={isLoading}
             >

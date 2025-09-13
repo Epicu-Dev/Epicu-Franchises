@@ -404,75 +404,75 @@ export function AgendaModals({
               <FormLabel htmlFor="establishmentName" isRequired={true}>
                 Nom de l&apos;établissement
               </FormLabel>
-                              <Input
-                  isRequired
-                  errorMessage={fieldErrors['tournage.establishmentName']}
-                  id="establishmentName"
-                  isInvalid={!!fieldErrors['tournage.establishmentName']}
-                  placeholder="Nom de l'établissement"
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  value={newTournage.establishmentName}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <Input
+                isRequired
+                errorMessage={fieldErrors['tournage.establishmentName']}
+                id="establishmentName"
+                isInvalid={!!fieldErrors['tournage.establishmentName']}
+                placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={newTournage.establishmentName}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      establishmentName: value,
-                    }));
-                    validateField('establishmentName', value, 'tournage');
-                  }}
-                />
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value, 'tournage');
+                }}
+              />
 
 
               <FormLabel htmlFor="publicationDate" isRequired={true}>
                 Date de la publication
               </FormLabel>
-                              <Input
-                  isRequired
-                  errorMessage={fieldErrors['tournage.publicationDate']}
-                  id="publicationDate"
-                  isInvalid={!!fieldErrors['tournage.publicationDate']}
-                  type="date"
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  value={newTournage.publicationDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <Input
+                isRequired
+                errorMessage={fieldErrors['tournage.publicationDate']}
+                id="publicationDate"
+                isInvalid={!!fieldErrors['tournage.publicationDate']}
+                type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={newTournage.publicationDate}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      publicationDate: value,
-                    }));
-                    validateField('publicationDate', value, 'tournage');
-                  }}
-                />
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    publicationDate: value,
+                  }));
+                  validateField('publicationDate', value, 'tournage');
+                }}
+              />
 
               <FormLabel htmlFor="shootingDate" isRequired={true}>
                 Date du tournage
               </FormLabel>
-                              <Input
-                  isRequired
-                  errorMessage={fieldErrors['tournage.shootingDate']}
-                  id="shootingDate"
-                  isInvalid={!!fieldErrors['tournage.shootingDate']}
-                  type="date"
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  value={newTournage.shootingDate}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <Input
+                isRequired
+                errorMessage={fieldErrors['tournage.shootingDate']}
+                id="shootingDate"
+                isInvalid={!!fieldErrors['tournage.shootingDate']}
+                type="date"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={newTournage.shootingDate}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewTournage((prev) => ({
-                      ...prev,
-                      shootingDate: value,
-                    }));
-                    validateField('shootingDate', value, 'tournage');
-                  }}
-                />
+                  setNewTournage((prev) => ({
+                    ...prev,
+                    shootingDate: value,
+                  }));
+                  validateField('shootingDate', value, 'tournage');
+                }}
+              />
 
 
               <div className="space-y-2">
@@ -537,51 +537,54 @@ export function AgendaModals({
               <FormLabel htmlFor="categoryName" isRequired={true}>
                 Nom catégorie
               </FormLabel>
-                              <Input
-                  isRequired
-                  errorMessage={fieldErrors['publication.categoryName']}
-                  id="categoryName"
-                  isInvalid={!!fieldErrors['publication.categoryName']}
-                  placeholder="FOOD"
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  value={newPublication.categoryName}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <Input
+                isRequired
+                errorMessage={fieldErrors['publication.categoryName']}
+                id="categoryName"
+                isInvalid={!!fieldErrors['publication.categoryName']}
+                placeholder="FOOD"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={newPublication.categoryName}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      categoryName: value,
-                    }));
-                    validateField('categoryName', value, 'publication');
-                  }}
-                />
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    categoryName: value,
+                  }));
+                  validateField('categoryName', value, 'publication');
+                }}
+              />
               <FormLabel htmlFor="establishmentName" isRequired={true}>
                 Nom établissement
               </FormLabel>
-                              <Input
-                  isRequired
-                  errorMessage={fieldErrors['publication.establishmentName']}
-                  id="establishmentName"
-                  isInvalid={!!fieldErrors['publication.establishmentName']}
-                  placeholder="Nom de l'établissement"
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  value={newPublication.establishmentName}
-                  onChange={(e) => {
-                    const value = e.target.value;
+              <Input
+                isRequired
+                errorMessage={fieldErrors['publication.establishmentName']}
+                id="establishmentName"
+                isInvalid={!!fieldErrors['publication.establishmentName']}
+                placeholder="Nom de l'établissement"
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
+                value={newPublication.establishmentName}
+                onChange={(e) => {
+                  const value = e.target.value;
 
-                    setNewPublication((prev) => ({
-                      ...prev,
-                      establishmentName: value,
-                    }));
-                    validateField('establishmentName', value, 'publication');
-                  }}
-                />
+                  setNewPublication((prev) => ({
+                    ...prev,
+                    establishmentName: value,
+                  }));
+                  validateField('establishmentName', value, 'publication');
+                }}
+              />
 
               <Input
+                classNames={{
+                  inputWrapper: "bg-page-bg",
+                }}
                 isRequired
                 errorMessage={fieldErrors['publication.publicationDate']}
                 id="publicationDate"
@@ -716,7 +719,7 @@ export function AgendaModals({
                 />
               </div>
 
-              
+
             </div>
           </ModalBody>
           <ModalFooter className="flex justify-between">

@@ -34,9 +34,9 @@ const config = {
         'custom-orange-event': '#F36F21',
         'custom-rose': '#E91E63',
         'custom-purple-pub': '#9B4DCC',
-        'custom-purple-publication': '#8E24AA',
-        'custom-red-filming': '#E91E63',
-        'custom-orange-event': '#F36F2124',
+        'custom-red-publication': '#E91E63',
+        'custom-green-filming': '#84BC26',
+        'custom-orange-event': '#F57C00',
         'custom-blue-meeting': '#1E40AF',
 
       },

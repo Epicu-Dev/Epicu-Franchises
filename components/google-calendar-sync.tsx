@@ -165,8 +165,8 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
         <div className="flex items-center flex-col">
           <p className="text-sm text-gray-600 mb-2">Calendrier EPICU synchronisé:</p>
           <div className="flex flex-wrap gap-2">
-            {syncStatus.calendars.filter(calendar => 
-              calendar.summary?.toLowerCase().includes('epicu')
+            {syncStatus.calendars.filter(calendar =>
+              calendar.summary?.toLowerCase().includes('epicu agenda')
             ).map((calendar) => (
               <span
                 key={calendar.id}
