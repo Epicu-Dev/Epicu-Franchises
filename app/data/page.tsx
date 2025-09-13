@@ -16,6 +16,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/
 import { Spinner } from "@heroui/spinner";
 
 import { DashboardLayout } from "../dashboard-layout";
+
 import { useUser } from "@/contexts/user-context";
 import { SubscribersEditModal } from "@/components";
 import { useSortableTable } from "@/hooks/use-sortable-table";
@@ -44,6 +45,7 @@ export default function DataPage() {
     try {
       // Format attendu: "MM-YYYY" (ex: "01-2024")
       const parts = date.split('-');
+
       if (parts.length === 2) {
         const monthIndex = parseInt(parts[0]) - 1;
 
@@ -144,11 +146,11 @@ export default function DataPage() {
         );
       }
 
-      const dataPromises = months.map(async (month, index) => {
+      const dataPromises = months.map(async (month, _index) => {
         const monthNumber = allMonths.indexOf(month) + 1;
         const date = `${monthNumber.toString().padStart(2, '0')}-${currentYear}`;
         
-        // Utiliser la ville sélectionnée ou alterner entre toutes les villes
+        // Utiliser la ville sélectionnée ou "all" pour la vue d'ensemble
         let city, villeParam;
 
         if (selectedCity) {
@@ -156,11 +158,9 @@ export default function DataPage() {
           city = selectedCity;
           villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
         } else {
-          // Vue d'ensemble : alterner entre les villes
-          const cityIndex = index % userProfile.villes.length;
-
-          city = userProfile.villes[cityIndex];
-          villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+          // Vue d'ensemble : utiliser "all" comme paramètre de ville
+          city = null;
+          villeParam = "all";
         }
 
         try {
@@ -240,7 +240,7 @@ export default function DataPage() {
   };
   
   // Fonction pour sauvegarder les modifications
-  const handleSaveSubscribers = async (newData: Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>) => {
+  const handleSaveSubscribers = async (newData: Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>, selectedCity?: string) => {
     if (editingRowIndex !== null) {
       const currentRow = tableData[editingRowIndex];
 
@@ -248,9 +248,12 @@ export default function DataPage() {
       setSaveError(null);
 
       try {
+        // Utiliser la ville sélectionnée dans le modal ou la ville de la ligne actuelle
+        const villeToUse = selectedCity || currentRow.ville;
+        
         // Préparer les données pour l'API en utilisant l'interface Data
         const apiData = {
-          ville: currentRow.ville,
+          ville: villeToUse,
           date: currentRow.date,
           abonnesFood: newData.abonnesFood || 0,
           abonnesShop: newData.abonnesShop || 0,
@@ -274,7 +277,8 @@ export default function DataPage() {
 
           updatedData[editingRowIndex] = {
             ...updatedData[editingRowIndex],
-            ...newData
+            ...newData,
+            ville: villeToUse
           };
           setTableData(updatedData);
         } else {
@@ -533,6 +537,7 @@ export default function DataPage() {
 
         {/* Modal d'édition des abonnés */}
         <SubscribersEditModal
+          date={editingRowIndex !== null && tableData[editingRowIndex] ? tableData[editingRowIndex].date : ""}
           initialData={getCurrentSubscribersData()}
           isOpen={editModalOpen}
           month={editingRowIndex !== null && tableData[editingRowIndex] ? formatMonthFromDate(tableData[editingRowIndex].date) : ""}
