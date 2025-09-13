@@ -248,8 +248,14 @@ export default function DataPage() {
       setSaveError(null);
 
       try {
-        // Utiliser la ville sélectionnée dans le modal ou la ville de la ligne actuelle
-        const villeToUse = selectedCity || currentRow.ville;
+        // Déterminer la ville à utiliser
+        let villeToUse = selectedCity || currentRow.ville;
+        
+        // Si l'utilisateur n'a qu'une ville et que la ville actuelle est "all", 
+        // utiliser l'ID de la seule ville de l'utilisateur
+        if (userProfile?.villes && userProfile.villes.length === 1 && villeToUse === "all") {
+          villeToUse = userProfile.villes[0].id || userProfile.villes[0].ville;
+        }
         
         // Préparer les données pour l'API en utilisant l'interface Data
         const apiData = {
