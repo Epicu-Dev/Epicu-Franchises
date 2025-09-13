@@ -92,37 +92,46 @@ export function ProspectModal({
     setFieldErrors({});
   }, [isEditing, editingProspect, isOpen, collaborateurs]);
 
-  // Récupérer la liste des collaborateurs au chargement du modal
+  // Récupérer la liste des membres d'équipe au chargement du modal
   useEffect(() => {
-    const fetchCollaborateurs = async () => {
+    const fetchMembers = async () => {
       try {
-        const response = await authFetch('/api/collaborateurs?limit=200&offset=0');
+        const response = await authFetch('/api/equipe?limit=200&offset=0');
         if (response.ok) {
           const data = await response.json();
-          let allCollaborateurs = data.results || [];
+          let allMembers = data.results || [];
 
-          // Filtrer les collaborateurs selon les villes de l'utilisateur connecté
+          // Filtrer les membres selon les villes de l'utilisateur connecté
           if (userProfile?.villes && userProfile.villes.length > 0) {
             const userVilles = userProfile.villes.map(v => v.ville);
-            allCollaborateurs = allCollaborateurs.filter((collab: any) => {
-              // Si le collaborateur a des villes, vérifier qu'il y a au moins une intersection
-              if (collab.villes && collab.villes.length > 0) {
-                return collab.villes.some((ville: string) => userVilles.includes(ville));
+
+            allMembers = allMembers.filter((member: any) => {
+              // Si le membre a des villes, vérifier qu'il y a au moins une intersection
+              if (member.villeEpicu && member.villeEpicu.length > 0) {
+                return member.villeEpicu.some((ville: string) => userVilles.includes(ville));
               }
-              // Si le collaborateur n'a pas de villes spécifiées, l'inclure (probablement un admin)
+
+              // Si le membre n'a pas de villes spécifiées, l'inclure (probablement un admin)
               return true;
             });
           }
 
-          setCollaborateurs(allCollaborateurs);
+          // Mapper les données pour correspondre au format attendu par le dropdown
+          const mappedMembers = allMembers.map((member: any) => ({
+            id: member.id, // Utiliser l'identifiant de l'utilisateur
+            nomComplet: `${member.prenom} ${member.nom}`,
+            villes: member.villeEpicu || []
+          }));
+
+          setCollaborateurs(mappedMembers);
         }
       } catch (err) {
-        console.error('Erreur lors de la récupération des collaborateurs:', err);
+        console.error('Erreur lors de la récupération des membres d\'équipe:', err);
       }
     };
 
     if (isOpen) {
-      fetchCollaborateurs();
+      fetchMembers();
     }
   }, [isOpen, userProfile?.villes]);
 
