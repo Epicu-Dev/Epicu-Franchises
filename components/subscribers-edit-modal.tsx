@@ -11,18 +11,21 @@ import {
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Spinner } from "@heroui/spinner";
 
 import { useUser } from "@/contexts/user-context";
 import { Data } from "@/types/data";
+import { getValidAccessToken } from "@/utils/auth";
 
 type SubscribersData = Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>;
 
 interface SubscribersEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: SubscribersData) => void;
+  onSave: (data: SubscribersData, selectedCity?: string) => void;
   initialData: SubscribersData;
   month: string;
+  date: string; // Format MM-YYYY
   saving?: boolean;
 }
 
@@ -32,12 +35,73 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
   onSave,
   initialData,
   month,
+  date,
   saving = false,
 }) => {
   const { userProfile } = useUser();
   const [formData, setFormData] = useState<SubscribersData>(initialData);
   const [activeTab, setActiveTab] = useState<string>("");
   const [cityData, setCityData] = useState<Record<string, SubscribersData>>({});
+  const [loadingCityData, setLoadingCityData] = useState<Record<string, boolean>>({});
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Fonction pour les appels API authentifiés
+  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
+    const token = await getValidAccessToken();
+
+    if (!token) throw new Error('No access token');
+
+    const headers = new Headers((init?.headers as HeadersInit) || {});
+
+    headers.set('Authorization', `Bearer ${token}`);
+    const merged: RequestInit = { ...init, headers };
+
+    return fetch(input, merged);
+  };
+
+  // Fonction pour charger les données d'une ville spécifique
+  const loadCityData = async (cityKey: string, city: any) => {
+    if (loadingCityData[cityKey]) return; // Éviter les appels multiples
+
+    setLoadingCityData(prev => ({ ...prev, [cityKey]: true }));
+    setIsLoadingData(true);
+
+    try {
+      const villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
+      const response = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
+
+      if (response.ok) {
+        const apiData = await response.json();
+        const citySubscribersData: SubscribersData = {
+          abonnesFood: apiData.abonnesFood || 0,
+          abonnesShop: apiData.abonnesShop || 0,
+          abonnesTravel: apiData.abonnesTravel || 0,
+          abonnesFun: apiData.abonnesFun || 0,
+          abonnesBeauty: apiData.abonnesBeauty || 0,
+        };
+
+        setCityData(prev => ({
+          ...prev,
+          [cityKey]: citySubscribersData
+        }));
+      } else {
+        // En cas d'erreur, utiliser les données initiales
+        setCityData(prev => ({
+          ...prev,
+          [cityKey]: initialData
+        }));
+      }
+    } catch {
+      // En cas d'erreur, utiliser les données initiales
+      setCityData(prev => ({
+        ...prev,
+        [cityKey]: initialData
+      }));
+    } finally {
+      setLoadingCityData(prev => ({ ...prev, [cityKey]: false }));
+      setIsLoadingData(false);
+    }
+  };
 
   // Vérifier si l'utilisateur a plusieurs villes
   const hasMultipleCities = userProfile?.villes && userProfile.villes.length > 1;
@@ -57,15 +121,26 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
 
       setCityData(initialCityData);
       
-      // Définir le premier tab comme actif
+      // Définir le premier tab comme actif et charger ses données
       if (userProfile.villes.length > 0) {
-        const firstCityKey = userProfile.villes[0].ville.toLowerCase().replace(/\s+/g, '-');
+        const firstCity = userProfile.villes[0];
+        const firstCityKey = firstCity.ville.toLowerCase().replace(/\s+/g, '-');
 
         setActiveTab(firstCityKey);
-        setFormData(initialCityData[firstCityKey] || initialData);
+        setFormData(initialData);
+        
+        // Charger les données de la première ville
+        loadCityData(firstCityKey, firstCity);
       }
     }
-  }, [initialData, isOpen, hasMultipleCities, userProfile?.villes]);
+  }, [initialData, isOpen, hasMultipleCities, userProfile?.villes, date]);
+
+  // Mettre à jour formData quand les données de la ville active changent
+  useEffect(() => {
+    if (hasMultipleCities && activeTab && cityData[activeTab]) {
+      setFormData(cityData[activeTab]);
+    }
+  }, [cityData, activeTab, hasMultipleCities]);
 
   const handleInputChange = (field: keyof SubscribersData, value: string) => {
     // Permettre seulement les nombres
@@ -91,17 +166,31 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
     setActiveTab(key);
     
     // Charger les données de la ville sélectionnée
-    if (hasMultipleCities) {
-      const cityFormData = cityData[key] || initialData;
+    if (hasMultipleCities && userProfile?.villes) {
+      const city = userProfile.villes.find(c => 
+        c.ville.toLowerCase().replace(/\s+/g, '-') === key
+      );
+      
+      if (city) {
+        // Charger les données de cette ville depuis l'API
+        loadCityData(key, city);
+        
+        // Afficher les données actuelles (ou initiales en attendant)
+        const cityFormData = cityData[key] || initialData;
 
-      setFormData(cityFormData);
+        setFormData(cityFormData);
+      }
     }
   };
 
   const handleSave = () => {
     // Si l'utilisateur a plusieurs villes, sauvegarder les données de la ville active
     if (hasMultipleCities && activeTab) {
-      onSave(cityData[activeTab] || formData);
+      const selectedCity = userProfile?.villes?.find(c => 
+        c.ville.toLowerCase().replace(/\s+/g, '-') === activeTab
+      );
+
+      onSave(cityData[activeTab] || formData, selectedCity?.ville);
     } else {
       onSave(formData);
     }
@@ -135,7 +224,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
     {
       key: "abonnesFun" as keyof SubscribersData,
       label: "FUN",
-      color: "bg-custom-green-travel/10 text-custom-green-travel",
+      color: "bg-custom-red-fun/10 text-custom-red-fun",
       placeholder: "Nombre d'abonnés Fun"
     },
     {
@@ -171,6 +260,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
                   cursor: "w-[50px] left-[12px] h-1 rounded",
                   tab: "pb-6 data-[selected=true]:font-semibold text-base font-light",
                 }}
+                isDisabled={isLoadingData || saving}
                 selectedKey={activeTab}
                 variant="underlined"
                 onSelectionChange={(key) => handleTabChange(key as string)}
@@ -184,7 +274,17 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
               </Tabs>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Spinner de chargement */}
+            {isLoadingData && (
+              <div className="flex justify-center items-center py-8">
+                <Spinner color="primary" size="lg" />
+                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
+                  Chargement des données...
+                </span>
+              </div>
+            )}
+
+           {!isLoadingData && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {categories.map((category) => (
                 <div key={category.key} className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -198,6 +298,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
                       input: "text-sm",
                       inputWrapper: "border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
                     }}
+                    isDisabled={isLoadingData || saving}
                     placeholder={category.placeholder}
                     type="text"
                     value={formData[category.key]?.toString() || "0"}
@@ -206,15 +307,15 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
                   />
                 </div>
               ))}
-            </div>
+            </div>}
           </div>
         </ModalBody>
         <ModalFooter className="flex justify-between">
           <Button
             className="flex-1 border-1" 
             color='primary' 
-            variant="bordered"
             isDisabled={saving}
+            variant="bordered"
             onPress={handleCancel}
           >
             Annuler
@@ -222,8 +323,8 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
           <Button
             className="flex-1"
             color="primary"
+            isDisabled={saving || isLoadingData}
             isLoading={saving}
-            isDisabled={saving}
             onPress={handleSave}
           >
             {saving ? "Sauvegarde..." : "Sauvegarder"}

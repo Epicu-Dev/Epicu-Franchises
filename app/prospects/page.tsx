@@ -59,31 +59,40 @@ export default function ProspectsPage() {
   const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string; villes?: string[] }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
-  // Récupérer la liste des collaborateurs et catégories au chargement de la page
+  // Récupérer la liste des membres d'équipe et catégories au chargement de la page
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        // Récupérer les collaborateurs
-        const collabResponse = await authFetch('/api/collaborateurs?limit=200&offset=0');
+        // Récupérer les membres d'équipe via l'API equipe
+        const equipeResponse = await authFetch('/api/equipe?limit=200&offset=0');
 
-        if (collabResponse.ok) {
-          const collabData = await collabResponse.json();
-          let allCollaborateurs = collabData.results || [];
+        if (equipeResponse.ok) {
+          const equipeData = await equipeResponse.json();
+          let allMembers = equipeData.results || [];
 
-          // Filtrer les collaborateurs selon les villes de l'utilisateur connecté
+          // Filtrer les membres selon les villes de l'utilisateur connecté
           if (userProfile?.villes && userProfile.villes.length > 0) {
             const userVilles = userProfile.villes.map(v => v.ville);
-            allCollaborateurs = allCollaborateurs.filter((collab: any) => {
-              // Si le collaborateur a des villes, vérifier qu'il y a au moins une intersection
-              if (collab.villes && collab.villes.length > 0) {
-                return collab.villes.some((ville: string) => userVilles.includes(ville));
+
+            allMembers = allMembers.filter((member: any) => {
+              // Si le membre a des villes, vérifier qu'il y a au moins une intersection
+              if (member.villeEpicu && member.villeEpicu.length > 0) {
+                return member.villeEpicu.some((ville: string) => userVilles.includes(ville));
               }
-              // Si le collaborateur n'a pas de villes spécifiées, l'inclure (probablement un admin)
+
+              // Si le membre n'a pas de villes spécifiées, l'inclure (probablement un admin)
               return true;
             });
           }
 
-          setCollaborateurs(allCollaborateurs);
+          // Mapper les données pour correspondre au format attendu par le dropdown
+          const mappedMembers = allMembers.map((member: any) => ({
+            id: member.id, // Utiliser l'identifiant de l'utilisateur
+            nomComplet: `${member.prenom} ${member.nom}`,
+            villes: member.villeEpicu || []
+          }));
+
+          setCollaborateurs(mappedMembers);
         }
 
         // Récupérer les catégories
@@ -94,7 +103,7 @@ export default function ProspectsPage() {
 
           setCategories(catData.results || []);
         }
-      } catch (err) {
+      } catch {
         // console.error('Erreur lors de la récupération des filtres:', err);
       }
     };
@@ -312,34 +321,6 @@ export default function ProspectsPage() {
       adresse: prospect.adresse,
     };
 
-    // Initialiser les données du client avec les données du prospect
-    const clientData = {
-      id: '',
-      raisonSociale: prospect.nomEtablissement,
-      ville: prospect.ville,
-      categorie: prospect.categorie,
-      telephone: prospect.telephone || '',
-      nomEtablissement: prospect.nomEtablissement,
-      email: prospect.email || '',
-      datePriseContact: '',
-      datePublicationContenu: '',
-      datePublicationFacture: '',
-      statutPaiementContenu: 'En attente' as const,
-      montantFactureContenu: '',
-      montantPaye: '',
-      dateReglementFacture: '',
-      restantDu: '',
-      montantSponsorisation: '',
-      montantAddition: '',
-      factureContenu: '',
-      facturePublication: '',
-      commentaire: prospect.commentaires,
-      commentaireCadeauGerant: '',
-      montantCadeau: '',
-      tirageAuSort: false,
-      adresse: prospect.adresse,
-      statut: 'actif' as const,
-    };
 
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
@@ -589,8 +570,8 @@ export default function ProspectsPage() {
                         <TableCell className="font-light">
                           <CategoryBadge category={prospect.categorie[0]} />
                           {
-                            prospect.categorie.length > 1 && (
-                              <CategoryBadge className="ml-2" category={prospect.categorie[1] || ''} />
+                            prospect.categorie.length > 1 && (prospect.categorie as any[])[1] && (
+                              <CategoryBadge className="ml-2" category={(prospect.categorie as any[])[1]} />
                             )
                           }
 
