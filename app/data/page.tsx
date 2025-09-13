@@ -14,6 +14,7 @@ import { Tabs, Tab } from "@heroui/tabs";
 import { Button } from "@heroui/button";
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
+import toast from "react-hot-toast";
 
 import { DashboardLayout } from "../dashboard-layout";
 
@@ -281,12 +282,23 @@ export default function DataPage() {
           // Mettre à jour l'état local seulement si l'API a réussi
           const updatedData = [...tableData];
 
+          // Calculer le nouveau total des abonnés
+          const newTotalAbonnes = (newData.abonnesFood || 0) + 
+                                 (newData.abonnesShop || 0) + 
+                                 (newData.abonnesTravel || 0) + 
+                                 (newData.abonnesFun || 0) + 
+                                 (newData.abonnesBeauty || 0);
+
           updatedData[editingRowIndex] = {
             ...updatedData[editingRowIndex],
             ...newData,
+            totalAbonnes: newTotalAbonnes,
             ville: villeToUse
           };
           setTableData(updatedData);
+          
+          // Afficher un toast de succès
+          toast.success("Données sauvegardées avec succès !");
         } else {
           const error = await response.text();
 
@@ -381,6 +393,11 @@ export default function DataPage() {
                   const data = await fetchDataFromAPI();
 
                   setTableData(data);
+                  
+                  // Afficher un toast de succès si des données ont été chargées
+                  if (data.length > 0) {
+                    toast.success("Données rechargées avec succès !");
+                  }
                 };
 
                 loadData();
