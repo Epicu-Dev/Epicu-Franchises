@@ -37,15 +37,19 @@ export async function getValidAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) {
-      // Vider le localStorage si le refresh token est invalide
-      const errorData = await res.json().catch(() => ({}));
-      if (errorData.message === 'Refresh token invalide' || errorData.message === 'Refresh token expiré') {
+      // Vider le localStorage dans tous les cas d'erreur 401
+      if (res.status === 401) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('expiresAtAccess');
         localStorage.removeItem('expiresAtRefresh');
         localStorage.removeItem('userProfile');
         localStorage.removeItem('userProfileCacheTime');
+        
+        // Rediriger vers la page de connexion
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
 
       return null;
@@ -59,14 +63,19 @@ export async function getValidAccessToken(): Promise<string | null> {
     localStorage.setItem('expiresAtRefresh', data.expiresAtRefresh);
 
     return data.accessToken;
-  } catch (err) {
-    console.error('Erreur lors du refresh token :', err);
-    // Ne pas vider le localStorage immédiatement, laisser le dashboard-layout gérer
-    // console.warn('Erreur réseau lors du refresh, mais on ne vide pas le localStorage');
+  } catch {
+    // En cas d'erreur réseau, vider le localStorage et rediriger
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('expiresAtAccess');
     localStorage.removeItem('expiresAtRefresh');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('userProfileCacheTime');
+    
+    // Rediriger vers la page de connexion
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
     
     return null;
   }

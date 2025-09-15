@@ -201,11 +201,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const villeEpicu = body['Ville EPICU'] || null;
         const telephone = body['Téléphone'] || body.telephone || null;
 
-        // Debug: Log des données reçues par l'API
-        console.log('=== DEBUG API POST ===');
-        console.log('Body reçu:', body);
-        console.log('Ville EPICU extraite:', villeEpicu);
-        console.log('=====================');
         const categorieRaw = body['Catégorie'] || body.categorie || null;
         const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
         const dateRelance = body['Date de relance'] || body.dateRelance || null;
@@ -299,11 +294,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const id = (req.query.id as string) || body.id;
         if (!id) return res.status(400).json({ error: 'id requis' });
 
-        // Debug: Log des données reçues par l'API PATCH
-        console.log('=== DEBUG API PATCH ===');
-        console.log('Body reçu:', body);
-        console.log('Ville EPICU dans body:', body['Ville EPICU']);
-        console.log('======================');
 
         // Fetch existing to determine current date fields
         const existing = await base(TABLE_NAME).find(id);

@@ -132,8 +132,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       user: userInfo,
     });
   } catch (error) {
-    console.error('Erreur lors du refresh :', error);
-
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 }

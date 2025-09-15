@@ -191,6 +191,13 @@ export function ProspectModal({
         // La date de relance est optionnelle, pas de validation requise
         delete errors.dateRelance;
         break;
+      case 'villeEpicu':
+        if (!value || !value.trim()) {
+          errors.villeEpicu = 'La ville Epicu est requise';
+        } else {
+          delete errors.villeEpicu;
+        }
+        break;
     }
 
     setFieldErrors(errors);
@@ -199,7 +206,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact'];
+    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact', 'villeEpicu'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -252,13 +259,6 @@ export function ProspectModal({
         prospectData['Suivi par'] = [newProspect.suiviPar];
       }
 
-      // Debug: Log des données envoyées à l'API
-      console.log('=== DEBUG PROSPECT DATA ===');
-      console.log('État du formulaire:', newProspect);
-      console.log('Données envoyées à l\'API:', prospectData);
-      console.log('Ville EPICU sélectionnée:', newProspect.villeEpicu);
-      console.log('Villes utilisateur:', userProfile?.villes);
-      console.log('==========================');
 
 
 
@@ -514,10 +514,13 @@ export function ProspectModal({
                   id="villeEpicu"
                   placeholder="Sélectionner une ville Epicu"
                   selectedKeys={newProspect.villeEpicu ? [newProspect.villeEpicu] : []}
+                  errorMessage={fieldErrors.villeEpicu}
+                  isInvalid={!!fieldErrors.villeEpicu}
                   onSelectionChange={(keys) => {
                     const selectedVilleEpicu = Array.from(keys)[0] as string;
 
                     setNewProspect((prev) => ({ ...prev, villeEpicu: selectedVilleEpicu }));
+                    validateField('villeEpicu', selectedVilleEpicu);
                   }}
                 >
                   {userProfile.villes.map((ville) => (
@@ -683,7 +686,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact || !newProspect.villeEpicu}
               isLoading={isLoading}
               onPress={handleSubmit}
             >
