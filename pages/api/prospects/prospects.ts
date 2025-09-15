@@ -200,6 +200,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const ville = body['Ville'] || body.ville || null;
         const villeEpicu = body['Ville EPICU'] || null;
         const telephone = body['Téléphone'] || body.telephone || null;
+
+        // Debug: Log des données reçues par l'API
+        console.log('=== DEBUG API POST ===');
+        console.log('Body reçu:', body);
+        console.log('Ville EPICU extraite:', villeEpicu);
+        console.log('=====================');
         const categorieRaw = body['Catégorie'] || body.categorie || null;
         const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
         const dateRelance = body['Date de relance'] || body.dateRelance || null;
@@ -221,8 +227,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (ville) fieldsToCreate['Ville'] = ville;
 
         if (villeEpicu) {
-          const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicu, ['Ville', 'Name']);
-          if (villeId) fieldsToCreate['Ville EPICU'] = [villeId];
+          // Si c'est déjà un tableau d'IDs, l'utiliser directement
+          if (Array.isArray(villeEpicu)) {
+            fieldsToCreate['Ville EPICU'] = villeEpicu;
+          } else {
+            // Sinon, utiliser ensureRelatedRecord pour trouver l'ID par nom
+            const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicu, ['Ville', 'Name']);
+            if (villeId) fieldsToCreate['Ville EPICU'] = [villeId];
+          }
         }
 
         const catIds = await resolveCategoryIds(categorieRaw);
@@ -287,6 +299,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const id = (req.query.id as string) || body.id;
         if (!id) return res.status(400).json({ error: 'id requis' });
 
+        // Debug: Log des données reçues par l'API PATCH
+        console.log('=== DEBUG API PATCH ===');
+        console.log('Body reçu:', body);
+        console.log('Ville EPICU dans body:', body['Ville EPICU']);
+        console.log('======================');
+
         // Fetch existing to determine current date fields
         const existing = await base(TABLE_NAME).find(id);
         const existingDatePrise = existing.get('Date de prise de contact') || null;
@@ -309,8 +327,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
           const villeEpicuRaw = body['Ville EPICU'];
           if (villeEpicuRaw) {
-            const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicuRaw, ['Ville', 'Name']);
-            if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
+            // Si c'est déjà un tableau d'IDs, l'utiliser directement
+            if (Array.isArray(villeEpicuRaw)) {
+              fieldsToUpdate['Ville EPICU'] = villeEpicuRaw;
+            } else {
+              // Sinon, utiliser ensureRelatedRecord pour trouver l'ID par nom
+              const villeId = await ensureRelatedRecord('VILLES EPICU', villeEpicuRaw, ['Ville', 'Name']);
+              if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
+            }
           } else {
             fieldsToUpdate['Ville EPICU'] = [];
           }

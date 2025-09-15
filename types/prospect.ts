@@ -4,7 +4,7 @@ export interface Prospect {
     ville: string;
     villeEpicu?: string;
     telephone: string;
-    categorie: ["FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY"];
+    categorie: ("FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY")[];
     statut: "a_contacter" | "en_discussion" | "glacial";
     datePriseContact: string;
     dateRelance: string;

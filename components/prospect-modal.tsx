@@ -12,6 +12,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 import { useUser } from "../contexts/user-context";
 import { useAuthFetch } from "../hooks/use-auth-fetch";
@@ -19,7 +20,6 @@ import { useAuthFetch } from "../hooks/use-auth-fetch";
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
 import { Prospect } from "@/types/prospect";
-import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface ProspectModalProps {
   isOpen: boolean;
@@ -63,8 +63,10 @@ export function ProspectModal({
     if (isEditing && editingProspect) {
       // Si le prospect a un suiviPar (nom), trouver l'ID correspondant
       let prospectToSet = { ...editingProspect };
+
       if (editingProspect.suiviPar && collaborateurs.length > 0) {
         const collaborateur = collaborateurs.find(collab => collab.nomComplet === editingProspect.suiviPar);
+
         if (collaborateur) {
           prospectToSet.suiviPar = collaborateur.id;
         }
@@ -72,25 +74,33 @@ export function ProspectModal({
       setNewProspect(prospectToSet);
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
+      // Définir la première ville Epicu par défaut si l'utilisateur a des villes
+      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
+        ? userProfile.villes[0].id 
+        : "";
+      
+      // Définir l'utilisateur actuel comme suivi par défaut
+      const defaultSuiviPar = userProfile?.id || "";
+        
       setNewProspect({
         id: "",
         nomEtablissement: "",
         ville: "",
-        villeEpicu: "",
+        villeEpicu: defaultVilleEpicu,
         telephone: "",
         categorie: ["FOOD"],
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
         commentaires: "",
-        suiviPar: "",
+        suiviPar: defaultSuiviPar,
         email: "",
         adresse: "",
       });
     }
     setError(null);
     setFieldErrors({});
-  }, [isEditing, editingProspect, isOpen, collaborateurs]);
+  }, [isEditing, editingProspect, isOpen, collaborateurs, userProfile?.villes]);
 
   // Récupérer la liste des membres d'équipe au chargement du modal
   useEffect(() => {
@@ -123,11 +133,21 @@ export function ProspectModal({
             villes: member.villeEpicu || []
           }));
 
+          // S'assurer que l'utilisateur actuel est dans la liste des collaborateurs
+          if (userProfile?.id && !mappedMembers.find((member: any) => member.id === userProfile.id)) {
+            mappedMembers.unshift({
+              id: userProfile.id,
+              nomComplet: `${userProfile.firstname} ${userProfile.lastname}`,
+              villes: userProfile.villes?.map(v => v.ville) || []
+            });
+          }
+
           setCollaborateurs(mappedMembers);
         }
-      } catch (err) {
-        console.error('Erreur lors de la récupération des membres d\'équipe:', err);
-      }
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('Erreur lors de la récupération des membres d\'équipe:', err);
+        }
     };
 
     if (isOpen) {
@@ -218,18 +238,27 @@ export function ProspectModal({
         'Adresse': newProspect.adresse,
       };
 
-      // Gérer la ville Epicu : si l'utilisateur n'a qu'une seule ville, l'envoyer automatiquement
-      // Sinon, utiliser la sélection du dropdown
-      if (userProfile?.villes && userProfile.villes.length === 1) {
-        prospectData['Ville EPICU'] = userProfile.villes[0].ville;
-      } else if (newProspect.villeEpicu) {
-        prospectData['Ville EPICU'] = newProspect.villeEpicu;
+      // Gérer la ville Epicu : envoyer l'ID directement à l'API
+      if (newProspect.villeEpicu) {
+        // Envoyer l'ID de la ville EPICU sélectionnée
+        prospectData['Ville EPICU'] = [newProspect.villeEpicu];
+      } else if (userProfile?.villes && userProfile.villes.length > 0) {
+        // Fallback sur la première ville si aucune n'est sélectionnée
+        prospectData['Ville EPICU'] = [userProfile.villes[0].id];
       }
 
       // Gérer le suivi par : envoyer comme un tableau avec l'ID du collaborateur
       if (newProspect.suiviPar) {
         prospectData['Suivi par'] = [newProspect.suiviPar];
       }
+
+      // Debug: Log des données envoyées à l'API
+      console.log('=== DEBUG PROSPECT DATA ===');
+      console.log('État du formulaire:', newProspect);
+      console.log('Données envoyées à l\'API:', prospectData);
+      console.log('Ville EPICU sélectionnée:', newProspect.villeEpicu);
+      console.log('Villes utilisateur:', userProfile?.villes);
+      console.log('==========================');
 
 
 
@@ -261,18 +290,26 @@ export function ProspectModal({
       }
 
       // Réinitialiser le formulaire et fermer le modal
+      // Définir la première ville Epicu par défaut si l'utilisateur a des villes
+      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
+        ? userProfile.villes[0].id 
+        : "";
+      
+      // Définir l'utilisateur actuel comme suivi par défaut
+      const defaultSuiviPar = userProfile?.id || "";
+        
       setNewProspect({
         id: "",
         nomEtablissement: "",
         ville: "",
-        villeEpicu: "",
+        villeEpicu: defaultVilleEpicu,
         telephone: "",
         categorie: ["FOOD"],
         statut: "a_contacter",
         datePriseContact: "",
         dateRelance: "",
         commentaires: "",
-        suiviPar: "",
+        suiviPar: defaultSuiviPar,
         email: "",
         adresse: "",
       });
@@ -290,18 +327,26 @@ export function ProspectModal({
   const handleClose = () => {
     setError(null);
     setFieldErrors({});
+    // Définir la première ville Epicu par défaut si l'utilisateur a des villes
+    const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
+      ? userProfile.villes[0].ville 
+      : "";
+    
+    // Définir l'utilisateur actuel comme suivi par défaut
+    const defaultSuiviPar = userProfile?.id || "";
+      
     setNewProspect({
       id: "",
       nomEtablissement: "",
       ville: "",
-      villeEpicu: "",
+      villeEpicu: defaultVilleEpicu,
       telephone: "",
       categorie: ["FOOD"],
       statut: "a_contacter",
       datePriseContact: "",
       dateRelance: "",
       commentaires: "",
-      suiviPar: "",
+      suiviPar: defaultSuiviPar,
       email: "",
       adresse: "",
     });
@@ -354,9 +399,18 @@ export function ProspectModal({
                 <StyledSelect
                   id="categorie2"
                   selectedKeys={[newProspect.categorie[1] || ""]}
-                  onSelectionChange={(keys) =>
-                    Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none') == "none" ? setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] })) : setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0], ...Array.from(keys).map((key) => key as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY")] }))
-                  }
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none';
+                    
+                    if (selectedKey === "none") {
+                      setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] }));
+                    } else {
+                      setNewProspect((prev) => ({ 
+                        ...prev, 
+                        categorie: [prev.categorie[0], selectedKey as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY"] 
+                      }));
+                    }
+                  }}
                 >
                   <SelectItem key="none">Aucune</SelectItem>
                   <SelectItem key="FOOD">FOOD</SelectItem>
@@ -366,8 +420,18 @@ export function ProspectModal({
                   <SelectItem key="BEAUTY">BEAUTY</SelectItem>
                 </StyledSelect>
               </div>
-            ) : <Button endContent={<PlusIcon className="h-4 w-4" />} color='primary' variant="bordered" className="border-1" onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}>Ajouter une catégorie (Optionnel)</Button>}
-           
+            ) : (
+              <Button 
+                className="border-1" 
+                color='primary' 
+                endContent={<PlusIcon className="h-4 w-4" />} 
+                variant="bordered" 
+                onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}
+              >
+                Ajouter une catégorie (Optionnel)
+              </Button>
+            )}
+
             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
               Nom établissement
             </FormLabel>
@@ -441,9 +505,9 @@ export function ProspectModal({
               }}
             />
 
-            {userProfile?.villes && userProfile.villes.length > 1 && (
+            {userProfile?.villes && userProfile.villes.length > 0 && (
               <>
-                <FormLabel htmlFor="villeEpicu" isRequired={false}>
+                <FormLabel htmlFor="villeEpicu" isRequired={true}>
                   Ville Epicu
                 </FormLabel>
                 <StyledSelect
@@ -457,7 +521,7 @@ export function ProspectModal({
                   }}
                 >
                   {userProfile.villes.map((ville) => (
-                    <SelectItem key={ville.ville}>
+                    <SelectItem key={ville.id}>
                       {ville.ville}
                     </SelectItem>
                   ))}
@@ -573,7 +637,7 @@ export function ProspectModal({
                 }
               />
               <p className="text-xs mt-2">
-                Pour changer l&apos;état du prospect, utilisez le bouton &quot;Convertir&quot;
+                Pour changer l&apos;état du prospect, utilisez le bouton &quot;Convertir&quot; dans l&apos;onglet Prospects
               </p>
             </div>
 
