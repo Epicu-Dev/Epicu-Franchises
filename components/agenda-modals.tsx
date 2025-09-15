@@ -14,6 +14,7 @@ import { Checkbox } from "@heroui/checkbox";
 import { Switch } from "@heroui/switch";
 
 import { FormLabel } from "./form-label";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface Event {
   id: string;
@@ -46,6 +47,7 @@ export function AgendaModals({
   setIsRdvModalOpen,
   onEventAdded,
 }: AgendaModalsProps) {
+  const { authFetch } = useAuthFetch();
   const [, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
@@ -208,7 +210,7 @@ export function AgendaModals({
         category: "siege" as Event["category"],
       };
 
-      const tournageResponse = await fetch("/api/agenda", {
+      const tournageResponse = await authFetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -233,7 +235,7 @@ export function AgendaModals({
           category: "siege" as Event["category"],
         };
 
-        const publicationResponse = await fetch("/api/agenda", {
+        const publicationResponse = await authFetch("/api/agenda", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -287,7 +289,7 @@ export function AgendaModals({
           category: "siege" as Event["category"],
         };
 
-        const tournageResponse = await fetch("/api/agenda", {
+        const tournageResponse = await authFetch("/api/agenda", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -312,7 +314,7 @@ export function AgendaModals({
         category: "siege" as Event["category"],
       };
 
-      const publicationResponse = await fetch("/api/agenda", {
+      const publicationResponse = await authFetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -364,7 +366,7 @@ export function AgendaModals({
         category: "siege" as Event["category"],
       };
 
-      const response = await fetch("/api/agenda", {
+      const response = await authFetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

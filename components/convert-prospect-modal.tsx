@@ -15,7 +15,7 @@ import { Textarea } from "@heroui/input";
 import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 import { Prospect } from "@/types/prospect";
-import { getValidAccessToken } from "@/utils/auth";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 type ProspectStatus = "A contacter" | "En discussion" | "Glacial" | "Client";
 
@@ -32,6 +32,7 @@ export default function ConvertProspectModal({
     prospect,
     onInteractionCreated
 }: ConvertProspectModalProps) {
+    const { authFetch } = useAuthFetch();
     const [status, setStatus] = useState<ProspectStatus | null>(null);
     const [comment, setComment] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
@@ -55,11 +56,6 @@ export default function ConvertProspectModal({
             setIsLoading(true);
             setError(null);
 
-            const token = await getValidAccessToken();
-            if (!token) {
-                throw new Error('No access token');
-            }
-
             const interactionData = {
                 etablissement: prospect.nomEtablissement,
                 dateInteraction: new Date().toISOString().split('T')[0], // Date du jour
@@ -68,10 +64,9 @@ export default function ConvertProspectModal({
                 prochainRdv: null
             };
 
-            const response = await fetch('/api/interaction', {
+            const response = await authFetch('/api/interaction', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(interactionData),

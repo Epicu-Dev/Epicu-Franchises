@@ -11,6 +11,7 @@ import {
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import { GoogleCalendarSyncStatus, GoogleCalendarEvent } from "@/types/googleCalendar";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface GoogleCalendarSyncProps {
   onEventsFetched?: (events: GoogleCalendarEvent[]) => void;
@@ -18,6 +19,7 @@ interface GoogleCalendarSyncProps {
 }
 
 export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCalendarSyncProps) {
+  const { authFetch } = useAuthFetch();
   const [syncStatus, setSyncStatus] = useState<GoogleCalendarSyncStatus>({
     isConnected: false,
     calendars: []
@@ -60,7 +62,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
 
   const checkConnectionStatus = async () => {
     try {
-      const response = await fetch('/api/google-calendar/status');
+      const response = await authFetch('/api/google-calendar/status');
       if (response.ok) {
         const status = await response.json();
         setSyncStatus(status);
@@ -82,7 +84,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
     setIsConnecting(true);
     try {
       // Rediriger vers l'authentification Google
-      const response = await fetch('/api/google-calendar/auth');
+      const response = await authFetch('/api/google-calendar/auth');
       if (response.ok) {
         const { authUrl } = await response.json();
         window.location.href = authUrl;
@@ -98,7 +100,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
   const disconnectFromGoogle = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/google-calendar/disconnect', {
+      const response = await authFetch('/api/google-calendar/disconnect', {
         method: 'POST'
       });
       if (response.ok) {
@@ -117,7 +119,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
   const syncEvents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/google-calendar/sync');
+      const response = await authFetch('/api/google-calendar/sync');
       if (response.ok) {
         const { events, message } = await response.json();
         onEventsFetched?.(events);
@@ -140,7 +142,7 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
 
   const createEvent = async (eventData: Partial<GoogleCalendarEvent>) => {
     try {
-      const response = await fetch('/api/google-calendar/events', {
+      const response = await authFetch('/api/google-calendar/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

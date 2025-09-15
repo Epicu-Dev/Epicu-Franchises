@@ -28,12 +28,14 @@ import { TodoBadge } from "../../components/badges";
 import { SortableColumnHeader } from "@/components";
 
 import TodoModal from "@/components/todo-modal";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Todo } from "@/types/todo";
 
 
 
 
 export default function TodoPage() {
+  const { authFetch } = useAuthFetch();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [itemsPerPage] = useState(50);
   const [searchTerm] = useState("");
@@ -68,7 +70,7 @@ export default function TodoPage() {
         params.set('order', sortDirection);
       }
 
-      const response = await fetch(`/api/todo?${params}`);
+      const response = await authFetch(`/api/todo?${params}`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des tâches");
@@ -119,7 +121,7 @@ export default function TodoPage() {
       setIsDeletingTodo(true);
       setError(null);
 
-      const response = await fetch(`/api/todo?id=${todoId}`, {
+      const response = await authFetch(`/api/todo?id=${todoId}`, {
         method: "DELETE",
       });
 

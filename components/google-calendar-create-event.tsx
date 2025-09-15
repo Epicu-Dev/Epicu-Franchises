@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface GoogleCalendarCreateEventProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export function GoogleCalendarCreateEvent({
   onOpenChange,
   onEventCreated
 }: GoogleCalendarCreateEventProps) {
+  const { authFetch } = useAuthFetch();
   const [formData, setFormData] = useState({
     summary: '',
     description: '',
@@ -56,7 +58,7 @@ export function GoogleCalendarCreateEvent({
       };
 
       // Créer l'événement via l'API
-      const response = await fetch('/api/google-calendar/events', {
+      const response = await authFetch('/api/google-calendar/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

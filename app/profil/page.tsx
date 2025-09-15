@@ -23,7 +23,7 @@ import { useSortableTable } from '@/hooks/use-sortable-table';
 import { InvoiceStatusBadge } from '@/components/badges';
 import { FormLabel } from '@/components';
 import { useUser } from '@/contexts/user-context';
-import { getValidAccessToken } from '@/utils/auth';
+import { useAuthFetch } from '@/hooks/use-auth-fetch';
 
 interface Invoice {
   id: string;
@@ -49,6 +49,7 @@ interface HistoryItem {
 
 export default function ProfilPage() {
   const { userProfile, refreshUserProfile } = useUser();
+  const { authFetch } = useAuthFetch();
   const [activeTab] = useState<string>('informations');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -293,15 +294,10 @@ export default function ProfilPage() {
       };
 
       // Appel à l'API profil pour mettre à jour le profil
-      const token = await getValidAccessToken();
-
-      if (!token) throw new Error('Token d\'accès non trouvé');
-
-      const response = await fetch('/api/profile', {
+      const response = await authFetch('/api/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });

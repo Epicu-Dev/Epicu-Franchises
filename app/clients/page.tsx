@@ -23,11 +23,13 @@ import { StyledSelect } from "@/components/styled-select";
 import ClientModal from "@/components/client-modal";
 import { ToastContainer } from "@/components";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Client } from "@/types/client";
 
 
 export default function ClientsPage() {
   const { showWarning } = useToast();
+  const { authFetch } = useAuthFetch();
   const [clients, setClients] = useState<Client[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
@@ -132,7 +134,7 @@ export default function ClientsPage() {
       const queryString = params.toString();
       const url = `/api/clients/clients${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url);
+      const response = await authFetch(url);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des clients");
@@ -162,7 +164,7 @@ export default function ClientsPage() {
   // Fonction pour récupérer les catégories
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await authFetch('/api/categories');
 
       if (response.ok) {
         const data = await response.json();
@@ -247,7 +249,7 @@ export default function ClientsPage() {
         "Catégorie": editingClient.categorie,
       };
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

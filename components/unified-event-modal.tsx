@@ -268,7 +268,7 @@ export function UnifiedEventModal({
       }
     };
 
-    const response = await fetch('/api/google-calendar/events', {
+    const response = await authFetch('/api/google-calendar/events', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -362,7 +362,7 @@ export function UnifiedEventModal({
 
     for (const eventData of events) {
       // Créer l'événement local
-      const localResponse = await fetch("/api/agenda", {
+      const localResponse = await authFetch("/api/agenda", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -392,7 +392,7 @@ export function UnifiedEventModal({
           }
         };
 
-        const googleResponse = await fetch('/api/google-calendar/events', {
+        const googleResponse = await authFetch('/api/google-calendar/events', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

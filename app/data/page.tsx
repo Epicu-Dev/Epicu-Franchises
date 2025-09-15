@@ -21,11 +21,12 @@ import { DashboardLayout } from "../dashboard-layout";
 import { useUser } from "@/contexts/user-context";
 import { SubscribersEditModal } from "@/components";
 import { useSortableTable } from "@/hooks/use-sortable-table";
-import { getValidAccessToken } from "@/utils/auth";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Data } from "@/types/data";
 
 export default function DataPage() {
   const { userProfile, isLoading } = useUser();
+  const { authFetch } = useAuthFetch();
   const [activeTab, setActiveTab] = useState("overview");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
@@ -61,19 +62,6 @@ export default function DataPage() {
     }
   };
 
-  // Fonction pour les appels API authentifiés
-  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
-    const token = await getValidAccessToken();
-
-    if (!token) throw new Error('No access token');
-
-    const headers = new Headers((init?.headers as HeadersInit) || {});
-
-    headers.set('Authorization', `Bearer ${token}`);
-    const merged: RequestInit = { ...init, headers };
-
-    return fetch(input, merged);
-  };
 
   // Fonction pour transformer les données API en données d'affichage
   const transformApiDataToDisplayData = (apiData: any, _month: string, _city: any): Data => {

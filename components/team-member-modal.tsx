@@ -14,7 +14,7 @@ import {
 } from "@heroui/modal";
 
 import { Collaborator } from "../types/collaborator";
-import { getValidAccessToken } from "../utils/auth";
+import { useAuthFetch } from "../hooks/use-auth-fetch";
 
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
@@ -39,6 +39,7 @@ export function TeamMemberModal({
   editingMember = null,
   isEditing = false
 }: TeamMemberModalProps) {
+  const { authFetch } = useAuthFetch();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -65,15 +66,7 @@ export function TeamMemberModal({
   // Récupérer les villes Epicu
   const fetchCities = async () => {
     try {
-      const token = await getValidAccessToken();
-
-      if (!token) throw new Error('No access token');
-
-      const response = await fetch('/api/villes?limit=100', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await authFetch('/api/villes?limit=100');
 
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération des villes');
@@ -235,10 +228,6 @@ export function TeamMemberModal({
         return;
       }
 
-      const token = await getValidAccessToken();
-
-      if (!token) throw new Error('No access token');
-
       // Préparer les données pour l'API équipe
       const requestData = {
         nom: memberWithCity.nom,
@@ -260,11 +249,10 @@ export function TeamMemberModal({
       const method = isEditing ? 'PATCH' : 'POST';
       const url = isEditing ? `/api/equipe?id=${editingMember?.id}` : '/api/equipe';
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(requestData),
       });

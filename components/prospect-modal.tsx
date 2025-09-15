@@ -246,7 +246,7 @@ export function ProspectModal({
         method = "POST";
       }
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",

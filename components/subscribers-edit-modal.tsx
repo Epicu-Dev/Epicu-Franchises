@@ -15,7 +15,7 @@ import { Spinner } from "@heroui/spinner";
 
 import { useUser } from "@/contexts/user-context";
 import { Data } from "@/types/data";
-import { getValidAccessToken } from "@/utils/auth";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 type SubscribersData = Pick<Data, 'abonnesFood' | 'abonnesShop' | 'abonnesTravel' | 'abonnesFun' | 'abonnesBeauty'>;
 
@@ -39,25 +39,12 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
   saving = false,
 }) => {
   const { userProfile } = useUser();
+  const { authFetch } = useAuthFetch();
   const [formData, setFormData] = useState<SubscribersData>(initialData);
   const [activeTab, setActiveTab] = useState<string>("");
   const [cityData, setCityData] = useState<Record<string, SubscribersData>>({});
   const [loadingCityData, setLoadingCityData] = useState<Record<string, boolean>>({});
   const [isLoadingData, setIsLoadingData] = useState(false);
-
-  // Fonction pour les appels API authentifiés
-  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
-    const token = await getValidAccessToken();
-
-    if (!token) throw new Error('No access token');
-
-    const headers = new Headers((init?.headers as HeadersInit) || {});
-
-    headers.set('Authorization', `Bearer ${token}`);
-    const merged: RequestInit = { ...init, headers };
-
-    return fetch(input, merged);
-  };
 
   // Fonction pour charger les données d'une ville spécifique
   const loadCityData = async (cityKey: string, city: any) => {

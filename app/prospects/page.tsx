@@ -96,7 +96,7 @@ export default function ProspectsPage() {
         }
 
         // Récupérer les catégories
-        const catResponse = await fetch('/api/categories?limit=200&offset=0');
+        const catResponse = await authFetch('/api/categories?limit=200&offset=0');
 
         if (catResponse.ok) {
           const catData = await catResponse.json();
@@ -144,7 +144,7 @@ export default function ProspectsPage() {
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
 
-        const response = await fetch(fullUrl);
+        const response = await authFetch(fullUrl);
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des discussions");
@@ -174,7 +174,7 @@ export default function ProspectsPage() {
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
 
-        const response = await fetch(fullUrl);
+        const response = await authFetch(fullUrl);
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des prospects glaciaux");
@@ -226,7 +226,7 @@ export default function ProspectsPage() {
         const queryString = params.toString();
         const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
 
-        const response = await fetch(fullUrl);
+        const response = await authFetch(fullUrl);
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des prospects");

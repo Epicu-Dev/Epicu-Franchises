@@ -12,6 +12,7 @@ import { Input } from "@heroui/input";
 import { Textarea } from "@heroui/input";
 
 import { FormLabel } from "./form-label";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface UserProfile {
 }
 
 export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
+  const { authFetch } = useAuthFetch();
   const [formData, setFormData] = useState({
     objet: "",
     commentaires: "",
@@ -42,7 +44,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch("/api/profil?section=profile");
+        const response = await authFetch("/api/profil?section=profile");
 
         if (response.ok) {
           const profile = await response.json();
@@ -74,7 +76,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         destinataire: "webmaster@epicu.fr",
       };
 
-      const response = await fetch("/api/help", {
+      const response = await authFetch("/api/help", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

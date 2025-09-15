@@ -12,9 +12,9 @@ import {
 
 import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { EventDetailModal } from "@/components/event-detail-modal";
-import { getValidAccessToken } from "@/utils/auth";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
 import { useUser } from "@/contexts/user-context";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 
 interface Event {
@@ -61,6 +61,7 @@ interface ApiEvent {
 
 export default function AgendaPage() {
   const { userProfile } = useUser();
+  const { authFetch } = useAuthFetch();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view] = useState<"semaine" | "mois">("mois");
   const [selectedCategory] = useState<string>("tout");
@@ -125,7 +126,7 @@ export default function AgendaPage() {
   // Fonction pour connecter à Google Calendar
   const connectToGoogleCalendar = async () => {
     try {
-      const response = await fetch('/api/google-calendar/auth');
+      const response = await authFetch('/api/google-calendar/auth');
 
       if (response.ok) {
         const { authUrl } = await response.json();
@@ -141,7 +142,7 @@ export default function AgendaPage() {
   // Fonction pour synchroniser les événements Google Calendar
   const syncGoogleEvents = async () => {
     try {
-      const response = await fetch('/api/google-calendar/sync');
+      const response = await authFetch('/api/google-calendar/sync');
 
       if (response.ok) {
         const { events } = await response.json();
@@ -158,7 +159,7 @@ export default function AgendaPage() {
   // Fonction pour se déconnecter de Google Calendar
   const disconnectFromGoogleCalendar = async () => {
     try {
-      const response = await fetch('/api/google-calendar/disconnect', {
+      const response = await authFetch('/api/google-calendar/disconnect', {
         method: 'POST'
       });
 
@@ -179,7 +180,7 @@ export default function AgendaPage() {
   const checkGoogleCalendarStatus = async () => {
     try {
       setIsCheckingGoogleConnection(true);
-      const response = await fetch('/api/google-calendar/status');
+      const response = await authFetch('/api/google-calendar/status');
 
       if (response.ok) {
         const status = await response.json();
@@ -260,13 +261,6 @@ export default function AgendaPage() {
       // Vérifier d'abord le statut Google Calendar
       await checkGoogleCalendarStatus();
 
-      // Récupérer le token d'authentification
-      const token = await getValidAccessToken();
-
-      if (!token) {
-        throw new Error("Non authentifié");
-      }
-
       // Calculer les dates de début et fin selon la vue
       let dateStart: string;
       let dateEnd: string;
@@ -301,11 +295,7 @@ export default function AgendaPage() {
         limit: '100', // Récupérer plus d'événements pour couvrir la période
       });
 
-      const response = await fetch(`/api/agenda?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await authFetch(`/api/agenda?${params}`);
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des événements");

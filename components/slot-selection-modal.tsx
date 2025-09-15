@@ -10,7 +10,7 @@ import {
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 
-import { getValidAccessToken } from "../utils/auth";
+import { useAuthFetch } from "../hooks/use-auth-fetch";
 
 // Helper pour convertir les IDs de statut en texte lisible
 const getStatusText = (statusId: string): string => {
@@ -45,12 +45,8 @@ interface SlotSelectionModalProps {
 }
 
 // Fonction pour récupérer les créneaux depuis l'API
-const fetchSlots = async (category?: string, ville?: string, startDate?: string): Promise<TimeSlot[]> => {
+const fetchSlots = async (authFetch: any, category?: string, ville?: string, startDate?: string): Promise<TimeSlot[]> => {
     try {
-        const token = await getValidAccessToken();
-
-        if (!token) throw new Error('No access token');
-
         const params = new URLSearchParams();
 
         if (category) params.set('categorie', category);
@@ -62,11 +58,7 @@ const fetchSlots = async (category?: string, ville?: string, startDate?: string)
         params.set('start', dateToUse);
         params.set('limit', '100'); // Récupérer plus de créneaux
 
-        const response = await fetch(`/api/publications/creneaux?${params.toString()}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
+        const response = await authFetch(`/api/publications/creneaux?${params.toString()}`);
 
         if (!response.ok) {
             throw new Error(`Erreur API: ${response.status}`);
@@ -101,6 +93,7 @@ const SlotSelectionModal: React.FC<SlotSelectionModalProps> = ({
     ville,
     startDate
 }) => {
+    const { authFetch } = useAuthFetch();
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -116,7 +109,7 @@ const SlotSelectionModal: React.FC<SlotSelectionModalProps> = ({
         setLoading(true);
         setError(null);
         try {
-            const fetchedSlots = await fetchSlots(category, ville, startDate);
+            const fetchedSlots = await fetchSlots(authFetch, category, ville, startDate);
 
             setSlots(fetchedSlots);
         } catch (err) {

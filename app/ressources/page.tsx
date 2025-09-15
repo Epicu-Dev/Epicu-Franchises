@@ -18,7 +18,7 @@ import {
 
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
-import { getValidAccessToken } from "../../utils/auth";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 // Interface pour les données de l'API
 interface ApiResource {
@@ -48,6 +48,7 @@ export default function RessourcesPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { authFetch } = useAuthFetch();
 
   // Fonction pour formater les dates
   const formatDate = (dateString: string | null | undefined): string => {
@@ -94,11 +95,6 @@ export default function RessourcesPage() {
     setError(null);
     
     try {
-      const token = await getValidAccessToken();
-      if (!token) {
-        throw new Error('No access token');
-      }
-
       // Déterminer l'endpoint selon la catégorie
       let endpoint = '';
       switch (category) {
@@ -115,9 +111,8 @@ export default function RessourcesPage() {
           endpoint = '/api/ressources/link-importants';
       }
 
-      const response = await fetch(endpoint, {
+      const response = await authFetch(endpoint, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -196,11 +191,6 @@ export default function RessourcesPage() {
 
   const handleAddResource = async (resourceData: Omit<Resource, "id" | "dateAdded">) => {
     try {
-      const token = await getValidAccessToken();
-      if (!token) {
-        throw new Error('No access token');
-      }
-
       // Utiliser la catégorie sélectionnée dans le modal
       const category = resourceData.category || selectedTab;
 
@@ -220,10 +210,9 @@ export default function RessourcesPage() {
           endpoint = '/api/ressources/link-importants';
       }
 
-      const response = await fetch(endpoint, {
+      const response = await authFetch(endpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

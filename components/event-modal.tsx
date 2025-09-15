@@ -15,6 +15,7 @@ import { StyledSelect } from "./styled-select";
 
 import { FormLabel } from "./form-label";
 import { useUser } from "@/contexts/user-context";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface Event {
     id: string;
@@ -40,6 +41,7 @@ export function EventModal({
     onEventAdded,
 }: EventModalProps) {
     const { userProfile } = useUser();
+    const { authFetch } = useAuthFetch();
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
@@ -143,7 +145,7 @@ export function EventModal({
                 collaborator: userProfile?.id,
             };
 
-            const response = await fetch("/api/agenda", {
+            const response = await authFetch("/api/agenda", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -6,7 +6,7 @@ import { Button } from "@heroui/button";
 import { Avatar } from "@heroui/avatar";
 import { Spinner } from "@heroui/spinner";
 
-import { getValidAccessToken } from "../utils/auth";
+import { useAuthFetch } from "../hooks/use-auth-fetch";
 import { Collaborator } from "../types/collaborator";
 
 interface FranchiseTeamModalProps {
@@ -16,23 +16,10 @@ interface FranchiseTeamModalProps {
 }
 
 export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: FranchiseTeamModalProps) {
+    const { authFetch } = useAuthFetch();
     const [teamMembers, setTeamMembers] = useState<Collaborator[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    // Wrapper fetch avec authentification
-    const authFetch = async (input: RequestInfo, init?: RequestInit) => {
-        const token = await getValidAccessToken();
-
-        if (!token) throw new Error('No access token');
-
-        const headers = new Headers((init?.headers as HeadersInit) || {});
-
-        headers.set('Authorization', `Bearer ${token}`);
-        const merged: RequestInit = { ...init, headers };
-
-        return fetch(input, merged);
-    };
 
     const fetchTeamMembers = async () => {
         if (!selectedMember?.villeEpicu || selectedMember.villeEpicu.length === 0) return;

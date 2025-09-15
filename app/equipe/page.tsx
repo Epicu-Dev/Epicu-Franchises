@@ -27,7 +27,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Spinner } from "@heroui/spinner";
 
-import { getValidAccessToken } from "../../utils/auth";
+import { useAuthFetch } from "../../hooks/use-auth-fetch";
 import { TeamMemberModal } from "../../components/team-member-modal";
 import { FranchiseTeamModal } from "../../components/franchise-team-modal";
 import { useUser } from "../../contexts/user-context";
@@ -39,6 +39,7 @@ import { Collaborator } from "../../types/collaborator";
 
 export default function EquipePage() {
   const { userProfile, userType } = useUser();
+  const { authFetch } = useAuthFetch();
   const [members, setMembers] = useState<Collaborator[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("tout");
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,18 +57,6 @@ export default function EquipePage() {
 
 
 
-  // Wrapper fetch avec authentification
-  const authFetch = async (input: RequestInfo, init?: RequestInit) => {
-    const token = await getValidAccessToken();
-
-    if (!token) throw new Error('No access token');
-    const headers = new Headers((init?.headers as HeadersInit) || {});
-
-    headers.set('Authorization', `Bearer ${token}`);
-    const merged: RequestInit = { ...init, headers };
-
-    return fetch(input, merged);
-  };
 
   const fetchMembers = async () => {
     try {

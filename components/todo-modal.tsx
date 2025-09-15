@@ -16,6 +16,7 @@ import {
 import { Spinner } from "@heroui/spinner";
 
 import { FormLabel } from "@/components";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 interface TodoModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function TodoModal({
   selectedTodo,
   isEditMode = false,
 }: TodoModalProps) {
+  const { authFetch } = useAuthFetch();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddingTodo, setIsAddingTodo] = useState(false);
@@ -139,7 +141,7 @@ export default function TodoModal({
         payload["Date d'échéance"] = newTodo.dueDate;
       }
 
-      const response = await fetch("/api/todo", {
+      const response = await authFetch("/api/todo", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -194,7 +196,7 @@ export default function TodoModal({
         payload["Date d'échéance"] = newTodo.dueDate;
       }
 
-      const response = await fetch(`/api/todo?id=${selectedTodo.id}`, {
+      const response = await authFetch(`/api/todo?id=${selectedTodo.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

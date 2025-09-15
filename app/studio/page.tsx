@@ -18,6 +18,7 @@ import { PrestationModal } from '../../components/prestation-modal';
 
 import { CategoryBadge, StatusBadge } from '@/components/badges';
 import { SortableColumnHeader } from '@/components';
+import { useAuthFetch } from '@/hooks/use-auth-fetch';
 
 interface Service {
   id: string;
@@ -223,6 +224,7 @@ const defaultPacks: Pack[] = [
 ];
 
 export default function StudioPage() {
+  const { authFetch } = useAuthFetch();
   const [selectedTab, setSelectedTab] = useState('prestations');
   const [services, setServices] = useState<Service[]>(defaultServices);
   const [packs, setPacks] = useState<Pack[]>(defaultPacks);
@@ -241,7 +243,7 @@ export default function StudioPage() {
   const fetchData = async (type: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/studio?type=${type}`);
+      const response = await authFetch(`/api/studio?type=${type}`);
 
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération des données');

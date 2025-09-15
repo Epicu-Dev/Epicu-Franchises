@@ -27,7 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         // Vérifier d'abord si l'authentification a déjà été vérifiée récemment
         const lastAuthCheck = localStorage.getItem('lastAuthCheck');
         const now = Date.now();
-        
+
         // Si la vérification a été faite il y a moins de 30 secondes, on skip
         if (lastAuthCheck && (now - parseInt(lastAuthCheck)) < 30000) {
           setIsAuthChecking(false);

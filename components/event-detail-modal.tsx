@@ -12,7 +12,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { TrashIcon, CalendarIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
 
-import { getValidAccessToken } from "@/utils/auth";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getEventColorFromEstablishmentCategories } from "@/components/badges";
 
 interface Event {
@@ -38,6 +38,7 @@ interface EventDetailModalProps {
 }
 
 export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }: EventDetailModalProps) {
+  const { authFetch } = useAuthFetch();
   const [isDeleting, setIsDeleting] = useState(false);
 
   if (!event) return null;
@@ -54,16 +55,10 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
 
     setIsDeleting(true);
     try {
-      const token = await getValidAccessToken();
-
-      if (!token) {
-        throw new Error("Non authentifié");
-      }
-
       // Si c'est un événement Google Calendar, le supprimer de Google Calendar
       if (event.isGoogleEvent && event.id.startsWith('google-')) {
         const googleEventId = event.id.replace('google-', '');
-        const response = await fetch(`/api/google-calendar/events/delete?eventId=${googleEventId}`, {
+        const response = await authFetch(`/api/google-calendar/events/delete?eventId=${googleEventId}`, {
           method: 'DELETE',
         });
 
@@ -72,11 +67,8 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
         }
       } else {
         // Supprimer l'événement de l'agenda Airtable
-        const response = await fetch(`/api/agenda?id=${event.id}`, {
+        const response = await authFetch(`/api/agenda?id=${event.id}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
         });
 
         if (!response.ok) {

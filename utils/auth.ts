@@ -37,8 +37,16 @@ export async function getValidAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) {
-      // Ne pas vider le localStorage immédiatement, laisser le dashboard-layout gérer
-      // console.warn('Échec du refresh token, mais on ne vide pas le localStorage');
+      // Vider le localStorage si le refresh token est invalide
+      const errorData = await res.json().catch(() => ({}));
+      if (errorData.message === 'Refresh token invalide' || errorData.message === 'Refresh token expiré') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('expiresAtAccess');
+        localStorage.removeItem('expiresAtRefresh');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userProfileCacheTime');
+      }
 
       return null;
     }
