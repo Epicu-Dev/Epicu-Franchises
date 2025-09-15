@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '../constants';
 import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
-const VIEW_NAME = '🟡 Prospects';
+const VIEW_NAME = '🟡 Contacté';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 
 // Helpers

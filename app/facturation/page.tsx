@@ -276,7 +276,12 @@ export default function FacturationPage() {
 
           {loading ? <div className="flex justify-center items-center h-64">
             <Spinner className="text-black dark:text-white" size="lg" />
-          </div> :
+          </div> : invoices.length === 0 ?
+            <div className="flex flex-col justify-center items-center h-64 text-gray-500 dark:text-gray-400">
+              <div className="text-lg font-medium mb-2">Aucune facture trouvée</div>
+              <div className="text-sm">Commencez par ajouter votre première facture</div>
+            </div>
+            :
             <div>
               {/* Tableau des factures */}
               <Table aria-label="Tableau des factures" shadow="none">

@@ -223,76 +223,81 @@ export default function TodoPage() {
               <div className="flex justify-center items-center h-64">
                 <Spinner className="text-black dark:text-white" size="lg" />
               </div>
-              :
-              <Table aria-label="Tableau des tâches" shadow="none">
-                <TableHeader>
-                  <TableColumn className="font-light text-sm">
-                    <></>
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
+              : todos.length === 0 ?
+                <div className="flex flex-col justify-center items-center h-64 text-gray-500 dark:text-gray-400">
+                  <div className="text-lg font-medium mb-2">Aucune tâche trouvée</div>
+                  <div className="text-sm">Commencez par ajouter votre première tâche</div>
+                </div>
+                :
+                <Table aria-label="Tableau des tâches" shadow="none">
+                  <TableHeader>
+                    <TableColumn className="font-light text-sm">
+                      <></>
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm">
 
-                    Tâches
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="Date d'échéance"
-                      label="Deadline"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
+                      Tâches
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm">
+                      <SortableColumnHeader
+                        field="Date d'échéance"
+                        label="Deadline"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
 
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    État
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">Actions</TableColumn>
-                </TableHeader>
-                <TableBody>
-                  {todos.map((todo) => (
-                    <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
-                      <TableCell className="font-light py-5">
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => openEditModal(todo)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-light py-5">
-                        <div className="flex items-center gap-2">
-                          <span>{todo.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-light">
-                        {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        }).replace(/\//g, '.') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <TodoBadge status={todo.status} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm">
+                      État
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm">Actions</TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    {todos.map((todo) => (
+                      <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
+                        <TableCell className="font-light py-5">
                           <Button
                             isIconOnly
                             size="sm"
                             variant="light"
-                            onPress={() => openDeleteConfirmation(todo)}
+                            onPress={() => openEditModal(todo)}
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <PencilIcon className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>}
+                        </TableCell>
+                        <TableCell className="font-light py-5">
+                          <div className="flex items-center gap-2">
+                            <span>{todo.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-light">
+                          {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          }).replace(/\//g, '.') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <TodoBadge status={todo.status} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              onPress={() => openDeleteConfirmation(todo)}
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>}
 
         </CardBody>
       </Card>

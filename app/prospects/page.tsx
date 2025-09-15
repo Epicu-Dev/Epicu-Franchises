@@ -526,7 +526,6 @@ export default function ProspectsPage() {
                               <Button
                                 className="mt-4"
                                 color="primary"
-                                variant="flat"
                                 onPress={() => {
                                   setEditingProspect(null);
                                   setIsProspectModalOpen(true);

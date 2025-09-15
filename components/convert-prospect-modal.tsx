@@ -17,7 +17,7 @@ import { StyledSelect } from "@/components/styled-select";
 import { Prospect } from "@/types/prospect";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
-type ProspectStatus = "A contacter" | "En discussion" | "Glacial" | "Client";
+type ProspectStatus = "Contacté" | "En discussion" | "Glacial" | "Client";
 
 interface ConvertProspectModalProps {
     isOpen: boolean;
@@ -130,7 +130,7 @@ export default function ConvertProspectModal({
                                         setStatus(selectedStatus);
                                     }}
                                 >
-                                    <SelectItem key="A contacter">A contacter</SelectItem>
+                                    <SelectItem key="Contacté">Contacté</SelectItem>
                                     <SelectItem key="En discussion">En discussion</SelectItem>
                                     <SelectItem key="Glacial">Glacial</SelectItem>
                                     <SelectItem key="Client">Client</SelectItem>

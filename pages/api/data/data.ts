@@ -100,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 			}
 
-			const dateFormula = `{Mois-Année} = "${escAirtable(canonical)}"`;
+			const dateFormula = `{Mois-Année} = DATETIME_PARSE("${escAirtable(canonical)}", "YYYY-MM-DD")`;
 			const filterFormula = villeName
 				? `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(villeName)}")`
 				: `AND(${dateFormula}, FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
@@ -157,7 +157,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			}
 		}
 
-		const dateFormula = `{Mois-Année} = "${escAirtable(canonical)}"`;
+		const dateFormula = `{Mois-Année} = DATETIME_PARSE("${escAirtable(canonical)}", "YYYY-MM-DD")`;
 		const filterFormula =
 			ville === 'all'
 				? dateFormula

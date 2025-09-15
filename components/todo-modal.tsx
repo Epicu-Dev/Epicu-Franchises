@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { SelectItem } from "@heroui/select";
-
-import { StyledSelect } from "./styled-select";
 import {
   Modal,
   ModalContent,
@@ -15,8 +13,11 @@ import {
 } from "@heroui/modal";
 import { Spinner } from "@heroui/spinner";
 
+import { StyledSelect } from "./styled-select";
+
 import { FormLabel } from "@/components";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useUser } from "@/contexts/user-context";
 
 interface TodoModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export default function TodoModal({
   isEditMode = false,
 }: TodoModalProps) {
   const { authFetch } = useAuthFetch();
+  const { userProfile } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isAddingTodo, setIsAddingTodo] = useState(false);
@@ -130,7 +132,7 @@ export default function TodoModal({
         return;
       }
 
-      const payload: { [key: string]: string } = {
+      const payload: { [key: string]: any } = {
         'Nom de la tâche': newTodo.name,
         'Date de création': new Date().toISOString(),
         'Statut': newTodo.status,
@@ -139,6 +141,11 @@ export default function TodoModal({
 
       if (newTodo.dueDate) {
         payload["Date d'échéance"] = newTodo.dueDate;
+      }
+
+      // Ajouter l'ID de l'utilisateur comme collaborateur
+      if (userProfile?.id) {
+        payload['Collaborateur'] = [userProfile.id];
       }
 
       const response = await authFetch("/api/todo", {
@@ -151,6 +158,7 @@ export default function TodoModal({
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.error || "Erreur lors de l'ajout de la tâche");
       }
 
@@ -187,13 +195,18 @@ export default function TodoModal({
         return;
       }
 
-      const payload: { [key: string]: string } = {
+      const payload: { [key: string]: any } = {
         'Nom de la tâche': newTodo.name,
         'Statut': newTodo.status,
       };
 
       if (newTodo.dueDate) {
         payload["Date d'échéance"] = newTodo.dueDate;
+      }
+
+      // Ajouter l'ID de l'utilisateur comme collaborateur
+      if (userProfile?.id) {
+        payload['Collaborateur'] = [userProfile.id];
       }
 
       const response = await authFetch(`/api/todo?id=${selectedTodo.id}`, {
@@ -270,11 +283,11 @@ export default function TodoModal({
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              errorMessage={fieldErrors.name}
               id="name"
+              errorMessage={fieldErrors.name}
               isInvalid={!!fieldErrors.name}
-              placeholder="Titre de la tâche"
               isRequired
+              placeholder="Titre de la tâche"
               value={newTodo.name}
               onChange={(e) => {
                 const value = e.target.value;
@@ -291,11 +304,11 @@ export default function TodoModal({
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              errorMessage={fieldErrors.dueDate}
               id="dueDate"
+              errorMessage={fieldErrors.dueDate}
               isInvalid={!!fieldErrors.dueDate}
-              type="date"
               isRequired
+              type="date"
               value={newTodo.dueDate}
               onChange={(e) => {
                 const value = e.target.value;
@@ -312,11 +325,11 @@ export default function TodoModal({
               Statut
             </FormLabel>
             <StyledSelect
-              errorMessage={fieldErrors.status}
               id="status"
+              errorMessage={fieldErrors.status}
               isInvalid={!!fieldErrors.status}
-              selectedKeys={newTodo.status ? [newTodo.status] : []}
               isRequired
+              selectedKeys={newTodo.status ? [newTodo.status] : []}
               onSelectionChange={(keys) => {
                 const selectedStatus = Array.from(keys)[0] as string;
 
