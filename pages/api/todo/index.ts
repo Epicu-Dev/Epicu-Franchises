@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const statusFilter = req.query.status as string || null;
       const searchQuery = req.query.q as string || null;
-      
+
       // Paramètres de tri
       const order = req.query.order === 'desc' ? 'desc' : 'asc';
       const orderByReq = (req.query.orderBy as string) || "Date de création";
@@ -71,15 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const callerId = await requireValidAccessToken(req, res);
       if (!callerId) return; // requireValidAccessToken a déjà répondu
 
-      // Vérifier si le caller est admin (une seule fois)
-      let callerIsAdmin = false;
-      try {
-        const callerRec = await base('COLLABORATEURS').find(callerId);
-        const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
-        callerIsAdmin = callerRole === 'admin' || callerRole === 'administrateur';
-      } catch (e) {
-        callerIsAdmin = false;
-      }
+      // NOTE: removed admin exception — tous les utilisateurs sont soumis aux mêmes restrictions
 
       // récupérer tous (overfetch) puis filtrer côté serveur
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
@@ -94,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const status = r.get('Statut') || '';
         const type = r.get('Type de tâche') || '';
         const description = r.get('Description') || '';
-  const collaborators = r.get('Collaborateur') || [];
+        const collaborators = r.get('Collaborateur') || [];
 
         return {
           id: r.id,
@@ -122,8 +114,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        // Par défaut : restreindre aux todos où le collaborateur est le caller (sauf si caller est admin)
-        if (!callerIsAdmin) {
+        // Restreindre aux todos où le collaborateur est le caller (appliqué à tous)
+        {
           const collField = it.collaborators || it['Collaborateur'] || [];
 
           if (Array.isArray(collField) && collField.length > 0) {
@@ -160,19 +152,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Si l'un est "Terminé" et l'autre non, "Terminé" va en dernier
         if (a.status === "Terminé" && b.status !== "Terminé") return 1;
         if (b.status === "Terminé" && a.status !== "Terminé") return -1;
-        
+
         // Si les deux ont le même statut (ou aucun n'est "Terminé"), trier par deadline
         const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
         const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        
+
         // Tri par deadline (les dates les plus proches en premier)
         return dateA - dateB;
       });
 
       const page = sorted.slice(offset, offset + limit);
 
-      res.status(200).json({ 
-        todos: page, 
+      res.status(200).json({
+        todos: page,
         total: sorted.length,
         pagination: {
           limit,
@@ -232,7 +224,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const descPayload =
         getField(body, ['Description', 'description', 'desc']);
 
-  if (duePayload) fieldsToCreate["Date d'échéance"] = dateOnly(duePayload);
+      if (duePayload) fieldsToCreate["Date d'échéance"] = dateOnly(duePayload);
       if (descPayload) fieldsToCreate['Description'] = descPayload;
 
       // Collaborateur (id ou tableau d’ids)
@@ -313,7 +305,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-  res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
+    res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     console.error('pages/api/todo error:', error?.message || error);
