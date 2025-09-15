@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
-import { Calendar } from "@heroui/calendar";
 import {
   Modal,
   ModalContent,
@@ -20,18 +19,18 @@ import {
   CalendarIcon,
   DocumentTextIcon,
   PlusIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardBody } from "@heroui/card";
-import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
+import { CalendarDate, today, getLocalTimeZone, startOfMonth, endOfMonth } from "@internationalized/date";
 
 import { DashboardLayout } from "../dashboard-layout";
 
 import { MetricCard } from "@/components/metric-card";
 import { StatsGrid } from "@/components/stats-grid";
-import { AgendaModals } from "@/components/agenda-modals";
 import { EventModal } from "@/components/event-modal";
-import { AgendaSection } from "@/components/agenda-section";
 import { StyledSelect } from "@/components/styled-select";
+import { PeriodSelector, PeriodSelection } from "@/components/period-selector";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -40,14 +39,25 @@ export default function HomeAdminPage() {
   const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const { authFetch } = useAuthFetch();
-  const [selectedDate, setSelectedDate] = useState<CalendarDate>(
+  const [selectedDate] = useState<CalendarDate>(
     today(getLocalTimeZone())
   );
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isAddProspectModalOpen, setIsAddProspectModalOpen] = useState(false);
   const [activeTab] = useState("overview");
   const [selectedCategory] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState<"month" | "year">("month");
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodSelection>(() => {
+    const todayDate = today(getLocalTimeZone());
+    const currentMonth = startOfMonth(todayDate);
+    const currentMonthEnd = endOfMonth(todayDate);
+    
+    return {
+      type: "month",
+      startDate: currentMonth,
+      endDate: currentMonthEnd,
+      label: "Ce mois-ci"
+    };
+  });
   const [newProspect, setNewProspect] = useState({
     nomEtablissement: "",
     categorie1: "",
@@ -90,11 +100,21 @@ export default function HomeAdminPage() {
       setStatisticsLoading(true);
 
       // Calculer la plage de dates pour la période sélectionnée
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
+      let monthYear = '';
+
+      if (selectedPeriod.startDate) {
+        const selectedDateObj = selectedPeriod.startDate.toDate(getLocalTimeZone());
+
+        monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
+      } else {
+        const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
+
+        monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
+      }
 
       // Construire les paramètres de requête pour l'API /api/data/data
       const params = new URLSearchParams();
+
       params.set('date', monthYear);
       params.set('ville', 'all'); // Pour l'admin, on récupère toutes les données
 
@@ -114,11 +134,13 @@ export default function HomeAdminPage() {
 
         if (clientsResponse.ok) {
           const clientsData = await clientsResponse.json();
+
           totalClients = clientsData.clients?.length || 0;
         }
 
         if (prospectsResponse.ok) {
           const prospectsData = await prospectsResponse.json();
+
           totalProspects = prospectsData.prospects?.length || 0;
         }
 
@@ -134,8 +156,7 @@ export default function HomeAdminPage() {
           totalPrestations: 0, // À implémenter si nécessaire
         });
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error);
+    } catch {
       setStatistics(null);
     } finally {
       setStatisticsLoading(false);
@@ -150,15 +171,6 @@ export default function HomeAdminPage() {
   // Transformation des événements pour l'affichage
 
   const getAdditionalMetrics = () => {
-    const formatNumber = (num: number) => {
-      if (num >= 1000000) {
-        return `${(num / 1000000).toFixed(1)}M`;
-      } else if (num >= 1000) {
-        return `${(num / 1000).toFixed(0)}k`;
-      }
-      return num.toString();
-    };
-
     return [
       {
         value: statisticsLoading ? "..." : statistics ? statistics.totalClients.toString() : "0",
@@ -224,31 +236,15 @@ export default function HomeAdminPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <CalendarIcon className="h-5 w-5 text-gray-600" />
-              <div className="flex gap-2">
-                <Button
-                  className={
-                    selectedPeriod === "month"
-                      ? "bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
-                  }
-                  size="sm"
-                  onPress={() => setSelectedPeriod("month")}
-                >
-                  Ce mois-ci
-                </Button>
-                <Button
-                  className={
-                    selectedPeriod === "year"
-                      ? "bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20 border-0"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
-                  }
-                  size="sm"
-                  onPress={() => setSelectedPeriod("year")}
-                >
-                  Cette année
-                </Button>
-              </div>
-
+              <Button
+                className="bg-custom-blue-select/14 text-custom-blue-select hover:bg-custom-blue-select/20"
+                endContent={<ChevronDownIcon className="h-4 w-4" />}
+                size="sm"
+                variant="light"
+                onPress={onOpen}
+              >
+                {selectedPeriod.label}
+              </Button>
             </div>
             <Button
               color='primary'
@@ -264,13 +260,13 @@ export default function HomeAdminPage() {
           <div className="space-y-6">
             {/* Stats Grid - 4 principales métriques */}
             <StatsGrid
+              loading={statisticsLoading}
               statistics={statistics ? {
                 abonnes: statistics.totalAbonnes,
                 vues: statistics.totalVues,
                 prospectsSignes: statistics.totalProspectsSignes,
                 tauxConversion: statistics.tauxConversion
               } : null}
-              loading={statisticsLoading}
             />
 
             {/* Additional Metrics Grid */}
@@ -300,11 +296,11 @@ export default function HomeAdminPage() {
               <ModalBody>
                 <div className="space-y-4">
                   <Input
-                    label="Nom de l'établissement"
-                    placeholder="Entrez le nom de l'établissement"
                     classNames={{
                       inputWrapper: "bg-page-bg",
                     }}
+                    label="Nom de l'établissement"
+                    placeholder="Entrez le nom de l'établissement"
                     value={newProspect.nomEtablissement}
                     onChange={(e) =>
                       setNewProspect({
@@ -314,23 +310,23 @@ export default function HomeAdminPage() {
                     }
                   />
                   <Input
-                    label="Email"
-                    placeholder="email@exemple.com"
-                    type="email"
                     classNames={{
                       inputWrapper: "bg-page-bg",
                     }}
+                    label="Email"
+                    placeholder="email@exemple.com"
+                    type="email"
                     value={newProspect.email}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, email: e.target.value })
                     }
                   />
                   <Input
-                    label="Téléphone"
-                    placeholder="+33 1 23 45 67 89"
                     classNames={{
                       inputWrapper: "bg-page-bg",
                     }}
+                    label="Téléphone"
+                    placeholder="+33 1 23 45 67 89"
                     value={newProspect.telephone}
                     onChange={(e) =>
                       setNewProspect({ ...newProspect, telephone: e.target.value })
@@ -439,25 +435,13 @@ export default function HomeAdminPage() {
         </CardBody>
       </Card>
 
-      {/* Calendar Modal */}
-      <Modal isOpen={isOpen} placement="center" onClose={onClose}>
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            Sélectionner une date
-          </ModalHeader>
-          <ModalBody>
-            <Calendar
-              className="w-full"
-              showMonthAndYearPickers={false}
-              value={selectedDate}
-              onChange={(date) => {
-                setSelectedDate(date);
-                onClose();
-              }}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      {/* Period Selector Modal */}
+      <PeriodSelector
+        isOpen={isOpen}
+        selectedPeriod={selectedPeriod}
+        onOpenChange={onOpenChange}
+        onPeriodChange={setSelectedPeriod}
+      />
     </DashboardLayout>
   );
 }

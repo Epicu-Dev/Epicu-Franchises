@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 import { UserProfile, UserType } from '../types/user';
-import { getValidAccessToken } from '../utils/auth';
+import { getValidAccessToken, clearAuthData, redirectToLogin } from '../utils/auth';
 
 interface UserContextType {
   userProfile: UserProfile | null;
@@ -41,7 +41,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         setUserProfile(parsed);
         // Ne pas marquer comme chargé pour permettre la mise à jour via l'API
-      } catch (e) {
+      } catch {
         // Erreur lors du parsing du profil en cache, on continue
       }
     }
@@ -57,7 +57,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const clearUserData = () => {
     setUserProfile(null);
     setError(null);
-    localStorage.removeItem('userProfile');
+    clearAuthData();
   };
 
   const fetchUserProfile = async () => {
@@ -70,6 +70,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!accessToken) {
         setError('Token d\'accès non trouvé');
         setIsLoading(false);
+        clearAuthData();
+        redirectToLogin();
 
         return;
       }
@@ -87,6 +89,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthData();
+          redirectToLogin();
+          return;
+        }
+
         throw new Error('Erreur lors de la récupération des données utilisateur');
       }
 
@@ -149,6 +157,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Charger le profil utilisateur au montage
   useEffect(() => {
     if (isLoaded) {
+      // Vérifier d'abord si l'utilisateur est authentifié
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (!accessToken || !refreshToken) {
+        setIsLoading(false);
+
+        return;
+      }
+      
       // Vérifier si on a déjà un profil en cache récent
       const cachedProfile = localStorage.getItem('userProfile');
       const cacheTime = localStorage.getItem('userProfileCacheTime');
@@ -156,6 +174,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // Si on a un profil en cache récent (moins de 5 minutes), on ne fait pas d'appel API
       if (cachedProfile && cacheTime && (Date.now() - parseInt(cacheTime) < 300000)) {
         setIsLoading(false);
+
         return;
       }
       

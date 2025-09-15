@@ -11,6 +11,11 @@ export function isRefreshTokenValid(): boolean {
 }
   
 export async function getValidAccessToken(): Promise<string | null> {
+  // Vérifier si on est côté client
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const accessToken = localStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken');
   const expiresAtAccess = localStorage.getItem('expiresAtAccess');
@@ -39,17 +44,7 @@ export async function getValidAccessToken(): Promise<string | null> {
     if (!res.ok) {
       // Vider le localStorage dans tous les cas d'erreur 401
       if (res.status === 401) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('expiresAtAccess');
-        localStorage.removeItem('expiresAtRefresh');
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userProfileCacheTime');
-        
-        // Rediriger vers la page de connexion
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        clearAuthData();
       }
 
       return null;
@@ -64,21 +59,37 @@ export async function getValidAccessToken(): Promise<string | null> {
 
     return data.accessToken;
   } catch {
-    // En cas d'erreur réseau, vider le localStorage et rediriger
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('expiresAtAccess');
-    localStorage.removeItem('expiresAtRefresh');
-    localStorage.removeItem('userProfile');
-    localStorage.removeItem('userProfileCacheTime');
-    
-    // Rediriger vers la page de connexion
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    
+    // En cas d'erreur réseau, vider le localStorage
+    clearAuthData();
     return null;
   }
+}
+
+/**
+ * Nettoie toutes les données d'authentification du localStorage
+ */
+export function clearAuthData(): void {
+  if (typeof window === 'undefined') return;
+  
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('expiresAtAccess');
+  localStorage.removeItem('expiresAtRefresh');
+  localStorage.removeItem('userProfile');
+  localStorage.removeItem('userProfileCacheTime');
+  localStorage.removeItem('lastAuthCheck');
+}
+
+/**
+ * Redirige vers la page de connexion de manière sûre
+ */
+export function redirectToLogin(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Éviter les redirections multiples
+  if (window.location.pathname === '/login') return;
+  
+  window.location.href = '/login';
 }
   
 export function isUserLoggedIn(): boolean {
@@ -98,6 +109,9 @@ export function isUserLoggedIn(): boolean {
  * et le rafraîchit automatiquement si nécessaire
  */
 export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
+  // Vérifier si on est côté client
+  if (typeof window === 'undefined') return false;
+
   const accessToken = localStorage.getItem('accessToken');
   const expiresAtAccess = localStorage.getItem('expiresAtAccess');
   
@@ -109,10 +123,15 @@ export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
   
   // Si le token expire dans moins de 30 minutes, le rafraîchir
   if (timeUntilExpiry < 30 * 60 * 1000) {
-    // console.log('Token expire bientôt, rafraîchissement automatique...');
-    const newToken = await getValidAccessToken();
+    try {
+      const newToken = await getValidAccessToken();
 
-    return newToken !== null;
+      return newToken !== null;
+    } catch (error) {
+      // console.error('Erreur lors du rafraîchissement automatique du token:', error);
+
+      return false;
+    }
   }
   
   return true;
