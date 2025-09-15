@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
+import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 const VIEW_NAME = '🟢 Clients';
@@ -75,6 +76,10 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         return res.status(500).json({ error: 'Erreur mise à jour client', details: err?.message || String(err) });
       }
     }
+    // Vérification de l'authentification
+    const userId = await requireValidAccessToken(req, res);
+    if (!userId) return; // requireValidAccessToken a déjà répondu
+
     const limitRaw = parseInt((req.query.limit as string) || '50', 10);
     const offsetRaw = parseInt((req.query.offset as string) || '0', 10);
     const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw));
@@ -120,6 +125,78 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       sort: [{ field: orderBy, direction: order }],
     };
 
+    // Auth: si l'utilisateur est admin -> voir tous les clients
+    // sinon -> ne voir que les clients qui partagent au moins une Ville EPICU avec lui
+    try {
+      const userRecord = await base('COLLABORATEURS').find(userId);
+      const userRole = String(userRecord.get('Rôle') || '').toLowerCase();
+      const isAdmin = userRole === 'admin' || userRole === 'administrateur';
+
+      if (!isAdmin) {
+        let linkedIds: string[] = [];
+        const linked = userRecord.get('Ville EPICU');
+        if (linked) {
+          if (Array.isArray(linked)) linkedIds = linked;
+          else if (typeof linked === 'string') linkedIds = [linked];
+        }
+
+        if (linkedIds.length === 0) {
+          // l'utilisateur n'a pas de ville Epicu liée -> pas de résultats
+          return res.status(200).json({
+            clients: [],
+            pagination: {
+              limit,
+              offset,
+              orderBy,
+              order,
+              hasMore: false,
+              nextOffset: null,
+              prevOffset: Math.max(0, offset - limit),
+            },
+          });
+        }
+
+        try {
+          const formulaForCities = `OR(${linkedIds.map((id) => `RECORD_ID() = '${id}'`).join(',')})`;
+          const cityRecords = await base('VILLES EPICU').select({ filterByFormula: formulaForCities, fields: ['Ville EPICU'] }).all();
+          const cityNames: string[] = cityRecords.map((c: any) => String(c.get('Ville EPICU') || '').trim()).filter(Boolean);
+
+          if (cityNames.length === 0) {
+            return res.status(200).json({
+              clients: [],
+              pagination: {
+                limit,
+                offset,
+                orderBy,
+                order,
+                hasMore: false,
+                nextOffset: null,
+                prevOffset: Math.max(0, offset - limit),
+              },
+            });
+          }
+
+          const cityParts = cityNames.map((name) => {
+            const esc = String(name).replace(/"/g, '\\"');
+            return `FIND("${esc}", ARRAYJOIN({Ville EPICU}))`;
+          });
+          const cityFilter = `OR(${cityParts.join(',')})`;
+
+          if (selectOptions.filterByFormula) {
+            selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${cityFilter})`;
+          } else {
+            selectOptions.filterByFormula = cityFilter;
+          }
+        } catch (e) {
+          console.error('Erreur résolution villes Epicu:', e);
+          return res.status(500).json({ error: 'Impossible de récupérer les villes Epicu de l\'utilisateur' });
+        }
+      }
+    } catch (e) {
+      console.error('Erreur récupération utilisateur:', e);
+      return res.status(500).json({ error: 'Impossible de récupérer les informations de l\'utilisateur' });
+    }
+
     // Construire la formule de filtrage
     let filterFormulas: string[] = [];
 
@@ -159,9 +236,13 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     // Appliquer les filtres si il y en a
     if (filterFormulas.length > 0) {
-      selectOptions.filterByFormula = filterFormulas.length === 1
-        ? filterFormulas[0]
-        : `AND(${filterFormulas.join(', ')})`;
+      if (selectOptions.filterByFormula) {
+        selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${filterFormulas.length === 1 ? filterFormulas[0] : `AND(${filterFormulas.join(', ')})`})`;
+      } else {
+        selectOptions.filterByFormula = filterFormulas.length === 1
+          ? filterFormulas[0]
+          : `AND(${filterFormulas.join(', ')})`;
+      }
     }
 
     // Ne récupérer qu'au plus offset+limit en mémoire
