@@ -110,13 +110,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Auth: si l'utilisateur est admin -> voir tous les prospects
       // sinon -> ne voir que les prospects qui partagent au moins une Ville EPICU avec lui
       try {
-        console.log('DEBUG - User ID:', userId);
         const userRecord = await base('COLLABORATEURS').find(userId);
         const userRole = String(userRecord.get('Rôle') || '').toLowerCase();
         const isAdmin = userRole === 'admin' || userRole === 'administrateur';
         
-        console.log('DEBUG - User role:', userRole, 'isAdmin:', isAdmin);
-
         if (!isAdmin) {
           let linkedIds: string[] = [];
           const linked = userRecord.get('Ville EPICU');
@@ -174,12 +171,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               selectOptions.filterByFormula = cityFilter;
             }
           } catch (e) {
-            console.error('Erreur résolution villes Epicu:', e);
             return res.status(500).json({ error: 'Impossible de récupérer les villes Epicu de l\'utilisateur' });
           }
         }
       } catch (e) {
-        console.error('Erreur récupération utilisateur:', e);
         return res.status(500).json({ error: 'Impossible de récupérer les informations de l\'utilisateur' });
       }
 
@@ -224,27 +219,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (formulaParts.length > 0) {
-        console.log('DEBUG - Additional formulaParts:', formulaParts);
         if (selectOptions.filterByFormula) {
           selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${formulaParts.length === 1 ? formulaParts[0] : `AND(${formulaParts.join(',')})`})`;
         } else {
           selectOptions.filterByFormula = formulaParts.length === 1 ? formulaParts[0] : `AND(${formulaParts.join(',')})`;
         }
-        console.log('DEBUG - Final filterByFormula after additional filters:', selectOptions.filterByFormula);
       }
 
       selectOptions.maxRecords = offset + limit;
-      console.log('DEBUG - Final selectOptions:', JSON.stringify(selectOptions, null, 2));
       
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
-      console.log('DEBUG - Number of records found:', upToPageRecords.length);
       
       // Debug: vérifier les champs disponibles sur le premier enregistrement
       if (upToPageRecords.length > 0) {
         const firstRecord = upToPageRecords[0];
-        console.log('DEBUG - First record fields:', Object.keys(firstRecord.fields || {}));
-        console.log('DEBUG - First record Ville EPICU:', firstRecord.get('Ville EPICU'));
-        console.log('DEBUG - First record Ville:', firstRecord.get('Ville'));
       }
       
       const pageRecords = upToPageRecords.slice(offset, offset + limit);
@@ -454,7 +442,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const updated = await base(TABLE_NAME).update([{ id, fields: fieldsToUpdate }]);
         return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
       } catch (err: any) {
-        console.error('prospects PATCH error', err);
         return res.status(500).json({ error: 'Erreur mise à jour prospect', details: err?.message || String(err) });
       }
     }
