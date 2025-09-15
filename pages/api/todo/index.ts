@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
+import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'TO DO';
 const VIEW_NAME = 'Grid view';
@@ -66,6 +67,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         maxRecords: offset + limit,
       };
 
+      // Auth: récupérer l'utilisateur appelant pour appliquer les restrictions
+      const callerId = await requireValidAccessToken(req, res);
+      if (!callerId) return; // requireValidAccessToken a déjà répondu
+
+      // Vérifier si le caller est admin (une seule fois)
+      let callerIsAdmin = false;
+      try {
+        const callerRec = await base('COLLABORATEURS').find(callerId);
+        const callerRole = String(callerRec.get('Rôle') || '').toLowerCase();
+        callerIsAdmin = callerRole === 'admin' || callerRole === 'administrateur';
+      } catch (e) {
+        callerIsAdmin = false;
+      }
+
+      // récupérer tous (overfetch) puis filtrer côté serveur
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
 
       const mapped = upToPageRecords.map((r: any) => {
@@ -78,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const status = r.get('Statut') || '';
         const type = r.get('Type de tâche') || '';
         const description = r.get('Description') || '';
-        const collaborators = r.get('Collaborateur') || [];
+  const collaborators = r.get('Collaborateur') || [];
 
         return {
           id: r.id,
@@ -93,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       const filtered = mapped.filter((it: any) => {
-        // Filtre par collaborateur
+        // Si le client a passé explicitement un param collaborator (filtre), on l'applique
         if (collaborator) {
           const coll = it.collaborators || it['Collaborateur'] || [];
 
@@ -101,6 +117,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (!coll.includes(collaborator)) return false;
           } else if (typeof coll === 'string' && coll.length > 0) {
             if (coll !== collaborator) return false;
+          } else {
+            return false;
+          }
+        }
+
+        // Par défaut : restreindre aux todos où le collaborateur est le caller (sauf si caller est admin)
+        if (!callerIsAdmin) {
+          const collField = it.collaborators || it['Collaborateur'] || [];
+
+          if (Array.isArray(collField) && collField.length > 0) {
+            if (!collField.includes(callerId)) return false;
+          } else if (typeof collField === 'string' && collField.length > 0) {
+            if (collField !== callerId) return false;
           } else {
             return false;
           }
@@ -117,7 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const nameMatch = it.name.toLowerCase().includes(searchLower);
           const descriptionMatch = it.description && it.description.toLowerCase().includes(searchLower);
           const typeMatch = it.type && it.type.toLowerCase().includes(searchLower);
-          
+
           if (!nameMatch && !descriptionMatch && !typeMatch) {
             return false;
           }
