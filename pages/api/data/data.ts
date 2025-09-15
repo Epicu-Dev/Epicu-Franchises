@@ -11,6 +11,26 @@ function escAirtable(s: string) {
 	return s.replace(/"/g, '\\"');
 }
 
+function canonicalFirstOfMonth(date: string) {
+	// Accepts formats: mm-yyyy, mm/yyyy, yyyy-mm-01, yyyy-mm
+	if (/^[0-9]{2}-[0-9]{4}$/.test(date)) {
+		const [mm, yyyy] = date.split('-');
+		return `${yyyy}-${mm}-01`;
+	}
+	if (/^[0-9]{2}\/([0-9]{4})$/.test(date)) {
+		const [mm, yyyy] = date.split('/');
+		return `${yyyy}-${mm}-01`;
+	}
+	if (/^[0-9]{4}-[0-9]{2}-01$/.test(date)) {
+		return date;
+	}
+	if (/^[0-9]{4}-[0-9]{2}$/.test(date)) {
+		const [yyyy, mm] = date.split('-');
+		return `${yyyy}-${mm}-01`;
+	}
+	return null;
+}
+
 function toNumber(v: any) {
 	if (v === null || v === undefined || v === '') return 0;
 	if (typeof v === 'number') return v;
@@ -35,13 +55,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				return res.status(400).json({ error: 'Paramètre ville requis et ne peut pas être "all" pour PATCH' });
 			}
 
-			if (!/^[0-9]{2}-[0-9]{4}$/.test(date)) {
+			const canonical = canonicalFirstOfMonth(date);
+			if (!canonical) {
 				return res.status(400).json({ error: 'Paramètre date invalide. Format attendu: mm-yyyy' });
 			}
 
 			const userId = await requireValidAccessToken(req, res);
 			if (!userId) return;
-
 			const FIELD_MAP: Record<string, string> = {
 				viewsFood: '📊 Vues 🟠 FOOD',
 				abonnesFood: '📊 Abonnés 🟠 FOOD',
@@ -80,9 +100,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 			}
 
+			const dateFormula = `{Mois-Année} = "${escAirtable(canonical)}"`;
 			const filterFormula = villeName
-				? `AND({Mois-Année} = "${escAirtable(date)}", {Ville EPICU} = "${escAirtable(villeName)}")`
-				: `AND({Mois-Année} = "${escAirtable(date)}", FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
+				? `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(villeName)}")`
+				: `AND(${dateFormula}, FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
 
 			const found = await base(TABLE_NAME).select({ view: VIEW_NAME, filterByFormula: filterFormula, pageSize: 1 }).all();
 			if (!found || found.length === 0) return res.status(404).json({ error: 'Aucune statistique trouvée pour ce mois/ville' });
@@ -98,7 +119,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		// GET
 		const ville = (req.query.ville as string) || 'all';
 		const date = (req.query.date as string) || '';
-		if (!/^[0-9]{2}-[0-9]{4}$/.test(date)) {
+		const canonical = canonicalFirstOfMonth(date);
+		if (!canonical) {
 			return res.status(400).json({ error: 'Paramètre date invalide. Format attendu: mm-yyyy' });
 		}
 
@@ -135,12 +157,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			}
 		}
 
+		const dateFormula = `{Mois-Année} = "${escAirtable(canonical)}"`;
 		const filterFormula =
 			ville === 'all'
-				? `{Mois-Année} = "${escAirtable(date)}"`
+				? dateFormula
 				: villeName
-					? `AND({Mois-Année} = "${escAirtable(date)}", {Ville EPICU} = "${escAirtable(villeName)}")`
-					: `AND({Mois-Année} = "${escAirtable(date)}", FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
+					? `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(villeName)}")`
+					: `AND(${dateFormula}, FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
 
 		const records = await base(TABLE_NAME).select({ view: VIEW_NAME, fields, filterByFormula: filterFormula, pageSize: 100 }).all();
 
@@ -207,7 +230,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			if (cityNames.length > 0) {
 				await Promise.all(
 					cityNames.map(async (name) => {
-						const formula = `AND({Mois-Année} = "${escAirtable(date)}", {Ville EPICU} = "${escAirtable(name)}")`;
+						const formula = `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(name)}")`;
 						const recs = await base(TABLE_NAME).select({ view: VIEW_NAME, fields, filterByFormula: formula, pageSize: 100 }).all();
 						totalRecords += recs.length;
 						recs.forEach((r: any) => {
@@ -239,7 +262,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			} else {
 				await Promise.all(
 					linkedIds.map(async (vid) => {
-						const formula = `AND({Mois-Année} = "${escAirtable(date)}", FIND("${escAirtable(vid)}", ARRAYJOIN({Ville EPICU})))`;
+						const formula = `AND(${dateFormula}, FIND("${escAirtable(vid)}", ARRAYJOIN({Ville EPICU})))`;
 						const recs = await base(TABLE_NAME).select({ view: VIEW_NAME, fields, filterByFormula: formula, pageSize: 100 }).all();
 						totalRecords += recs.length;
 						recs.forEach((r: any) => {
