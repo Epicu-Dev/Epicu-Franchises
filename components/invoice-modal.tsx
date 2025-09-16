@@ -21,20 +21,7 @@ import { SelectItem } from "@heroui/select";
 import { StyledSelect } from "@/components/styled-select";
 import { FormLabel } from "@/components";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { Invoice } from "@/types";
-
-interface Client {
-  id: string;
-  nomEtablissement: string;
-  raisonSociale: string;
-  ville?: string;
-  categorie?: 'FOOD' | 'SHOP' | 'TRAVEL' | 'FUN' | 'BEAUTY';
-  numeroSiret?: string;
-  email?: string;
-  telephone?: string;
-  adresse?: string;
-  publications?: Array<{ id: string; nom: string; datePublication: string }>;
-}
+import { Client, Invoice } from "@/types";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -69,6 +56,12 @@ export default function InvoiceModal({
   const [isSearchingClient, setIsSearchingClient] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
+  
+  // État de chargement global pour l'édition
+  const [isLoadingClientData, setIsLoadingClientData] = useState(false);
+  
+  // État de chargement pour la sauvegarde
+  const [isSaving, setIsSaving] = useState(false);
 
   // États pour la sélection de publication
   const [publications, setPublications] = useState<{ id: string; nom: string; datePublication: string }[]>([]);
@@ -172,6 +165,7 @@ export default function InvoiceModal({
 
   const searchClientForInvoice = async (establishmentName: string) => {
     try {
+      setIsLoadingClientData(true);
       const response = await authFetch(`/api/clients/clients?q=${encodeURIComponent(establishmentName)}&limit=10`);
 
       if (response.ok) {
@@ -205,6 +199,8 @@ export default function InvoiceModal({
       }
     } catch (err) {
       // Erreur silencieuse lors du chargement des informations du client
+    } finally {
+      setIsLoadingClientData(false);
     }
   };
 
@@ -326,6 +322,8 @@ export default function InvoiceModal({
 
   const handleSave = async () => {
     try {
+      setIsSaving(true);
+      
       const invoiceData = {
         'Prestation': newInvoice.serviceType,
         'Client': newInvoice.establishmentName,
@@ -363,6 +361,8 @@ export default function InvoiceModal({
       onOpenChange(false);
     } catch {
       // Erreur silencieuse lors de la sauvegarde
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -393,7 +393,18 @@ export default function InvoiceModal({
         <ModalHeader className="flex justify-center">
           {selectedInvoice ? "Modifier la facture" : "Ajouter une nouvelle facture"}
         </ModalHeader>
-        <ModalBody className="max-h-[70vh] overflow-y-auto">
+        <ModalBody className="max-h-[70vh] overflow-y-auto relative">
+          {/* Spinner global pour le chargement du client en mode édition */}
+          {isLoadingClientData && selectedInvoice && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-4">
+                <Spinner size="lg" color="primary" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Chargement des informations du client...
+                </p>
+              </div>
+            </div>
+          )}
           <div className="space-y-4">
             {/* Recherche de client */}
             <div className="relative">
@@ -782,8 +793,8 @@ export default function InvoiceModal({
                         </h3>
                         <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
                           <p>
-                            Ce client n'a pas encore de publication associée. Vous devez d'abord ajouter une publication 
-                            dans la section "Publications" avant de pouvoir créer une facture.
+                            Ce client n&apos;a pas encore de publication associée. Vous devez d&apos;abord ajouter une publication 
+                            dans la section &quot;Publications&quot; avant de pouvoir créer une facture.
                           </p>
                         </div>
                       </div>
@@ -807,6 +818,7 @@ export default function InvoiceModal({
           <Button
             className="flex-1 border-1"
             color='primary'
+            isDisabled={isSaving}
             variant="bordered"
             onPress={handleCancel}
           >
@@ -815,10 +827,11 @@ export default function InvoiceModal({
           <Button
             className="flex-1"
             color='primary'
-            isDisabled={!newInvoice.establishmentName || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus || !newInvoice.emissionDate}
+            isDisabled={isSaving || !newInvoice.establishmentName || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus || !newInvoice.emissionDate}
+            isLoading={isSaving}
             onPress={handleSave}
           >
-            {selectedInvoice ? "Modifier" : "Ajouter"}
+            {isSaving ? 'Chargement...' : (selectedInvoice ? "Modifier" : "Ajouter")}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -163,6 +163,33 @@ export function UnifiedEventModal({
     // Plus de chargement de catégories nécessaire
   }, [isOpen, eventType]);
 
+  // Initialiser automatiquement les dates de fin pour rendez-vous et tournages
+  useEffect(() => {
+    if (isOpen && (eventType === 'rendez-vous' || eventType === 'tournage')) {
+      // Initialiser la date de fin avec la date de début si elle est définie
+      if (formData.startDate && !formData.endDate) {
+        setFormData(prev => ({ ...prev, endDate: formData.startDate }));
+      }
+      
+      // Initialiser l'heure de fin avec l'heure de début + 1h si elle est définie
+      if (formData.startTime && formData.startTime !== '10:00') {
+        const [hours, minutes] = formData.startTime.split(':').map(Number);
+        const startDate = new Date();
+        startDate.setHours(hours, minutes, 0, 0);
+        
+        // Ajouter 1 heure
+        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+        
+        // Formatter en HH:MM
+        const endHours = endDate.getHours().toString().padStart(2, '0');
+        const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+        const endTime = `${endHours}:${endMinutes}`;
+        
+        setFormData(prev => ({ ...prev, endTime }));
+      }
+    }
+  }, [isOpen, eventType, formData.startDate, formData.startTime]);
+
   // Fonctions de recherche de client (comme dans invoice-modal)
   const searchClients = async (searchTerm: string) => {
     if (!searchTerm || searchTerm.length < 2) {
@@ -442,6 +469,12 @@ export function UnifiedEventModal({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Auto-calculer la date de fin pour rendez-vous et tournages
+    if ((eventType === 'rendez-vous' || eventType === 'tournage') && field === 'startDate' && value) {
+      // La date de fin est la même que la date de début
+      setFormData(prev => ({ ...prev, endDate: value }));
+    }
 
     // Auto-calculer l'heure de fin quand l'heure de début change
     if (field === 'startTime' && value) {
@@ -821,7 +854,8 @@ export function UnifiedEventModal({
                   </div>
                 )}
 
-                {eventType !== 'publication' && (
+                {/* Champs de date et heure de fin - masqués pour rendez-vous et tournages */}
+                {eventType !== 'publication' && eventType !== 'rendez-vous' && eventType !== 'tournage' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <FormLabel htmlFor="endDate" isRequired={true}>

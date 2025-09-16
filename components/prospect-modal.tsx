@@ -74,6 +74,12 @@ export function ProspectModal({
           prospectToSet.suiviPar = collaborateur.id;
         }
       }
+
+      // Si le prospect n'a pas de ville Epicu définie, utiliser la première ville de l'utilisateur par défaut
+      if (!prospectToSet.villeEpicu && userProfile?.villes && userProfile.villes.length > 0) {
+        prospectToSet.villeEpicu = userProfile.villes[0].id;
+      }
+
       setNewProspect(prospectToSet);
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout

@@ -1,3 +1,6 @@
+// Variable pour éviter les refresh multiples simultanés
+let refreshPromise: Promise<string | null> | null = null;
+
 export function isRefreshTokenValid(): boolean {
   const refreshToken = localStorage.getItem('refreshToken');
   const expiresAt = localStorage.getItem('expiresAtRefresh');
@@ -31,6 +34,24 @@ export async function getValidAccessToken(): Promise<string | null> {
     return null;
   }
 
+  // Si un refresh est déjà en cours, attendre le résultat
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  // Créer une nouvelle promesse de refresh
+  refreshPromise = performTokenRefresh(refreshToken, accessToken);
+
+  try {
+    const result = await refreshPromise;
+    return result;
+  } finally {
+    // Nettoyer la promesse une fois terminée
+    refreshPromise = null;
+  }
+}
+
+async function performTokenRefresh(refreshToken: string, accessToken: string): Promise<string | null> {
   try {
     const res = await fetch('/api/auth/refresh', {
       method: 'POST',
@@ -42,10 +63,12 @@ export async function getValidAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) {
-      // Vider le localStorage dans tous les cas d'erreur 401
-      if (res.status === 401) {
+      // Seulement vider le localStorage pour les erreurs d'authentification (401, 403)
+      if (res.status === 401 || res.status === 403) {
         clearAuthData();
       }
+      // Pour les autres erreurs (500, 502, etc.), ne pas vider le localStorage
+      // car cela peut être un problème temporaire de serveur
 
       return null;
     }
@@ -58,9 +81,10 @@ export async function getValidAccessToken(): Promise<string | null> {
     localStorage.setItem('expiresAtRefresh', data.expiresAtRefresh);
 
     return data.accessToken;
-  } catch {
-    // En cas d'erreur réseau, vider le localStorage
-    clearAuthData();
+  } catch (error) {
+    // En cas d'erreur réseau, ne pas vider le localStorage immédiatement
+    // car cela peut être un problème temporaire de connectivité
+    console.warn('Erreur réseau lors du refresh du token:', error);
     return null;
   }
 }
@@ -135,5 +159,59 @@ export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
   }
   
   return true;
+}
+
+/**
+ * Vérifie si une erreur est récupérable (problème temporaire de réseau/serveur)
+ */
+export function isRecoverableError(error: any): boolean {
+  if (!error) return false;
+  
+  // Erreurs de réseau temporaires
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    return true;
+  }
+  
+  // Erreurs de timeout
+  if (error.name === 'AbortError') {
+    return true;
+  }
+  
+  // Erreurs 5xx (problèmes serveur temporaires)
+  if (error.status >= 500 && error.status < 600) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Fonction de debug pour vérifier l'état des tokens
+ * Utile pour diagnostiquer les problèmes de déconnexion
+ */
+export function debugTokenState(): void {
+  if (typeof window === 'undefined') {
+    console.log('Debug token state: côté serveur');
+    return;
+  }
+
+  const accessToken = localStorage.getItem('accessToken');
+  const refreshToken = localStorage.getItem('refreshToken');
+  const expiresAtAccess = localStorage.getItem('expiresAtAccess');
+  const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
+
+  const now = new Date();
+  const accessExpiry = expiresAtAccess ? new Date(expiresAtAccess) : null;
+  const refreshExpiry = expiresAtRefresh ? new Date(expiresAtRefresh) : null;
+
+  console.log('=== État des tokens ===');
+  console.log('Access Token:', accessToken ? `${accessToken.substring(0, 10)}...` : 'Aucun');
+  console.log('Refresh Token:', refreshToken ? `${refreshToken.substring(0, 10)}...` : 'Aucun');
+  console.log('Access Token expire:', accessExpiry ? accessExpiry.toISOString() : 'Inconnu');
+  console.log('Refresh Token expire:', refreshExpiry ? refreshExpiry.toISOString() : 'Inconnu');
+  console.log('Access Token valide:', accessExpiry ? accessExpiry > now : false);
+  console.log('Refresh Token valide:', refreshExpiry ? refreshExpiry > now : false);
+  console.log('Temps restant access:', accessExpiry ? Math.round((accessExpiry.getTime() - now.getTime()) / 1000 / 60) + ' minutes' : 'N/A');
+  console.log('======================');
 }
   

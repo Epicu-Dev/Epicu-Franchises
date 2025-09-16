@@ -88,21 +88,18 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
   };
 
   const getEventColor = (event: Event) => {
-    if (event.establishmentCategories && event.establishmentCategories.length > 0) {
-      return getEventColorFromEstablishmentCategories(event.establishmentCategories);
-    }
-
+    // Utiliser les mêmes couleurs que dans l'Agenda
     switch (event.type) {
       case "rendez-vous":
-        return "bg-custom-blue-rdv/14 text-custom-blue-rdv";
+        return "bg-custom-blue-meeting/14 text-custom-blue-meeting";
       case "tournage":
-        return "bg-custom-rose/14 text-custom-rose";
+        return "bg-custom-green-filming/14 text-custom-green-filming";
       case "publication":
-        return "bg-custom-blue-pub/14 text-custom-blue-pub";
+        return "bg-custom-red-publication/14 text-custom-red-publication";
       case "evenement":
         return "bg-custom-orange-event/14 text-custom-orange-event";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-custom-text-color text-custom-text-color";
     }
   };
 
