@@ -48,8 +48,8 @@ export function useTokenRefresh() {
         const expiryTime = new Date(expiresAtAccess).getTime();
         const timeUntilExpiry = expiryTime - now;
         
-        // Si le token expire dans moins de 30 minutes, programmer une vérification
-        if (timeUntilExpiry < 30 * 60 * 1000 && timeUntilExpiry > 0) {
+        // Si le token expire dans moins de 5 minutes, programmer une vérification
+        if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
           timeoutRef.current = setTimeout(() => {
             safeCheckAndRefresh();
             checkBeforeExpiry(); // Reprogrammer pour le prochain cycle

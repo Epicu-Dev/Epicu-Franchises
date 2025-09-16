@@ -145,8 +145,8 @@ export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
   const expirationDate = new Date(expiresAtAccess);
   const timeUntilExpiry = expirationDate.getTime() - now.getTime();
   
-  // Si le token expire dans moins de 30 minutes, le rafraîchir
-  if (timeUntilExpiry < 30 * 60 * 1000) {
+  // Si le token expire dans moins de 5 minutes, le rafraîchir
+  if (timeUntilExpiry < 5 * 60 * 1000) {
     try {
       const newToken = await getValidAccessToken();
 
