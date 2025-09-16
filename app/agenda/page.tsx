@@ -279,14 +279,20 @@ export default function AgendaPage() {
         dateStart = startOfWeek.toISOString().split('T')[0];
         dateEnd = endOfWeek.toISOString().split('T')[0];
       } else {
-        // Vue mois
+        // Vue mois - étendre la plage pour inclure les mois précédents et suivants
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        
+        // Étendre la plage pour couvrir les jours visibles du calendrier (6 semaines)
+        const startOfCalendar = new Date(startOfMonth);
+        startOfCalendar.setDate(startOfMonth.getDate() - startOfMonth.getDay() + 1);
+        
+        const endOfCalendar = new Date(endOfMonth);
+        endOfCalendar.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay()));
+        endOfCalendar.setHours(23, 59, 59, 999);
 
-        endOfMonth.setHours(23, 59, 59, 999);
-
-        dateStart = startOfMonth.toISOString().split('T')[0];
-        dateEnd = endOfMonth.toISOString().split('T')[0];
+        dateStart = startOfCalendar.toISOString().split('T')[0];
+        dateEnd = endOfCalendar.toISOString().split('T')[0];
       }
 
       const params = new URLSearchParams({
@@ -466,9 +472,16 @@ export default function AgendaPage() {
         // Priorité : Airtable (isGoogleEvent = false) > Google Calendar (isGoogleEvent = true)
         if (!event.isGoogleEvent && existingEvent.isGoogleEvent) {
           // L'événement actuel est d'Airtable et l'existant est de Google Calendar
+          // Remplacer l'événement Google Calendar par l'événement Airtable
           uniqueEvents.set(key, event);
+        } else if (event.isGoogleEvent && !existingEvent.isGoogleEvent) {
+          // L'événement actuel est de Google Calendar et l'existant est d'Airtable
+          // Garder l'événement Airtable (déjà prioritaire)
+          // Ne rien faire, garder l'existant
+        } else {
+          // Même type de source, garder le premier (ou remplacer si nécessaire)
+          // Dans ce cas, on garde l'existant pour éviter les changements
         }
-        // Sinon, garder l'événement existant (déjà prioritaire)
       }
     });
 
@@ -477,9 +490,7 @@ export default function AgendaPage() {
 
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
-    if (event.isGoogleEvent) {
-      return "bg-custom-text-color/14 text-custom-text-color";
-    }
+   
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
       case "tournage":
@@ -496,9 +507,7 @@ export default function AgendaPage() {
   };
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventBorderColor = (event: Event) => {
-    if (event.isGoogleEvent) {
-      return "border-custom-text-color";
-    }
+    
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
@@ -648,7 +657,7 @@ export default function AgendaPage() {
                 {day.events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
+                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${!day.isCurrentMonth ? 'shadow-sm' : ''}`}
                     title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                     role={event.isGoogleEvent ? "button" : undefined}
                     tabIndex={event.isGoogleEvent ? 0 : undefined}
@@ -749,7 +758,7 @@ export default function AgendaPage() {
                       {hourEvents.map((event) => (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)}`}
+                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${day.date.getMonth() !== currentDate.getMonth() ? 'shadow-sm' : ''}`}
                           title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
                           role={event.isGoogleEvent ? "button" : undefined}
                           tabIndex={event.isGoogleEvent ? 0 : undefined}
@@ -847,7 +856,7 @@ export default function AgendaPage() {
                   </p>
                   <ol className="text-sm text-amber-800 list-decimal list-inside space-y-2 text-left">
                     <li>Ouvrez Google Calendar</li>
-                    <li>Cliquez sur le &quot;+&quot; à côté de &quot;Autres calendriers&quot;</li>
+                    <li>Cliquez sur le &quot;+&quot; à côté de &quot;Autres agendas&quot;</li>
                     <li>Créez un nouveau calendrier nommé &quot;EPICU AGENDA&quot;</li>
                     <li>Revenez ici et cliquez sur &quot;Synchroniser&quot;</li>
                   </ol>

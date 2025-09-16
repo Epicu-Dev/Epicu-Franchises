@@ -179,7 +179,10 @@ export function TeamMemberModal({
         }
         break;
       case 'siret':
-        if (!value || !value.trim()) {
+        // Le SIRET n'est pas requis pour le rôle Siège
+        if (newMember.role === "Siège") {
+          delete errors.siret;
+        } else if (!value || !value.trim()) {
           errors.siret = 'Le SIRET est requis';
         } else if (value.length !== 14) {
           errors.siret = 'Le SIRET doit contenir 14 chiffres';
@@ -195,7 +198,12 @@ export function TeamMemberModal({
   };
 
   const validateAllFields = (member: any) => {
-    const fields = ['prenom', 'nom', 'villeEpicu', 'telephone', 'emailPerso', 'siret'];
+    // Champs de base toujours requis
+    const baseFields = ['prenom', 'nom', 'villeEpicu', 'telephone', 'emailPerso'];
+    
+    // Ajouter le SIRET seulement si le rôle n'est pas "Siège"
+    const fields = member.role === "Siège" ? baseFields : [...baseFields, 'siret'];
+    
     let isValid = true;
 
     fields.forEach(field => {
@@ -413,6 +421,7 @@ export function TeamMemberModal({
               }}
             >
               <SelectItem key="Admin">Admin</SelectItem>
+              <SelectItem key="Siège">Siège</SelectItem>
               <SelectItem key="Franchisé">Franchisé</SelectItem>
               <SelectItem key="Nouveau franchisé">Nouveau franchisé</SelectItem>
               <SelectItem key="Studio">Studio</SelectItem>
@@ -441,26 +450,31 @@ export function TeamMemberModal({
               }}
             />
 
-            <FormLabel htmlFor="siret" isRequired={true}>
-              SIRET
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              isRequired
-              errorMessage={fieldErrors.siret}
-              id="siret"
-              isInvalid={!!fieldErrors.siret}
-              placeholder="12345678901234"
-              value={newMember.siret || ""}
-              onChange={(e) => {
-                const value = e.target.value;
+            {/* Champs SIRET - masqués pour le rôle Siège */}
+            {newMember.role !== "Siège" && (
+              <>
+                <FormLabel htmlFor="siret" isRequired={true}>
+                  SIRET
+                </FormLabel>
+                <Input
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  isRequired
+                  errorMessage={fieldErrors.siret}
+                  id="siret"
+                  isInvalid={!!fieldErrors.siret}
+                  placeholder="12345678901234"
+                  value={newMember.siret || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                setNewMember((prev) => ({ ...prev, siret: value }));
-                validateField('siret', value);
-              }}
-            />
+                    setNewMember((prev) => ({ ...prev, siret: value }));
+                    validateField('siret', value);
+                  }}
+                />
+              </>
+            )}
 
 
             <FormLabel htmlFor="emailPerso" isRequired={true}>
@@ -522,50 +536,55 @@ export function TeamMemberModal({
               }}
             />
 
-            <FormLabel htmlFor="dateDIP" isRequired={false}>
-              Date signature DIP
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="dateDIP"
-              type="date"
-              value={newMember.dateDIP || ""}
-              onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateDIP: e.target.value }));
-              }}
-            />
+            {/* Champs de dates de signature - masqués pour le rôle Siège */}
+            {newMember.role !== "Siège" && (
+              <>
+                <FormLabel htmlFor="dateDIP" isRequired={false}>
+                  Date signature DIP
+                </FormLabel>
+                <Input
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  id="dateDIP"
+                  type="date"
+                  value={newMember.dateDIP || ""}
+                  onChange={(e) => {
+                    setNewMember((prev) => ({ ...prev, dateDIP: e.target.value }));
+                  }}
+                />
 
-            <FormLabel htmlFor="dateSignatureContrat" isRequired={false}>
-              Date signature contrat
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="dateSignatureContrat"
-              type="date"
-              value={newMember.dateSignatureContrat || ""}
-              onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateSignatureContrat: e.target.value }));
-              }}
-            />
+                <FormLabel htmlFor="dateSignatureContrat" isRequired={false}>
+                  Date signature contrat
+                </FormLabel>
+                <Input
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  id="dateSignatureContrat"
+                  type="date"
+                  value={newMember.dateSignatureContrat || ""}
+                  onChange={(e) => {
+                    setNewMember((prev) => ({ ...prev, dateSignatureContrat: e.target.value }));
+                  }}
+                />
 
-            <FormLabel htmlFor="dateSignatureAttestation" isRequired={false}>
-              Date signature formation
-            </FormLabel>
-            <Input
-              classNames={{
-                inputWrapper: "bg-page-bg",
-              }}
-              id="dateSignatureAttestation"
-              type="date"
-              value={newMember.dateSignatureAttestation || ""}
-              onChange={(e) => {
-                setNewMember((prev) => ({ ...prev, dateSignatureAttestation: e.target.value }));
-              }}
-            />
+                <FormLabel htmlFor="dateSignatureAttestation" isRequired={false}>
+                  Date signature formation
+                </FormLabel>
+                <Input
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  id="dateSignatureAttestation"
+                  type="date"
+                  value={newMember.dateSignatureAttestation || ""}
+                  onChange={(e) => {
+                    setNewMember((prev) => ({ ...prev, dateSignatureAttestation: e.target.value }));
+                  }}
+                />
+              </>
+            )}
 
             <FormLabel htmlFor="adresse" isRequired={false}>
               Adresse postale
@@ -605,7 +624,7 @@ export function TeamMemberModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.prenom || !newMember.nom || !selectedCityId || !newMember.telephone || !newMember.emailPerso || !newMember.siret}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newMember.prenom || !newMember.nom || !selectedCityId || !newMember.telephone || !newMember.emailPerso || (newMember.role !== "Siège" && !newMember.siret)}
               isLoading={isLoading}
               onPress={handleSubmit}
             >

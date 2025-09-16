@@ -830,6 +830,9 @@ export function UnifiedEventModal({
                         Date de début
                       </FormLabel>
                       <Input
+                        classNames={{
+                          inputWrapper: "bg-page-bg",
+                        }}
                         id="startDate"
                         type="date"
                         value={formData.startDate}
@@ -844,6 +847,9 @@ export function UnifiedEventModal({
                         Heure de début
                       </FormLabel>
                       <Input
+                        classNames={{
+                          inputWrapper: "bg-page-bg",
+                        }}
                         id="startTime"
                         type="time"
                         value={formData.startTime}
@@ -862,6 +868,9 @@ export function UnifiedEventModal({
                         Date de fin
                       </FormLabel>
                       <Input
+                        classNames={{
+                          inputWrapper: "bg-page-bg",
+                        }}
                         id="endDate"
                         type="date"
                         value={formData.endDate}
@@ -875,6 +884,9 @@ export function UnifiedEventModal({
                         Heure de fin
                       </FormLabel>
                       <Input
+                        classNames={{
+                          inputWrapper: "bg-page-bg",
+                        }}
                         id="endTime"
                         type="time"
                         value={formData.endTime}
