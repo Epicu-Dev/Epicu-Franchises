@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
+import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'AGENDA';
 const VIEW_NAME = 'Grid view';
@@ -23,7 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw));
       const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
 
-      const collaborator = (req.query.collaborator as string) || (req.query.user as string) || null;
+      // Ne plus accepter `collaborator` en paramètre : on récupère l'utilisateur à partir
+      // de l'access token et on filtre les événements pour ce collaborateur.
+      const callerUserId = await requireValidAccessToken(req, res);
+      if (!callerUserId) return; // requireValidAccessToken a déjà répondu (403/500)
+
+      // callerUserId est l'id du record dans la table COLLABORATEURS (référence depuis AUTH_ACCESS_TOKEN)
+      const collaboratorId = callerUserId;
       // dateStart: if not provided, default to first day of current month at 00:00
       const rawDateStart = req.query.dateStart as string | undefined;
       let dateStart = parseDateParam(rawDateStart);
@@ -50,12 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Construire la formule de filtrage si besoin
       // const filters: string[] = [];
 
-      if (collaborator) {
-        // filterByFormula to match collaborator reference
-        // Airtable stored collaborator as a linked record id — using RECORD_ID() comparisons is not relevant here
-        // We'll filter client-side after fetching upTo offset+limit records, but add a server-side filter if field contains plain text
-        // No robust generic filter possible without knowing field type — keep server-side simple
-      }
+      // ...existing code...
 
       // Récupérer au plus offset+limit records
       const selectOptions: any = {
@@ -64,6 +66,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pageSize: Math.min(100, offset + limit),
         maxRecords: offset + limit,
       };
+
+      // Ne pas appliquer de filterByFormula côté serveur — récupérer un set d'enregistrements
+      // et filtrer ensuite côté serveur par `collaboratorId`.
 
       const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
 
@@ -143,7 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // filtrage par date/client côté serveur (après mapping)
+      // filtrage par date côté serveur (après mapping) + fallback filtrage par collaboratorId
       let filtered = mapped.filter((ev: any) => {
         if (dateStart) {
           const evDate = new Date(ev.date);
@@ -157,14 +162,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           evDate.setHours(23, 59, 59, 999);
           if (evDate > dateEnd) return false;
         }
-        if (collaborator) {
-          // collaborator stored as linked record id array (Airtable) or string
-          const coll = ev.collaborators || ev.Collaborateur || [];
-
+        // filtrage par collaborateur (fallback côté serveur si filterByFormula n'a pas fonctionné)
+        const coll = ev.collaborators || ev.Collaborateur || [];
+        if (collaboratorId) {
           if (Array.isArray(coll) && coll.length > 0) {
-            if (!coll.includes(collaborator)) return false;
+            if (!coll.includes(collaboratorId)) return false;
           } else if (typeof coll === 'string' && coll.length > 0) {
-            if (coll !== collaborator) return false;
+            if (coll !== collaboratorId) return false;
           } else {
             return false;
           }
@@ -179,13 +183,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const enrichedEvents = page.map((event: any) => {
         const eventEstablishmentIds = event.etablissements || [];
         const eventCategories = eventEstablishmentIds.flatMap((id: string) => establishmentCategories[id] || []);
-        
-        
+
         return {
           ...event,
           establishmentCategories: eventCategories,
         };
       });
+
+      // Si debug=1, inclure des informations de diagnostic
+      const debugMode = String(req.query.debug || '') === '1';
+
+      if (debugMode) {
+        return res.status(200).json({
+          events: enrichedEvents,
+          total: filtered.length,
+          debug: {
+            callerUserId: collaboratorId,
+            fetchedCount: upToPageRecords.length,
+            mappedCount: mapped.length,
+            filteredCount: filtered.length,
+            sampleCollaborators: mapped.slice(0, 5).map((m: any) => m.collaborators),
+          },
+        });
+      }
 
       res.status(200).json({ events: enrichedEvents, total: filtered.length });
 
@@ -311,7 +331,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-  res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
+    res.setHeader('Allow', ['GET', 'POST', 'PATCH', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     res.status(500).json({ error: 'Erreur serveur', details: error?.message || String(error) });
