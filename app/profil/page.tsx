@@ -28,7 +28,7 @@ import { useAuthFetch } from '@/hooks/use-auth-fetch';
 interface Invoice {
   id: string;
   etat: 'Validée' | 'En attente';
-  date: string;
+  datePaiement: string;
   montant: string;
   typeFacture: string;
 }
@@ -99,120 +99,6 @@ export default function ProfilPage() {
       });
     }
   }, [userProfile]);
-
-  // Charger les données mock au montage
-  useEffect(() => {
-    // Données mock pour les factures (à remplacer par de vraies données API plus tard)
-    setInvoices([
-      {
-        id: '1',
-        etat: 'Validée',
-        date: '10.07.2025',
-        montant: '1450€67',
-        typeFacture: 'Redevance annuelle'
-      },
-      {
-        id: '2',
-        etat: 'Validée',
-        date: '10.07.2025',
-        montant: '1450€67',
-        typeFacture: 'Redevance annuelle'
-      },
-      {
-        id: '3',
-        etat: 'Validée',
-        date: '10.07.2025',
-        montant: '1450€67',
-        typeFacture: 'Redevance annuelle'
-      },
-      {
-        id: '4',
-        etat: 'En attente',
-        date: '10.07.2025',
-        montant: '1450€67',
-        typeFacture: 'Redevance mensuelle'
-      },
-      {
-        id: '5',
-        etat: 'Validée',
-        date: '10.07.2025',
-        montant: '1450€67',
-        typeFacture: 'Droit d\'entrée'
-      }
-    ]);
-
-    // Données mock pour les documents (à remplacer par de vraies données API plus tard)
-    setDocuments([
-      {
-        id: '1',
-        type: 'DIP',
-        dateAjout: '12.08.2025'
-      },
-      {
-        id: '2',
-        type: 'Contrat de franchisé',
-        dateAjout: '12.08.2025'
-      },
-      {
-        id: '3',
-        type: 'Autre',
-        dateAjout: '12.08.2025'
-      }
-    ]);
-
-    // Données mock pour l'historique (à remplacer par de vraies données API plus tard)
-    setHistory([
-      {
-        id: '1',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Modification du profil',
-        date: '12.07.2025',
-        heure: '14:30'
-      },
-      {
-        id: '2',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Connexion',
-        date: '12.07.2025',
-        heure: '09:15'
-      },
-      {
-        id: '3',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Modification du profil',
-        date: '12.07.2025',
-        heure: '16:45'
-      },
-      {
-        id: '4',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Connexion',
-        date: '12.07.2025',
-        heure: '08:30'
-      },
-      {
-        id: '5',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Modification du profil',
-        date: '12.07.2025',
-        heure: '11:20'
-      },
-      {
-        id: '6',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Connexion',
-        date: '12.07.2025',
-        heure: '13:15'
-      },
-      {
-        id: '7',
-        personne: userProfile?.firstname || 'Utilisateur',
-        action: 'Ajout d\'un prospect',
-        date: '12.07.2025',
-        heure: '18:45'
-      }
-    ]);
-  }, [userProfile?.firstname]);
 
   // Fonction de validation des champs
   const validateField = (fieldName: string, value: any) => {
@@ -575,7 +461,7 @@ export default function ProfilPage() {
                           <TableCell className="font-light text-sm py-3">
                             <InvoiceStatusBadge status={invoice.etat} />
                           </TableCell>
-                          <TableCell className="font-light text-sm">{invoice.date}</TableCell>
+                          <TableCell className="font-light text-sm">{invoice.datePaiement}</TableCell>
                           <TableCell className="font-light text-sm">{invoice.montant}</TableCell>
                           <TableCell className="font-light text-sm">{invoice.typeFacture}</TableCell>
                           <TableCell className="font-light text-sm">

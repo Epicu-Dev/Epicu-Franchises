@@ -261,9 +261,9 @@ export default function HomePage() {
         const list: Invoice[] = data.invoices || [];
 
         const filtered = list.filter((inv) => {
-          if (!inv.date) return false;
+          if (!inv.datePaiement) return false;
 
-          const d = new Date(inv.date);
+          const d = new Date(inv.datePaiement);
 
           return d >= startOfMonth && d <= endOfMonth;
         });
@@ -542,7 +542,7 @@ export default function HomePage() {
     return invoices.slice(0, 3).map((inv) => ({
       id: inv.id,
       client: inv.nomEtablissement || "Nom client",
-      date: inv.date,
+      date: inv.dateEmission,
       montant: inv.montant || 0,
     }));
   }, [invoices]);

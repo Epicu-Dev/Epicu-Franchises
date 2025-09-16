@@ -750,12 +750,20 @@ export function UnifiedEventModal({
                       Date de publication
                     </FormLabel>
                     <div
-                      className="p-3 border border-gray-300 rounded-lg bg-white cursor-pointer hover:border-blue-400 transition-colors"
-                      onClick={() => setIsSlotModalOpen(true)}
+                      className={`p-3 border rounded-lg transition-colors ${
+                        selectedClient 
+                          ? "border-gray-300 bg-white cursor-pointer hover:border-blue-400" 
+                          : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
+                      }`}
+                      onClick={() => {
+                        if (selectedClient) {
+                          setIsSlotModalOpen(true);
+                        }
+                      }}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={selectedClient ? 0 : -1}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (selectedClient && (e.key === 'Enter' || e.key === ' ')) {
                           e.preventDefault();
                           setIsSlotModalOpen(true);
                         }
@@ -771,8 +779,10 @@ export function UnifiedEventModal({
                           })} - 18h00 - 19h00
                         </span>
                       ) : (
-                        <span className="text-gray-500">
-                          Cliquez pour sélectionner un créneau
+                        <span className={selectedClient ? "text-gray-500" : "text-gray-400"}>
+                          {selectedClient 
+                            ? "Cliquez pour sélectionner un créneau" 
+                            : "Sélectionnez d'abord un établissement"}
                         </span>
                       )}
                     </div>
@@ -872,6 +882,8 @@ export function UnifiedEventModal({
           isOpen={isSlotModalOpen}
           onClose={() => setIsSlotModalOpen(false)}
           onSelectSlot={handleSlotSelection}
+          category={selectedClient?.categorie}
+          ville={selectedClient?.villeEpicu}
         />
       )}
     </>

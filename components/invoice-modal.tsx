@@ -21,17 +21,7 @@ import { SelectItem } from "@heroui/select";
 import { StyledSelect } from "@/components/styled-select";
 import { FormLabel } from "@/components";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-
-interface Invoice {
-  id: string;
-  categorie: string;
-  nomEtablissement: string;
-  date: string;
-  montant: number;
-  typePrestation: string;
-  statut: string;
-  commentaire?: string;
-}
+import { Invoice } from "@/types";
 
 interface Client {
   id: string;
@@ -66,6 +56,7 @@ export default function InvoiceModal({
     category: "shop",
     establishmentName: "",
     date: "",
+    emissionDate: "",
     amount: "",
     serviceType: "",
     status: "en_attente",
@@ -84,6 +75,28 @@ export default function InvoiceModal({
   const [selectedPublication, setSelectedPublication] = useState<string>("");
   const [selectedPublicationDisplay, setSelectedPublicationDisplay] = useState<string>("");
 
+  // Fonction pour formater le nom de publication
+  const formatPublicationName = (nom: string) => {
+    // Si le nom commence par une date au format yyyy-MM-dd, la formater
+    const dateMatch = nom.match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+    if (dateMatch) {
+      const [, dateStr, rest] = dateMatch;
+      const formattedDate = new Date(dateStr).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).replace(/\//g, '.');
+      
+      // Enlever la date à la fin si elle existe (format - yyyy-MM-dd)
+      const endDateMatch = rest.match(/^(.+?)\s*-\s*\d{4}-\d{2}-\d{2}$/);
+      const cleanRest = endDateMatch ? endDateMatch[1] : rest;
+      
+      return `${formattedDate} ${cleanRest}`;
+    }
+
+    return nom;
+  };
+
   // État pour la facture de tournage
   const [tournageFactureStatus, setTournageFactureStatus] = useState<string>("");
   const [tournageFactureStatusDisplay, setTournageFactureStatusDisplay] = useState<string>("");
@@ -93,16 +106,44 @@ export default function InvoiceModal({
     if (isOpen) {
       if (selectedInvoice) {
         // Mode édition
+        // Formater la date pour l'input de type date (format YYYY-MM-DD)
+        const formatDateForInput = (dateString: string) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          return date.toISOString().split('T')[0];
+        };
+
+        // Mapper le statut de la facture
+        const mapInvoiceStatus = (status: string) => {
+          switch (status.toLowerCase()) {
+            case 'en_attente':
+              return 'En attente';
+            case 'payée':
+            case 'payee':
+              return 'Payée';
+            case 'en_retard':
+              return 'En retard';
+            default:
+              return status;
+          }
+        };
+
         setNewInvoice({
           category: selectedInvoice.categorie,
           establishmentName: selectedInvoice.nomEtablissement,
-          date: selectedInvoice.date,
+          date: formatDateForInput(selectedInvoice.datePaiement || "") || "",
+          emissionDate: formatDateForInput(selectedInvoice.dateEmission || "") || "",
           amount: selectedInvoice.montant.toString(),
           serviceType: selectedInvoice.typePrestation,
           status: selectedInvoice.statut,
           comment: selectedInvoice.commentaire || "",
         });
         setClientSearchTerm(selectedInvoice.nomEtablissement);
+
+        // Initialiser le statut de la facture avec le bon mapping
+        const mappedStatus = mapInvoiceStatus(selectedInvoice.statut);
+        setTournageFactureStatus(mappedStatus);
+        setTournageFactureStatusDisplay(mappedStatus);
 
         // Rechercher automatiquement le client
         searchClientForInvoice(selectedInvoice.nomEtablissement);
@@ -112,6 +153,7 @@ export default function InvoiceModal({
           category: "shop",
           establishmentName: "",
           date: "",
+          emissionDate: "",
           amount: "",
           serviceType: "",
           status: "en_attente",
@@ -119,6 +161,11 @@ export default function InvoiceModal({
         });
         setClientSearchTerm("");
         setSelectedClient(null);
+        setSelectedPublication("");
+        setSelectedPublicationDisplay("");
+        setPublications([]);
+        setTournageFactureStatus("");
+        setTournageFactureStatusDisplay("");
       }
     }
   }, [isOpen, selectedInvoice]);
@@ -144,10 +191,20 @@ export default function InvoiceModal({
             establishmentName: matchingClient.nomEtablissement,
             category: matchingClient.categorie?.toLowerCase() || prev.category,
           }));
+
+          // En mode édition, pré-sélectionner la publication si disponible
+          if (selectedInvoice && matchingClient.publications && matchingClient.publications.length > 0) {
+            // En mode édition, on prend la première publication disponible
+            // Dans un cas réel, il faudrait avoir l'ID de la publication liée à la facture
+            const firstPublication = matchingClient.publications[0];
+            setSelectedPublication(firstPublication.id);
+            const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+            setSelectedPublicationDisplay(`${formattedNom} - ${new Date(firstPublication.datePublication).toLocaleDateString('fr-FR')}`);
+          }
         }
       }
     } catch (err) {
-      console.warn("Impossible de charger les informations du client:", err);
+      // Erreur silencieuse lors du chargement des informations du client
     }
   };
 
@@ -170,7 +227,8 @@ export default function InvoiceModal({
       const data = await response.json();
       setClientSearchResults(data.clients || []);
       setShowClientSearchResults(true);
-    } catch (err) {
+    } catch {
+      // Erreur silencieuse lors de la recherche de clients
     } finally {
       setIsSearchingClient(false);
     }
@@ -212,21 +270,37 @@ export default function InvoiceModal({
   // Mettre à jour les publications quand selectedClient change
   useEffect(() => {
     setPublications(selectedClient?.publications || []);
-    setSelectedPublication("");
-    setSelectedPublicationDisplay("");
-  }, [selectedClient]);
+    
+    // En mode édition, ne pas réinitialiser la sélection de publication
+    if (!selectedInvoice) {
+      setSelectedPublication("");
+      setSelectedPublicationDisplay("");
+    }
+  }, [selectedClient, selectedInvoice]);
 
   // Synchroniser l'affichage avec la sélection
   useEffect(() => {
     if (selectedPublication && publications.length > 0) {
       const pub = publications.find(p => p.id === selectedPublication);
       if (pub) {
-        setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+        const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
+        setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
       }
     } else {
       setSelectedPublicationDisplay("");
     }
   }, [selectedPublication, publications]);
+
+  // En mode édition, s'assurer que la publication est sélectionnée après le chargement
+  useEffect(() => {
+    if (selectedInvoice && selectedClient && publications.length > 0 && !selectedPublication) {
+      // Sélectionner automatiquement la première publication disponible
+      const firstPublication = publications[0];
+      setSelectedPublication(firstPublication.id);
+      const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+      setSelectedPublicationDisplay(`${formattedNom} - ${new Date(firstPublication.datePublication).toLocaleDateString('fr-FR')}`);
+    }
+  }, [selectedInvoice, selectedClient, publications, selectedPublication]);
 
   // Synchroniser l'affichage du statut de facture
   useEffect(() => {
@@ -253,9 +327,10 @@ export default function InvoiceModal({
   const handleSave = async () => {
     try {
       const invoiceData = {
-        'Prestation demandée': newInvoice.serviceType,
+        'Prestation': newInvoice.serviceType,
         'Client': newInvoice.establishmentName,
-        "Date d'émission": newInvoice.date,
+        "Date d'émission": newInvoice.emissionDate,
+        'Date de paiement': newInvoice.date,
         'Statut facture': tournageFactureStatus,
         'Montant total brut': parseFloat(newInvoice.amount),
         'Commentaire': newInvoice.comment,
@@ -272,6 +347,7 @@ export default function InvoiceModal({
         category: "shop",
         establishmentName: "",
         date: "",
+        emissionDate: "",
         amount: "",
         serviceType: "",
         status: "en_attente",
@@ -285,7 +361,8 @@ export default function InvoiceModal({
       setTournageFactureStatus("");
       setTournageFactureStatusDisplay("");
       onOpenChange(false);
-    } catch (err) {
+    } catch {
+      // Erreur silencieuse lors de la sauvegarde
     }
   };
 
@@ -294,6 +371,7 @@ export default function InvoiceModal({
       category: "shop",
       establishmentName: "",
       date: "",
+      emissionDate: "",
       amount: "",
       serviceType: "",
       status: "en_attente",
@@ -441,7 +519,8 @@ export default function InvoiceModal({
                         tabIndex={0}
                         onClick={() => {
                           setSelectedPublication(pub.id);
-                          setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+                          const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
+                          setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
                           // Hide dropdown
                           const dropdown = document.getElementById('publication-dropdown');
                           if (dropdown) {
@@ -451,7 +530,8 @@ export default function InvoiceModal({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             setSelectedPublication(pub.id);
-                            setSelectedPublicationDisplay(`${pub.nom || `Publication ${pub.id}`} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+                            const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
+                            setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
                             // Hide dropdown
                             const dropdown = document.getElementById('publication-dropdown');
                             if (dropdown) {
@@ -460,7 +540,7 @@ export default function InvoiceModal({
                           }
                         }}
                       >
-                        {pub.nom || `Publication ${pub.id}`} - {new Date(pub.datePublication).toLocaleDateString('fr-FR')}
+                        {formatPublicationName(pub.nom || `Publication ${pub.id}`)}
                       </div>
                     ))}
                   </div>
@@ -508,6 +588,23 @@ export default function InvoiceModal({
                   onChange={(e) => {
                     const value = e.target.value;
                     setNewInvoice((prev) => ({ ...prev, amount: value }));
+                  }}
+                />
+
+                <FormLabel htmlFor="emissionDate" isRequired={true}>
+                  Date d&apos;envoi de la facture
+                </FormLabel>
+                <Input
+                  isRequired
+                  id="emissionDate"
+                  type="date"
+                  classNames={{
+                    inputWrapper: "bg-page-bg",
+                  }}
+                  value={newInvoice.emissionDate}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewInvoice((prev) => ({ ...prev, emissionDate: value }));
                   }}
                 />
 
@@ -624,7 +721,7 @@ export default function InvoiceModal({
                 </div>
 
                  <FormLabel htmlFor="date" isRequired={false}>
-                   Date du paiement
+                   Date de paiement
                  </FormLabel>
                  <Input
                    id="date"
@@ -671,12 +768,37 @@ export default function InvoiceModal({
             )}
             {selectedClient && !selectedPublication && (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <div className="text-lg font-medium mb-2">
-                  Sélectionnez une publication pour continuer
-                </div>
-                <div className="text-sm">
-                  Choisissez la publication concernée par cette facture
-                </div>
+                {!selectedInvoice && publications.length === 0 ? (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          Aucune publication disponible
+                        </h3>
+                        <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                          <p>
+                            Ce client n'a pas encore de publication associée. Vous devez d'abord ajouter une publication 
+                            dans la section "Publications" avant de pouvoir créer une facture.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-lg font-medium mb-2">
+                      Sélectionnez une publication pour continuer
+                    </div>
+                    <div className="text-sm">
+                      Choisissez la publication concernée par cette facture
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -693,7 +815,7 @@ export default function InvoiceModal({
           <Button
             className="flex-1"
             color='primary'
-            isDisabled={!newInvoice.establishmentName || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus}
+            isDisabled={!newInvoice.establishmentName || !newInvoice.amount || !newInvoice.serviceType || !selectedPublication || !tournageFactureStatus || !newInvoice.emissionDate}
             onPress={handleSave}
           >
             {selectedInvoice ? "Modifier" : "Ajouter"}

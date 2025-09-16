@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Client',                 // IDs vers ÉTABLISSEMENTS
         "Date d'émission",
         'Montant total net',
-        'Prestation demandée',
+        'Prestation',
         'Commentaire',
         'Statut facture',         // single select (ex. "🔴 En retard")
       ],
@@ -113,9 +113,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: r.id,
         categorie: categorieText,
         nomEtablissement: clientId ? (clientNames[clientId] ?? null) : null,
-        date: r.get("Date d'émission") ?? null,
+        dateEmission: r.get("Date d'émission") ?? null,
         montant: r.get('Montant total net') ?? null,
-        typePrestation: r.get('Prestation demandée') ?? null,
+        typePrestation: r.get('Prestation') ?? null,
         commentaire: r.get('Commentaire') ?? null,
         statut: toText(r.get('Statut facture')), // toujours une string
       };

@@ -168,9 +168,6 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
                     }))
                   }
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Optionnel - Plus de détails nous aident à mieux vous assister
-                </p>
               </div>
             </div>
           )}

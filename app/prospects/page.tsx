@@ -30,11 +30,13 @@ import { StyledSelect } from "@/components/styled-select";
 import { SortableColumnHeader } from "@/components";
 import { useUser } from "@/contexts/user-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useToastContext } from "@/contexts/toast-context";
 import { Prospect } from "@/types/prospect";
 
 export default function ProspectsPage() {
   const { userProfile } = useUser();
   const { authFetch } = useAuthFetch();
+  const { showError } = useToastContext();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   // Variables pour le LazyLoading
   const [hasMore, setHasMore] = useState(true);
@@ -246,7 +248,9 @@ export default function ProspectsPage() {
       }
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue";
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -631,6 +635,7 @@ export default function ProspectsPage() {
             setProspectToConvert(null);
           }
         }}
+        onInteractionCreated={fetchProspects}
       />
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}

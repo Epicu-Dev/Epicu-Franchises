@@ -16,9 +16,11 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 
 import { useUser } from "../contexts/user-context";
 import { useAuthFetch } from "../hooks/use-auth-fetch";
+import { useToastContext } from "../contexts/toast-context";
 
 import { StyledSelect } from "./styled-select";
 import { FormLabel } from "./form-label";
+
 import { Prospect } from "@/types/prospect";
 
 interface ProspectModalProps {
@@ -38,6 +40,7 @@ export function ProspectModal({
 }: ProspectModalProps) {
   const { authFetch } = useAuthFetch();
   const { userProfile } = useUser();
+  const { showSuccess, showError } = useToastContext();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -106,7 +109,9 @@ export function ProspectModal({
   useEffect(() => {
     const fetchMembers = async () => {
       try {
+        
         const response = await authFetch('/api/equipe?limit=200&offset=0');
+        
         if (response.ok) {
           const data = await response.json();
           let allMembers = data.results || [];
@@ -144,6 +149,7 @@ export function ProspectModal({
 
           setCollaborateurs(mappedMembers);
         }
+        
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Erreur lors de la récupération des membres d\'équipe:', err);
@@ -285,9 +291,15 @@ export function ProspectModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-
-        throw new Error(errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`);
+        const errorMessage = errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`;
+        
+        showError(errorMessage);
+        throw new Error(errorMessage);
       }
+
+      // Afficher le toast de succès
+      
+      showSuccess(isEditing ? 'Prospect modifié avec succès' : 'Prospect ajouté avec succès');
 
       // Réinitialiser le formulaire et fermer le modal
       // Définir la première ville Epicu par défaut si l'utilisateur a des villes
@@ -379,6 +391,7 @@ export function ProspectModal({
                     ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"].includes(key as string)
                 );
                 // Always keep categorie as a tuple of length 1 (for categorie1)
+                
                 setNewProspect((prev) => ({
                   ...prev,
                   categorie: [selected[0] ?? prev.categorie[0]],
@@ -403,6 +416,7 @@ export function ProspectModal({
                     const selectedKey = Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none';
                     
                     if (selectedKey === "none") {
+                      
                       setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] }));
                     } else {
                       setNewProspect((prev) => ({ 
@@ -465,6 +479,7 @@ export function ProspectModal({
               selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
               onSelectionChange={(keys) => {
                 const selectedSuiviPar = Array.from(keys)[0] as string;
+                
                 setNewProspect((prev) => ({ ...prev, suiviPar: selectedSuiviPar }));
               }}
             >

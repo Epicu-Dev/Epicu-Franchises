@@ -262,7 +262,21 @@ export default function ClientModal({
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="font-medium text-gray-700 dark:text-gray-300">
-                                                    {publication.nom || `Publication ${index + 1}`}
+                                                    {(() => {
+                                                        const nom = publication.nom || `Publication ${index + 1}`;
+                                                        // Si le nom commence par une date au format yyyy-MM-dd, la formater
+                                                        const dateMatch = nom.match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+                                                        if (dateMatch) {
+                                                            const [, dateStr, rest] = dateMatch;
+                                                            const formattedDate = new Date(dateStr).toLocaleDateString('fr-FR', {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: 'numeric'
+                                                            }).replace(/\//g, '.');
+                                                            return `${formattedDate} ${rest}`;
+                                                        }
+                                                        return nom;
+                                                    })()}
                                                 </span>
                                             </div>
                                             <div className="text-sm text-gray-600 dark:text-gray-400">

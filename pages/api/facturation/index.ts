@@ -36,14 +36,8 @@ const ensureInvoiceFields = async (recId: string, rec?: any) => {
       record = await base(TABLE).find(recId);
     }
     const fieldsToUpdate: any = {};
-    // Date d'émission
-    const dateEmission = record.get("Date d'échéance") || record.get("Date d'émission") || record.get('Date d\'émission');
-    // prefer Date d'émission field exact name
-    const dateField = record.get("Date d'émission") || record.get('Date d\'émission');
-    if (!dateField) {
-      // set to today ISO if missing
-      fieldsToUpdate["Date d'émission"] = new Date().toISOString();
-    }
+    // Date d'émission - laisser vide si non définie
+    // Ne pas définir de valeur par défaut automatiquement
 
     // Montant payé
     const montantPaye = record.get('Montant payé');
@@ -123,23 +117,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!userId) return;
 
       const body = req.body || {};
-      const prestation = body['Prestation demandée'] || body.prestation || null;
+      const prestation = body['Prestation'] || body.prestation || null;
       const clientRaw = body['Client'] || body.client || null;
-      const dateEmission = body["Date d'émission"] || body.date || null;
+      const dateEmission = body["Date d'émission"] || body.dateEmission || null;
+      const datePaiement = body['Date de paiement'] || body.datePaiement || body.date || null;
       const statut = body['Statut facture'] || body.statut || null;
       const montantBrut = body['Montant total brut'] ?? body['Montant total net'] ?? body.montant ?? null;
       const commentaire = body['Commentaire'] || body.commentaire || null;
 
       const fieldsToCreate: any = {};
-      // Ne pas envoyer le champ Prestation demandée pour éviter les erreurs de permissions
-      // if (prestation) fieldsToCreate['Prestation demandée'] = prestation;
+      if (prestation) fieldsToCreate['Prestation'] = prestation;
 
       if (clientRaw) {
         const cid = await findOrCreateEstablishment(clientRaw);
         if (cid) fieldsToCreate['Client'] = [cid];
       }
 
-      if (dateEmission) fieldsToCreate["Date d'émission"] = dateEmission;
+      if (dateEmission && dateEmission.trim() !== '') fieldsToCreate["Date d'émission"] = dateEmission;
+      if (datePaiement && datePaiement.trim() !== '') fieldsToCreate['Date de paiement'] = datePaiement;
       if (statut) fieldsToCreate['Statut facture'] = statut;
       if (montantBrut != null) fieldsToCreate['Montant total brut'] = montantBrut;
       if (commentaire) fieldsToCreate['Commentaire'] = commentaire;
@@ -162,16 +157,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const crecs = await base('ÉTABLISSEMENTS').select({ filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, fields: ["Nom de l'établissement", 'Raison sociale'], maxRecords: 1 }).all();
           if (crecs && crecs.length > 0) nomEtablissement = crecs[0].get("Nom de l'établissement") || crecs[0].get('Raison sociale') || null;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const invoice = {
         id: rec.id,
         categorie: null,
         nomEtablissement,
-        date: rec.get("Date d'émission") || null,
+        datePaiement: rec.get('Date de paiement') || null,
+        dateEmission: rec.get("Date d'émission") || null,
         montant: rec.get('Montant total brut') ?? rec.get('Montant total net') ?? null,
-        typePrestation: rec.get('Prestation demandée') || null,
+        typePrestation: rec.get('Prestation') || null,
         commentaire: rec.get('Commentaire') || null,
         statut: rec.get('Statut facture') || null,
       };
@@ -189,8 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) return res.status(400).json({ error: 'id requis' });
 
       const fieldsToUpdate: any = {};
-      // Ne pas envoyer le champ Prestation demandée pour éviter les erreurs de permissions
-      // if (Object.prototype.hasOwnProperty.call(body, 'Prestation demandée') || Object.prototype.hasOwnProperty.call(body, 'prestation')) fieldsToUpdate['Prestation demandée'] = body['Prestation demandée'] || body.prestation;
+      if (Object.prototype.hasOwnProperty.call(body, 'Prestation') || Object.prototype.hasOwnProperty.call(body, 'prestation')) fieldsToUpdate['Prestation'] = body['Prestation'] || body.prestation;
 
       if (Object.prototype.hasOwnProperty.call(body, 'Client') || Object.prototype.hasOwnProperty.call(body, 'client')) {
         const clientRaw = body['Client'] || body.client;
@@ -202,7 +197,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      if (Object.prototype.hasOwnProperty.call(body, "Date d'émission") || Object.prototype.hasOwnProperty.call(body, 'date')) fieldsToUpdate["Date d'émission"] = body["Date d'émission"] || body.date;
+      if (Object.prototype.hasOwnProperty.call(body, "Date d'émission") || Object.prototype.hasOwnProperty.call(body, 'dateEmission')) {
+        const emissionValue = body["Date d'émission"] || body.dateEmission;
+        fieldsToUpdate["Date d'émission"] = emissionValue && emissionValue.trim() !== '' ? emissionValue : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(body, 'Date de paiement') || Object.prototype.hasOwnProperty.call(body, 'datePaiement') || Object.prototype.hasOwnProperty.call(body, 'date')) {
+        const paiementValue = body['Date de paiement'] || body.datePaiement || body.date;
+        fieldsToUpdate['Date de paiement'] = paiementValue && paiementValue.trim() !== '' ? paiementValue : null;
+      }
       if (Object.prototype.hasOwnProperty.call(body, 'Statut facture') || Object.prototype.hasOwnProperty.call(body, 'statut')) fieldsToUpdate['Statut facture'] = body['Statut facture'] || body.statut;
       if (Object.prototype.hasOwnProperty.call(body, 'Montant total brut') || Object.prototype.hasOwnProperty.call(body, 'montant')) fieldsToUpdate['Montant total brut'] = body['Montant total brut'] ?? body['Montant total net'] ?? body.montant;
       if (Object.prototype.hasOwnProperty.call(body, 'Commentaire') || Object.prototype.hasOwnProperty.call(body, 'commentaire')) fieldsToUpdate['Commentaire'] = body['Commentaire'] || body.commentaire || null;
@@ -227,16 +229,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const crecs = await base('ÉTABLISSEMENTS').select({ filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, fields: ["Nom de l'établissement", 'Raison sociale'], maxRecords: 1 }).all();
           if (crecs && crecs.length > 0) nomEtablissement = crecs[0].get("Nom de l'établissement") || crecs[0].get('Raison sociale') || null;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const invoice = {
         id: rec.id,
         categorie: null,
         nomEtablissement,
-        date: rec.get("Date d'émission") || null,
+        datePaiement: rec.get('Date de paiement') || null,
+        dateEmission: rec.get("Date d'émission") || null,
         montant: rec.get('Montant total brut') ?? rec.get('Montant total net') ?? null,
-        typePrestation: rec.get('Prestation demandée') || null,
+        typePrestation: rec.get('Prestation') || null,
         commentaire: rec.get('Commentaire') || null,
         statut: rec.get('Statut facture') || null,
       };
@@ -248,9 +251,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
     console.error('facturation/index error:', error?.message || error);
-    return res.status(500).json({ 
-      error: 'Internal error', 
-      details: error?.message || String(error) 
+    return res.status(500).json({
+      error: 'Internal error',
+      details: error?.message || String(error)
     });
   }
 }

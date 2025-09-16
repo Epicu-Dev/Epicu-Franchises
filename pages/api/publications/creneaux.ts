@@ -43,14 +43,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // normalize start to ISO date (keep input but protect quotes)
                 const startEsc = String(start).replace(/"/g, '\\"');
 
-                // resolve category id if provided
-                let catId: string | null = null;
+                // resolve category name if provided (Catégorie is a Single Select field)
+                let categoryName: string | null = null;
                 if (category) {
-                    if (/^rec/i.test(category)) catId = category;
-                    else {
-                        const found = await base('Catégories').select({ filterByFormula: `LOWER({Name}) = "${String(category).toLowerCase().replace(/"/g, '\\"')}"`, maxRecords: 1 }).firstPage();
-                        if (found && found.length > 0) catId = found[0].id;
-                    }
+                    // Map category names to emoji categories
+                    const categoryMapping: Record<string, string> = {
+                        'FOOD': '🟠 FOOD',
+                        'SHOP': '🟣 SHOP', 
+                        'TRAVEL': '🟢 TRAVEL',
+                        'FUN': '🔴 FUN',
+                        'BEAUTY': '🩷 BEAUTY'
+                    };
+                    
+                    categoryName = categoryMapping[String(category).toUpperCase()] || String(category);
                 }
 
                 // resolve ville id if provided
@@ -65,18 +70,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 // build formula parts
                 const formulaParts: string[] = [];
-                // category relation contains
-                if (catId) formulaParts.push(`FIND("${catId}", ARRAYJOIN({Catégorie}))`);
-                // ville relation contains
-                if (villeId) formulaParts.push(`FIND("${villeId}", ARRAYJOIN({Ville EPICU}))`);
+                // category is a Single Select field - use exact match
+                if (categoryName) {
+                    formulaParts.push(`{Catégorie} = "${categoryName.replace(/"/g, '\\"')}"`);
+                }
+                // ville is a relation fiel d - use FIND with ARRAYJOIN
+                if (villeId) {
+                    formulaParts.push(`FIND("${villeId}", ARRAYJOIN({Ville EPICU}))`);
+                }
                 // date >= start : use DATETIME_DIFF >= 0
                 formulaParts.push(`DATETIME_DIFF({DATE}, DATETIME_PARSE("${startEsc}"), 'seconds') >= 0`);
 
                 const filterFormula = formulaParts.length > 1 ? `AND(${formulaParts.join(',')})` : formulaParts[0];
 
+                // Debug logging
+                console.log('Debug creneaux API:');
+                console.log('- category:', category);
+                console.log('- categoryName:', categoryName);
+                console.log('- ville:', ville);
+                console.log('- villeId:', villeId);
+                console.log('- start:', start);
+                console.log('- filterFormula:', filterFormula);
+
                 // fetch records; request only needed fields
                 const fields = ['DATE', 'CATÉGORIE', 'JOUR', 'DATE DE PUBLICATION', 'HEURE', 'Statut de publication'];
                 const records = await base(TABLE_NAME).select({ view: VIEW_NAME, filterByFormula: filterFormula, fields, pageSize: 100, sort: [{ field: 'DATE', direction: 'asc' }] }).all();
+                
+                console.log('- records found:', records.length);
+
+                // Test sans filtre si aucun résultat
+                if (records.length === 0) {
+                    console.log('Testing without filters...');
+                    const allRecords = await base(TABLE_NAME).select({ view: VIEW_NAME, fields, pageSize: 10 }).all();
+                    console.log('- total records in table:', allRecords.length);
+                    if (allRecords.length > 0) {
+                        const sampleRecord = allRecords[0];
+                        console.log('- sample record CATÉGORIE:', sampleRecord.get('CATÉGORIE'));
+                        console.log('- sample record Ville EPICU:', sampleRecord.get('Ville EPICU'));
+                        console.log('- sample record DATE:', sampleRecord.get('DATE'));
+                        
+                        // Test chaque filtre individuellement
+                        console.log('Testing individual filters...');
+                        
+                        // Test catégorie seule
+                        try {
+                            const catRecords = await base(TABLE_NAME).select({ 
+                                view: VIEW_NAME, 
+                                filterByFormula: `{Catégorie} = "🔴 FUN"`, 
+                                fields, 
+                                pageSize: 5 
+                            }).all();
+                            console.log('- records with FUN category:', catRecords.length);
+                        } catch (e) {
+                            console.log('- error testing category filter:', e);
+                        }
+                        
+                        // Test ville seule
+                        try {
+                            const villeRecords = await base(TABLE_NAME).select({ 
+                                view: VIEW_NAME, 
+                                filterByFormula: `FIND("recVFzmIaA047hk6E", ARRAYJOIN({Ville EPICU}))`, 
+                                fields, 
+                                pageSize: 5 
+                            }).all();
+                            console.log('- records with ville ID:', villeRecords.length);
+                        } catch (e) {
+                            console.log('- error testing ville filter:', e);
+                        }
+                    }
+                }
 
                 // map to simple objects
                 const mapped = records.map((r: any) => ({

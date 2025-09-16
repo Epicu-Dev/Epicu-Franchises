@@ -171,7 +171,7 @@ export default function FacturationPage() {
         ...selectedInvoice,
         category: invoiceData.category,
         establishmentName: invoiceData.establishmentName,
-        date: invoiceData.date,
+        datePaiement: invoiceData.date,
         amount: invoiceData.amount,
         serviceType: invoiceData.serviceType,
         comment: invoiceData.comment,
@@ -203,8 +203,13 @@ export default function FacturationPage() {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    
     const date = new Date(dateString);
+    
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) return "-";
 
     return date.toLocaleDateString("fr-FR", {
       day: "2-digit",
@@ -307,8 +312,8 @@ export default function FacturationPage() {
                   </TableColumn>
                   <TableColumn className="font-light text-sm">
                     <SortableColumnHeader
-                      field="date"
-                      label="Date"
+                      field="dateEmission"
+                      label="Date d'émission"
                       sortDirection={sortDirection}
                       sortField={sortField}
                       onSort={handleSort}
@@ -338,7 +343,7 @@ export default function FacturationPage() {
                       <TableCell className="font-light py-5">
                         {invoice.nomEtablissement}
                       </TableCell>
-                      <TableCell className="font-light">{formatDate(invoice.date)}</TableCell>
+                      <TableCell className="font-light">{formatDate(invoice.dateEmission)}</TableCell>
                       <TableCell className="font-light">
                         {formatAmount(invoice.montant)}
                       </TableCell>

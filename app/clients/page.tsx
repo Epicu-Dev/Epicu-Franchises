@@ -580,7 +580,14 @@ export default function ClientsPage() {
                                           client.publications && client.publications.length > 0
                                             ? client.publications.map((pub, idx) => (
                                               <div key={idx} className="text-sm">
-                                                {pub.datePublication || "-"}
+                                                {pub.datePublication
+                                                  ? new Date(pub.datePublication).toLocaleDateString('fr-FR', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric'
+                                                  }).replace(/\//g, '.')
+                                                  : "-"
+                                                }
                                               </div>
                                             ))
                                             : "-"
@@ -595,7 +602,14 @@ export default function ClientsPage() {
                                           client.publications && client.publications.length > 0
                                             ? client.publications.map((pub, idx) => (
                                               <div key={idx} className="text-sm">
-                                                {pub.dateEnvoiFactureCreation || "-"}
+                                                {pub.dateEnvoiFactureCreation
+                                                  ? new Date(pub.dateEnvoiFactureCreation).toLocaleDateString('fr-FR', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric'
+                                                  }).replace(/\//g, '.')
+                                                  : "-"
+                                                }
                                               </div>
                                             ))
                                             : "-"

@@ -16,6 +16,7 @@ import { FormLabel } from "@/components";
 import { StyledSelect } from "@/components/styled-select";
 import { Prospect } from "@/types/prospect";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useToastContext } from "@/contexts/toast-context";
 
 type ProspectStatus = "Contacté" | "En discussion" | "Glacial" | "Client";
 
@@ -33,6 +34,7 @@ export default function ConvertProspectModal({
     onInteractionCreated
 }: ConvertProspectModalProps) {
     const { authFetch } = useAuthFetch();
+    const { showSuccess, showError } = useToastContext();
     const [status, setStatus] = useState<ProspectStatus | null>(null);
     const [comment, setComment] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
@@ -74,8 +76,13 @@ export default function ConvertProspectModal({
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Erreur lors de la création de l'interaction");
+                const errorMessage = errorData.error || "Erreur lors de la création de l'interaction";
+                showError(errorMessage);
+                throw new Error(errorMessage);
             }
+
+            // Afficher le toast de succès
+            showSuccess('Prospect converti avec succès');
 
             // Réinitialiser le formulaire
             setStatus(null);

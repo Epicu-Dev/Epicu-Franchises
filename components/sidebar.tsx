@@ -8,27 +8,25 @@ import { CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Avatar } from "@heroui/avatar";
 import {
-  HomeIcon,
-  ChartBarIcon,
-  UsersIcon,
-  BellIcon,
-  CalendarIcon,
-  DocumentTextIcon,
-  UserGroupIcon,
-  BuildingStorefrontIcon,
-  Cog6ToothIcon,
-  QuestionMarkCircleIcon,
-  ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
-  ArchiveBoxIcon,
   ArrowRightIcon,
-  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
 import { useUser } from "../contexts/user-context";
 import { useLoading } from "../contexts/loading-context";
+
+// Composant d'icône personnalisé
+const CustomIcon = ({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => (
+  <Image
+    alt={alt}
+    className={`${className} ${isActive ? 'brightness-0 invert' : ''}`}
+    height={20}
+    src={src}
+    width={20}
+  />
+);
 
 interface SidebarProps {
   onLogout: () => void;
@@ -69,41 +67,77 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     {
       key: "home-admin",
       label: "Accueil Admin",
-      icon: HomeIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil Admin" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_accueil.svg" />,
       href: "/home-admin",
       showFor: ["admin"]
     },
-    { key: "home", label: "Accueil", icon: Squares2X2Icon, href: "/home", showFor: ["franchise", "admin"] },
-    { key: "data", label: "Data", icon: ChartBarIcon, href: "/data", showFor: ["franchise", "admin"] },
-    { key: "clients", label: "Clients", icon: UsersIcon, href: "/clients", showFor: ["franchise", "admin"] },
+    { 
+      key: "home", 
+      label: "Accueil", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_accueil.svg" />, 
+      href: "/home", 
+      showFor: ["franchise", "admin"] 
+    },
+    { 
+      key: "data", 
+      label: "Data", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Data" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_data.svg" />, 
+      href: "/data", 
+      showFor: ["franchise", "admin"] 
+    },
+    { 
+      key: "clients", 
+      label: "Clients", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Clients" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_client -.svg" />, 
+      href: "/clients", 
+      showFor: ["franchise", "admin"] 
+    },
     {
       key: "prospects",
       label: "Prospects",
-      icon: UsersIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Prospects" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_prospects.svg" />,
       href: "/prospects",
       showFor: ["franchise", "admin"]
     },
-    { key: "agenda", label: "Agenda", icon: CalendarIcon, href: "/agenda", showFor: ["franchise", "admin"] },
-    { key: "todo", label: "To do", icon: BellIcon, href: "/todo", showFor: ["franchise", "admin"] },
+    { 
+      key: "agenda", 
+      label: "Agenda", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Agenda" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_agenda.svg" />, 
+      href: "/agenda", 
+      showFor: ["franchise", "admin"] 
+    },
+    { 
+      key: "todo", 
+      label: "To do", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="To do" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_to do.svg" />, 
+      href: "/todo", 
+      showFor: ["franchise", "admin"] 
+    },
     {
       key: "facturation",
       label: "Facturation",
-      icon: DocumentTextIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Facturation" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_facturation.svg" />,
       href: "/facturation",
       showFor: ["admin", "franchise"]
     },
-    { key: "equipe", label: "Equipe", icon: UserGroupIcon, href: "/equipe", showFor: ["franchise", "admin"] },
+    { 
+      key: "equipe", 
+      label: "Equipe", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Equipe" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_équipe.svg" />, 
+      href: "/equipe", 
+      showFor: ["franchise", "admin"] 
+    },
     {
       key: "studio",
       label: "Le studio",
-      icon: BuildingStorefrontIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Le studio" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_le studio.svg" />,
       href: "/studio",
       showFor: ["admin", "franchise"]
     },
     {
       key: "ressources",
       label: "Ressources",
-      icon: ArchiveBoxIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Ressources" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_Ressources.svg" />,
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
@@ -131,17 +165,22 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   });
 
   const settingsItems = [
-    { key: "compte", label: "Compte", icon: Cog6ToothIcon, href: "/profil" },
+    { 
+      key: "compte", 
+      label: "Compte", 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Compte" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_compte.svg" />, 
+      href: "/profil" 
+    },
     {
       key: "aide",
       label: "Aide",
-      icon: QuestionMarkCircleIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Aide" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_aide.svg" />,
       action: onHelpClick,
     },
     {
       key: "logout",
       label: "Se déconnecter",
-      icon: ArrowRightOnRectangleIcon,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Déconnexion" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_déconnexion.svg" />,
       action: onLogout,
     },
   ];
@@ -273,7 +312,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                     }`}
                   onClick={() => handleItemClick(item)}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon isActive={isActive} />
                   <div className="flex-1">
 
                     {item.label}
@@ -306,7 +345,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                       }`}
                     onClick={() => handleItemClick(item)}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon isActive={isActive} />
                     <div className="flex-1">
 
                       {item.label}
