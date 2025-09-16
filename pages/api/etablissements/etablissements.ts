@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { base } from '../constants';
+import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 const VIEW_NAME = '🌍 Tous établissements';
@@ -53,6 +54,77 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       sort: [{ field: orderBy, direction: order }],
     };
 
+    // Vérification de l'authentification
+    const userId = await requireValidAccessToken(req, res);
+    if (!userId) return; // requireValidAccessToken a déjà répondu
+
+    // Auth: ne voir que les établissements qui partagent au moins une Ville EPICU avec l'utilisateur
+    try {
+      const userRecord = await base('COLLABORATEURS').find(userId);
+
+      let linkedIds: string[] = [];
+      const linked = userRecord.get('Ville EPICU');
+      if (linked) {
+        if (Array.isArray(linked)) linkedIds = linked;
+        else if (typeof linked === 'string') linkedIds = [linked];
+      }
+
+      if (linkedIds.length === 0) {
+        // l'utilisateur n'a pas de ville Epicu liée -> pas de résultats
+        return res.status(200).json({
+          clients: [],
+          pagination: {
+            limit,
+            offset,
+            orderBy,
+            order,
+            hasMore: false,
+            nextOffset: null,
+            prevOffset: Math.max(0, offset - limit),
+          },
+        });
+      }
+
+      try {
+        const formulaForCities = `OR(${linkedIds.map((id) => `RECORD_ID() = '${id}'`).join(',')})`;
+        const cityRecords = await base('VILLES EPICU').select({ filterByFormula: formulaForCities, fields: ['Ville EPICU'] }).all();
+        const cityNames: string[] = cityRecords.map((c: any) => String(c.get('Ville EPICU') || '').trim()).filter(Boolean);
+
+        if (cityNames.length === 0) {
+          return res.status(200).json({
+            clients: [],
+            pagination: {
+              limit,
+              offset,
+              orderBy,
+              order,
+              hasMore: false,
+              nextOffset: null,
+              prevOffset: Math.max(0, offset - limit),
+            },
+          });
+        }
+
+        const cityParts = cityNames.map((name) => {
+          const esc = String(name).replace(/"/g, '\\"');
+          return `FIND("${esc}", ARRAYJOIN({Ville EPICU}))`;
+        });
+        const cityFilter = `OR(${cityParts.join(',')})`;
+
+        if (selectOptions.filterByFormula) {
+          selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${cityFilter})`;
+        } else {
+          selectOptions.filterByFormula = cityFilter;
+        }
+      } catch (e) {
+        console.error('Erreur résolution villes Epicu:', e);
+        return res.status(500).json({ error: 'Impossible de récupérer les villes Epicu de l\'utilisateur' });
+      }
+    } catch (e) {
+      console.error('Erreur récupération utilisateur:', e);
+      return res.status(500).json({ error: 'Impossible de récupérer les informations de l\'utilisateur' });
+    }
+
     // Construire la formule de filtrage
     let filterFormulas: string[] = [];
 
@@ -90,11 +162,15 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    // Appliquer les filtres si il y en a
+    // Appliquer les filtres si il y en a (conserver/combiner le filtre Ville EPICU si présent)
     if (filterFormulas.length > 0) {
-      selectOptions.filterByFormula = filterFormulas.length === 1
-        ? filterFormulas[0]
-        : `AND(${filterFormulas.join(', ')})`;
+      if (selectOptions.filterByFormula) {
+        selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${filterFormulas.length === 1 ? filterFormulas[0] : `AND(${filterFormulas.join(', ')})`})`;
+      } else {
+        selectOptions.filterByFormula = filterFormulas.length === 1
+          ? filterFormulas[0]
+          : `AND(${filterFormulas.join(', ')})`;
+      }
     }
 
     // Ne récupérer qu'au plus offset+limit en mémoire
