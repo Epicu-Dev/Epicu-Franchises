@@ -58,13 +58,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     categoryName = categoryMapping[String(category).toUpperCase()] || String(category);
                 }
 
-                // resolve ville id if provided
-                let villeId: string | null = null;
+                // resolve ville names if provided (search VILLES EPICU to get the canonical 'Ville EPICU' name)
+                const cityNames: string[] = [];
                 if (ville) {
-                    if (/^rec/i.test(ville)) villeId = ville;
-                    else {
-                        const found = await base('VILLES EPICU').select({ filterByFormula: `OR(LOWER({Ville EPICU}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}", LOWER({Ville}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}", LOWER({Name}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}")`, maxRecords: 1 }).firstPage();
-                        if (found && found.length > 0) villeId = found[0].id;
+                    if (/^rec/i.test(ville)) {
+                        // provided a record id -> fetch it
+                        try {
+                            const rec = await base('VILLES EPICU').find(ville);
+                            const name = String(rec.get('Ville EPICU') || rec.get('Ville') || rec.get('Name') || '').trim();
+                            if (name) cityNames.push(name);
+                        } catch (e) {
+                            // fallback: keep raw value
+                            cityNames.push(String(ville));
+                        }
+                    } else {
+                        // try to find matching city records by common fields (case-insensitive)
+                        try {
+                            const found = await base('VILLES EPICU').select({ filterByFormula: `OR(LOWER({Ville EPICU}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}", LOWER({Ville}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}", LOWER({Name}) = "${String(ville).toLowerCase().replace(/"/g, '\\"')}")`, maxRecords: 50 }).all();
+                            if (found && found.length > 0) {
+                                found.forEach((c: any) => {
+                                    const n = String(c.get('Ville EPICU') || c.get('Ville') || c.get('Name') || '').trim();
+                                    if (n) cityNames.push(n);
+                                });
+                            } else {
+                                cityNames.push(String(ville));
+                            }
+                        } catch (e) {
+                            cityNames.push(String(ville));
+                        }
                     }
                 }
 
@@ -74,71 +95,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (categoryName) {
                     formulaParts.push(`{Catégorie} = "${categoryName.replace(/"/g, '\\"')}"`);
                 }
-                // ville is a relation fiel d - use FIND with ARRAYJOIN
-                if (villeId) {
-                    formulaParts.push(`FIND("${villeId}", ARRAYJOIN({Ville EPICU}))`);
+                // ville: match by city names inside {Ville EPICU}
+                if (cityNames.length > 0) {
+                    const cityParts = cityNames.map((name) => {
+                        const esc = String(name).replace(/"/g, '\\"');
+                        return `FIND("${esc}", ARRAYJOIN({Ville EPICU}))`;
+                    });
+                    if (cityParts.length === 1) formulaParts.push(cityParts[0]); else formulaParts.push(`OR(${cityParts.join(',')})`);
                 }
                 // date >= start : use DATETIME_DIFF >= 0
                 formulaParts.push(`DATETIME_DIFF({DATE}, DATETIME_PARSE("${startEsc}"), 'seconds') >= 0`);
 
                 const filterFormula = formulaParts.length > 1 ? `AND(${formulaParts.join(',')})` : formulaParts[0];
 
-                // Debug logging
-                console.log('Debug creneaux API:');
-                console.log('- category:', category);
-                console.log('- categoryName:', categoryName);
-                console.log('- ville:', ville);
-                console.log('- villeId:', villeId);
-                console.log('- start:', start);
-                console.log('- filterFormula:', filterFormula);
+                // (debug logs removed)
 
                 // fetch records; request only needed fields
-                const fields = ['DATE', 'CATÉGORIE', 'JOUR', 'DATE DE PUBLICATION', 'HEURE', 'Statut de publication'];
-                const records = await base(TABLE_NAME).select({ view: VIEW_NAME, filterByFormula: filterFormula, fields, pageSize: 100, sort: [{ field: 'DATE', direction: 'asc' }] }).all();
-                
-                console.log('- records found:', records.length);
+                const fields = ['DATE', 'CATÉGORIE', 'JOUR', 'DATE DE PUBLICATION', 'HEURE', 'Statut de publication', 'Ville EPICU'];
+                const selectOptions: any = {
+                    view: VIEW_NAME,
+                    filterByFormula: filterFormula,
+                    fields,
+                    pageSize: Math.min(100, limit || 50),
+                    sort: [{ field: 'DATE', direction: 'asc' }],
+                    maxRecords: offset + limit,
+                };
 
-                // Test sans filtre si aucun résultat
-                if (records.length === 0) {
-                    console.log('Testing without filters...');
-                    const allRecords = await base(TABLE_NAME).select({ view: VIEW_NAME, fields, pageSize: 10 }).all();
-                    console.log('- total records in table:', allRecords.length);
-                    if (allRecords.length > 0) {
-                        const sampleRecord = allRecords[0];
-                        console.log('- sample record CATÉGORIE:', sampleRecord.get('CATÉGORIE'));
-                        console.log('- sample record Ville EPICU:', sampleRecord.get('Ville EPICU'));
-                        console.log('- sample record DATE:', sampleRecord.get('DATE'));
-                        
-                        // Test chaque filtre individuellement
-                        console.log('Testing individual filters...');
-                        
-                        // Test catégorie seule
-                        try {
-                            const catRecords = await base(TABLE_NAME).select({ 
-                                view: VIEW_NAME, 
-                                filterByFormula: `{Catégorie} = "🔴 FUN"`, 
-                                fields, 
-                                pageSize: 5 
-                            }).all();
-                            console.log('- records with FUN category:', catRecords.length);
-                        } catch (e) {
-                            console.log('- error testing category filter:', e);
-                        }
-                        
-                        // Test ville seule
-                        try {
-                            const villeRecords = await base(TABLE_NAME).select({ 
-                                view: VIEW_NAME, 
-                                filterByFormula: `FIND("recVFzmIaA047hk6E", ARRAYJOIN({Ville EPICU}))`, 
-                                fields, 
-                                pageSize: 5 
-                            }).all();
-                            console.log('- records with ville ID:', villeRecords.length);
-                        } catch (e) {
-                            console.log('- error testing ville filter:', e);
-                        }
-                    }
-                }
+                const upToPageRecords = await base(TABLE_NAME).select(selectOptions).all();
+                const records = upToPageRecords.slice(offset, offset + limit);
+
+                // counts available for monitoring
 
                 // map to simple objects
                 const mapped = records.map((r: any) => ({
