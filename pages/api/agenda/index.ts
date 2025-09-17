@@ -53,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Collaborateur',
         'Établissements',
         'Google Event ID', // Nouveau champ pour stocker l'ID Google Calendar
+        'Creneau', // Champ de liaison vers le créneau de publication
       ];
 
       // Construire la formule de filtrage si besoin
@@ -82,6 +83,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const description = r.get('Description') || '';
         const collaborators = r.get('Collaborateur') || [];
         const etablissements = r.get('Établissements') || [];
+        const googleEventId = r.get('Google Event ID') || '';
+        const creneauLien = r.get('Creneau') || [];
+        const creneauId = Array.isArray(creneauLien) && creneauLien.length > 0 ? creneauLien[0] : '';
 
         return {
           id: r.id,
@@ -91,6 +95,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           description,
           collaborators,
           etablissements,
+          googleEventId,
+          creneauId,
         };
       });
 
@@ -230,12 +236,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Type': body['Type'] || body.type || '',
         'Description': body['Description'] || body.description || body.desc || '',
         'Google Event ID': body['Google Event ID'] || body.googleEventId || '',
+        'Creneau': body['Creneau'] || body.creneauId || body.creneau || '',
       };
 
       // Log pour déboguer
       if (body['Google Event ID'] || body.googleEventId) {
         console.log(`🔄 Création avec Google Event ID: ${fieldsToCreate['Google Event ID']}`);
       }
+      if (body['Creneau'] || body.creneauId || body.creneau) {
+        console.log(`🔄 Création avec Creneau: ${JSON.stringify(fieldsToCreate['Creneau'])}`);
+      }
+      console.log(`📋 Données complètes à créer:`, JSON.stringify(fieldsToCreate, null, 2));
 
       // Collaborateur linkage: expect an array of record ids or single id
       const collPayload = body['Collaborateur'] || body.collaborator || body.collaborateurs || body.collaborators || body.user;
@@ -283,6 +294,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body['Google Event ID'] ?? body.googleEventId) {
         fieldsToUpdate['Google Event ID'] = body['Google Event ID'] || body.googleEventId;
         console.log(`🔄 Mise à jour Google Event ID: ${fieldsToUpdate['Google Event ID']}`);
+      }
+      if (body['Creneau'] ?? body.creneauId ?? body.creneau) {
+        fieldsToUpdate['Creneau'] = body['Creneau'] || body.creneauId || body.creneau;
+        console.log(`🔄 Mise à jour Creneau: ${fieldsToUpdate['Creneau']}`);
       }
 
       // Collaborateur linkage: accept array, single id, null (to clear)
@@ -347,80 +362,107 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const eventType = eventToDelete.get('Type') || '';
       const eventDate = eventToDelete.get('Date') || '';
       const eventEtablissements = eventToDelete.get('Établissements') || [];
+      const creneauLien = eventToDelete.get('Creneau') || [];
+      const creneauId = Array.isArray(creneauLien) && creneauLien.length > 0 ? creneauLien[0] : '';
 
       // Si c'est une publication, libérer le créneau associé
-      if (eventType === 'publication' && eventDate && Array.isArray(eventEtablissements) && eventEtablissements.length > 0) {
-        console.log(`🔄 Suppression d'un événement de type publication - Date: ${eventDate}, Établissements: ${eventEtablissements.join(', ')}`);
+      if (eventType === 'publication') {
+        console.log(`🔄 Suppression d'un événement de type publication - Date: ${eventDate}, Creneau ID: ${creneauId}`);
         
         try {
-          // Récupérer la catégorie de l'établissement
-          const establishmentId = Array.isArray(eventEtablissements) ? eventEtablissements[0] : eventEtablissements;
-          console.log(`🏢 Recherche de l'établissement: ${establishmentId}`);
+          let creneauToUpdate = null;
           
-          const establishment = await base('ÉTABLISSEMENTS').find(establishmentId);
-          const establishmentCategories = establishment.get('Catégorie') || [];
-          console.log(`📂 Catégories de l'établissement: ${Array.isArray(establishmentCategories) ? establishmentCategories.join(', ') : establishmentCategories}`);
-
-          if (Array.isArray(establishmentCategories) && establishmentCategories.length > 0) {
-            // Récupérer le nom de la catégorie
-            const categoryId = establishmentCategories[0];
-            console.log(`🔍 Recherche de la catégorie: ${categoryId}`);
-            
-            const category = await base('CATÉGORIES').find(categoryId);
-            const categoryName = String(category.get('Name') || '');
-            console.log(`📋 Nom de la catégorie: ${categoryName}`);
-
-            // Mapper le nom de catégorie vers l'emoji correspondant
-            const categoryMapping: Record<string, string> = {
-              'FOOD': '🟠 FOOD',
-              'SHOP': '🟣 SHOP', 
-              'TRAVEL': '🟢 TRAVEL',
-              'FUN': '🔴 FUN',
-              'BEAUTY': '🩷 BEAUTY'
-            };
-            
-            const categoryWithEmoji = categoryMapping[categoryName.toUpperCase()] || categoryName;
-            console.log(`🎨 Catégorie avec emoji: ${categoryWithEmoji}`);
-
-            // Rechercher le créneau correspondant
-            const filterFormula = `AND({Catégorie} = "${categoryWithEmoji.replace(/"/g, '\\"')}", {DATE} = "${eventDate}")`;
-            console.log(`🔍 Recherche du créneau avec la formule: ${filterFormula}`);
-            
-            const creneauxResponse = await base('CALENDRIER PUBLICATIONS').select({
-              filterByFormula: filterFormula,
-              fields: ['Statut de publication'],
-              maxRecords: 1
-            }).firstPage();
-
-            console.log(`📊 Résultats de la recherche: ${creneauxResponse.length} créneau(s) trouvé(s)`);
-            
-            if (creneauxResponse && creneauxResponse.length > 0) {
-              const creneau = creneauxResponse[0];
-              const currentStatus = creneau.get('Statut de publication') || [];
-              console.log(`⏰ Créneau trouvé: ${creneau.id} - Statut actuel: ${Array.isArray(currentStatus) ? currentStatus.join(', ') : currentStatus}`);
-              
-              // Vérifier si le créneau n'est pas déjà libre
-              const freeStatusId = 'recfExTXxcNivX1i4';
-              
-              // Si le statut n'est pas déjà "Libre", le libérer
-              if (Array.isArray(currentStatus) && !currentStatus.includes(freeStatusId)) {
-                console.log(`🔄 Libération du créneau ${creneau.id} - Statut actuel: ${currentStatus.join(', ')}`);
-                
-                // Libérer le créneau en le passant à Libre
-                await base('CALENDRIER PUBLICATIONS').update([{
-                  id: creneau.id,
-                  fields: {
-                    'Statut de publication': [freeStatusId] // Libre
-                  }
-                }]);
-                
-                console.log(`✅ Créneau ${creneau.id} libéré avec succès`);
-              } else {
-                console.log(`ℹ️ Créneau ${creneau.id} déjà libre, aucune action nécessaire`);
-              }
-            } else {
-              console.log(`⚠️ Aucun créneau trouvé pour la catégorie ${categoryWithEmoji} et la date ${eventDate}`);
+          // Méthode 1: Utiliser l'ID du créneau stocké (plus fiable)
+          if (creneauId) {
+            console.log(`🎯 Utilisation de l'ID du créneau stocké: ${creneauId}`);
+            try {
+              creneauToUpdate = await base('CALENDRIER PUBLICATIONS').find(creneauId);
+              console.log(`✅ Créneau trouvé par ID: ${creneauToUpdate.id}`);
+            } catch (error) {
+              console.warn(`⚠️ Créneau avec ID ${creneauId} introuvable, recherche par catégorie et date`);
+              creneauToUpdate = null;
             }
+          }
+          
+          // Méthode 2: Recherche par catégorie et date (fallback)
+          if (!creneauToUpdate && eventDate && Array.isArray(eventEtablissements) && eventEtablissements.length > 0) {
+            console.log(`🔍 Recherche du créneau par catégorie et date...`);
+            
+            const establishmentId = Array.isArray(eventEtablissements) ? eventEtablissements[0] : eventEtablissements;
+            console.log(`🏢 Recherche de l'établissement: ${establishmentId}`);
+            
+            const establishment = await base('ÉTABLISSEMENTS').find(establishmentId);
+            const establishmentCategories = establishment.get('Catégorie') || [];
+            console.log(`📂 Catégories de l'établissement: ${Array.isArray(establishmentCategories) ? establishmentCategories.join(', ') : establishmentCategories}`);
+
+            if (Array.isArray(establishmentCategories) && establishmentCategories.length > 0) {
+              // Récupérer le nom de la catégorie
+              const categoryId = establishmentCategories[0];
+              console.log(`🔍 Recherche de la catégorie: ${categoryId}`);
+              
+              const category = await base('CATÉGORIES').find(categoryId);
+              const categoryName = String(category.get('Name') || '');
+              console.log(`📋 Nom de la catégorie: ${categoryName}`);
+
+              // Mapper le nom de catégorie vers l'emoji correspondant
+              const categoryMapping: Record<string, string> = {
+                'FOOD': '🟠 FOOD',
+                'SHOP': '🟣 SHOP', 
+                'TRAVEL': '🟢 TRAVEL',
+                'FUN': '🔴 FUN',
+                'BEAUTY': '🩷 BEAUTY'
+              };
+              
+              const categoryWithEmoji = categoryMapping[categoryName.toUpperCase()] || categoryName;
+              console.log(`🎨 Catégorie avec emoji: ${categoryWithEmoji}`);
+
+              // Rechercher le créneau correspondant
+              const filterFormula = `AND({Catégorie} = "${categoryWithEmoji.replace(/"/g, '\\"')}", {DATE} = "${eventDate}")`;
+              console.log(`🔍 Recherche du créneau avec la formule: ${filterFormula}`);
+              
+              const creneauxResponse = await base('CALENDRIER PUBLICATIONS').select({
+                filterByFormula: filterFormula,
+                fields: ['Statut de publication'],
+                maxRecords: 1
+              }).firstPage();
+
+              console.log(`📊 Résultats de la recherche: ${creneauxResponse.length} créneau(s) trouvé(s)`);
+              
+              if (creneauxResponse && creneauxResponse.length > 0) {
+                creneauToUpdate = creneauxResponse[0];
+                console.log(`✅ Créneau trouvé par recherche: ${creneauToUpdate.id}`);
+              } else {
+                console.log(`⚠️ Aucun créneau trouvé pour la catégorie ${categoryWithEmoji} et la date ${eventDate}`);
+              }
+            }
+          }
+          
+          // Libérer le créneau si trouvé
+          if (creneauToUpdate) {
+            const currentStatus = creneauToUpdate.get('Statut de publication') || [];
+            console.log(`⏰ Créneau trouvé: ${creneauToUpdate.id} - Statut actuel: ${Array.isArray(currentStatus) ? currentStatus.join(', ') : currentStatus}`);
+            
+            // Vérifier si le créneau n'est pas déjà libre
+            const freeStatusId = 'recfExTXxcNivX1i4';
+            
+            // Si le statut n'est pas déjà "Libre", le libérer
+            if (Array.isArray(currentStatus) && !currentStatus.includes(freeStatusId)) {
+              console.log(`🔄 Libération du créneau ${creneauToUpdate.id} - Statut actuel: ${currentStatus.join(', ')}`);
+              
+              // Libérer le créneau en le passant à Libre
+              await base('CALENDRIER PUBLICATIONS').update([{
+                id: creneauToUpdate.id,
+                fields: {
+                  'Statut de publication': [freeStatusId] // Libre
+                }
+              }]);
+              
+              console.log(`✅ Créneau ${creneauToUpdate.id} libéré avec succès - Statut: 🟩 Libre`);
+            } else {
+              console.log(`ℹ️ Créneau ${creneauToUpdate.id} déjà libre, aucune action nécessaire`);
+            }
+          } else {
+            console.log(`⚠️ Aucun créneau trouvé pour libérer`);
           }
         } catch (error) {
           // Log l'erreur mais continue la suppression de l'événement

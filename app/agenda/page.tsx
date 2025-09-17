@@ -31,6 +31,7 @@ interface Event {
   htmlLink?: string; // Lien vers l'événement dans Google Calendar
   establishmentCategories?: string[]; // Catégories des établissements associés
   googleEventId?: string; // ID de l'événement dans Google Calendar
+  creneauId?: string; // ID du créneau de publication associé (extrait du champ de liaison)
 }
 
 interface CalendarDay {
@@ -59,6 +60,7 @@ interface ApiEvent {
   collaborators?: string[];
   establishmentCategories?: string[];
   googleEventId?: string; // ID de l'événement dans Google Calendar
+  creneauId?: string; // ID du créneau de publication associé (extrait du champ de liaison)
 }
 
 export default function AgendaPage() {
@@ -355,6 +357,7 @@ export default function AgendaPage() {
           category,
           establishmentCategories: apiEvent.establishmentCategories,
           googleEventId: apiEvent.googleEventId, // Inclure l'ID Google Calendar
+          creneauId: apiEvent.creneauId, // Inclure l'ID du créneau (extrait du champ de liaison)
         };
       });
 

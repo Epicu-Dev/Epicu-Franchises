@@ -418,6 +418,7 @@ export function UnifiedEventModal({
 
     // Créer les événements localement ET dans Google Calendar
     let eventCreatedSuccessfully = false;
+    let createdEventId = null;
 
     for (const eventData of events) {
       // Créer l'événement local
@@ -433,6 +434,8 @@ export function UnifiedEventModal({
         throw new Error("Erreur lors de l'ajout de l'événement local");
       }
 
+      const localEventData = await localResponse.json();
+      createdEventId = localEventData.id;
       eventCreatedSuccessfully = true;
 
       // Créer l'événement dans Google Calendar seulement si connecté
@@ -466,18 +469,25 @@ export function UnifiedEventModal({
             console.log("✅ Événement créé avec succès dans Google Calendar");
             
             // Mettre à jour l'événement Airtable avec l'ID Google Calendar
-            const localEventId = await localResponse.json();
-            if (localEventId.id && createdGoogleEvent.id) {
-              await authFetch(`/api/agenda?id=${localEventId.id}`, {
+            if (createdEventId && createdGoogleEvent.id) {
+              // Préparer les données à mettre à jour
+              const updateData: any = {
+                googleEventId: createdGoogleEvent.id
+              };
+              
+              // Si c'est un événement de publication avec un créneau sélectionné, ajouter l'ID du créneau
+              if (eventData.type === 'publication' && formData.selectedSlotId) {
+                updateData['Creneau'] = [formData.selectedSlotId];
+              }
+              
+              await authFetch(`/api/agenda?id=${createdEventId}`, {
                 method: 'PATCH',
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                  googleEventId: createdGoogleEvent.id
-                }),
+                body: JSON.stringify(updateData),
               });
-              console.log("✅ ID Google Calendar stocké dans l'événement Airtable");
+              console.log("✅ ID Google Calendar et créneau stockés dans l'événement Airtable");
             }
             
             // Mettre à jour le statut pour indiquer le succès
@@ -513,7 +523,7 @@ export function UnifiedEventModal({
       }
     }
 
-    // Marquer le créneau comme indisponible seulement si l'événement a été créé avec succès
+    // Marquer le créneau comme indisponible et stocker l'ID du créneau seulement si l'événement a été créé avec succès
     if (eventCreatedSuccessfully && formData.selectedSlotId) {
       try {
         const slotResponse = await authFetch(`/api/publications/creneaux?id=${formData.selectedSlotId}`, {
@@ -527,14 +537,36 @@ export function UnifiedEventModal({
         });
 
         if (slotResponse.ok) {
+          console.log(`✅ Créneau ${formData.selectedSlotId} marqué comme indisponible`);
+          
+          // Mettre à jour l'événement créé avec l'ID du créneau seulement si Google Calendar n'était pas connecté
+          // (sinon c'est déjà fait dans la section Google Calendar ci-dessus)
+          if (createdEventId && !isGoogleConnected) {
+            await authFetch(`/api/agenda?id=${createdEventId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                'Creneau': [formData.selectedSlotId] // Champ de liaison (array)
+              }),
+            });
+            console.log(`✅ ID du créneau ${formData.selectedSlotId} lié à l'événement publication`);
+          } else if (isGoogleConnected) {
+            console.log(`ℹ️ ID du créneau déjà lié lors de la synchronisation Google Calendar`);
+          }
         } else {
           const errorData = await slotResponse.json();
+          console.warn(`⚠️ Erreur lors de la mise à jour du créneau:`, errorData);
         }
       } catch (slotError) {
+        console.warn('⚠️ Erreur lors de la mise à jour du créneau:', slotError);
         // On continue même si la mise à jour du créneau échoue
       }
     } else if (!eventCreatedSuccessfully) {
+      console.log('ℹ️ Événement non créé, pas de mise à jour du créneau');
     } else {
+      console.log('ℹ️ Aucun créneau sélectionné, pas de mise à jour nécessaire');
     }
 
     onEventAdded?.();
