@@ -101,6 +101,10 @@ export function UnifiedEventModal({
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSlotModalOpen, setIsSlotModalOpen] = useState(false);
+  const [googleSyncStatus, setGoogleSyncStatus] = useState<{
+    isConnected: boolean;
+    message?: string;
+  }>({ isConnected: false });
 
   // États pour la recherche de client (comme dans invoice-modal)
   const [clientSearchTerm, setClientSearchTerm] = useState("");
@@ -162,6 +166,31 @@ export function UnifiedEventModal({
   useEffect(() => {
     // Plus de chargement de catégories nécessaire
   }, [isOpen, eventType]);
+
+  // Vérifier le statut Google Calendar au chargement du modal
+  useEffect(() => {
+    if (isOpen) {
+      checkGoogleCalendarStatus();
+    }
+  }, [isOpen]);
+
+  const checkGoogleCalendarStatus = async () => {
+    try {
+      const statusResponse = await authFetch('/api/google-calendar/status');
+      if (statusResponse.ok) {
+        const status = await statusResponse.json();
+        setGoogleSyncStatus({
+          isConnected: status.isConnected,
+          message: status.isConnected ? "Synchronisé avec Google Calendar" : "Non connecté à Google Calendar"
+        });
+      }
+    } catch (error) {
+      setGoogleSyncStatus({
+        isConnected: false,
+        message: "Impossible de vérifier le statut Google Calendar"
+      });
+    }
+  };
 
   // Initialiser automatiquement les dates de fin pour rendez-vous et tournages
   useEffect(() => {
@@ -384,6 +413,9 @@ export function UnifiedEventModal({
       events.push(eventData);
     }
 
+    // Utiliser le statut Google Calendar déjà vérifié
+    const isGoogleConnected = googleSyncStatus.isConnected;
+
     // Créer les événements localement ET dans Google Calendar
     let eventCreatedSuccessfully = false;
 
@@ -403,39 +435,81 @@ export function UnifiedEventModal({
 
       eventCreatedSuccessfully = true;
 
-      // Créer l'événement dans Google Calendar
-      try {
-        const googleEventData: Partial<GoogleCalendarEvent> = {
-          summary: eventData.title,
-          description: eventData.description || undefined,
-          location: eventData.location || undefined,
-          start: {
-            dateTime: `${formData.startDate}T${eventData.startTime}:00`,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          },
-          end: {
-            dateTime: `${formData.startDate}T${eventData.endTime}:00`,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      // Créer l'événement dans Google Calendar seulement si connecté
+      if (isGoogleConnected) {
+        try {
+          const googleEventData: Partial<GoogleCalendarEvent> = {
+            summary: eventData.title,
+            description: eventData.description || undefined,
+            location: eventData.location || undefined,
+            start: {
+              dateTime: `${formData.startDate}T${eventData.startTime}:00`,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            },
+            end: {
+              dateTime: `${formData.startDate}T${eventData.endTime}:00`,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }
+          };
+
+          const googleResponse = await authFetch('/api/google-calendar/events', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(googleEventData),
+          });
+
+          if (googleResponse.ok) {
+            const createdGoogleEvent = await googleResponse.json();
+            onEventCreated?.(createdGoogleEvent);
+            console.log("✅ Événement créé avec succès dans Google Calendar");
+            
+            // Mettre à jour l'événement Airtable avec l'ID Google Calendar
+            const localEventId = await localResponse.json();
+            if (localEventId.id && createdGoogleEvent.id) {
+              await authFetch(`/api/agenda?id=${localEventId.id}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  googleEventId: createdGoogleEvent.id
+                }),
+              });
+              console.log("✅ ID Google Calendar stocké dans l'événement Airtable");
+            }
+            
+            // Mettre à jour le statut pour indiquer le succès
+            setGoogleSyncStatus(prev => ({
+              ...prev,
+              message: "Synchronisé avec Google Calendar - Événement créé"
+            }));
+          } else {
+            const errorData = await googleResponse.json();
+            console.warn("⚠️ Impossible de créer l'événement dans Google Calendar:", errorData.error);
+            // Mettre à jour le statut pour indiquer l'erreur
+            setGoogleSyncStatus(prev => ({
+              ...prev,
+              message: `Erreur Google Calendar: ${errorData.error || 'Erreur inconnue'}`
+            }));
           }
-        };
-
-        const googleResponse = await authFetch('/api/google-calendar/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(googleEventData),
-        });
-
-        if (googleResponse.ok) {
-          const createdGoogleEvent = await googleResponse.json();
-          onEventCreated?.(createdGoogleEvent);
-        } else {
-          console.warn("Impossible de créer l'événement dans Google Calendar, mais l'événement local a été créé");
+        } catch (googleError) {
+          console.warn("⚠️ Erreur lors de la création dans Google Calendar:", googleError);
+          // Mettre à jour le statut pour indiquer l'erreur
+          setGoogleSyncStatus(prev => ({
+            ...prev,
+            message: `Erreur Google Calendar: ${googleError instanceof Error ? googleError.message : 'Erreur inconnue'}`
+          }));
+          // On continue même si Google Calendar échoue
         }
-      } catch (googleError) {
-        console.warn("Erreur lors de la création dans Google Calendar:", googleError);
-        // On continue même si Google Calendar échoue
+      } else {
+        console.log("ℹ️ Google Calendar non connecté - événement créé localement uniquement");
+        // Mettre à jour le statut pour indiquer que l'événement a été créé localement
+        setGoogleSyncStatus(prev => ({
+          ...prev,
+          message: "Événement créé localement - Google Calendar non connecté"
+        }));
       }
     }
 

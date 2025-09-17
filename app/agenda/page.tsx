@@ -30,6 +30,7 @@ interface Event {
   isGoogleEvent?: boolean; // Marqueur pour identifier les événements Google Calendar
   htmlLink?: string; // Lien vers l'événement dans Google Calendar
   establishmentCategories?: string[]; // Catégories des établissements associés
+  googleEventId?: string; // ID de l'événement dans Google Calendar
 }
 
 interface CalendarDay {
@@ -57,6 +58,7 @@ interface ApiEvent {
   description?: string;
   collaborators?: string[];
   establishmentCategories?: string[];
+  googleEventId?: string; // ID de l'événement dans Google Calendar
 }
 
 export default function AgendaPage() {
@@ -352,6 +354,7 @@ export default function AgendaPage() {
           description: apiEvent.description,
           category,
           establishmentCategories: apiEvent.establishmentCategories,
+          googleEventId: apiEvent.googleEventId, // Inclure l'ID Google Calendar
         };
       });
 

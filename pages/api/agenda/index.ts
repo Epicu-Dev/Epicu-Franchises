@@ -52,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Description',
         'Collaborateur',
         'Établissements',
+        'Google Event ID', // Nouveau champ pour stocker l'ID Google Calendar
       ];
 
       // Construire la formule de filtrage si besoin
@@ -228,7 +229,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Date': body['Date'] || body.date,
         'Type': body['Type'] || body.type || '',
         'Description': body['Description'] || body.description || body.desc || '',
+        'Google Event ID': body['Google Event ID'] || body.googleEventId || '',
       };
+
+      // Log pour déboguer
+      if (body['Google Event ID'] || body.googleEventId) {
+        console.log(`🔄 Création avec Google Event ID: ${fieldsToCreate['Google Event ID']}`);
+      }
 
       // Collaborateur linkage: expect an array of record ids or single id
       const collPayload = body['Collaborateur'] || body.collaborator || body.collaborateurs || body.collaborators || body.user;
@@ -272,6 +279,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       if (body['Description'] ?? body.description ?? body.desc) {
         fieldsToUpdate['Description'] = body['Description'] || body.description || body.desc;
+      }
+      if (body['Google Event ID'] ?? body.googleEventId) {
+        fieldsToUpdate['Google Event ID'] = body['Google Event ID'] || body.googleEventId;
+        console.log(`🔄 Mise à jour Google Event ID: ${fieldsToUpdate['Google Event ID']}`);
       }
 
       // Collaborateur linkage: accept array, single id, null (to clear)
@@ -323,6 +334,123 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const id = (req.query.id as string) || req.body.id;
 
       if (!id) return res.status(400).json({ error: 'id requis' });
+
+      // Récupérer les détails de l'événement avant suppression pour vérifier s'il s'agit d'une publication
+      let eventToDelete: any = null;
+      try {
+        eventToDelete = await base(TABLE_NAME).find(id);
+      } catch (error) {
+        return res.status(404).json({ error: 'Événement introuvable' });
+      }
+
+      // Vérifier si c'est un événement de type publication
+      const eventType = eventToDelete.get('Type') || '';
+      const eventDate = eventToDelete.get('Date') || '';
+      const eventEtablissements = eventToDelete.get('Établissements') || [];
+
+      // Si c'est une publication, libérer le créneau associé
+      if (eventType === 'publication' && eventDate && Array.isArray(eventEtablissements) && eventEtablissements.length > 0) {
+        console.log(`🔄 Suppression d'un événement de type publication - Date: ${eventDate}, Établissements: ${eventEtablissements.join(', ')}`);
+        
+        try {
+          // Récupérer la catégorie de l'établissement
+          const establishmentId = Array.isArray(eventEtablissements) ? eventEtablissements[0] : eventEtablissements;
+          console.log(`🏢 Recherche de l'établissement: ${establishmentId}`);
+          
+          const establishment = await base('ÉTABLISSEMENTS').find(establishmentId);
+          const establishmentCategories = establishment.get('Catégorie') || [];
+          console.log(`📂 Catégories de l'établissement: ${Array.isArray(establishmentCategories) ? establishmentCategories.join(', ') : establishmentCategories}`);
+
+          if (Array.isArray(establishmentCategories) && establishmentCategories.length > 0) {
+            // Récupérer le nom de la catégorie
+            const categoryId = establishmentCategories[0];
+            console.log(`🔍 Recherche de la catégorie: ${categoryId}`);
+            
+            const category = await base('CATÉGORIES').find(categoryId);
+            const categoryName = String(category.get('Name') || '');
+            console.log(`📋 Nom de la catégorie: ${categoryName}`);
+
+            // Mapper le nom de catégorie vers l'emoji correspondant
+            const categoryMapping: Record<string, string> = {
+              'FOOD': '🟠 FOOD',
+              'SHOP': '🟣 SHOP', 
+              'TRAVEL': '🟢 TRAVEL',
+              'FUN': '🔴 FUN',
+              'BEAUTY': '🩷 BEAUTY'
+            };
+            
+            const categoryWithEmoji = categoryMapping[categoryName.toUpperCase()] || categoryName;
+            console.log(`🎨 Catégorie avec emoji: ${categoryWithEmoji}`);
+
+            // Rechercher le créneau correspondant
+            const filterFormula = `AND({Catégorie} = "${categoryWithEmoji.replace(/"/g, '\\"')}", {DATE} = "${eventDate}")`;
+            console.log(`🔍 Recherche du créneau avec la formule: ${filterFormula}`);
+            
+            const creneauxResponse = await base('CALENDRIER PUBLICATIONS').select({
+              filterByFormula: filterFormula,
+              fields: ['Statut de publication'],
+              maxRecords: 1
+            }).firstPage();
+
+            console.log(`📊 Résultats de la recherche: ${creneauxResponse.length} créneau(s) trouvé(s)`);
+            
+            if (creneauxResponse && creneauxResponse.length > 0) {
+              const creneau = creneauxResponse[0];
+              const currentStatus = creneau.get('Statut de publication') || [];
+              console.log(`⏰ Créneau trouvé: ${creneau.id} - Statut actuel: ${Array.isArray(currentStatus) ? currentStatus.join(', ') : currentStatus}`);
+              
+              // Vérifier si le créneau n'est pas déjà libre
+              const freeStatusId = 'recfExTXxcNivX1i4';
+              
+              // Si le statut n'est pas déjà "Libre", le libérer
+              if (Array.isArray(currentStatus) && !currentStatus.includes(freeStatusId)) {
+                console.log(`🔄 Libération du créneau ${creneau.id} - Statut actuel: ${currentStatus.join(', ')}`);
+                
+                // Libérer le créneau en le passant à Libre
+                await base('CALENDRIER PUBLICATIONS').update([{
+                  id: creneau.id,
+                  fields: {
+                    'Statut de publication': [freeStatusId] // Libre
+                  }
+                }]);
+                
+                console.log(`✅ Créneau ${creneau.id} libéré avec succès`);
+              } else {
+                console.log(`ℹ️ Créneau ${creneau.id} déjà libre, aucune action nécessaire`);
+              }
+            } else {
+              console.log(`⚠️ Aucun créneau trouvé pour la catégorie ${categoryWithEmoji} et la date ${eventDate}`);
+            }
+          }
+        } catch (error) {
+          // Log l'erreur mais continue la suppression de l'événement
+          console.error('Erreur lors de la libération du créneau:', error);
+        }
+      }
+
+      // Vérifier s'il y a un ID Google Calendar associé et le supprimer
+      const googleEventId = eventToDelete.get('Google Event ID');
+      if (googleEventId) {
+        console.log(`🔄 Suppression de l'événement Google Calendar: ${googleEventId}`);
+        try {
+          // Appeler l'API de suppression Google Calendar
+          const deleteResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/google-calendar/events/delete?eventId=${googleEventId}`, {
+            method: 'DELETE',
+            headers: {
+              'Cookie': req.headers.cookie || '', // Transmettre les cookies d'authentification
+            },
+          });
+          
+          if (deleteResponse.ok) {
+            console.log(`✅ Événement Google Calendar ${googleEventId} supprimé avec succès`);
+          } else {
+            console.warn(`⚠️ Impossible de supprimer l'événement Google Calendar ${googleEventId}:`, await deleteResponse.text());
+          }
+        } catch (error) {
+          // Log l'erreur mais continue la suppression de l'événement Airtable
+          console.error('Erreur lors de la suppression de l\'événement Google Calendar:', error);
+        }
+      }
 
       const deleted = await base(TABLE_NAME).destroy([id]);
 
