@@ -269,8 +269,10 @@ export default function PublicationModal({
                                 <Input
                                     isRequired
                                     classNames={{
-                                        inputWrapper: "bg-page-bg",
+                                        inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
+                                        input: formData.datePublication ? "text-black" : "text-gray-300"
                                     }}
+                                    color={formData.datePublication ? "default" : "danger"}
                                     id="datePublication"
                                     type="date"
                                     value={formData.datePublication}

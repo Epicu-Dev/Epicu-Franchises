@@ -80,6 +80,7 @@ export function ProspectModal({
         prospectToSet.villeEpicu = userProfile.villes[0].id;
       }
 
+
       setNewProspect(prospectToSet);
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
@@ -167,6 +168,7 @@ export function ProspectModal({
     }
   }, [isOpen, userProfile?.villes]);
 
+
   const validateField = (fieldName: string, value: any) => {
     const errors = { ...fieldErrors };
 
@@ -193,7 +195,7 @@ export function ProspectModal({
         }
         break;
       case 'datePriseContact':
-        if (!value) {
+        if (!value || !value.trim()) {
           errors.datePriseContact = 'La date de prise de contact est requise';
         } else {
           delete errors.datePriseContact;
@@ -601,14 +603,17 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
+              
               classNames={{
-                inputWrapper: "bg-page-bg",
+                inputWrapper:  "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg" ,
+                input: newProspect.datePriseContact ? "text-black" : "text-gray-300"
               }}
+              color={newProspect.datePriseContact ? "default" : "danger"}
               errorMessage={fieldErrors.datePriseContact}
               id="datePriseContact"
               isInvalid={!!fieldErrors.datePriseContact}
               type="date"
-              value={newProspect.datePriseContact}
+              value={newProspect.datePriseContact || undefined}
               onChange={(e) => {
                 const value = e.target.value;
 
@@ -624,13 +629,15 @@ export function ProspectModal({
             </FormLabel>
             <Input
               classNames={{
-                inputWrapper: "bg-page-bg",
+                inputWrapper:  "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg" ,
+                input: newProspect.dateRelance ? "text-black" : "text-gray-300"
               }}
+              color={newProspect.dateRelance ? "default" : "danger"}
               errorMessage={fieldErrors.dateRelance}
               id="dateRelance"
               isInvalid={!!fieldErrors.dateRelance}
               type="date"
-              value={newProspect.dateRelance}
+              value={newProspect.dateRelance || undefined}
               onChange={(e) => {
                 const value = e.target.value;
 

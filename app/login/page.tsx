@@ -67,7 +67,7 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("expiresAtAccess", data.expiresAtAccess);
         localStorage.setItem("expiresAtRefresh", data.expiresAtRefresh);
-        
+
         // Stocker les données utilisateur pour éviter le problème de "utilisateur inconnu"
         localStorage.setItem("userProfile", JSON.stringify({
           id: data.user.id,
@@ -80,12 +80,12 @@ export default function LoginPage() {
           identifier: data.user.identifier || ""
         }));
         localStorage.setItem("userProfileCacheTime", Date.now().toString());
-        
+
         // Stocker également le type d'utilisateur par défaut
         localStorage.setItem("userType", "franchise");
-        
+
         showMessageWithType("Connexion réussie ! Redirection...", "success");
-        
+
         // Forcer un rechargement de la page pour s'assurer que le contexte utilisateur est bien initialisé
         setTimeout(() => {
           window.location.href = "/home";
@@ -146,8 +146,7 @@ export default function LoginPage() {
                 Bienvenue !
               </h1>
               <p className=" text-sm pl-8 pr-8 font-light">
-                Votre réseau réuni ici pour vous aider à prendre les meilleures
-                décisions
+                Connecte-toi sur ton dashboard : ton arme secrète pour faire décoller ton business ! Cash is King, Data is Queen !
               </p>
             </div>
 

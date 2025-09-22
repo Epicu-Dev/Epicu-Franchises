@@ -205,7 +205,7 @@ export default function SignupPage() {
                   {userInfo.villes && userInfo.villes.length > 0 && (
 
                     <p className="text-lg text-gray-700 mb-1">
-                      Villes EPICU : {userInfo.villes.map(v => v.ville).join(", ")}
+                      {userInfo.villes.length === 1 ? 'Ville EPICU' : 'Villes EPICU'} : {userInfo.villes.map(v => v.ville).join(", ")}
                     </p>)}
                   <p className="text-sm text-gray-600 mb-2">
                     {userInfo.email}
