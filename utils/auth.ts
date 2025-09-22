@@ -22,6 +22,7 @@ export async function getValidAccessToken(): Promise<string | null> {
   const accessToken = localStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken');
   const expiresAtAccess = localStorage.getItem('expiresAtAccess');
+  const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
 
   const now = new Date();
 
@@ -30,8 +31,15 @@ export async function getValidAccessToken(): Promise<string | null> {
     return accessToken; // ✅ toujours valide
   }
 
-  // 🔄 Si le token est expiré ou va expirer bientôt, tenter le refresh
-  if (!refreshToken || !accessToken) {
+  // Vérifier si le refresh token est encore valide
+  if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= now) {
+    // Refresh token expiré, il faut se reconnecter
+    clearAuthData();
+    return null;
+  }
+
+  // Si on n'a pas d'access token mais qu'on a un refresh token valide
+  if (!accessToken) {
     return null;
   }
 
@@ -119,14 +127,37 @@ export function redirectToLogin(): void {
   
 export function isUserLoggedIn(): boolean {
   const accessToken = localStorage.getItem('accessToken');
+  const refreshToken = localStorage.getItem('refreshToken');
   const expiresAtAccess = localStorage.getItem('expiresAtAccess');
+  const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
   
-  if (!accessToken || !expiresAtAccess) return false;
+  if (!accessToken || !refreshToken || !expiresAtAccess || !expiresAtRefresh) return false;
   
   const now = new Date();
-  const expirationDate = new Date(expiresAtAccess);
+  const accessExpirationDate = new Date(expiresAtAccess);
+  const refreshExpirationDate = new Date(expiresAtRefresh);
   
-  return expirationDate > now;
+  // L'utilisateur est considéré comme connecté s'il a au moins un refresh token valide
+  // (même si l'access token est expiré, on peut le rafraîchir)
+  return refreshExpirationDate > now;
+}
+
+/**
+ * Vérifie si l'utilisateur doit être redirigé vers la page de login
+ * (quand le refresh token est expiré)
+ */
+export function shouldRedirectToLogin(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  const refreshToken = localStorage.getItem('refreshToken');
+  const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
+  
+  if (!refreshToken || !expiresAtRefresh) return true;
+  
+  const now = new Date();
+  const refreshExpirationDate = new Date(expiresAtRefresh);
+  
+  return refreshExpirationDate <= now;
 }
 
 /**
