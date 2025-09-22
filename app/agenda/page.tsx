@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Spinner } from "@heroui/spinner";
@@ -86,6 +86,9 @@ export default function AgendaPage() {
   // États pour la modal de détail d'événement
   const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
+  // Référence pour le conteneur scrollable de la vue planning
+  const planningScrollRef = useRef<HTMLDivElement>(null);
 
   // Fonction pour vérifier si l'utilisateur peut ajouter des événements (même logique que la sidebar)
   const canAddEvents = () => {
@@ -224,39 +227,6 @@ export default function AgendaPage() {
     }
   };
 
-  // Fonction pour transformer les événements Google Calendar en format compatible
-  const transformGoogleEvents = (googleEvents: GoogleCalendarEvent[]): Event[] => {
-    return googleEvents.map((googleEvent) => {
-      const startDate = googleEvent.start.dateTime
-        ? new Date(googleEvent.start.dateTime)
-        : googleEvent.start.date
-          ? new Date(googleEvent.start.date)
-          : new Date();
-
-      const endDate = googleEvent.end.dateTime
-        ? new Date(googleEvent.end.dateTime)
-        : googleEvent.end.date
-          ? new Date(googleEvent.end.date)
-          : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
-
-      const startTime = startDate.toTimeString().slice(0, 5);
-      const endTime = endDate.toTimeString().slice(0, 5);
-
-      return {
-        id: `google-${googleEvent.id || Date.now()}`,
-        title: googleEvent.summary,
-        type: "evenement" as Event['type'], // Type par défaut pour Google Calendar
-        date: startDate.toISOString().split('T')[0],
-        startTime,
-        endTime,
-        location: googleEvent.location,
-        description: googleEvent.description,
-        category: "siege" as Event['category'], // Catégorie par défaut
-        isGoogleEvent: true, // Marqueur pour identifier les événements Google Calendar
-        htmlLink: googleEvent.htmlLink,
-      };
-    });
-  };
 
   const fetchEvents = async () => {
     try {
@@ -379,6 +349,18 @@ export default function AgendaPage() {
     fetchEvents();
   }, [currentDate, view, selectedCategory]);
 
+  // Effet pour scroller vers la date du jour dans la vue planning
+  useEffect(() => {
+    if (view === "planning" && !loading && events.length > 0) {
+      // Délai pour s'assurer que le DOM est rendu
+      const timeoutId = setTimeout(() => {
+        scrollToTodayInPlanning();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [view, loading, events]);
+
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => {
       const newDate = new Date(prev);
@@ -459,36 +441,108 @@ export default function AgendaPage() {
     }
   };
 
-  // Fonction pour dédupliquer les événements (priorité à Airtable)
-  const deduplicateEvents = (airtableEvents: Event[], googleEvents: Event[]) => {
-    const combinedEvents = [...airtableEvents, ...googleEvents];
-    const uniqueEvents = new Map<string, Event>();
+  // Fonction pour scroller vers la date du jour dans la vue planning
+  const scrollToTodayInPlanning = () => {
+    if (view !== "planning" || !planningScrollRef.current) {
+      return;
+    }
 
-    combinedEvents.forEach(event => {
-      // Créer une clé unique basée sur la date et le nom
-      const eventDate = new Date(event.date).toDateString();
-      const key = `${eventDate}-${event.title}`;
-
-      if (!uniqueEvents.has(key)) {
-        // Premier événement avec cette clé, l'ajouter
-        uniqueEvents.set(key, event);
-      } else {
-        // Événement existant trouvé, vérifier la priorité
-        const existingEvent = uniqueEvents.get(key)!;
-
-        // Priorité : Airtable (isGoogleEvent = false) > Google Calendar (isGoogleEvent = true)
-        if (!event.isGoogleEvent && existingEvent.isGoogleEvent) {
-          // L'événement actuel est d'Airtable et l'existant est de Google Calendar
-          // Remplacer l'événement Google Calendar par l'événement Airtable
-          uniqueEvents.set(key, event);
-        } else if (event.isGoogleEvent && !existingEvent.isGoogleEvent) {
-          // L'événement actuel est de Google Calendar et l'existant est d'Airtable
-          // Garder l'événement Airtable (déjà prioritaire)
-          // Ne rien faire, garder l'existant
-        } else {
-          // Même type de source, garder le premier (ou remplacer si nécessaire)
-          // Dans ce cas, on garde l'existant pour éviter les changements
+    const today = new Date();
+    const todayString = today.toDateString();
+    
+    // Trouver l'élément correspondant à la date du jour
+    const todayElement = planningScrollRef.current.querySelector(`[data-date="${todayString}"]`);
+    
+    if (todayElement) {
+      // Scroller vers l'élément d'aujourd'hui
+      todayElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    } else {
+      // Si pas d'événement aujourd'hui, trouver l'événement le plus proche
+      const allDateElements = planningScrollRef.current.querySelectorAll('[data-date]');
+      let closestElement: HTMLElement | null = null;
+      let minDiff = Infinity;
+      
+      allDateElements.forEach((element) => {
+        const elementDate = new Date(element.getAttribute('data-date') || '');
+        const diff = Math.abs(elementDate.getTime() - today.getTime());
+        
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestElement = element as HTMLElement;
         }
+      });
+      
+      if (closestElement) {
+        (closestElement as HTMLElement).scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }
+  };
+
+  // Fonction pour filtrer les événements par mois
+  const filterEventsByMonth = (events: Event[], targetDate: Date) => {
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth();
+    
+    return events.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate.getFullYear() === targetYear && eventDate.getMonth() === targetMonth;
+    });
+  };
+
+  // Fonction pour dédupliquer les événements (priorité à Airtable)
+  const deduplicateEvents = (airtableEvents: Event[], googleEvents: GoogleCalendarEvent[]) => {
+    const uniqueEvents = new Map<string, Event>();
+    
+    // D'abord, ajouter tous les événements d'Airtable
+    airtableEvents.forEach(event => {
+      uniqueEvents.set(event.id, event);
+    });
+    
+    // Ensuite, ajouter les événements Google seulement s'ils n'ont pas de correspondance Airtable
+    googleEvents.forEach(googleEvent => {
+      // Vérifier si cet événement Google a un correspondant dans Airtable
+      const hasAirtableCorrespondent = airtableEvents.some(airtableEvent => 
+        airtableEvent.googleEventId === googleEvent.id
+      );
+      
+      // Si pas de correspondant Airtable, ajouter l'événement Google
+      if (!hasAirtableCorrespondent) {
+        const startDate = googleEvent.start.dateTime
+          ? new Date(googleEvent.start.dateTime)
+          : googleEvent.start.date
+            ? new Date(googleEvent.start.date)
+            : new Date();
+
+        const endDate = googleEvent.end.dateTime
+          ? new Date(googleEvent.end.dateTime)
+          : googleEvent.end.date
+            ? new Date(googleEvent.end.date)
+            : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
+
+        const startTime = startDate.toTimeString().slice(0, 5);
+        const endTime = endDate.toTimeString().slice(0, 5);
+
+        const transformedGoogleEvent: Event = {
+          id: `google-${googleEvent.id || Date.now()}`,
+          title: googleEvent.summary,
+          type: "evenement" as Event['type'],
+          date: startDate.toISOString().split('T')[0],
+          startTime,
+          endTime,
+          location: googleEvent.location,
+          description: googleEvent.description,
+          category: "siege" as Event['category'],
+          isGoogleEvent: true,
+          htmlLink: googleEvent.htmlLink,
+        };
+        
+        uniqueEvents.set(transformedGoogleEvent.id, transformedGoogleEvent);
       }
     });
 
@@ -543,14 +597,14 @@ export default function AgendaPage() {
     const days: CalendarDay[] = [];
     const currentDate = new Date(startDate);
 
-    // Transformer les événements Google Calendar
-    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
-
     // Dédupliquer les événements (priorité à Airtable)
-    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+    const allEvents = deduplicateEvents(events, googleEvents);
+    
+    // Filtrer les événements par mois
+    const filteredEvents = filterEventsByMonth(allEvents, date);
 
     while (currentDate <= lastDay || days.length < 42) {
-      const dayEvents = allEvents.filter((event) => {
+      const dayEvents = filteredEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -586,18 +640,18 @@ export default function AgendaPage() {
       "Dimanche",
     ];
 
-    // Transformer les événements Google Calendar
-    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
-
     // Dédupliquer les événements (priorité à Airtable)
-    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+    const allEvents = deduplicateEvents(events, googleEvents);
+    
+    // Filtrer les événements par mois
+    const filteredEvents = filterEventsByMonth(allEvents, date);
 
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startOfWeek);
 
       currentDate.setDate(startOfWeek.getDate() + i);
 
-      const dayEvents = allEvents.filter((event) => {
+      const dayEvents = filteredEvents.filter((event) => {
         const eventDate = new Date(event.date);
 
         return eventDate.toDateString() === currentDate.toDateString();
@@ -662,7 +716,7 @@ export default function AgendaPage() {
               </div>
 
               <div className="mt-1 space-y-1">
-                {day.events.slice(0, 2).map((event) => (
+                {day.events.map((event) => (
                   <div
                     key={event.id}
                     className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${!day.isCurrentMonth ? 'shadow-sm' : ''}`}
@@ -688,12 +742,9 @@ export default function AgendaPage() {
                     )}
                   </div>
                 ))}
-                {day.events.length > 2 && (
-                  <div className="text-xs text-gray-500">
-                    +{day.events.length - 2} autres
-                    {day.events.some(e => e.isGoogleEvent) && (
-                      <span className="text-blue-600 ml-1">• GC</span>
-                    )}
+                {day.events.some(e => e.isGoogleEvent) && (
+                  <div className="text-xs text-blue-600">
+                    • Google Calendar
                   </div>
                 )}
               </div>
@@ -799,14 +850,14 @@ export default function AgendaPage() {
   };
 
   const renderPlanningView = () => {
-    // Transformer les événements Google Calendar
-    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
-
     // Dédupliquer les événements (priorité à Airtable)
-    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+    const allEvents = deduplicateEvents(events, googleEvents);
+    
+    // Filtrer les événements par mois
+    const filteredEvents = filterEventsByMonth(allEvents, currentDate);
 
     // Grouper les événements par date
-    const eventsByDate = allEvents.reduce((acc, event) => {
+    const eventsByDate = filteredEvents.reduce((acc, event) => {
       const eventDate = new Date(event.date).toDateString();
       if (!acc[eventDate]) {
         acc[eventDate] = [];
@@ -828,6 +879,19 @@ export default function AgendaPage() {
       return `${day} ${month}`;
     };
 
+    // Fonction pour calculer la hauteur dynamique d'une ligne
+    const calculateRowHeight = (eventCount: number) => {
+      const baseHeight = 64; // Hauteur de base (4rem = 64px)
+      const eventHeight = 50; // Hauteur par événement (2.5rem = 40px)
+      const padding = 16; // Padding vertical (1rem = 16px)
+      
+      if (eventCount === 0) {
+        return baseHeight;
+      }
+      
+      return Math.max(baseHeight, eventCount * eventHeight + padding);
+    };
+
 
     // Si pas d'événements, afficher un message
     if (sortedDates.length === 0) {
@@ -840,37 +904,57 @@ export default function AgendaPage() {
     }
 
     return (
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto" ref={planningScrollRef}>
         <div className="flex min-w-[600px]">
           {/* Colonne des dates */}
           <div className="w-24 sm:w-32 flex-shrink-0">
-            {sortedDates.map((dateString) => (
-              <div key={dateString} className="h-16 sm:h-20 flex items-center text-xs sm:text-sm text-gray-600 border-b border-gray-100 px-2">
-                {formatDate(dateString)}
-              </div>
-            ))}
+            {sortedDates.map((dateString) => {
+              const eventCount = eventsByDate[dateString].length;
+              const rowHeight = calculateRowHeight(eventCount);
+              
+              return (
+                <div 
+                  key={dateString} 
+                  data-date={new Date(dateString).toDateString()}
+                  className="flex items-center text-xs sm:text-sm text-gray-600 border-b border-gray-100 px-2"
+                  style={{ height: `${rowHeight}px` }}
+                >
+                  {formatDate(dateString)}
+                </div>
+              );
+            })}
           </div>
 
           {/* Colonne des événements */}
           <div className="flex-1 min-w-0">
-            {sortedDates.map((dateString) => (
-              <div key={dateString} className="h-16 sm:h-20 border-b border-gray-100 flex flex-col justify-center p-1">
-                <div className="space-y-1">
-                  {eventsByDate[dateString].map((event) => (
-                    <div
-                      key={event.id}
-                      className={`${getEventColor(event)} px-2 py-1 rounded text-xs sm:text-sm cursor-pointer hover:opacity-80 border border-1 ${getEventBorderColor(event)}`}
-                      onClick={() => openEventDetailModal(event)}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-xs opacity-90 truncate">
-                        {event.startTime} - {event.endTime}
+            {sortedDates.map((dateString) => {
+              const eventCount = eventsByDate[dateString].length;
+              const rowHeight = calculateRowHeight(eventCount);
+              
+              return (
+                <div 
+                  key={dateString} 
+                  data-date={new Date(dateString).toDateString()}
+                  className="border-b border-gray-100 flex flex-col justify-center p-1"
+                  style={{ height: `${rowHeight}px` }}
+                >
+                  <div className="space-y-1">
+                    {eventsByDate[dateString].map((event) => (
+                      <div
+                        key={event.id}
+                        className={`${getEventColor(event)} px-2 py-1 rounded text-xs sm:text-sm cursor-pointer hover:opacity-80 border border-1 ${getEventBorderColor(event)}`}
+                        onClick={() => openEventDetailModal(event)}
+                      >
+                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="text-xs opacity-90 truncate">
+                          {event.startTime} - {event.endTime}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -992,34 +1076,32 @@ export default function AgendaPage() {
         <CardBody className="p-3 sm:p-6">
 
           {/* En-tête avec navigation et bouton plus - style cohérent avec la page d'accueil */}
-          <div className={`flex ${view === "planning" ? "justify-end" : "flex-col sm:flex-row justify-between"} items-start sm:items-center mb-6 gap-4`}>
-            {/* Navigation mois/semaine - masquée en mode planning */}
-            {view !== "planning" && (
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={handlePreviousMonth}
-                  className="flex-shrink-0"
-                >
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </Button>
-                <span className="text-sm sm:text-base text-center flex-1 sm:flex-none">
-                  {view === "semaine"
-                    ? formatWeekRange(currentDate)
-                    : formatMonthYear(currentDate)}
-                </span>
-                <Button 
-                  isIconOnly 
-                  aria-label="Mois suivant" 
-                  variant="light" 
-                  onPress={handleNextMonth}
-                  className="flex-shrink-0"
-                >
-                  <ChevronRightIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            {/* Navigation mois/semaine - toujours visible */}
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={handlePreviousMonth}
+                className="flex-shrink-0"
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+              <span className="text-sm sm:text-base text-center flex-1 sm:flex-none">
+                {view === "semaine"
+                  ? formatWeekRange(currentDate)
+                  : formatMonthYear(currentDate)}
+              </span>
+              <Button 
+                isIconOnly 
+                aria-label="Mois suivant" 
+                variant="light" 
+                onPress={handleNextMonth}
+                className="flex-shrink-0"
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
             
             <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
               <AgendaDropdown
