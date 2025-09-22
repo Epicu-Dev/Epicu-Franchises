@@ -67,7 +67,7 @@ export function DateFilterModal({
   };
 
   return (
-    <Modal isOpen={isOpen} placement="center" size="lg" onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} placement="center" size="lg" className="pb-20 md:pb-0" onOpenChange={onOpenChange}>
       <ModalContent>
         <ModalHeader className="flex justify-center">
           Sélectionner une période

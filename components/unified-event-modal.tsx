@@ -659,7 +659,7 @@ export function UnifiedEventModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" className="pb-20 md:pb-0">
         <ModalContent>
           <ModalHeader className="flex  gap-1 justify-center">
             {getModalTitle()}

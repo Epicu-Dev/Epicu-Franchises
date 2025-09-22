@@ -378,6 +378,7 @@ export function ProspectModal({
       isOpen={isOpen}
       scrollBehavior="inside"
       size="2xl"
+      className="pb-20 md:pb-0"
       onOpenChange={handleClose}
     >
       <ModalContent>

@@ -110,6 +110,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
       }}
       isOpen={isOpen}
       size="lg"
+      className="pb-20 md:pb-0"
       onOpenChange={handleClose}
     >
       <ModalContent>

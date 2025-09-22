@@ -146,6 +146,7 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
     <Modal 
       isOpen={isOpen} 
       size="2xl"
+      className="pb-20 md:pb-0"
       onOpenChange={onOpenChange}
     >
       <ModalContent>

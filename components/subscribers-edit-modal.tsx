@@ -227,6 +227,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
 
       isOpen={isOpen}
       size="2xl"
+      className="pb-20 md:pb-0"
       onClose={handleCancel}
     >
       <ModalContent>

@@ -386,7 +386,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
             />
           </div>
           <p className="font-light text-xs text-gray-500 dark:text-gray-400 text-center pb-4">
-            V0.0.1
+            V1.0.0
           </p>
         </CardBody>
       </Card>

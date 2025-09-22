@@ -388,7 +388,7 @@ export default function InvoiceModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="pb-20 md:pb-0">
       <ModalContent>
         <ModalHeader className="flex justify-center">
           {selectedInvoice ? "Modifier la facture" : "Ajouter une nouvelle facture"}

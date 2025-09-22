@@ -261,7 +261,7 @@ export default function TodoModal({
   const isDisabled = Object.keys(fieldErrors).length > 0 || !newTodo.name || !newTodo.dueDate || !newTodo.status || isLoading;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="pb-20 md:pb-0">
       <ModalContent>
         <ModalHeader className="flex justify-center">
           {isEditMode ? "Modifier la tâche" : "Ajouter une nouvelle tâche"}

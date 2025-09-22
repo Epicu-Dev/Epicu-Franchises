@@ -531,6 +531,7 @@ export function AgendaModals({
       <Modal
         isOpen={isPublicationModalOpen}
         onOpenChange={setIsPublicationModalOpen}
+        className="pb-20 md:pb-0"
       >
         <ModalContent>
           <ModalHeader className="flex justify-center">Ajouter une publication</ModalHeader>

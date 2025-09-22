@@ -65,7 +65,7 @@ export default function ResourceModal({
   };
 
   return (
-    <Modal isOpen={isOpen} size="lg" onClose={onClose}>
+    <Modal isOpen={isOpen} size="lg" className="pb-20 md:pb-0" onClose={onClose}>
       <ModalContent>
         <form onSubmit={handleSubmit}>
           <ModalHeader className="flex justify-center">

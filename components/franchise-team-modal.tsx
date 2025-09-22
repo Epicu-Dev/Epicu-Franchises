@@ -86,6 +86,7 @@ export function FranchiseTeamModal({ isOpen, onClose, selectedMember }: Franchis
             isOpen={isOpen}
             scrollBehavior="inside"
             size="3xl"
+            className="pb-20 md:pb-0"
             onClose={handleClose}
         >
             <ModalContent>

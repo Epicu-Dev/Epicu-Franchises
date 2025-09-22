@@ -77,6 +77,7 @@ export default function ClientModal({
             isOpen={isOpen}
             scrollBehavior="inside"
             size="2xl"
+            className="pb-20 md:pb-0"
             onOpenChange={onOpenChange}
         >
             <ModalContent>

@@ -102,7 +102,7 @@ export function GoogleCalendarCreateEvent({
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" className="pb-20 md:pb-0">
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           Créer un événement Google Calendar

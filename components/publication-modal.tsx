@@ -248,12 +248,13 @@ export default function PublicationModal({
 
     return (
         <>
-            <Modal
-                isOpen={isOpen}
-                scrollBehavior="inside"
-                size="2xl"
-                onOpenChange={onOpenChange}
-            >
+        <Modal
+            isOpen={isOpen}
+            scrollBehavior="inside"
+            size="2xl"
+            className="pb-20 md:pb-0"
+            onOpenChange={onOpenChange}
+        >
                 <ModalContent>
                     <ModalHeader className="flex justify-center">
                         {editingPublication ? "Modifier la publication" : "Ajouter une publication"}
