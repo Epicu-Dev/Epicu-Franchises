@@ -85,8 +85,9 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const limit = Math.max(1, Math.min(100, isNaN(limitRaw) ? 50 : limitRaw));
     const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
 
-    const order = req.query.order === 'desc' ? 'desc' : 'asc';
-    const orderByReq = (req.query.orderBy as string) || "Nom de l'établissement";
+    const orderByReq = (req.query.orderBy as string) || "Date de création";
+    // Par défaut DESC pour "Date de création", sinon ASC
+    const order = req.query.order || (orderByReq === "Date de création" ? 'desc' : 'asc');
     const q = (req.query.q as string) || (req.query.search as string) || '';
     const category = (req.query.category as string) || '';
 
@@ -105,14 +106,16 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Commentaires',
       'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
       'HISTORIQUE DE PUBLICATIONS',
+      'Date de création',
     ];
 
     const allowedOrderBy = new Set([
       "Nom de l'établissement",
       'Catégorie',
       'Raison sociale',
+      'Date de création',
     ]);
-    const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
+    const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Date de création";
 
     const escapeForAirtableRegex = (s: string) =>
       s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '\\"').toLowerCase();

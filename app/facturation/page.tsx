@@ -72,6 +72,8 @@ export default function FacturationPage() {
         status: selectedStatus,
         q: searchTerm,
         offset: offset.toString(),
+        sortField: sortField,
+        sortDirection: sortDirection,
       });
 
       const response = await authFetch(`/api/facturation?${params}`);
@@ -127,6 +129,8 @@ export default function FacturationPage() {
   }, [
     selectedStatus,
     searchTerm,
+    sortField,
+    sortDirection,
   ]);
 
 
@@ -246,14 +250,14 @@ export default function FacturationPage() {
   return (
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
-        <CardBody>
+        <CardBody className="p-2 sm:p-4">
           {/* En-tête avec onglets et bouton d'ajout */}
-          <div className="flex justify-between items-center p-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-1 sm:p-2 gap-4">
             <Tabs
               className="w-full pt-3"
               classNames={{
-                cursor: "w-[50px]  left-[12px] h-1 rounded",
-                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
+                cursor: "w-[50px] left-[12px] h-1 rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light",
               }}
               selectedKey={selectedStatus}
               variant="underlined"
@@ -264,10 +268,11 @@ export default function FacturationPage() {
               <Tab key="retard" title="Retard" />
             </Tabs>
 
-            <div>
+            <div className="w-full sm:w-auto">
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
+                className="w-full sm:w-auto"
                 onPress={() => {
                   setError(null);
                   setSelectedInvoice(null);
@@ -289,65 +294,69 @@ export default function FacturationPage() {
             :
             <div>
               {/* Tableau des factures */}
-              <Table aria-label="Tableau des factures" shadow="none">
-                <TableHeader>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="category"
-                      label="Catégorie"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
+              <div className="overflow-x-auto">
+                <Table aria-label="Tableau des factures" shadow="none" classNames={{
+                  wrapper: "min-w-full",
+                  table: "min-w-[800px]"
+                }}>
+                  <TableHeader>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      <SortableColumnHeader
+                        field="category"
+                        label="Catégorie"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
 
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="establishmentName"
-                      label="Nom établissement"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="dateEmission"
-                      label="Date d'émission"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="amount"
-                      label="Montant de la facture"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    Type de prestation
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
-                </TableHeader>
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[150px]">
+                      <SortableColumnHeader
+                        field="establishmentName"
+                        label="Nom établissement"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      <SortableColumnHeader
+                        field="dateEmission"
+                        label="Date d'émission"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      <SortableColumnHeader
+                        field="amount"
+                        label="Montant de la facture"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      Type de prestation
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[80px]">Modifier</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[150px]">Commentaire</TableColumn>
+                  </TableHeader>
                 <TableBody>
                   {invoices.map((invoice) => (
                     <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
                       <TableCell>
                         <CategoryBadge category={invoice.categorie} />
                       </TableCell>
-                      <TableCell className="font-light py-5">
+                      <TableCell className="font-light py-5 text-xs sm:text-sm">
                         {invoice.nomEtablissement}
                       </TableCell>
-                      <TableCell className="font-light">{formatDate(invoice.dateEmission)}</TableCell>
-                      <TableCell className="font-light">
+                      <TableCell className="font-light text-xs sm:text-sm">{formatDate(invoice.dateEmission)}</TableCell>
+                      <TableCell className="font-light text-xs sm:text-sm">
                         {formatAmount(invoice.montant)}
                       </TableCell>
-                      <TableCell className="font-light">{getServiceTypeLabel(invoice.typePrestation)}</TableCell>
+                      <TableCell className="font-light text-xs sm:text-sm">{getServiceTypeLabel(invoice.typePrestation)}</TableCell>
                       <TableCell className="font-light">
                         <Button
                           isIconOnly
@@ -358,15 +367,16 @@ export default function FacturationPage() {
                           <PencilIcon className="h-4 w-4" />
                         </Button>
                       </TableCell>
-                      <TableCell className="font-light">
-                        <span className="text-sm text-gray-500">
+                      <TableCell className="font-light text-xs sm:text-sm">
+                        <span className="text-xs sm:text-sm text-gray-500">
                           {invoice.commentaire || "commentaires"}
                         </span>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
 
               {/* Bouton "Charger plus" */}
               {hasMore && (

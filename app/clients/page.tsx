@@ -68,9 +68,9 @@ export default function ClientsPage() {
 
   const columnConfig = [
     { key: 'modifier', label: 'Modifier', sortable: false },
-    { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
-    { key: 'nomEtablissement', label: 'Nom établissement', sortable: false },
-    { key: 'raisonSociale', label: 'Raison sociale', sortable: false },
+    { key: 'categorie', label: 'Catégorie', sortable: false, field: 'categorie' },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: 'nomEtablissement' },
+    { key: 'raisonSociale', label: 'Raison sociale', sortable: true, field: 'raisonSociale' },
     { key: 'siret', label: 'Numéro SIRET', sortable: false, field: 'siret' },
     { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
     { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
@@ -98,7 +98,7 @@ export default function ClientsPage() {
   const rdvColumnConfig = [
     { key: 'modifier', label: 'Modifier', sortable: false },
     { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
-    { key: 'nomEtablissement', label: 'Nom établissement', sortable: false },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: 'nomEtablissement' },
     { key: 'ville', label: 'Ville', sortable: false },
     { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'nombreVues', label: 'Nombre de vues', sortable: false },
@@ -288,10 +288,10 @@ export default function ClientsPage() {
   return (
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
-        <CardBody className="p-2" >
+        <CardBody className="p-2 sm:p-4" >
           {/* Header with filters */}
-          <div className="flex justify-between items-center p-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center p-2 sm:p-4 gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
               {/* Bouton de réinitialisation de tous les filtres */}
               {(selectedCategoryId || visibleColumns.size > 0 || searchTerm) && (
                 <Button
@@ -306,7 +306,7 @@ export default function ClientsPage() {
               )}
 
               <StyledSelect
-                className="w-40"
+                className="w-full sm:w-40"
                 placeholder="Catégorie"
                 selectedKeys={selectedCategoryId ? [selectedCategoryId] : []}
                 onSelectionChange={(keys) => {
@@ -339,7 +339,7 @@ export default function ClientsPage() {
 
               {/* Dropdown de sélection des colonnes */}
               <StyledSelect
-                className="w-64"
+                className="w-full sm:w-64"
                 placeholder={`Colonnes (${visibleColumns.size === 0 ? (isRdvMode ? rdvColumnConfig.length : columnConfig.length) : visibleColumns.size})`}
                 selectedKeys={visibleColumns}
                 selectionMode="multiple"
@@ -365,12 +365,12 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 w-full lg:w-auto">
 
 
-              <div className="relative">
+              <div className="relative w-full lg:w-64">
                   <Input
-                  className="w-64 pr-4 pl-10"
+                  className="w-full pr-0 pl-0 sm:pr-4 sm:pl-10"
                   classNames={{
                     inputWrapper:
                       "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
@@ -420,22 +420,27 @@ export default function ClientsPage() {
                   </Button>
 
                 </div> :
-                <Table aria-label="Tableau des clients" bottomContent={
-                  hasMore && (
-                    <div className="flex justify-center py-4">
-                      <Button
-                        color="primary"
-                        disabled={loadingMore}
-                        isLoading={loadingMore}
-                        onPress={loadMore}
-                      >
-                        {loadingMore ? 'Chargement...' : 'Charger plus'}
-                      </Button>
-                    </div>
-                  )
-                }
-                  shadow="none"
-                >
+                <div className="overflow-x-auto">
+                  <Table aria-label="Tableau des clients" bottomContent={
+                    hasMore && (
+                      <div className="flex justify-center py-4">
+                        <Button
+                          color="primary"
+                          disabled={loadingMore}
+                          isLoading={loadingMore}
+                          onPress={loadMore}
+                        >
+                          {loadingMore ? 'Chargement...' : 'Charger plus'}
+                        </Button>
+                      </div>
+                    )
+                  }
+                    shadow="none"
+                    classNames={{
+                      wrapper: "min-w-full",
+                      table: "min-w-[800px]"
+                    }}
+                  >
                   <TableHeader>
 
                     {/* Autres colonnes selon la sélection et le mode RDV */}
@@ -446,7 +451,7 @@ export default function ClientsPage() {
                         .map((column) => {
                           if (column.sortable) {
                             return (
-                              <TableColumn key={column.key} className="font-light text-sm">
+                              <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
                                 <SortableColumnHeader
                                   field={column.field!}
                                   label={column.label}
@@ -459,7 +464,7 @@ export default function ClientsPage() {
                           }
 
                           return (
-                            <TableColumn key={column.key} className="font-light text-sm">
+                            <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
                               {column.label}
                             </TableColumn>
                           );
@@ -540,28 +545,28 @@ export default function ClientsPage() {
                                     break;
                                   case 'telephone':
                                     cells.push(
-                                      <TableCell key={column.key} className="font-light min-w-32">
+                                      <TableCell key={column.key} className="font-light min-w-32 text-xs sm:text-sm">
                                         {client.telephone}
                                       </TableCell>
                                     );
                                     break;
                                   case 'email':
                                     cells.push(
-                                      <TableCell key={column.key} className="font-light">
+                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
                                         {client.email}
                                       </TableCell>
                                     );
                                     break;
                                   case 'siret':
                                     cells.push(
-                                      <TableCell key={column.key} className="font-light">
+                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
                                         {client.siret}
                                       </TableCell>
                                     );
                                     break;
                                   case 'dateSignatureContrat':
                                     cells.push(
-                                      <TableCell key={column.key} className="font-light">
+                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
                                         {client.dateSignatureContrat
                                           ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
                                             day: '2-digit',
@@ -709,7 +714,7 @@ export default function ClientsPage() {
                                       <TableCell key={column.key} className="font-light">
                                         {client.publications && client.publications.length > 0
                                           ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
+                                            <div key={idx} className="text-sm  min-w-50">
                                               {pub.commentaire || "-"}
                                             </div>
                                           ))
@@ -869,7 +874,8 @@ export default function ClientsPage() {
                       ))
                     )}
                   </TableBody>
-                </Table>}
+                </Table>
+                </div>}
 
 
         </CardBody>

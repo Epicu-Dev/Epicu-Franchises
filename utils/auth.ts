@@ -25,11 +25,12 @@ export async function getValidAccessToken(): Promise<string | null> {
 
   const now = new Date();
 
+  // Si le token est valide, le retourner
   if (accessToken && expiresAtAccess && new Date(expiresAtAccess) > now) {
     return accessToken; // ✅ toujours valide
   }
 
-  // 🔄 Sinon, tenter le refresh
+  // 🔄 Si le token est expiré ou va expirer bientôt, tenter le refresh
   if (!refreshToken || !accessToken) {
     return null;
   }
@@ -129,8 +130,8 @@ export function isUserLoggedIn(): boolean {
 }
 
 /**
- * Vérifie si le token va expirer dans les 30 prochaines minutes
- * et le rafraîchit automatiquement si nécessaire
+ * Vérifie si le token va expirer bientôt et le rafraîchit si nécessaire
+ * Ne rafraîchit que si le token expire dans les 2 prochaines minutes
  */
 export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
   // Vérifier si on est côté client
@@ -145,8 +146,8 @@ export async function checkAndRefreshTokenIfNeeded(): Promise<boolean> {
   const expirationDate = new Date(expiresAtAccess);
   const timeUntilExpiry = expirationDate.getTime() - now.getTime();
   
-  // Si le token expire dans moins de 5 minutes, le rafraîchir
-  if (timeUntilExpiry < 5 * 60 * 1000) {
+  // Si le token expire dans moins de 2 minutes, le rafraîchir
+  if (timeUntilExpiry < 2 * 60 * 1000) {
     try {
       const newToken = await getValidAccessToken();
 

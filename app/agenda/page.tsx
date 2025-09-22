@@ -12,6 +12,7 @@ import {
 
 import { UnifiedEventModal } from "@/components/unified-event-modal";
 import { EventDetailModal } from "@/components/event-detail-modal";
+import { AgendaDropdown } from "@/components/agenda-dropdown";
 import { GoogleCalendarEvent } from "@/types/googleCalendar";
 import { useUser } from "@/contexts/user-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -911,46 +912,37 @@ export default function AgendaPage() {
       <Card className="w-full" shadow="none">
         <CardBody className="p-6">
 
-          {/* En-tête avec navigation et boutons - visible seulement pour les admins */}
-          {(
-            <div className="flex justify-end items-center mb-6">
-              <div className="flex items-center space-x-4">
-
-                <Button
-                  color='primary'
-                  endContent={<PlusIcon className="h-4 w-4" />}
-                  onPress={() => openModal("tournage")}
-                >
-                  Ajouter un tournage
-                </Button>
-
-                <Button
-                  color='primary'
-                  endContent={<PlusIcon className="h-4 w-4" />}
-                  onPress={() => openModal("publication")}
-                >
-                  Ajouter une publication
-                </Button>
-
-                <Button
-                  color='primary'
-                  endContent={<PlusIcon className="h-4 w-4" />}
-                  onPress={() => openModal("rendez-vous")}
-                >
-                  Ajouter un rendez-vous
-                </Button>
-
-                {canAddEvents() &&
-                  <Button
-                    color='primary'
-                    endContent={<PlusIcon className="h-4 w-4" />}
-                    onPress={() => openModal("evenement")}
-                  >
-                    Ajouter un événement
-                  </Button>}
-              </div>
+          {/* En-tête avec navigation et bouton plus - style cohérent avec la page d'accueil */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center space-x-2">
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={handlePreviousMonth}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+              <span>
+                {view === "semaine"
+                  ? formatWeekRange(currentDate)
+                  : formatMonthYear(currentDate)}
+              </span>
+              <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
             </div>
-          )}
+            
+            <div className="flex items-center space-x-4">
+              <AgendaDropdown
+                onPublicationSelect={() => openModal("publication")}
+                onRendezVousSelect={() => openModal("rendez-vous")}
+                onTournageSelect={() => openModal("tournage")}
+                onEvenementSelect={() => openModal("evenement")}
+                isGoogleConnected={isGoogleConnected || false}
+                canAddEvents={canAddEvents()}
+              />
+            </div>
+          </div>
           {/* Synchronisation Google Calendar - seulement si connecté */}
 
 
@@ -958,37 +950,15 @@ export default function AgendaPage() {
 
 
 
-          {/* Filtres et vues */}
-          <div className="flex justify-between items-center mb-6 w-full">
-
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    onPress={handlePreviousMonth}
-                  >
-                    <ChevronLeftIcon className="h-4 w-4" />
-                  </Button>
-                  <span>
-                    {view === "semaine"
-                      ? formatWeekRange(currentDate)
-                      : formatMonthYear(currentDate)}
-                  </span>
-                  <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
-                    <ChevronRightIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            {isGoogleConnected && (
+          {/* Synchronisation Google Calendar - seulement si connecté */}
+          {isGoogleConnected && (
+            <div className="flex justify-end items-center mb-6">
               <GoogleCalendarSync
                 onEventsFetched={setGoogleEvents}
                 onEventCreated={handleGoogleEventCreated}
               />
-            )}
-          </div>
+            </div>
+          )}
 
 
           {/* Contenu du calendrier */}

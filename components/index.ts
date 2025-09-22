@@ -42,8 +42,6 @@ export { default as ToastNotification } from './toast-notification';
 // Composants de formulaire
 export { StyledSelect } from './styled-select';
 export { FormLabel } from './form-label';
-export { PeriodSelector } from './period-selector';
-export type { PeriodSelection } from './period-selector';
 
 // Composants de tableau
 export { SortableColumnHeader } from './sortable-column-header';
@@ -54,3 +52,6 @@ export { AgendaSection } from './agenda-section';
 
 // Utilitaires
 export * from './primitives';
+
+// Icônes personnalisées
+export * from './custom-icons';

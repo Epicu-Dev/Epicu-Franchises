@@ -265,18 +265,19 @@ export default function RessourcesPage() {
   return (
     <div >
       <Card className="w-full" shadow="none">
-        <CardHeader className="p-6">
+        <CardHeader className="p-2 sm:p-6">
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
-            <Tabs
-              className=" pt-3 text-xl"
-              classNames={{
-                cursor: "w-[50px]  left-[12px] h-1   rounded",
-                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
-              }}
-              selectedKey={selectedTab}
-              variant="underlined"
-              onSelectionChange={(key) => setSelectedTab(key as ResourceCategory)}
-            >
+            <div className="overflow-x-auto w-full">
+              <Tabs
+                className="pt-3 text-xl min-w-max"
+                classNames={{
+                  cursor: "w-[50px] left-[12px] h-1 rounded",
+                  tab: "pb-6 data-[selected=true]:font-semibold text-base font-light whitespace-nowrap",
+                }}
+                selectedKey={selectedTab}
+                variant="underlined"
+                onSelectionChange={(key) => setSelectedTab(key as ResourceCategory)}
+              >
               <Tab
                 key="liens-importants"
                 title="Liens importants"
@@ -290,13 +291,15 @@ export default function RessourcesPage() {
                 key="materiel"
                 title="Matériel"
               />
-            </Tabs>
+              </Tabs>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
 
               <Button
                 color="primary"
                 endContent={<PlusIcon className="h-4 w-4" />}
+                className="w-full sm:w-auto"
                 onPress={() => setIsModalOpen(true)}
               >
                 Ajouter un document
@@ -305,7 +308,7 @@ export default function RessourcesPage() {
           </div>
         </CardHeader>
 
-        <CardBody >
+        <CardBody className="p-2 sm:p-6">
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="text-gray-500">Chargement des ressources...</div>
@@ -319,25 +322,29 @@ export default function RessourcesPage() {
           )}
           
           {!loading && !error && (
-            <Table aria-label="Table des ressources" shadow="none" >
-              <TableHeader>
-                <TableColumn className="font-light text-sm">Objet</TableColumn>
-                <TableColumn className="font-light text-sm">Commentaires</TableColumn>
-                <TableColumn className="font-light text-sm">Lien</TableColumn>
-                <TableColumn>
-                  <button
-                    className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
-                    type="button"
-                    onClick={handleSort}
-                    onKeyDown={(e) => e.key === "Enter" && handleSort()}
-                  >
-                    Date d&apos;ajout
-                    <span className="ml-1">
-                      {sortOrder === "asc" ? "↑" : "↓"}
-                    </span>
-                  </button>
-                </TableColumn>
-              </TableHeader>
+            <div className="overflow-x-auto">
+              <Table aria-label="Table des ressources" shadow="none" classNames={{
+                wrapper: "min-w-full",
+                table: "min-w-[600px]"
+              }}>
+                <TableHeader>
+                  <TableColumn className="font-light text-sm min-w-[200px]">Objet</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[200px]">Commentaires</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[150px]">Lien</TableColumn>
+                  <TableColumn className="min-w-[120px]">
+                    <button
+                      className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
+                      type="button"
+                      onClick={handleSort}
+                      onKeyDown={(e) => e.key === "Enter" && handleSort()}
+                    >
+                      Date d&apos;ajout
+                      <span className="ml-1">
+                        {sortOrder === "asc" ? "↑" : "↓"}
+                      </span>
+                    </button>
+                  </TableColumn>
+                </TableHeader>
               <TableBody>
                 {sortedResources.length === 0 ? (
                   <TableRow>
@@ -348,20 +355,20 @@ export default function RessourcesPage() {
                 ) : (
                   sortedResources.map((resource) => (
                     <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
-                      <TableCell className="py-5">
+                      <TableCell className="py-5 text-xs sm:text-sm">
                         <span className="font-light">
                           {resource.title}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-xs sm:text-sm">
                         <span className="font-light">
                           {resource.description}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-xs sm:text-sm">
                         <Button
                           as="a"
-                          className="rounded-full font-light text-sm border-1"
+                          className="rounded-full font-light text-xs sm:text-sm border-1"
                           color='primary'
                           href={resource.link}
                           rel="noopener noreferrer"
@@ -384,7 +391,7 @@ export default function RessourcesPage() {
                                                   resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
                         </Button>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-xs sm:text-sm">
                         <span className="font-light">
                           {resource.dateAdded}
                         </span>
@@ -393,7 +400,8 @@ export default function RessourcesPage() {
                   ))
                 )}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           )}
         </CardBody>
       </Card>

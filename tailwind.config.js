@@ -27,7 +27,18 @@ const config = {
         'custom-purple-shop': '#8E75B3',
         'custom-purple-studio': '#4525F7',
         'custom-green-travel': '#84BC26',
+
         'custom-green-stats': '#B1D1A0',
+        'custom-rose-customers': '#FE88B4',
+        'custom-rose-views': '#FE88B4',
+        'custom-yellow-prospects': '#FFE07C',
+        'custom-orange-franchises': '#FE6744',
+        'custom-blue-posts': '#5DC9F4',
+        'custom-purple-studio': '#6E52F8',
+        'custom-orange-abonnes': '#FF9A3C',
+        'custom-green-views': '#60940A',
+        'custom-orange-conversion': '#FE6744',
+
         'custom-green-success': '#4CAF50',
         'custom-red-fun': '#D8324A',
         'custom-red-retard': '#F44336',

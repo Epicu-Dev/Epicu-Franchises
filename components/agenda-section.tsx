@@ -17,6 +17,7 @@ interface AgendaSectionProps {
   onRendezVousSelect: () => void;
   onTournageSelect: () => void;
   className?: string;
+  isGoogleConnected?: boolean;
 }
 
 export const AgendaSection: React.FC<AgendaSectionProps> = ({
@@ -25,7 +26,8 @@ export const AgendaSection: React.FC<AgendaSectionProps> = ({
   onPublicationSelect,
   onRendezVousSelect,
   onTournageSelect,
-  className = ""
+  className = "",
+  isGoogleConnected = false
 }) => {
   return (
     <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-custom dark:shadow-custom-dark p-4 lg:p-6 ${className}`}>
@@ -37,6 +39,7 @@ export const AgendaSection: React.FC<AgendaSectionProps> = ({
           onPublicationSelect={onPublicationSelect}
           onRendezVousSelect={onRendezVousSelect}
           onTournageSelect={onTournageSelect}
+          isGoogleConnected={isGoogleConnected}
         />
       </div>
       <div>

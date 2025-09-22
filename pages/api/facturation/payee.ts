@@ -27,6 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const q = (req.query.q as string) || '';
     const limit = Math.max(1, Math.min(200, parseInt((req.query.limit as string) || '20', 10)));
     const offset = Math.max(0, parseInt((req.query.offset as string) || '0', 10));
+    const sortField = (req.query.sortField as string) || 'establishmentName';
+    const sortDirection = (req.query.sortDirection as string) || 'asc';
 
     const selectOptions: any = {
       view: 'Toutes les factures',
@@ -138,8 +140,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
       : filteredByStatut;
 
+    // 8) Tri des résultats
+    const sorted = filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'category':
+          aValue = a.categorie || '';
+          bValue = b.categorie || '';
+          break;
+        case 'establishmentName':
+          aValue = a.nomEtablissement || '';
+          bValue = b.nomEtablissement || '';
+          break;
+        case 'dateEmission':
+          aValue = a.dateEmission ? new Date(a.dateEmission).getTime() : 0;
+          bValue = b.dateEmission ? new Date(b.dateEmission).getTime() : 0;
+          break;
+        case 'amount':
+          aValue = a.montant || 0;
+          bValue = b.montant || 0;
+          break;
+        default:
+          aValue = a.nomEtablissement || '';
+          bValue = b.nomEtablissement || '';
+      }
+
+      if (sortField === 'dateEmission' || sortField === 'amount') {
+        // Tri numérique
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      } else {
+        // Tri alphabétique
+        const comparison = aValue.toString().localeCompare(bValue.toString(), 'fr');
+        return sortDirection === 'asc' ? comparison : -comparison;
+      }
+    });
+
     // Appliquer l'offset et la limite pour la pagination
-    const paginatedInvoices = filtered.slice(offset, offset + limit);
+    const paginatedInvoices = sorted.slice(offset, offset + limit);
     
     return res.status(200).json({ invoices: paginatedInvoices });
   } catch (error: any) {

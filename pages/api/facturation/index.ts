@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Route by method
     if (req.method === 'GET') {
-      const { status, q, limit = '20', offset = '0' } = req.query;
+      const { status, q, limit = '20', offset = '0', sortField = 'establishmentName', sortDirection = 'asc' } = req.query;
       const limitNum = Math.max(1, Math.min(200, parseInt(limit as string, 10)));
       const offsetNum = Math.max(0, parseInt(offset as string, 10));
 
@@ -86,6 +86,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (q) url.searchParams.set('q', q as string);
       url.searchParams.set('limit', limitNum.toString());
       url.searchParams.set('offset', offsetNum.toString());
+      url.searchParams.set('sortField', sortField as string);
+      url.searchParams.set('sortDirection', sortDirection as string);
 
       // Appeler l'endpoint approprié
       const response = await fetch(url.toString());

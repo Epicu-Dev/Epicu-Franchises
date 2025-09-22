@@ -50,10 +50,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ message: 'Refresh token expiré' });
     }
 
-    // 🧹 Supprimer TOUS les anciens tokens de cet utilisateur (rotation complète)
+    // 🧹 Supprimer UNIQUEMENT le refresh token utilisé (rotation simple)
     await base('AUTH_REFRESH_TOKEN').destroy(refreshRecord.id);
 
-    // Supprimer tous les access tokens de cet utilisateur
+    // Supprimer tous les access tokens de cet utilisateur (ils sont tous invalidés)
     const userAccessRecords = await base('AUTH_ACCESS_TOKEN')
       .select({
         filterByFormula: `{user} = '${userId}'`,
@@ -65,25 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await base('AUTH_ACCESS_TOKEN').destroy(accessTokenIds);
     }
 
-    // Supprimer tous les autres refresh tokens de cet utilisateur (sécurité)
-    const userRefreshRecords = await base('AUTH_REFRESH_TOKEN')
-      .select({
-        filterByFormula: `{user} = '${userId}'`,
-      })
-      .all();
-
-    if (userRefreshRecords.length > 0) {
-      const refreshTokenIds = userRefreshRecords.map(record => record.id);
-      await base('AUTH_REFRESH_TOKEN').destroy(refreshTokenIds);
-    }
-
     // 🔐 Créer les nouveaux tokens
     const newAccessToken = generateToken(32);
     const newRefreshToken = generateToken(48);
     const now = Date.now();
 
     const expiresAtAccess = new Date(now + 15 * 60 * 1000).toISOString(); // 15 minutes
-    const expiresAtRefresh = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 jours
+    const expiresAtRefresh = new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 jours
 
     await base('AUTH_ACCESS_TOKEN').create([
       {

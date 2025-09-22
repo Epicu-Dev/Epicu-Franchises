@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { Card } from "@heroui/card";
 import { CardBody } from "@heroui/card";
 import { CardHeader } from "@heroui/card";
@@ -16,17 +16,46 @@ import Image from "next/image";
 
 import { useUser } from "../contexts/user-context";
 import { useLoading } from "../contexts/loading-context";
+import { useSidebarImageCache } from "../hooks/use-sidebar-image-cache";
 
-// Composant d'icône personnalisé
-const CustomIcon = ({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => (
+// Composant d'icône personnalisé avec mise en cache
+const CustomIcon = memo(({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => (
   <Image
     alt={alt}
     className={`${className} ${isActive ? 'brightness-0 invert' : ''}`}
     height={20}
     src={src}
     width={20}
+    priority={false}
+    loading="lazy"
+    quality={90}
   />
-);
+));
+
+CustomIcon.displayName = 'CustomIcon';
+
+// Composant d'élément de menu mémorisé
+const MenuItem = memo(({ item, isActive, onClick }: { 
+  item: any; 
+  isActive: boolean; 
+  onClick: () => void; 
+}) => (
+  <button
+    className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
+      ? "bg-black text-white dark:bg-white dark:text-black shadow"
+      : "hover:bg-white "
+      }`}
+    onClick={onClick}
+  >
+    <item.icon isActive={isActive} />
+    <div className="flex-1">
+      {item.label}
+    </div>
+    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
+  </button>
+));
+
+MenuItem.displayName = 'MenuItem';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -39,6 +68,9 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Utilisation du hook de cache des images
+  const { isImageCached, cachedImagesCount } = useSidebarImageCache();
 
   // Fermer le sidebar mobile lors du changement de route
   useEffect(() => {
@@ -63,127 +95,131 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMobileOpen]);
 
-  const menuItems = [
+  // Menu items mémorisés pour éviter les re-créations
+  const menuItems = useMemo(() => [
     {
       key: "home-admin",
       label: "Accueil Admin",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil Admin" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_accueil.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil Admin" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Accueil.svg" />,
       href: "/home-admin",
       showFor: ["admin"]
     },
     { 
       key: "home", 
       label: "Accueil", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_accueil.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Accueil.svg" />, 
       href: "/home", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "data", 
       label: "Data", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Data" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_data.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Data" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Data.svg" />, 
       href: "/data", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "clients", 
       label: "Clients", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Clients" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_client -.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Clients" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Clients.svg" />, 
       href: "/clients", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "prospects",
       label: "Prospects",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Prospects" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_prospects.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Prospects" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Prospects.svg" />,
       href: "/prospects",
       showFor: ["franchise", "admin"]
     },
     { 
       key: "agenda", 
       label: "Agenda", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Agenda" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_agenda.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Agenda" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Agenda.svg" />, 
       href: "/agenda", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "todo", 
       label: "To do", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="To do" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_to do.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="To do" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/To-do.svg" />, 
       href: "/todo", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "facturation",
       label: "Facturation",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Facturation" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_facturation.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Facturation" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Facturation.svg" />,
       href: "/facturation",
       showFor: ["admin", "franchise"]
     },
     { 
       key: "equipe", 
       label: "Equipe", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Equipe" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_équipe.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Equipe" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Equipe.svg" />, 
       href: "/equipe", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "studio",
       label: "Le studio",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Le studio" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_le studio.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Le studio" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Studio.svg" />,
       href: "/studio",
       showFor: ["admin", "franchise"]
     },
     {
       key: "ressources",
       label: "Ressources",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Ressources" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_Ressources.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Ressources" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Ressources.svg" />,
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
 
-  ];
+  ], []);
 
-  // Filtrer les éléments du menu selon le rôle de l'utilisateur
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!userProfile?.role) {
-      // Si pas de rôle défini, afficher un menu par défaut (franchise)
-      return item.showFor.includes('franchise');
-    }
-
-    // Mapper les rôles de l'API vers les types du menu
-    const roleMapping: { [key: string]: string[] } = {
-      'Admin': ['admin'],
-      'Franchisé': ['franchise'],
-      'Collaborateur': ['franchise'],
-      // Ajouter d'autres mappings selon les rôles disponibles
-    };
-
-    const allowedTypes = roleMapping[userProfile.role] || ['franchise'];
-
-    return item.showFor.some(type => allowedTypes.includes(type));
-  });
-
-  const settingsItems = [
+  // Settings items mémorisés
+  const settingsItems = useMemo(() => [
     { 
       key: "compte", 
       label: "Compte", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Compte" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_compte.svg" />, 
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Compte" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Compte.svg" />, 
       href: "/profil" 
     },
     {
       key: "aide",
       label: "Aide",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Aide" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_aide.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Aide" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Aide.svg" />,
       action: onHelpClick,
     },
     {
       key: "logout",
       label: "Se déconnecter",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Déconnexion" className="h-5 w-5" isActive={isActive} src="/images/icones/ICÔNES DASHBOARD_déconnexion.svg" />,
+      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Déconnexion" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Deconnexion.svg" />,
       action: onLogout,
     },
-  ];
+  ], [onHelpClick, onLogout]);
+
+  // Filtrer les éléments du menu selon le rôle de l'utilisateur (mémorisé)
+  const filteredMenuItems = useMemo(() => {
+    return menuItems.filter(item => {
+      if (!userProfile?.role) {
+        // Si pas de rôle défini, afficher un menu par défaut (franchise)
+        return item.showFor.includes('franchise');
+      }
+
+      // Mapper les rôles de l'API vers les types du menu
+      const roleMapping: { [key: string]: string[] } = {
+        'Admin': ['admin'],
+        'Franchisé': ['franchise'],
+        'Collaborateur': ['franchise'],
+        // Ajouter d'autres mappings selon les rôles disponibles
+      };
+
+      const allowedTypes = roleMapping[userProfile.role] || ['franchise'];
+
+      return item.showFor.some(type => allowedTypes.includes(type));
+    });
+  }, [menuItems, userProfile?.role]);
 
   const handleItemClick = (item: any) => {
     if (item.action) {
@@ -215,7 +251,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
       {isMobileOpen && (
         <div
           aria-label="Fermer le menu"
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden cursor-pointer"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden cursor-pointer"
           role="button"
           tabIndex={0}
           onClick={() => setIsMobileOpen(false)}
@@ -304,22 +340,12 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
               const isActive = pathname === item.href;
 
               return (
-                <button
+                <MenuItem
                   key={item.key}
-                  className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
-                    ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                    : "hover:bg-white "
-                    }`}
+                  item={item}
+                  isActive={isActive}
                   onClick={() => handleItemClick(item)}
-                >
-                  <item.icon isActive={isActive} />
-                  <div className="flex-1">
-
-                    {item.label}
-                  </div>
-                  <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
-
-                </button>
+                />
               )
             })}
 
@@ -337,29 +363,27 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                 const isActive = pathname === item.href;
 
                 return (
-                  <button
+                  <MenuItem
                     key={item.key}
-                    className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black shadow"
-                      : "hover:bg-white"
-                      }`}
+                    item={item}
+                    isActive={isActive}
                     onClick={() => handleItemClick(item)}
-                  >
-                    <item.icon isActive={isActive} />
-                    <div className="flex-1">
-
-                      {item.label}
-                    </div>
-                    <ArrowRightIcon className={`h-5 w-5 opacity-0  transition-opacity ${isActive ? "" : "group-hover:opacity-100"}`} />
-
-                  </button>
+                  />
                 )
               })
             }
 
           </div>
           <div className="flex justify-center items-center pb-6">
-            <Image alt="logo" height={42} src="/images/logo-e.png" width={42} />
+            <Image 
+              alt="logo" 
+              height={42} 
+              src="/images/logo-e.png" 
+              width={42}
+              priority={false}
+              loading="lazy"
+              quality={90}
+            />
           </div>
           <p className="font-light text-xs text-gray-500 dark:text-gray-400 text-center pb-4">
             V0.0.1

@@ -234,15 +234,16 @@ export default function EquipePage() {
   return (
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
-        <CardBody className="p-6">
+        <CardBody className="p-2 sm:p-6">
           {/* Header avec onglets, recherche et bouton de vue */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 sm:mb-6 gap-4">
             {/* Bouton de changement de vue - visible uniquement pour les admins */}
             {isAdmin() && (
               <Button
                 isIconOnly
                 variant="light"
                 onClick={handleViewModeToggle}
+                className="self-start"
               >
                 {viewMode === "grid" ? <Bars3Icon className="h-5 w-5" /> : <Squares2X2Icon className="h-5 w-5" />}
               </Button>
@@ -255,8 +256,8 @@ export default function EquipePage() {
               <Tabs
                 className="w-full pt-3"
                 classNames={{
-                  cursor: "w-[50px]  left-[12px] h-1   rounded",
-                  tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
+                  cursor: "w-[50px] left-[12px] h-1 rounded",
+                  tab: "pb-6 data-[selected=true]:font-semibold text-base font-light",
                 }}
                 selectedKey={selectedCategory}
                 variant="underlined"
@@ -271,10 +272,10 @@ export default function EquipePage() {
               <div />
             )}
 
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
+              <div className="relative w-full sm:w-64">
                 <Input
-                  className="w-64 pr-4 pl-10"
+                  className="w-full pr-0 pl-0 sm:pr-4 sm:pl-10"
                   classNames={{
                     input:
                       "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
@@ -299,6 +300,7 @@ export default function EquipePage() {
                 <Button
                   color='primary'
                   endContent={<PlusIcon className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
                   onPress={handleAddMember}
                 >
                   Ajouter un membre
@@ -315,7 +317,7 @@ export default function EquipePage() {
                 <Spinner className="text-black dark:text-white" size="lg" />
               </div>
               :
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
                 {members.map((member) => (
                   <div
                     key={member.id}
@@ -327,7 +329,7 @@ export default function EquipePage() {
                     onKeyDown={(e) => e.key === 'Enter' && handleMemberClick(member)}
                   >
                     <Avatar
-                      className="w-16 h-16 mb-3"
+                      className="w-12 h-12 sm:w-16 sm:h-16 mb-3"
                       classNames={{
                         base: "ring-2 ring-gray-200 dark:ring-gray-700",
                         img: "object-cover",
@@ -335,13 +337,13 @@ export default function EquipePage() {
                       name={`${member.prenom} ${member.nom}`}
                       src={member.trombi?.[0]?.url}
                     />
-                    <h3 className="font-semibold  text-sm mb-1">
+                    <h3 className="font-semibold text-xs sm:text-sm mb-1">
                       {member.prenom} {member.nom}
                     </h3>
-                    <p className="text-sm font-light ">
+                    <p className="text-xs sm:text-sm font-light">
                       {member.role}
                     </p>
-                    <p className="text-xs font-light ">
+                    <p className="text-xs font-light">
                       {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                     </p>
                   </div>
@@ -357,23 +359,26 @@ export default function EquipePage() {
                 :
                 <>
                   <div className="overflow-x-auto">
-                    <Table aria-label="Tableau des membres de l'équipe">
+                    <Table aria-label="Tableau des membres de l'équipe" classNames={{
+                      wrapper: "min-w-full",
+                      table: "min-w-[1200px]"
+                    }}>
                       <TableHeader>
-                        <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                        <TableColumn className="font-light text-sm">Ville</TableColumn>
-                        <TableColumn className="font-light text-sm">Rôle</TableColumn>
-                        <TableColumn className="font-light text-sm">Prénom</TableColumn>
-                        <TableColumn className="font-light text-sm">Nom</TableColumn>
-                        <TableColumn className="font-light text-sm">Identifiant</TableColumn>
-                        <TableColumn className="font-light text-sm">Date de naissance</TableColumn>
-                        <TableColumn className="font-light text-sm">Mail perso</TableColumn>
-                        <TableColumn className="font-light text-sm">Mail franchisé</TableColumn>
-                        <TableColumn className="font-light text-sm">Téléphone</TableColumn>
-                        <TableColumn className="font-light text-sm">Adresse postale</TableColumn>
-                        <TableColumn className="font-light text-sm">SIRET</TableColumn>
-                        <TableColumn className="font-light text-sm">Date signature du DIP</TableColumn>
-                        <TableColumn className="font-light text-sm">Date signature du contrat de franchise</TableColumn>
-                        <TableColumn className="font-light text-sm">Date signature de l&apos;attestation de formation initiale</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[100px]">Modifier</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">Ville</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">Rôle</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[100px]">Prénom</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[100px]">Nom</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[150px]">Identifiant</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">Date de naissance</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[150px]">Mail perso</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[150px]">Mail franchisé</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">Téléphone</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[200px]">Adresse postale</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">SIRET</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[120px]">Date signature du DIP</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[150px]">Date signature du contrat de franchise</TableColumn>
+                        <TableColumn className="font-light text-sm min-w-[180px]">Date signature de l&apos;attestation de formation initiale</TableColumn>
                       </TableHeader>
                       <TableBody>
                         {members.map((member) => (
@@ -404,35 +409,35 @@ export default function EquipePage() {
 
                               </div>
                             </TableCell>
-                            <TableCell className="font-light">
+                            <TableCell className="font-light text-xs sm:text-sm">
                               {member.villeEpicu && member.villeEpicu.length > 0 ? member.villeEpicu[0] : "Ville non définie"}
                             </TableCell>
-                            <TableCell className="font-light">
+                            <TableCell className="font-light text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.role}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.prenom}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.nom}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.emailEpicu || "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <a
                                 className="font-light underline"
                                 href={`mailto:${member.emailPerso || ""}`}
@@ -440,7 +445,7 @@ export default function EquipePage() {
                                 {member.emailPerso || "Non défini"}
                               </a>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <a
                                 className="font-light underline"
                                 href={`mailto:${member.emailEpicu || ""}`}
@@ -448,32 +453,32 @@ export default function EquipePage() {
                                 {member.emailEpicu || "Non défini"}
                               </a>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.telephone || "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.adresse || "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.siret || "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.dateDIP ? new Date(member.dateDIP).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.dateSignatureContrat ? new Date(member.dateSignatureContrat).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
                                 {member.dateSignatureAttestation ? new Date(member.dateSignatureAttestation).toLocaleDateString('fr-FR') : "Non défini"}
                               </span>
@@ -538,11 +543,17 @@ export default function EquipePage() {
         isOpen={isTokenModalOpen} 
         placement="center"
         size="md"
+        classNames={{
+          base: "mx-4 sm:mx-0",
+          body: "py-6",
+          header: "px-6 pt-6 pb-2",
+          footer: "px-6 pb-6 pt-2"
+        }}
         onClose={handleTokenModalClose}
       >
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1">
-            Lien d&apos;inscription généré
+            <span className="text-lg sm:text-xl font-semibold">Lien d&apos;inscription généré</span>
           </ModalHeader>
           <ModalBody>
             {tokenMember && (
@@ -551,21 +562,23 @@ export default function EquipePage() {
                   Lien d&apos;inscription pour <strong>{tokenMember.prenom} {tokenMember.nom}</strong>
                 </p>
                 <div className="bg-gray-100 p-3 rounded-md">
-                  <p className="text-sm font-mono break-all">
+                  <p className="text-xs sm:text-sm font-mono break-all">
                     https://franchise.epicu.fr/signup?q={generatedToken}
                   </p>
                 </div>
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
+              className="w-full sm:w-auto order-2 sm:order-1"
               variant="light"
               onPress={handleTokenModalClose}
             >
               Fermer
             </Button>
             <Button
+              className="w-full sm:w-auto order-1 sm:order-2"
               color="primary"
               onPress={() => copyToClipboard(`https://franchise.epicu.fr/signup?q=${generatedToken}`)}
             >

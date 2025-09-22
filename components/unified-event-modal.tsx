@@ -105,6 +105,7 @@ export function UnifiedEventModal({
     isConnected: boolean;
     message?: string;
   }>({ isConnected: false });
+  const [isEndTimeManuallyModified, setIsEndTimeManuallyModified] = useState(false);
 
   // États pour la recherche de client (comme dans invoice-modal)
   const [clientSearchTerm, setClientSearchTerm] = useState("");
@@ -192,6 +193,14 @@ export function UnifiedEventModal({
     }
   };
 
+  // Initialiser la date par défaut à la date du jour
+  useEffect(() => {
+    if (isOpen && !formData.startDate) {
+      const today = new Date().toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, startDate: today }));
+    }
+  }, [isOpen, formData.startDate]);
+
   // Initialiser automatiquement les dates de fin pour rendez-vous et tournages
   useEffect(() => {
     if (isOpen && (eventType === 'rendez-vous' || eventType === 'tournage')) {
@@ -199,25 +208,25 @@ export function UnifiedEventModal({
       if (formData.startDate && !formData.endDate) {
         setFormData(prev => ({ ...prev, endDate: formData.startDate }));
       }
-      
-      // Initialiser l'heure de fin avec l'heure de début + 1h si elle est définie
-      if (formData.startTime && formData.startTime !== '10:00') {
+
+      // Initialiser l'heure de fin avec l'heure de début + 1h si elle est définie et pas encore modifiée manuellement
+      if (formData.startTime && formData.startTime !== '10:00' && !isEndTimeManuallyModified) {
         const [hours, minutes] = formData.startTime.split(':').map(Number);
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0, 0);
-        
+
         // Ajouter 1 heure
         const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-        
+
         // Formatter en HH:MM
         const endHours = endDate.getHours().toString().padStart(2, '0');
         const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
         const endTime = `${endHours}:${endMinutes}`;
-        
+
         setFormData(prev => ({ ...prev, endTime }));
       }
     }
-  }, [isOpen, eventType, formData.startDate, formData.startTime]);
+  }, [isOpen, eventType, formData.startDate, formData.startTime, isEndTimeManuallyModified]);
 
   // Fonctions de recherche de client (comme dans invoice-modal)
   const searchClients = async (searchTerm: string) => {
@@ -467,19 +476,19 @@ export function UnifiedEventModal({
             const createdGoogleEvent = await googleResponse.json();
             onEventCreated?.(createdGoogleEvent);
             console.log("✅ Événement créé avec succès dans Google Calendar");
-            
+
             // Mettre à jour l'événement Airtable avec l'ID Google Calendar
             if (createdEventId && createdGoogleEvent.id) {
               // Préparer les données à mettre à jour
               const updateData: any = {
                 googleEventId: createdGoogleEvent.id
               };
-              
+
               // Si c'est un événement de publication avec un créneau sélectionné, ajouter l'ID du créneau
               if (eventData.type === 'publication' && formData.selectedSlotId) {
                 updateData['Creneau'] = [formData.selectedSlotId];
               }
-              
+
               await authFetch(`/api/agenda?id=${createdEventId}`, {
                 method: 'PATCH',
                 headers: {
@@ -489,7 +498,7 @@ export function UnifiedEventModal({
               });
               console.log("✅ ID Google Calendar et créneau stockés dans l'événement Airtable");
             }
-            
+
             // Mettre à jour le statut pour indiquer le succès
             setGoogleSyncStatus(prev => ({
               ...prev,
@@ -538,7 +547,7 @@ export function UnifiedEventModal({
 
         if (slotResponse.ok) {
           console.log(`✅ Créneau ${formData.selectedSlotId} marqué comme indisponible`);
-          
+
           // Mettre à jour l'événement créé avec l'ID du créneau seulement si Google Calendar n'était pas connecté
           // (sinon c'est déjà fait dans la section Google Calendar ci-dessus)
           if (createdEventId && !isGoogleConnected) {
@@ -582,8 +591,8 @@ export function UnifiedEventModal({
       setFormData(prev => ({ ...prev, endDate: value }));
     }
 
-    // Auto-calculer l'heure de fin quand l'heure de début change
-    if (field === 'startTime' && value) {
+    // Auto-calculer l'heure de fin quand l'heure de début change (seulement pour tournage et rendez-vous)
+    if ((eventType === 'rendez-vous' || eventType === 'tournage') && field === 'startTime' && value && !isEndTimeManuallyModified) {
       const [hours, minutes] = value.split(':').map(Number);
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
@@ -597,6 +606,11 @@ export function UnifiedEventModal({
       const endTime = `${endHours}:${endMinutes}`;
 
       setFormData(prev => ({ ...prev, endTime }));
+    }
+
+    // Marquer l'heure de fin comme modifiée manuellement si l'utilisateur la change
+    if (field === 'endTime') {
+      setIsEndTimeManuallyModified(true);
     }
   };
 
@@ -624,6 +638,8 @@ export function UnifiedEventModal({
     setClientSearchResults([]);
     setSelectedClient(null);
     setShowClientSearchResults(false);
+    // Réinitialiser l'état de modification manuelle de l'heure de fin
+    setIsEndTimeManuallyModified(false);
     onOpenChange(false);
   };
 
@@ -889,11 +905,10 @@ export function UnifiedEventModal({
                       Date de publication
                     </FormLabel>
                     <div
-                      className={`p-3 border rounded-lg transition-colors ${
-                        selectedClient 
-                          ? "border-gray-300 bg-white cursor-pointer hover:border-blue-400" 
+                      className={`p-3 border rounded-lg transition-colors ${selectedClient
+                          ? "border-gray-300 bg-white cursor-pointer hover:border-blue-400"
                           : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
-                      }`}
+                        }`}
                       onClick={() => {
                         if (selectedClient) {
                           setIsSlotModalOpen(true);
@@ -919,8 +934,8 @@ export function UnifiedEventModal({
                         </span>
                       ) : (
                         <span className={selectedClient ? "text-gray-500" : "text-gray-400"}>
-                          {selectedClient 
-                            ? "Cliquez pour sélectionner un créneau" 
+                          {selectedClient
+                            ? "Cliquez pour sélectionner un créneau"
                             : "Sélectionnez d'abord un établissement"}
                         </span>
                       )}
@@ -930,24 +945,30 @@ export function UnifiedEventModal({
 
                 {/* Dates et heures pour les autres types d'événements */}
                 {eventType !== 'publication' && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div >
                     <div>
                       <FormLabel htmlFor="startDate" isRequired={true}>
-                        Date de début
+                        Date
                       </FormLabel>
-                      <Input
-                        classNames={{
-                          inputWrapper: "bg-page-bg",
-                        }}
-                        id="startDate"
-                        type="date"
-                        value={formData.startDate}
-                        onChange={(e) => handleInputChange('startDate', e.target.value)}
-                        defaultValue={today}
-                        required
-                      />
+                        <Input
+                          classNames={{
+                            inputWrapper: "bg-page-bg",
+                          }}
+                          id="startDate"
+                          type="date"
+                          value={formData.startDate}
+                          onChange={(e) => handleInputChange('startDate', e.target.value)}
+                          required
+                        />
                     </div>
 
+
+                  </div>
+                )}
+
+                {/* Champs de date et heure de fin */}
+                {eventType !== 'publication' && (
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <FormLabel htmlFor="startTime" isRequired={true}>
                         Heure de début
@@ -961,27 +982,6 @@ export function UnifiedEventModal({
                         value={formData.startTime}
                         onChange={(e) => handleInputChange('startTime', e.target.value)}
                         required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Champs de date et heure de fin - masqués pour rendez-vous et tournages */}
-                {eventType !== 'publication' && eventType !== 'rendez-vous' && eventType !== 'tournage' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <FormLabel htmlFor="endDate" isRequired={true}>
-                        Date de fin
-                      </FormLabel>
-                      <Input
-                        classNames={{
-                          inputWrapper: "bg-page-bg",
-                        }}
-                        id="endDate"
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) => handleInputChange('endDate', e.target.value)}
-                        defaultValue={formData.startDate || today}
                       />
                     </div>
 

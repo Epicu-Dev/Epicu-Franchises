@@ -183,12 +183,12 @@ export default function TodoPage() {
   return (
     <div className="w-full">
       <Card className="w-full" shadow="none">
-        <CardBody >
+        <CardBody className="p-2 sm:p-4">
           {/* Header with filters */}
-          <div className="flex justify-between items-center p-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 sm:p-4 gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
               <StyledSelect
-                className="w-48"
+                className="w-full sm:w-48"
                 placeholder="État"
                 selectedKeys={selectedStatut ? [selectedStatut] : []}
                 onSelectionChange={(keys) =>
@@ -203,10 +203,11 @@ export default function TodoPage() {
 
             </div>
 
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Button
                 color='primary'
                 endContent={<PlusIcon className="h-4 w-4" />}
+                className="w-full sm:w-auto"
                 onPress={() => {
                   setError(null);
                   setIsAddModalOpen(true);
@@ -229,30 +230,34 @@ export default function TodoPage() {
                   <div className="text-sm">Commencez par ajouter votre première tâche</div>
                 </div>
                 :
-                <Table aria-label="Tableau des tâches" shadow="none">
-                  <TableHeader>
-                    <TableColumn className="font-light text-sm">
-                      <></>
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">
+                <div className="overflow-x-auto">
+                  <Table aria-label="Tableau des tâches" shadow="none" classNames={{
+                    wrapper: "min-w-full",
+                    table: "min-w-[600px]"
+                  }}>
+                    <TableHeader>
+                      <TableColumn className="font-light text-sm min-w-[60px]">
+                        <></>
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm min-w-[200px]">
 
-                      Tâches
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">
-                      <SortableColumnHeader
-                        field="Date d'échéance"
-                        label="Deadline"
-                        sortDirection={sortDirection}
-                        sortField={sortField}
-                        onSort={handleSort}
-                      />
+                        Tâches
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm min-w-[120px]">
+                        <SortableColumnHeader
+                          field="Date d'échéance"
+                          label="Deadline"
+                          sortDirection={sortDirection}
+                          sortField={sortField}
+                          onSort={handleSort}
+                        />
 
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">
-                      État
-                    </TableColumn>
-                    <TableColumn className="font-light text-sm">Actions</TableColumn>
-                  </TableHeader>
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm min-w-[120px]">
+                        État
+                      </TableColumn>
+                      <TableColumn className="font-light text-sm min-w-[100px]">Actions</TableColumn>
+                    </TableHeader>
                   <TableBody>
                     {todos.map((todo) => (
                       <TableRow key={todo.id} className=" border-t border-gray-100  dark:border-gray-700">
@@ -268,10 +273,10 @@ export default function TodoPage() {
                         </TableCell>
                         <TableCell className="font-light py-5">
                           <div className="flex items-center gap-2">
-                            <span>{todo.name}</span>
+                            <span className="text-xs sm:text-sm">{todo.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-light">
+                        <TableCell className="font-light text-xs sm:text-sm">
                           {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('fr-FR', {
                             day: '2-digit',
                             month: '2-digit',
@@ -297,7 +302,8 @@ export default function TodoPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>}
+                </Table>
+                </div>}
 
         </CardBody>
       </Card>
@@ -310,9 +316,21 @@ export default function TodoPage() {
       />
 
       {/* Modal de confirmation de suppression */}
-      <Modal isOpen={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <Modal 
+        isOpen={isDeleteModalOpen} 
+        onOpenChange={setIsDeleteModalOpen}
+        size="md"
+        classNames={{
+          base: "mx-4 sm:mx-0",
+          body: "py-6",
+          header: "px-6 pt-6 pb-2",
+          footer: "px-6 pb-6 pt-2"
+        }}
+      >
         <ModalContent>
-          <ModalHeader className="flex justify-center">Confirmer la suppression</ModalHeader>
+          <ModalHeader className="flex justify-center">
+            <span className="text-lg sm:text-xl font-semibold">Confirmer la suppression</span>
+          </ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Êtes-vous sûr de vouloir supprimer la tâche{" "}
@@ -322,8 +340,9 @@ export default function TodoPage() {
               Cette action est irréversible.
             </p>
           </ModalBody>
-          <ModalFooter className="flex justify-between">
-            <Button className="flex-1 border-1"
+          <ModalFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              className="w-full sm:flex-1 border-1 order-2 sm:order-1"
               color='primary'
               isDisabled={isDeletingTodo}
               variant="bordered"
@@ -331,7 +350,7 @@ export default function TodoPage() {
               Annuler
             </Button>
             <Button
-              className="flex-1"
+              className="w-full sm:flex-1 order-1 sm:order-2"
               color="danger"
               isDisabled={isDeletingTodo}
               onPress={confirmDelete}>

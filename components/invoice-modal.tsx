@@ -193,7 +193,7 @@ export default function InvoiceModal({
             const firstPublication = matchingClient.publications[0];
             setSelectedPublication(firstPublication.id);
             const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
-            setSelectedPublicationDisplay(`${formattedNom} - ${new Date(firstPublication.datePublication).toLocaleDateString('fr-FR')}`);
+            setSelectedPublicationDisplay(`${formattedNom}`);
           }
         }
       }
@@ -280,7 +280,7 @@ export default function InvoiceModal({
       const pub = publications.find(p => p.id === selectedPublication);
       if (pub) {
         const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
-        setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+        setSelectedPublicationDisplay(`${formattedNom}`);
       }
     } else {
       setSelectedPublicationDisplay("");
@@ -294,7 +294,7 @@ export default function InvoiceModal({
       const firstPublication = publications[0];
       setSelectedPublication(firstPublication.id);
       const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
-      setSelectedPublicationDisplay(`${formattedNom} - ${new Date(firstPublication.datePublication).toLocaleDateString('fr-FR')}`);
+      setSelectedPublicationDisplay(`${formattedNom}`);
     }
   }, [selectedInvoice, selectedClient, publications, selectedPublication]);
 
@@ -531,7 +531,7 @@ export default function InvoiceModal({
                         onClick={() => {
                           setSelectedPublication(pub.id);
                           const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
-                          setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+                          setSelectedPublicationDisplay(`${formattedNom}`);
                           // Hide dropdown
                           const dropdown = document.getElementById('publication-dropdown');
                           if (dropdown) {
@@ -542,7 +542,7 @@ export default function InvoiceModal({
                           if (e.key === 'Enter' || e.key === ' ') {
                             setSelectedPublication(pub.id);
                             const formattedNom = formatPublicationName(pub.nom || `Publication ${pub.id}`);
-                            setSelectedPublicationDisplay(`${formattedNom} - ${new Date(pub.datePublication).toLocaleDateString('fr-FR')}`);
+                            setSelectedPublicationDisplay(`${formattedNom}`);
                             // Hide dropdown
                             const dropdown = document.getElementById('publication-dropdown');
                             if (dropdown) {

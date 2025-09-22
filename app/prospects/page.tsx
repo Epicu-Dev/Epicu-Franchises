@@ -334,14 +334,14 @@ export default function ProspectsPage() {
   return (
     <div className="w-full">
       <Card className="w-full shadow-none" shadow="none">
-        <CardBody>
+        <CardBody className="p-2 sm:p-4">
           {/* Tabs */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <Tabs
-              className="mb-6  pt-3 text-xl"
+              className="mb-6 pt-3 text-xl"
               classNames={{
-                cursor: "w-[50px]  left-[12px] h-1   rounded",
-                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light ",
+                cursor: "w-[50px] left-[12px] h-1 rounded",
+                tab: "pb-6 data-[selected=true]:font-semibold text-base font-light",
               }}
               selectedKey={selectedTab}
               variant="underlined"
@@ -351,9 +351,9 @@ export default function ProspectsPage() {
               <Tab key="en_discussion" title="En discussion" />
               <Tab key="glacial" title="Glacial" />
             </Tabs>
-            <div className="relative">
+            <div className="relative w-full sm:w-64">
               <Input
-                className="w-64 pr-4 pl-10"
+                className="w-full pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
                 startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                 classNames={{
                   input:
@@ -372,10 +372,10 @@ export default function ProspectsPage() {
 
 
           {/* Header with filters */}
-          <div className="flex justify-between items-center pl-4 pr-4 pb-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center pl-2 pr-2 sm:pl-4 sm:pr-4 pb-4 gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
               <StyledSelect
-                className="w-32"
+                className="w-full sm:w-32"
                 placeholder="Catégorie"
                 selectedKeys={selectedCategory ? [selectedCategory] : []}
                 onSelectionChange={(keys) =>
@@ -397,7 +397,7 @@ export default function ProspectsPage() {
               </StyledSelect>
 
               <StyledSelect
-                className="w-45"
+                className="w-full sm:w-45"
                 placeholder="Suivi par"
                 selectedKeys={selectedSuiviPar ? [selectedSuiviPar] : []}
                 onSelectionChange={(keys) =>
@@ -422,6 +422,7 @@ export default function ProspectsPage() {
             <Button
               color='primary'
               endContent={<PlusIcon className="h-4 w-4" />}
+              className="w-full sm:w-auto"
               onPress={() => {
                 setEditingProspect(null);
                 setIsProspectModalOpen(true);
@@ -444,28 +445,33 @@ export default function ProspectsPage() {
             error ? <div className="flex justify-center items-center h-64">
               <div className="text-red-500">Erreur: {error}</div>
             </div> :
-              <Table
-                aria-label="Tableau des prospects"
-                bottomContent={
-                  hasMore && (
-                    <div className="flex justify-center py-4">
-                      <Button
-                        color="primary"
-                        disabled={loadingMore}
-                        isLoading={loadingMore}
-                        onPress={loadMore}
-                      >
-                        {loadingMore ? 'Chargement...' : 'Charger plus'}
-                      </Button>
-                    </div>
-                  )
-                }
-                shadow="none"
-              >
+              <div className="overflow-x-auto">
+                <Table
+                  aria-label="Tableau des prospects"
+                  bottomContent={
+                    hasMore && (
+                      <div className="flex justify-center py-4">
+                        <Button
+                          color="primary"
+                          disabled={loadingMore}
+                          isLoading={loadingMore}
+                          onPress={loadMore}
+                        >
+                          {loadingMore ? 'Chargement...' : 'Charger plus'}
+                        </Button>
+                      </div>
+                    )
+                  }
+                  shadow="none"
+                  classNames={{
+                    wrapper: "min-w-full",
+                    table: "min-w-[1000px]"
+                  }}
+                >
                 <TableHeader className="mb-4">
-                  <TableColumn className="font-light text-sm">Basculer</TableColumn>
-                  <TableColumn className="font-light text-sm">Modifier</TableColumn>
-                  <TableColumn className="font-light text-sm">
+                  <TableColumn className="font-light text-sm min-w-[120px]">Basculer</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[80px]">Modifier</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[120px]">
                     <SortableColumnHeader
                       field="categorie"
                       label="Catégorie"
@@ -474,10 +480,10 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
-                  <TableColumn className="font-light text-sm">Nom établissement</TableColumn>
-                  <TableColumn className="font-light text-sm">Date premier contact</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[150px]">Nom établissement</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[120px]">Date premier contact</TableColumn>
 
-                  <TableColumn className="font-light text-sm">
+                  <TableColumn className="font-light text-sm min-w-[120px]">
                     <SortableColumnHeader
                       field="dateRelance"
                       label="Date de relance"
@@ -495,12 +501,12 @@ export default function ProspectsPage() {
                       onSort={handleSort}
                     />
                   </TableColumn>
-                  <TableColumn className="font-light text-sm">Ville</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[120px]">Ville</TableColumn>
 
-                  <TableColumn className="font-light text-sm">Téléphone</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[120px]">Téléphone</TableColumn>
 
-                  <TableColumn className="font-light text-sm">Mail</TableColumn>
-                  <TableColumn className="font-light text-sm">Commentaire</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[150px]">Mail</TableColumn>
+                  <TableColumn className="font-light text-sm min-w-[200px]">Commentaire</TableColumn>
                 </TableHeader>
                 <TableBody className="mt-4">
                   {prospects.length === 0 ? (
@@ -606,18 +612,19 @@ export default function ProspectsPage() {
                         <TableCell className="font-light">{prospect.suiviPar}</TableCell>
 
                         <TableCell className="font-light">{prospect.ville}</TableCell>
-                        <TableCell className="font-light min-w-32">{prospect.telephone}</TableCell>
+                        <TableCell className="font-light min-w-32 text-xs sm:text-sm">{prospect.telephone}</TableCell>
 
 
-                        <TableCell className="font-light">{prospect.email}</TableCell>
-                        <TableCell className="font-light">{prospect.commentaires}</TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">{prospect.email}</TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">{prospect.commentaires}</TableCell>
 
 
                       </TableRow>
                     ))
                   )}
                 </TableBody>
-              </Table>}
+              </Table>
+              </div>}
         </CardBody>
       </Card>
 

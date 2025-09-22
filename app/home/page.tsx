@@ -9,15 +9,8 @@ import {
   ModalBody,
   useDisclosure,
 } from "@heroui/modal";
-import {
-  PlusIcon,
-  ChartBarIcon,
-  EyeIcon,
-  UsersIcon,
-  ShoppingCartIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import { FranchiseAbonnesIcon, FranchiseVuesIcon, FranchiseProspectsIcon, ConversionIcon } from "@/components/custom-icons";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { Card, CardBody } from "@heroui/card";
@@ -35,7 +28,11 @@ import TodoModal from "@/components/todo-modal";
 import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useDateFilters } from "@/hooks/use-date-filters";
+import { DateFilterModal } from "@/components/date-filter-modal";
+import { PeriodSelectorButtons } from "@/components/period-selector-buttons";
 import { Invoice } from "@/types/invoice";
+import { formatNumberWithK, formatNumberWithPlusAndK } from "@/utils/format-numbers";
 
 // Types pour les données réelles
 type AgendaEvent = {
@@ -62,10 +59,41 @@ export default function HomePage() {
   const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const { authFetch } = useAuthFetch();
-  const [selectedDate, setSelectedDate] = useState<CalendarDate>(
-    today(getLocalTimeZone())
-  );
+  
+  // Utilisation du hook de filtres de dates
+  const {
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    selectedPeriodType,
+    selectedPeriod,
+    isCustomDateSelected,
+    isSinceCreationSelected,
+    tempSelectedMonth,
+    tempSelectedYear,
+    tempSelectedDate,
+    tempIsSinceCreationSelected,
+    setSelectedDate,
+    setSelectedMonth,
+    setSelectedYear,
+    setSelectedPeriodType,
+    setSelectedPeriod,
+    setIsCustomDateSelected,
+    setIsSinceCreationSelected,
+    setTempSelectedMonth,
+    setTempSelectedYear,
+    setTempSelectedDate,
+    setTempIsSinceCreationSelected,
+    selectCurrentMonth,
+    selectCurrentYear,
+    selectSinceCreation,
+    applyCustomDate,
+    resetToCurrentDate,
+    syncTempStates,
+  } = useDateFilters();
+
   const { isOpen, onClose } = useDisclosure();
+  const { isOpen: isDateModalOpen, onOpen: onDateModalOpen, onOpenChange: onDateModalOpenChange } = useDisclosure();
   const {
     isOpen: isAddTodoModalOpen,
     onOpen: onAddTodoModalOpen,
@@ -95,6 +123,9 @@ export default function HomePage() {
     vues: number;
   } | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
+  
+  // État pour la connexion Google Calendar
+  const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
   
   // État de loading global pour la navigation par mois
   const [isNavigating, setIsNavigating] = useState(false);
@@ -279,6 +310,22 @@ export default function HomePage() {
     }
   };
 
+  // Fonction pour vérifier le statut Google Calendar
+  const checkGoogleCalendarStatus = async () => {
+    try {
+      const response = await authFetch('/api/google-calendar/status');
+
+      if (response.ok) {
+        const status = await response.json();
+        setIsGoogleConnected(status.isConnected);
+      } else {
+        setIsGoogleConnected(false);
+      }
+    } catch {
+      setIsGoogleConnected(false);
+    }
+  };
+
   // Fonction pour récupérer les statistiques
   const fetchStatistics = async () => {
     try {
@@ -430,8 +477,8 @@ export default function HomePage() {
     }
     
     try {
-      // Récupération des événements d'agenda, todos et statistiques
-      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics()]);
+      // Récupération des événements d'agenda, todos, statistiques et vérification Google Calendar
+      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics(), checkGoogleCalendarStatus()]);
     } catch (error) {
       // Ignorer les erreurs d'annulation
       if (error instanceof Error && error.name === 'AbortError') {
@@ -450,6 +497,13 @@ export default function HomePage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Effet pour synchroniser les états temporaires quand le modal s'ouvre
+  useEffect(() => {
+    if (isDateModalOpen) {
+      syncTempStates();
+    }
+  }, [isDateModalOpen]);
 
   // Effet pour recharger agenda, todos et statistiques quand la date change
   useEffect(() => {
@@ -482,32 +536,32 @@ export default function HomePage() {
 
   const metrics = [
     {
-      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.abonnes.toLocaleString()}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithPlusAndK(statistics.abonnes) : "0",
       label: "Nombre d'abonnés",
-      icon: <ChartBarIcon className="h-6 w-6" />,
+      icon: <FranchiseAbonnesIcon className="h-6 w-6" />,
       iconBgColor: "bg-custom-green-stats/40",
       iconColor: "text-custom-green-stats",
     },
     {
-      value: (statisticsLoading || isNavigating) ? "..." : statistics ? `+${statistics.vues.toLocaleString()}` : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithPlusAndK(statistics.vues) : "0",
       label: "Nombre de vues",
-      icon: <EyeIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-rose/40",
-      iconColor: "text-custom-rose",
+      icon: <FranchiseVuesIcon className="h-6 w-6" />,
+      iconBgColor: "bg-custom-rose-views/40",
+      iconColor: "text-custom-rose-views",
     },
     {
-      value: (statisticsLoading || isNavigating) ? "..." : statistics ? statistics.prospectsSignes.toString() : "0",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithK(statistics.prospectsSignes) : "0",
       label: "Prospects signés",
-      icon: <UsersIcon className="h-6 w-6" />,
-      iconBgColor: "bg-yellow-100",
-      iconColor: "text-yellow-400",
+      icon: <FranchiseProspectsIcon className="h-6 w-6" />,
+      iconBgColor: "bg-custom-yellow-prospects/40",
+      iconColor: "text-custom-yellow-prospects",
     },
     {
       value: (statisticsLoading || isNavigating) ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
       label: "Taux de conversion",
-      icon: <ShoppingCartIcon className="h-6 w-6" />,
-      iconBgColor: "bg-custom-orange-food/40",
-      iconColor: "text-custom-orange-food",
+      icon: <ConversionIcon className="h-6 w-6" />,
+      iconBgColor: "bg-custom-orange-conversion/40",
+      iconColor: "text-custom-orange-conversion",
     },
   ];
 
@@ -690,39 +744,14 @@ export default function HomePage() {
 
           {/* Date Navigation */}
           <div className="flex items-center justify-start gap-2 lg:gap-4 mb-4 lg:mb-6">
-            <Button
-              isIconOnly
-              className="text-gray-600"
-              size="sm"
-              variant="light"
-              onPress={() => {
-                const newDate = selectedDate.subtract({ months: 1 });
-
-                setSelectedDate(newDate);
-              }}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center gap-2">
-              {selectedDate
-                .toDate(getLocalTimeZone())
-                .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-            </div>
-            
-            <Button
-              isIconOnly
-              className="text-gray-600"
-              size="sm"
-              variant="light"
-              onPress={() => {
-                const newDate = selectedDate.add({ months: 1 });
-
-                setSelectedDate(newDate);
-              }}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
+            <PeriodSelectorButtons
+              selectedPeriodType={selectedPeriodType}
+              isCustomDateSelected={isCustomDateSelected}
+              isSinceCreationSelected={isSinceCreationSelected}
+              onDateModalOpen={onDateModalOpen}
+              onCurrentMonthSelect={selectCurrentMonth}
+              onCurrentYearSelect={selectCurrentYear}
+            />
           </div>
 
           {/* Main Layout - Responsive: stacked on mobile, side-by-side on desktop */}
@@ -752,6 +781,7 @@ export default function HomePage() {
                 onPublicationSelect={() => openUnifiedModal("publication")}
                 onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
                 onTournageSelect={() => openUnifiedModal("tournage")}
+                isGoogleConnected={isGoogleConnected || false}
               />
 
               {/* To do Section */}
@@ -901,6 +931,23 @@ export default function HomePage() {
         onEdit={handleEditInvoice}
         onOpenChange={setIsInvoiceModalOpen}
         onSave={handleAddInvoice}
+      />
+
+      {/* Date Selection Modal */}
+      <DateFilterModal
+        isOpen={isDateModalOpen}
+        onOpenChange={onDateModalOpenChange}
+        tempSelectedMonth={tempSelectedMonth}
+        tempSelectedYear={tempSelectedYear}
+        tempIsSinceCreationSelected={tempIsSinceCreationSelected}
+        onTempMonthChange={setTempSelectedMonth}
+        onTempYearChange={setTempSelectedYear}
+        onTempSinceCreationChange={setTempIsSinceCreationSelected}
+        onTempDateChange={setTempSelectedDate}
+        onApply={() => {
+          applyCustomDate();
+          onDateModalOpenChange();
+        }}
       />
     </DashboardLayout>
   );
