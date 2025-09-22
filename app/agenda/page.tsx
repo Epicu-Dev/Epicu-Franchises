@@ -68,7 +68,7 @@ export default function AgendaPage() {
   const { userProfile } = useUser();
   const { authFetch } = useAuthFetch();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view] = useState<"semaine" | "mois">("mois");
+  const [view, setView] = useState<"semaine" | "mois" | "planning">("planning");
   const [selectedCategory] = useState<string>("tout");
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -287,11 +287,11 @@ export default function AgendaPage() {
         // Vue mois - étendre la plage pour inclure les mois précédents et suivants
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-        
+
         // Étendre la plage pour couvrir les jours visibles du calendrier (6 semaines)
         const startOfCalendar = new Date(startOfMonth);
         startOfCalendar.setDate(startOfMonth.getDate() - startOfMonth.getDay() + 1);
-        
+
         const endOfCalendar = new Date(endOfMonth);
         endOfCalendar.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay()));
         endOfCalendar.setHours(23, 59, 59, 999);
@@ -497,7 +497,7 @@ export default function AgendaPage() {
 
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
-   
+
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
       case "tournage":
@@ -514,7 +514,7 @@ export default function AgendaPage() {
   };
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventBorderColor = (event: Event) => {
-    
+
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
@@ -634,9 +634,10 @@ export default function AgendaPage() {
           {weekDays.map((day) => (
             <div
               key={day}
-              className="p-2 text-center font-medium text-gray-600 text-sm"
+              className="p-1 sm:p-2 text-center font-medium text-gray-600 text-xs sm:text-sm"
             >
-              {day}
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.substring(0, 3)}</span>
             </div>
           ))}
         </div>
@@ -646,12 +647,12 @@ export default function AgendaPage() {
           {days.map((day, index) => (
             <div
               key={index}
-              className={`min-h-32 p-2 border border-gray-100 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+              className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border border-gray-100 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
                 } `}
             >
               <div
-                className={`text-sm w-8 h-8 flex items-center justify-center font-medium ${day.isToday
-                  ? "text-white bg-red-500 rounded-full  flex items-center justify-center "
+                className={`text-xs sm:text-sm w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center font-medium ${day.isToday
+                  ? "text-white bg-red-500 rounded-full"
                   : day.isCurrentMonth
                     ? "text-gray-900"
                     : "text-gray-400"
@@ -661,7 +662,7 @@ export default function AgendaPage() {
               </div>
 
               <div className="mt-1 space-y-1">
-                {day.events.slice(0, 3).map((event) => (
+                {day.events.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
                     className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${!day.isCurrentMonth ? 'shadow-sm' : ''}`}
@@ -687,9 +688,9 @@ export default function AgendaPage() {
                     )}
                   </div>
                 ))}
-                {day.events.length > 3 && (
+                {day.events.length > 2 && (
                   <div className="text-xs text-gray-500">
-                    +{day.events.length - 3} autres
+                    +{day.events.length - 2} autres
                     {day.events.some(e => e.isGoogleEvent) && (
                       <span className="text-blue-600 ml-1">• GC</span>
                     )}
@@ -709,25 +710,24 @@ export default function AgendaPage() {
 
     return (
       <div className="w-full overflow-x-auto">
-        <div className="min-w-[800px]">
+        <div className="min-w-[600px] sm:min-w-[800px]">
           {/* En-têtes des jours */}
-          <div className="grid grid-cols-8  mb-2">
-            <div className="p-2 text-center font-medium text-gray-600 text-sm" />
+          <div className="grid grid-cols-8 mb-2">
+            <div className="p-1 sm:p-2 text-center font-medium text-gray-600 text-xs sm:text-sm" />
             {weekDays.map((day) => (
               <div
                 key={day.date.toISOString()}
-                className="p-2 text-center gap-4 flex items-center font-semibold text-primary-light"
+                className="p-1 sm:p-2 text-center gap-2 sm:gap-4 flex flex-col sm:flex-row items-center font-semibold text-primary-light"
               >
                 <div
-                  className={` w-8 h-8 flex items-center justify-center ${day.isToday
-                    ? "text-white bg-red-500 rounded-full flex items-center justify-center"
+                  className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm ${day.isToday
+                    ? "text-white bg-red-500 rounded-full"
                     : ""
                     }`}
                 >
                   {day.dayNumber}
                 </div>
-                <div >{day.dayName}</div>
-
+                <div className="text-xs sm:text-sm hidden sm:block">{day.dayName}</div>
               </div>
             ))}
           </div>
@@ -737,7 +737,7 @@ export default function AgendaPage() {
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-2 text-sm text-gray-500 text-right pr-4 border-r border-gray-100 h-20 flex items-center justify-end">
+                <div className="p-1 sm:p-2 text-xs sm:text-sm text-gray-500 text-right pr-2 sm:pr-4 border-r border-gray-100 h-16 sm:h-20 flex items-center justify-end">
                   {hour}:00
                 </div>
 
@@ -759,7 +759,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
+                      className={`h-16 sm:h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
                         }`}
                     >
                       {hourEvents.map((event) => (
@@ -790,6 +790,85 @@ export default function AgendaPage() {
                     </div>
                   );
                 })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPlanningView = () => {
+    // Transformer les événements Google Calendar
+    const transformedGoogleEvents = transformGoogleEvents(googleEvents);
+
+    // Dédupliquer les événements (priorité à Airtable)
+    const allEvents = deduplicateEvents(events, transformedGoogleEvents);
+
+    // Grouper les événements par date
+    const eventsByDate = allEvents.reduce((acc, event) => {
+      const eventDate = new Date(event.date).toDateString();
+      if (!acc[eventDate]) {
+        acc[eventDate] = [];
+      }
+      acc[eventDate].push(event);
+      return acc;
+    }, {} as Record<string, Event[]>);
+
+    // Trier les dates
+    const sortedDates = Object.keys(eventsByDate).sort((a, b) =>
+      new Date(a).getTime() - new Date(b).getTime()
+    );
+
+    // Fonction pour formater la date
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = date.toLocaleDateString('fr-FR', { month: 'long' });
+      return `${day} ${month}`;
+    };
+
+
+    // Si pas d'événements, afficher un message
+    if (sortedDates.length === 0) {
+      return (
+        <div className="w-full text-center py-12">
+          <div className="text-gray-500 text-lg mb-2">Aucun événement à afficher</div>
+          <div className="text-gray-400 text-sm">Les événements apparaîtront ici une fois créés</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full overflow-x-auto">
+        <div className="flex min-w-[600px]">
+          {/* Colonne des dates */}
+          <div className="w-24 sm:w-32 flex-shrink-0">
+            {sortedDates.map((dateString) => (
+              <div key={dateString} className="h-16 sm:h-20 flex items-center text-xs sm:text-sm text-gray-600 border-b border-gray-100 px-2">
+                {formatDate(dateString)}
+              </div>
+            ))}
+          </div>
+
+          {/* Colonne des événements */}
+          <div className="flex-1 min-w-0">
+            {sortedDates.map((dateString) => (
+              <div key={dateString} className="h-16 sm:h-20 border-b border-gray-100 flex flex-col justify-center p-1">
+                <div className="space-y-1">
+                  {eventsByDate[dateString].map((event) => (
+                    <div
+                      key={event.id}
+                      className={`${getEventColor(event)} px-2 py-1 rounded text-xs sm:text-sm cursor-pointer hover:opacity-80 border border-1 ${getEventBorderColor(event)}`}
+                      onClick={() => openEventDetailModal(event)}
+                    >
+                      <div className="font-medium truncate">{event.title}</div>
+                      <div className="text-xs opacity-90 truncate">
+                        {event.startTime} - {event.endTime}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -910,29 +989,39 @@ export default function AgendaPage() {
   return (
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
-        <CardBody className="p-6">
+        <CardBody className="p-3 sm:p-6">
 
           {/* En-tête avec navigation et bouton plus - style cohérent avec la page d'accueil */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
-              <Button
-                isIconOnly
-                variant="light"
-                onPress={handlePreviousMonth}
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-              </Button>
-              <span>
-                {view === "semaine"
-                  ? formatWeekRange(currentDate)
-                  : formatMonthYear(currentDate)}
-              </span>
-              <Button isIconOnly aria-label="Mois suivant" variant="light" onPress={handleNextMonth}>
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className={`flex ${view === "planning" ? "justify-end" : "flex-col sm:flex-row justify-between"} items-start sm:items-center mb-6 gap-4`}>
+            {/* Navigation mois/semaine - masquée en mode planning */}
+            {view !== "planning" && (
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <Button
+                  isIconOnly
+                  variant="light"
+                  onPress={handlePreviousMonth}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </Button>
+                <span className="text-sm sm:text-base text-center flex-1 sm:flex-none">
+                  {view === "semaine"
+                    ? formatWeekRange(currentDate)
+                    : formatMonthYear(currentDate)}
+                </span>
+                <Button 
+                  isIconOnly 
+                  aria-label="Mois suivant" 
+                  variant="light" 
+                  onPress={handleNextMonth}
+                  className="flex-shrink-0"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
               <AgendaDropdown
                 onPublicationSelect={() => openModal("publication")}
                 onRendezVousSelect={() => openModal("rendez-vous")}
@@ -943,22 +1032,46 @@ export default function AgendaPage() {
               />
             </div>
           </div>
-          {/* Synchronisation Google Calendar - seulement si connecté */}
 
-
-
-
-
-
-          {/* Synchronisation Google Calendar - seulement si connecté */}
-          {isGoogleConnected && (
-            <div className="flex justify-end items-center mb-6">
-              <GoogleCalendarSync
-                onEventsFetched={setGoogleEvents}
-                onEventCreated={handleGoogleEventCreated}
-              />
+          {/* Sélecteur de vue - toujours visible */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            
+            {/* Sélecteur de vue */}
+            <div className="flex rounded-md overflow-hidden w-full sm:w-auto">
+              {[
+                { key: "mois", label: "Mois" },
+                { key: "semaine", label: "Semaine" },
+                { key: "planning", label: "Planning" }
+              ].map((viewOption) => {
+                const isSelected = view === viewOption.key;
+                return (
+                  <Button
+                    key={viewOption.key}
+                    className={
+                      isSelected
+                        ? "bg-custom-blue-select/14 text-custom-blue-select border-0 rounded-none flex-1 sm:flex-none"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-none flex-1 sm:flex-none"
+                    }
+                    size="sm"
+                    variant="solid"
+                    onPress={() => setView(viewOption.key as "semaine" | "mois" | "planning")}
+                  >
+                    {viewOption.label}
+                  </Button>
+                );
+              })}
             </div>
-          )}
+            
+            {/* Synchronisation Google Calendar - seulement si connecté */}
+            {isGoogleConnected && (
+              <div className="w-full sm:w-auto">
+                <GoogleCalendarSync
+                  onEventsFetched={setGoogleEvents}
+                  onEventCreated={handleGoogleEventCreated}
+                />
+              </div>
+            )}
+          </div>
 
 
           {/* Contenu du calendrier */}
@@ -971,6 +1084,7 @@ export default function AgendaPage() {
               <div className="mt-6">
                 {view === "mois" && renderCalendarView()}
                 {view === "semaine" && renderWeekView()}
+                {view === "planning" && renderPlanningView()}
               </div>
             )
           }

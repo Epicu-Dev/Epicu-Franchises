@@ -56,10 +56,10 @@ export default function InvoiceModal({
   const [isSearchingClient, setIsSearchingClient] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
-  
+
   // État de chargement global pour l'édition
   const [isLoadingClientData, setIsLoadingClientData] = useState(false);
-  
+
   // État de chargement pour la sauvegarde
   const [isSaving, setIsSaving] = useState(false);
 
@@ -79,11 +79,11 @@ export default function InvoiceModal({
         month: '2-digit',
         year: 'numeric'
       }).replace(/\//g, '.');
-      
+
       // Enlever la date à la fin si elle existe (format - yyyy-MM-dd)
       const endDateMatch = rest.match(/^(.+?)\s*-\s*\d{4}-\d{2}-\d{2}$/);
       const cleanRest = endDateMatch ? endDateMatch[1] : rest;
-      
+
       return `${formattedDate} ${cleanRest}`;
     }
 
@@ -266,7 +266,7 @@ export default function InvoiceModal({
   // Mettre à jour les publications quand selectedClient change
   useEffect(() => {
     setPublications(selectedClient?.publications || []);
-    
+
     // En mode édition, ne pas réinitialiser la sélection de publication
     if (!selectedInvoice) {
       setSelectedPublication("");
@@ -323,7 +323,7 @@ export default function InvoiceModal({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      
+
       const invoiceData = {
         'Prestation': newInvoice.serviceType,
         'Client': newInvoice.establishmentName,
@@ -610,8 +610,10 @@ export default function InvoiceModal({
                   id="emissionDate"
                   type="date"
                   classNames={{
-                    inputWrapper: "bg-page-bg",
+                    inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
+                    input: newInvoice.emissionDate ? "text-black" : "text-gray-300"
                   }}
+                  color={newInvoice.emissionDate ? "default" : "danger"}
                   value={newInvoice.emissionDate}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -731,21 +733,23 @@ export default function InvoiceModal({
                   </div>
                 </div>
 
-                 <FormLabel htmlFor="date" isRequired={false}>
-                   Date de paiement
-                 </FormLabel>
-                 <Input
-                   id="date"
-                   type="date"
-                   classNames={{
-                     inputWrapper: "bg-page-bg",
-                   }}
-                   value={newInvoice.date}
-                   onChange={(e) => {
-                     const value = e.target.value;
-                     setNewInvoice((prev) => ({ ...prev, date: value }));
-                   }}
-                 />
+                <FormLabel htmlFor="date" isRequired={false}>
+                  Date de paiement
+                </FormLabel>
+                <Input
+                  id="date"
+                  type="date"
+                  classNames={{
+                    inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
+                    input: newInvoice.date ? "text-black" : "text-gray-300"
+                  }}
+                  color={newInvoice.date ? "default" : "danger"}
+                  value={newInvoice.date}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewInvoice((prev) => ({ ...prev, date: value }));
+                  }}
+                />
 
                 <FormLabel htmlFor="comment" isRequired={false}>
                   Commentaire
@@ -793,7 +797,7 @@ export default function InvoiceModal({
                         </h3>
                         <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
                           <p>
-                            Ce client n&apos;a pas encore de publication associée. Vous devez d&apos;abord ajouter une publication 
+                            Ce client n&apos;a pas encore de publication associée. Vous devez d&apos;abord ajouter une publication
                             dans la section &quot;Publications&quot; avant de pouvoir créer une facture.
                           </p>
                         </div>
