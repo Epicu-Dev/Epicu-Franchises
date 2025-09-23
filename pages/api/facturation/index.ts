@@ -126,6 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const statut = body['Statut facture'] || body.statut || null;
       const montantBrut = body['Montant total brut'] ?? body['Montant total net'] ?? body.montant ?? null;
       const commentaire = body['Commentaire'] || body.commentaire || null;
+      const publicationId = body['publication_id'] || body.publicationId || null;
 
       const fieldsToCreate: any = {};
       if (prestation) fieldsToCreate['Prestation'] = prestation;
@@ -140,6 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (statut) fieldsToCreate['Statut facture'] = statut;
       if (montantBrut != null) fieldsToCreate['Montant total brut'] = montantBrut;
       if (commentaire) fieldsToCreate['Commentaire'] = commentaire;
+      if (publicationId) fieldsToCreate['HISTORIQUE DE PUBLICATIONS'] = [publicationId];
 
       const created = await base(TABLE).create([{ fields: fieldsToCreate }]);
       const rec = created[0];
@@ -210,6 +212,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (Object.prototype.hasOwnProperty.call(body, 'Statut facture') || Object.prototype.hasOwnProperty.call(body, 'statut')) fieldsToUpdate['Statut facture'] = body['Statut facture'] || body.statut;
       if (Object.prototype.hasOwnProperty.call(body, 'Montant total brut') || Object.prototype.hasOwnProperty.call(body, 'montant')) fieldsToUpdate['Montant total brut'] = body['Montant total brut'] ?? body['Montant total net'] ?? body.montant;
       if (Object.prototype.hasOwnProperty.call(body, 'Commentaire') || Object.prototype.hasOwnProperty.call(body, 'commentaire')) fieldsToUpdate['Commentaire'] = body['Commentaire'] || body.commentaire || null;
+      if (Object.prototype.hasOwnProperty.call(body, 'publication_id') || Object.prototype.hasOwnProperty.call(body, 'publicationId')) {
+        const pubId = body['publication_id'] || body.publicationId;
+        fieldsToUpdate['HISTORIQUE DE PUBLICATIONS'] = pubId ? [pubId] : [];
+      }
 
       if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
