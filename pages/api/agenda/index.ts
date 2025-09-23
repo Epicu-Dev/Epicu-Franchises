@@ -48,6 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const fields = [
         'Tâche',
         'Date',
+        'Date fin rdv', // Nouveau champ pour la date de fin du rendez-vous
         'Type',
         'Description',
         'Collaborateur',
@@ -79,6 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // champs français
         const task = r.get('Tâche') || '';
         const date = r.get('Date') || '';
+        const dateFinRdv = r.get('Date fin rdv') || '';
         const type = r.get('Type') || '';
         const description = r.get('Description') || '';
         const collaborators = r.get('Collaborateur') || [];
@@ -91,6 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: r.id,
           task,
           date,
+          dateFinRdv,
           type,
           description,
           collaborators,
@@ -233,6 +236,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const fieldsToCreate: any = {
         'Tâche': body['Tâche'] || body.tache || body.title || body.name || '',
         'Date': body['Date'] || body.date,
+        'Date fin rdv': body['Date fin rdv'] || body.dateFinRdv || body.endDate || '',
         'Type': body['Type'] || body.type || '',
         'Description': body['Description'] || body.description || body.desc || '',
         'Google Event ID': body['Google Event ID'] || body.googleEventId || '',
@@ -284,6 +288,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       if (body['Date'] ?? body.date) {
         fieldsToUpdate['Date'] = body['Date'] || body.date;
+      }
+      if (body['Date fin rdv'] ?? body.dateFinRdv ?? body.endDate) {
+        fieldsToUpdate['Date fin rdv'] = body['Date fin rdv'] || body.dateFinRdv || body.endDate;
       }
       if (body['Type'] ?? body.type) {
         fieldsToUpdate['Type'] = body['Type'] || body.type;

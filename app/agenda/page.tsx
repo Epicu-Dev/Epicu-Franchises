@@ -56,6 +56,7 @@ interface ApiEvent {
   id: string;
   task: string;
   date: string;
+  dateFinRdv?: string; // Nouveau champ pour la date de fin du rendez-vous
   type: string;
   description?: string;
   collaborators?: string[];
@@ -289,11 +290,17 @@ export default function AgendaPage() {
         const eventDate = new Date(apiEvent.date);
         const startTime = eventDate.toTimeString().slice(0, 5);
 
-        // Calculer l'heure de fin (par défaut +1h)
-        const endDate = new Date(eventDate);
-
-        endDate.setHours(endDate.getHours() + 1);
-        const endTime = endDate.toTimeString().slice(0, 5);
+        // Utiliser la date de fin du rendez-vous si disponible, sinon calculer +1h
+        let endTime: string;
+        if (apiEvent.dateFinRdv) {
+          const endDate = new Date(apiEvent.dateFinRdv);
+          endTime = endDate.toTimeString().slice(0, 5);
+        } else {
+          // Calculer l'heure de fin (par défaut +1h)
+          const endDate = new Date(eventDate);
+          endDate.setHours(endDate.getHours() + 1);
+          endTime = endDate.toTimeString().slice(0, 5);
+        }
 
         // Mapper le type de l'API vers le type de l'interface
         let mappedType: Event['type'] = "evenement";
@@ -356,7 +363,7 @@ export default function AgendaPage() {
       const timeoutId = setTimeout(() => {
         scrollToTodayInPlanning();
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [view, loading, events]);
@@ -449,36 +456,36 @@ export default function AgendaPage() {
 
     const today = new Date();
     const todayString = today.toDateString();
-    
+
     // Trouver l'élément correspondant à la date du jour
     const todayElement = planningScrollRef.current.querySelector(`[data-date="${todayString}"]`);
-    
+
     if (todayElement) {
       // Scroller vers l'élément d'aujourd'hui
-      todayElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
+      todayElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       });
     } else {
       // Si pas d'événement aujourd'hui, trouver l'événement le plus proche
       const allDateElements = planningScrollRef.current.querySelectorAll('[data-date]');
       let closestElement: HTMLElement | null = null;
       let minDiff = Infinity;
-      
+
       allDateElements.forEach((element) => {
         const elementDate = new Date(element.getAttribute('data-date') || '');
         const diff = Math.abs(elementDate.getTime() - today.getTime());
-        
+
         if (diff < minDiff) {
           minDiff = diff;
           closestElement = element as HTMLElement;
         }
       });
-      
+
       if (closestElement) {
-        (closestElement as HTMLElement).scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+        (closestElement as HTMLElement).scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
         });
       }
     }
@@ -488,7 +495,7 @@ export default function AgendaPage() {
   const filterEventsByMonth = (events: Event[], targetDate: Date) => {
     const targetYear = targetDate.getFullYear();
     const targetMonth = targetDate.getMonth();
-    
+
     return events.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate.getFullYear() === targetYear && eventDate.getMonth() === targetMonth;
@@ -498,19 +505,19 @@ export default function AgendaPage() {
   // Fonction pour dédupliquer les événements (priorité à Airtable)
   const deduplicateEvents = (airtableEvents: Event[], googleEvents: GoogleCalendarEvent[]) => {
     const uniqueEvents = new Map<string, Event>();
-    
+
     // D'abord, ajouter tous les événements d'Airtable
     airtableEvents.forEach(event => {
       uniqueEvents.set(event.id, event);
     });
-    
+
     // Ensuite, ajouter les événements Google seulement s'ils n'ont pas de correspondance Airtable
     googleEvents.forEach(googleEvent => {
       // Vérifier si cet événement Google a un correspondant dans Airtable
-      const hasAirtableCorrespondent = airtableEvents.some(airtableEvent => 
+      const hasAirtableCorrespondent = airtableEvents.some(airtableEvent =>
         airtableEvent.googleEventId === googleEvent.id
       );
-      
+
       // Si pas de correspondant Airtable, ajouter l'événement Google
       if (!hasAirtableCorrespondent) {
         const startDate = googleEvent.start.dateTime
@@ -541,16 +548,25 @@ export default function AgendaPage() {
           isGoogleEvent: true,
           htmlLink: googleEvent.htmlLink,
         };
-        
+
         uniqueEvents.set(transformedGoogleEvent.id, transformedGoogleEvent);
       }
     });
 
-    return Array.from(uniqueEvents.values());
+    // Trier les événements par date et heure de début
+    return Array.from(uniqueEvents.values()).sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.startTime}`);
+      const dateB = new Date(`${b.date}T${b.startTime}`);
+      return dateA.getTime() - dateB.getTime();
+    });
   };
 
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
+
+    if (event.isGoogleEvent) {
+      return "bg-green-100 text-green-800";
+    }
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
@@ -568,7 +584,9 @@ export default function AgendaPage() {
   };
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventBorderColor = (event: Event) => {
-
+    if (event.isGoogleEvent) {
+      return "border-green-800";
+    }
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
     switch (event.type) {
@@ -599,7 +617,7 @@ export default function AgendaPage() {
 
     // Dédupliquer les événements (priorité à Airtable)
     const allEvents = deduplicateEvents(events, googleEvents);
-    
+
     // Filtrer les événements par mois
     const filteredEvents = filterEventsByMonth(allEvents, date);
 
@@ -642,7 +660,7 @@ export default function AgendaPage() {
 
     // Dédupliquer les événements (priorité à Airtable)
     const allEvents = deduplicateEvents(events, googleEvents);
-    
+
     // Filtrer les événements par mois
     const filteredEvents = filterEventsByMonth(allEvents, date);
 
@@ -716,37 +734,38 @@ export default function AgendaPage() {
               </div>
 
               <div className="mt-1 space-y-1">
-                {day.events.map((event) => (
-                  <div
-                    key={event.id}
-                    className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${!day.isCurrentMonth ? 'shadow-sm' : ''}`}
-                    title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
-                    role={event.isGoogleEvent ? "button" : undefined}
-                    tabIndex={event.isGoogleEvent ? 0 : undefined}
-                    onKeyDown={(e) => {
-                      if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
-                        e.preventDefault();
-                        window.open(event.htmlLink, '_blank');
-                      }
-                    }}
-                    onClick={() => openEventDetailModal(event)}
-                  >
-                    <div className="font-light truncate flex items-center gap-1">
-                      {event.title}
+                {day.events
+                  .sort((a, b) => {
+                    const timeA = new Date(`${a.date}T${a.startTime}`).getTime();
+                    const timeB = new Date(`${b.date}T${b.startTime}`).getTime();
+                    return timeA - timeB;
+                  })
+                  .map((event) => (
+                    <div
+                      key={event.id}
+                      className={`text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${!day.isCurrentMonth ? 'shadow-sm' : ''}`}
+                      title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}`}
+                      role={event.isGoogleEvent ? "button" : undefined}
+                      tabIndex={event.isGoogleEvent ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          window.open(event.htmlLink, '_blank');
+                        }
+                      }}
+                      onClick={() => openEventDetailModal(event)}
+                    >
+                      <div className="font-light truncate flex items-center gap-1">
+                        {event.title}
 
-                    </div>
-                    {event.startTime && (
-                      <div className="text-xs opacity-75">
-                        {event.startTime}
                       </div>
-                    )}
-                  </div>
-                ))}
-                {day.events.some(e => e.isGoogleEvent) && (
-                  <div className="text-xs text-blue-600">
-                    • Google Calendar
-                  </div>
-                )}
+                      {event.startTime && event.endTime && (
+                        <div className="text-xs opacity-75">
+                          {event.startTime} - {event.endTime}
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
           ))}
@@ -757,11 +776,104 @@ export default function AgendaPage() {
 
   const renderWeekView = () => {
     const weekDays = getWeekDays(currentDate);
-    const timeSlots = Array.from({ length: 13 }, (_, i) => i + 6); // 6h à 18h
+    const timeSlots = Array.from({ length: 15 }, (_, i) => i + 6); // 6h à 20h
+    const slotHeight = 60; // Hauteur de chaque créneau horaire en pixels
+
+    // Fonction pour calculer la position et la hauteur d'un événement
+    const calculateEventPosition = (event: Event, currentHour: number) => {
+      if (!event.startTime || !event.endTime) return null;
+
+      const startTime = new Date(`${event.date}T${event.startTime}`);
+      const endTime = new Date(`${event.date}T${event.endTime}`);
+      
+      const startHour = startTime.getHours();
+      const startMinute = startTime.getMinutes();
+      const endHour = endTime.getHours();
+      const endMinute = endTime.getMinutes();
+
+      // L'événement ne s'affiche que dans la cellule où il commence
+      if (startHour !== currentHour) return null;
+
+      // Calculer la position verticale relative à cette cellule (basée sur les minutes)
+      const topPosition = (startMinute / 60) * slotHeight;
+
+      // Calculer la hauteur totale de l'événement
+      const totalDurationMinutes = (endHour - startHour) * 60 + (endMinute - startMinute);
+      const height = Math.max(totalDurationMinutes * (slotHeight / 60), 20); // Minimum 20px
+
+      return {
+        top: topPosition,
+        height: height
+      };
+    };
+
+    // Fonction pour détecter les chevauchements et calculer les colonnes
+    const calculateEventColumns = (events: Event[]) => {
+      if (events.length === 0) return { columns: [], eventColumns: {} };
+
+      // Trier les événements par heure de début
+      const sortedEvents = [...events].sort((a, b) => {
+        const timeA = new Date(`${a.date}T${a.startTime}`).getTime();
+        const timeB = new Date(`${b.date}T${b.startTime}`).getTime();
+        return timeA - timeB;
+      });
+
+      const columns: Event[][] = [];
+      const eventColumns: { [key: string]: number } = {};
+
+      sortedEvents.forEach(event => {
+        if (!event.startTime || !event.endTime) return;
+
+        const startTime = new Date(`${event.date}T${event.startTime}`);
+        const endTime = new Date(`${event.date}T${event.endTime}`);
+        
+        const startHour = startTime.getHours();
+        const startMinute = startTime.getMinutes();
+        const endHour = endTime.getHours();
+        const endMinute = endTime.getMinutes();
+
+        // Calculer la position absolue pour la détection de chevauchement
+        const startPosition = ((startHour - 6) * 60 + startMinute) * (slotHeight / 60);
+        const endPosition = ((endHour - 6) * 60 + endMinute) * (slotHeight / 60);
+
+        // Trouver une colonne disponible
+        let columnIndex = 0;
+        while (columnIndex < columns.length) {
+          const column = columns[columnIndex];
+          const lastEvent = column[column.length - 1];
+          
+          if (!lastEvent.startTime || !lastEvent.endTime) {
+            break;
+          }
+
+          const lastStartTime = new Date(`${lastEvent.date}T${lastEvent.startTime}`);
+          const lastEndTime = new Date(`${lastEvent.date}T${lastEvent.endTime}`);
+          
+          const lastStartPosition = ((lastStartTime.getHours() - 6) * 60 + lastStartTime.getMinutes()) * (slotHeight / 60);
+          const lastEndPosition = ((lastEndTime.getHours() - 6) * 60 + lastEndTime.getMinutes()) * (slotHeight / 60);
+          
+          // Vérifier s'il y a chevauchement
+          if (startPosition >= lastEndPosition || endPosition <= lastStartPosition) {
+            break;
+          }
+          columnIndex++;
+        }
+
+        // Si aucune colonne disponible, créer une nouvelle
+        if (columnIndex >= columns.length) {
+          columns.push([]);
+        }
+
+        columns[columnIndex].push(event);
+        eventColumns[event.id] = columnIndex;
+      });
+
+      return { columns, eventColumns };
+    };
 
     return (
       <div className="w-full overflow-x-auto">
-        <div className="min-w-[600px] sm:min-w-[800px]">
+        <div className="min-w-[800px] sm:min-w-[1000px]">
           {/* En-têtes des jours */}
           <div className="grid grid-cols-8 mb-2">
             <div className="p-1 sm:p-2 text-center font-medium text-gray-600 text-xs sm:text-sm" />
@@ -784,60 +896,73 @@ export default function AgendaPage() {
           </div>
 
           {/* Grille horaire */}
-          <div className="grid grid-cols-8 ">
+          <div className="grid grid-cols-8">
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div className="p-1 sm:p-2 text-xs sm:text-sm text-gray-500 text-right pr-2 sm:pr-4 border-r border-gray-100 h-16 sm:h-20 flex items-center justify-end">
+                <div 
+                  className="p-1 sm:p-2 text-xs sm:text-sm text-gray-500 text-right pr-2 sm:pr-4 border-r border-gray-100 flex items-center justify-end"
+                  style={{ height: `${slotHeight}px` }}
+                >
                   {hour}:00
                 </div>
 
                 {/* Cellules des jours */}
                 {weekDays.map((day) => {
-                  const hourEvents = day.events.filter((event) => {
-                    // Vérifier que startTime existe et n'est pas undefined
-                    if (!event.startTime) {
-                      return false;
-                    }
-
-                    const eventStartHour = parseInt(
-                      event.startTime.split(":")[0]
-                    );
-
-                    return eventStartHour === hour;
-                  });
+                  const dayEvents = day.events.filter(event => event.startTime && event.endTime);
+                  const { eventColumns } = calculateEventColumns(dayEvents);
 
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`h-16 sm:h-20 p-1 border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"
-                        }`}
+                      className={`border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"}`}
+                      style={{ height: `${slotHeight}px` }}
                     >
-                      {hourEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className={`text-xs p-1 rounded mb-1 cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${day.date.getMonth() !== currentDate.getMonth() ? 'shadow-sm' : ''}`}
-                          title={`${event.title}${event.startTime && event.endTime ? ` (${event.startTime} - ${event.endTime})` : ''}${event.isGoogleEvent ? ' (Google Calendar)' : ''}`}
-                          role={event.isGoogleEvent ? "button" : undefined}
-                          tabIndex={event.isGoogleEvent ? 0 : undefined}
-                          onKeyDown={(e) => {
-                            if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
-                              e.preventDefault();
-                              window.open(event.htmlLink, '_blank');
-                            }
-                          }}
-                          onClick={() => openEventDetailModal(event)}
-                        >
-                          <div className="font-medium truncate flex items-center gap-1">
-                            {event.title}
-                          </div>
-                          {event.startTime && event.endTime && (
-                            <div className="text-xs opacity-75 mt-0.5">
-                              {event.startTime} - {event.endTime}
+                      {/* Afficher seulement les événements qui COMMENCENT à cette heure */}
+                      {dayEvents
+                        .filter(event => {
+                          const eventStartHour = parseInt(event.startTime!.split(":")[0]);
+                          return eventStartHour === hour;
+                        })
+                        .map((event) => {
+                          const position = calculateEventPosition(event, hour);
+                          if (!position) return null;
+
+                          const columnIndex = eventColumns[event.id] || 0;
+                          const totalColumns = Math.max(...Object.values(eventColumns)) + 1;
+                          const columnWidth = totalColumns > 1 ? `${100 / totalColumns}%` : '100%';
+                          const leftPosition = totalColumns > 1 ? `${(columnIndex * 100) / totalColumns}%` : '0%';
+
+                          return (
+                            <div
+                              key={event.id}
+                              className={`absolute text-xs p-1 rounded cursor-pointer ${getEventColor(event)} border border-1 ${getEventBorderColor(event)} ${day.date.getMonth() !== currentDate.getMonth() ? 'shadow-sm' : ''}`}
+                              style={{
+                                top: `${position.top}px`,
+                                height: `${position.height}px`,
+                                width: columnWidth,
+                                left: leftPosition,
+                                zIndex: 10
+                              }}
+                              title={`${event.title} (${event.startTime} - ${event.endTime})`}
+                              tabIndex={event.isGoogleEvent ? 0 : undefined}
+                              onKeyDown={(e) => {
+                                if (event.isGoogleEvent && event.htmlLink && (e.key === 'Enter' || e.key === ' ')) {
+                                  e.preventDefault();
+                                  window.open(event.htmlLink, '_blank');
+                                }
+                              }}
+                              onClick={() => openEventDetailModal(event)}
+                            >
+                              <div className="font-medium truncate text-xs">
+                                {event.title}
+                              </div>
+                              <div className="text-xs opacity-75 mt-0.5 truncate">
+                                {event.startTime} - {event.endTime}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          );
+                        })}
                     </div>
                   );
                 })}
@@ -852,7 +977,7 @@ export default function AgendaPage() {
   const renderPlanningView = () => {
     // Dédupliquer les événements (priorité à Airtable)
     const allEvents = deduplicateEvents(events, googleEvents);
-    
+
     // Filtrer les événements par mois
     const filteredEvents = filterEventsByMonth(allEvents, currentDate);
 
@@ -866,10 +991,19 @@ export default function AgendaPage() {
       return acc;
     }, {} as Record<string, Event[]>);
 
-    // Trier les dates
+    // Trier les dates et les événements dans chaque date
     const sortedDates = Object.keys(eventsByDate).sort((a, b) =>
       new Date(a).getTime() - new Date(b).getTime()
     );
+
+    // Trier les événements par heure dans chaque date
+    Object.keys(eventsByDate).forEach(date => {
+      eventsByDate[date].sort((a, b) => {
+        const timeA = new Date(`${a.date}T${a.startTime}`).getTime();
+        const timeB = new Date(`${b.date}T${b.startTime}`).getTime();
+        return timeA - timeB;
+      });
+    });
 
     // Fonction pour formater la date
     const formatDate = (dateString: string) => {
@@ -884,11 +1018,11 @@ export default function AgendaPage() {
       const baseHeight = 64; // Hauteur de base (4rem = 64px)
       const eventHeight = 50; // Hauteur par événement (2.5rem = 40px)
       const padding = 16; // Padding vertical (1rem = 16px)
-      
+
       if (eventCount === 0) {
         return baseHeight;
       }
-      
+
       return Math.max(baseHeight, eventCount * eventHeight + padding);
     };
 
@@ -911,10 +1045,10 @@ export default function AgendaPage() {
             {sortedDates.map((dateString) => {
               const eventCount = eventsByDate[dateString].length;
               const rowHeight = calculateRowHeight(eventCount);
-              
+
               return (
-                <div 
-                  key={dateString} 
+                <div
+                  key={dateString}
                   data-date={new Date(dateString).toDateString()}
                   className="flex items-center text-xs sm:text-sm text-gray-600 border-b border-gray-100 px-2"
                   style={{ height: `${rowHeight}px` }}
@@ -930,10 +1064,10 @@ export default function AgendaPage() {
             {sortedDates.map((dateString) => {
               const eventCount = eventsByDate[dateString].length;
               const rowHeight = calculateRowHeight(eventCount);
-              
+
               return (
-                <div 
-                  key={dateString} 
+                <div
+                  key={dateString}
                   data-date={new Date(dateString).toDateString()}
                   className="border-b border-gray-100 flex flex-col justify-center p-1"
                   style={{ height: `${rowHeight}px` }}
@@ -1092,17 +1226,17 @@ export default function AgendaPage() {
                   ? formatWeekRange(currentDate)
                   : formatMonthYear(currentDate)}
               </span>
-              <Button 
-                isIconOnly 
-                aria-label="Mois suivant" 
-                variant="light" 
+              <Button
+                isIconOnly
+                aria-label="Mois suivant"
+                variant="light"
                 onPress={handleNextMonth}
                 className="flex-shrink-0"
               >
                 <ChevronRightIcon className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
               <AgendaDropdown
                 onPublicationSelect={() => openModal("publication")}
@@ -1117,7 +1251,7 @@ export default function AgendaPage() {
 
           {/* Sélecteur de vue - toujours visible */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            
+
             {/* Sélecteur de vue */}
             <div className="flex rounded-md overflow-hidden w-full sm:w-auto">
               {[
@@ -1143,7 +1277,7 @@ export default function AgendaPage() {
                 );
               })}
             </div>
-            
+
             {/* Synchronisation Google Calendar - seulement si connecté */}
             {isGoogleConnected && (
               <div className="w-full sm:w-auto">

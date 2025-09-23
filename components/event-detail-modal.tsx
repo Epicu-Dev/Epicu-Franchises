@@ -146,7 +146,7 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
     <Modal 
       isOpen={isOpen} 
       size="2xl"
-      className="pb-20 md:pb-0"
+      className="pb-20 md:pb-0 pt-8"
       onOpenChange={onOpenChange}
     >
       <ModalContent>
@@ -217,35 +217,6 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
                   </div>
                 )}
 
-                {/* Informations supplémentaires */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                    Informations
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">Catégorie</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{getCategoryLabel(event.category)}</p>
-                    </div>
-                    {event.establishmentCategories && event.establishmentCategories.length > 0 && (
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">Établissements</p>
-                        <div className="flex flex-wrap gap-1">
-                          {event.establishmentCategories.map((category, index) => (
-                            <Chip
-                              key={index}
-                              className={getEventColorFromEstablishmentCategories([category])}
-                              size="sm"
-                              variant="flat"
-                            >
-                              {category}
-                            </Chip>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 {/* Lien Google Calendar */}
                 {event.isGoogleEvent && event.htmlLink && (

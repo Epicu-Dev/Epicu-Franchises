@@ -19,6 +19,7 @@ import {
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useUser } from "@/contexts/user-context";
 
 // Interface pour les données de l'API
 interface ApiResource {
@@ -49,6 +50,7 @@ export default function RessourcesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authFetch } = useAuthFetch();
+  const { userType } = useUser();
 
   // Fonction pour formater les dates
   const formatDate = (dateString: string | null | undefined): string => {
@@ -295,15 +297,16 @@ export default function RessourcesPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-
-              <Button
-                color="primary"
-                endContent={<PlusIcon className="h-4 w-4" />}
-                className="w-full sm:w-auto"
-                onPress={() => setIsModalOpen(true)}
-              >
-                Ajouter un document
-              </Button>
+              {userType === "admin" && (
+                <Button
+                  color="primary"
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
+                  onPress={() => setIsModalOpen(true)}
+                >
+                  Ajouter un document
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

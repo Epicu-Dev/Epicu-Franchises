@@ -85,7 +85,7 @@ export default function ClientsPage() {
     { key: 'montantFacturePublication', label: 'Montant facture publication', sortable: false },
     { key: 'facturePublication', label: 'Facture publication', sortable: false },
     { key: 'montantSponsorisation', label: 'Montant de la sponsorisation', sortable: false },
-    { key: 'montantEdition', label: 'Montant de l\'édition', sortable: false },
+    { key: 'montantEdition', label: 'Montant de l\'addition', sortable: false },
     { key: 'benefice', label: 'Bénéfices', sortable: false },
     { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'tirageAuSort', label: 'Tirage au sort', sortable: false },
@@ -369,7 +369,7 @@ export default function ClientsPage() {
 
 
               <div className="relative w-full lg:w-64">
-                  <Input
+                <Input
                   className="w-full pr-0 pl-0 sm:pr-4 sm:pl-10"
                   classNames={{
                     inputWrapper:
@@ -441,152 +441,360 @@ export default function ClientsPage() {
                       table: "min-w-[800px]"
                     }}
                   >
-                  <TableHeader>
+                    <TableHeader>
 
-                    {/* Autres colonnes selon la sélection et le mode RDV */}
-                    {
+                      {/* Autres colonnes selon la sélection et le mode RDV */}
+                      {
 
-                      (isRdvMode ? rdvColumnConfig : columnConfig)
-                        .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
-                        .map((column) => {
-                          if (column.sortable) {
+                        (isRdvMode ? rdvColumnConfig : columnConfig)
+                          .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                          .map((column) => {
+                            if (column.sortable) {
+                              return (
+                                <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
+                                  <SortableColumnHeader
+                                    field={column.field!}
+                                    label={column.label}
+                                    sortDirection={sortDirection}
+                                    sortField={sortField}
+                                    onSort={handleSort}
+                                  />
+                                </TableColumn>
+                              );
+                            }
+
                             return (
                               <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
-                                <SortableColumnHeader
-                                  field={column.field!}
-                                  label={column.label}
-                                  sortDirection={sortDirection}
-                                  sortField={sortField}
-                                  onSort={handleSort}
-                                />
+                                {column.label}
                               </TableColumn>
                             );
-                          }
+                          })}
+                    </TableHeader>
+                    <TableBody className="mt-4">
+                      {(
+                        clients.map((client, index) => (
+                          <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
+                            {(() => {
+                              const cells: JSX.Element[] = [];
 
-                          return (
-                            <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
-                              {column.label}
-                            </TableColumn>
-                          );
-                        })}
-                  </TableHeader>
-                  <TableBody className="mt-4">
-                    {(
-                      clients.map((client, index) => (
-                        <TableRow key={client.id || index} className="border-t border-gray-100 dark:border-gray-700">
-                          {(() => {
-                            const cells: JSX.Element[] = [];
+                              // Cellule Modifier toujours visible en premier
+                              const hasFactures = client.invoices && client.invoices.length > 0;
 
-                            // Cellule Modifier toujours visible en premier
-                            const hasFactures = client.invoices && client.invoices.length > 0;
-
-                            cells.push(
-                              <TableCell key="modifier" className="font-light">
-                                <div className="relative">
-                                  <Button
-                                    isIconOnly
-                                    aria-label={hasFactures ? `Client ${client.raisonSociale} lié à la facturation - Modification désactivée` : `Modifier le client ${client.raisonSociale}`}
-                                    className={hasFactures ? "text-gray-&ÀÀ cursor-not-allowed" : "text-gray-600 hover:text-gray-800"}
-                                    size="sm"
-                                    variant="light"
-                                    onPress={() => {
-                                      if (hasFactures) {
-                                        showWarning(`Le client ${client.raisonSociale} est lié à une facture et ne peut plus être modifié.`);
-                                      } else {
-                                        handleEditClient(client);
-                                      }
-                                    }}
-                                  >
-                                    <PencilIcon className="h-4 w-4" />
-                                  </Button>
-                                  {hasFactures && (
-                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                      Client lié à la facturation
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                            );
-
-                            // Autres cellules selon la sélection et le mode RDV
-                            (isRdvMode ? rdvColumnConfig : columnConfig)
-                              .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
-                              .forEach((column) => {
-
-                                switch (column.key) {
-                                  case 'categorie':
-
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light py-5">
-                                        <CategoryBadge category={client.categorie || ""} />
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'nomEtablissement':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.nomEtablissement}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'raisonSociale':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.raisonSociale}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'ville':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.ville}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'telephone':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light min-w-32 text-xs sm:text-sm">
-                                        {client.telephone}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'email':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
-                                        {client.email}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'siret':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
-                                        {client.siret}
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'dateSignatureContrat':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light text-xs sm:text-sm">
-                                        {client.dateSignatureContrat
-                                          ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric'
-                                          }).replace(/\//g, '.')
-                                          : "-"
+                              cells.push(
+                                <TableCell key="modifier" className="font-light">
+                                  <div className="relative">
+                                    <Button
+                                      isIconOnly
+                                      aria-label={hasFactures ? `Client ${client.raisonSociale} lié à la facturation - Modification désactivée` : `Modifier le client ${client.raisonSociale}`}
+                                      className={hasFactures ? "text-gray-&ÀÀ cursor-not-allowed" : "text-gray-600 hover:text-gray-800"}
+                                      size="sm"
+                                      variant="light"
+                                      onPress={() => {
+                                        if (hasFactures) {
+                                          showWarning(`Le client ${client.raisonSociale} est lié à une facture et ne peut plus être modifié.`);
+                                        } else {
+                                          handleEditClient(client);
                                         }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'datePublicationContenu':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {
-                                          client.publications && client.publications.length > 0
+                                      }}
+                                    >
+                                      <PencilIcon className="h-4 w-4" />
+                                    </Button>
+                                    {hasFactures && (
+                                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        Client lié à la facturation
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              );
+
+                              // Autres cellules selon la sélection et le mode RDV
+                              (isRdvMode ? rdvColumnConfig : columnConfig)
+                                .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
+                                .forEach((column) => {
+
+                                  switch (column.key) {
+                                    case 'categorie':
+
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light py-5">
+                                          <CategoryBadge category={client.categorie || ""} />
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'nomEtablissement':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.nomEtablissement}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'raisonSociale':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.raisonSociale}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'ville':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.ville}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'telephone':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light min-w-32 text-xs sm:text-sm">
+                                          {client.telephone}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'email':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light text-xs sm:text-sm">
+                                          {client.email}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'siret':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light text-xs sm:text-sm">
+                                          {client.siret}
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'dateSignatureContrat':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light text-xs sm:text-sm">
+                                          {client.dateSignatureContrat
+                                            ? new Date(client.dateSignatureContrat).toLocaleDateString('fr-FR', {
+                                              day: '2-digit',
+                                              month: '2-digit',
+                                              year: 'numeric'
+                                            }).replace(/\//g, '.')
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'datePublicationContenu':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {
+                                            client.publications && client.publications.length > 0
+                                              ? client.publications.map((pub, idx) => (
+                                                <div key={idx} className="text-sm">
+                                                  {pub.datePublication
+                                                    ? new Date(pub.datePublication).toLocaleDateString('fr-FR', {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric'
+                                                    }).replace(/\//g, '.')
+                                                    : "-"
+                                                  }
+                                                </div>
+                                              ))
+                                              : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'datePublicationFacture':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {
+                                            client.publications && client.publications.length > 0
+                                              ? client.publications.map((pub, idx) => (
+                                                <div key={idx} className="text-sm">
+                                                  {pub.dateEnvoiFactureCreation
+                                                    ? new Date(pub.dateEnvoiFactureCreation).toLocaleDateString('fr-FR', {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric'
+                                                    }).replace(/\//g, '.')
+                                                    : "-"
+                                                  }
+                                                </div>
+                                              ))
+                                              : "-"
+                                          }
+
+                                        </TableCell>
+                                      );
+                                      break;
+
+                                    case 'montantFactureTournage':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
                                             ? client.publications.map((pub, idx) => (
                                               <div key={idx} className="text-sm">
-                                                {pub.datePublication
-                                                  ? new Date(pub.datePublication).toLocaleDateString('fr-FR', {
+                                                {pub.montantFactureTournage || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'montantFactureContenu':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.invoices && client.invoices.length > 0
+                                            ? client.invoices.map((invoice, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {invoice.montant || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+
+                                    case 'montantSponsorisation':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.montantSponsorisation || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'montantAddition':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.montantAddition || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'montantCadeau':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.montantCadeau || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'tirageAuSort':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.tirageEffectue ? "Oui" : "Non"}
+                                              </div>
+                                            ))
+                                            : '-'
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'commentaire':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm  min-w-50">
+                                                {pub.commentaire || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'commentaireCadeauGerant':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.cadeauGerant || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'nombreVues':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.nombreVues || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'nombreAbonnes':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.nombreAbonnes || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'nombreAbonnesFood':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          -
+
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'factureTournage':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                <StatusBadge status={pub.factureTournage || "En attente"} />
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'dateEnvoiFacturePublication':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.dateEnvoiFacturePublication
+                                                  ? new Date(pub.dateEnvoiFacturePublication).toLocaleDateString('fr-FR', {
                                                     day: '2-digit',
                                                     month: '2-digit',
                                                     year: 'numeric'
@@ -596,285 +804,77 @@ export default function ClientsPage() {
                                               </div>
                                             ))
                                             : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'datePublicationFacture':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {
-                                          client.publications && client.publications.length > 0
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'montantFacturePublication':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
                                             ? client.publications.map((pub, idx) => (
                                               <div key={idx} className="text-sm">
-                                                {pub.dateEnvoiFactureCreation
-                                                  ? new Date(pub.dateEnvoiFactureCreation).toLocaleDateString('fr-FR', {
-                                                    day: '2-digit',
-                                                    month: '2-digit',
-                                                    year: 'numeric'
-                                                  }).replace(/\//g, '.')
-                                                  : "-"
-                                                }
+                                                {pub.montantFacturePublication || "-"}
                                               </div>
                                             ))
                                             : "-"
-                                        }
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'facturePublication':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                <StatusBadge status={pub.facturePublication || "En attente"} />
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'montantEdition':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.montantAddition || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
+                                    case 'benefice':
+                                      cells.push(
+                                        <TableCell key={column.key} className="font-light">
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm">
+                                                {pub.benefice || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
+                                        </TableCell>
+                                      );
+                                      break;
 
-                                      </TableCell>
-                                    );
-                                    break;
+                                  }
+                                });
 
-                                  case 'montantFactureTournage':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantFactureTournage || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'montantFactureContenu':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.invoices && client.invoices.length > 0
-                                          ? client.invoices.map((invoice, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {invoice.montant || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-
-                                  case 'montantSponsorisation':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantSponsorisation || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'montantAddition':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantAddition || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'montantCadeau':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantCadeau || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'tirageAuSort':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.tirageEffectue ? "Oui" : "Non"}
-                                            </div>
-                                          ))
-                                          : '-'
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'commentaire':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm  min-w-50">
-                                              {pub.commentaire || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'commentaireCadeauGerant':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.cadeauGerant || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'nombreVues':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.nombreVues || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'nombreAbonnes':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.nombreAbonnes || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'nombreAbonnesFood':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        -
-
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'factureTournage':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              <StatusBadge status={pub.factureTournage || "En attente"} />
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'dateEnvoiFacturePublication':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.dateEnvoiFacturePublication
-                                                ? new Date(pub.dateEnvoiFacturePublication).toLocaleDateString('fr-FR', {
-                                                  day: '2-digit',
-                                                  month: '2-digit',
-                                                  year: 'numeric'
-                                                }).replace(/\//g, '.')
-                                                : "-"
-                                              }
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'montantFacturePublication':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantFacturePublication || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'facturePublication':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              <StatusBadge status={pub.facturePublication || "En attente"} />
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'montantEdition':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.montantAddition || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-                                  case 'benefice':
-                                    cells.push(
-                                      <TableCell key={column.key} className="font-light">
-                                        {client.publications && client.publications.length > 0
-                                          ? client.publications.map((pub, idx) => (
-                                            <div key={idx} className="text-sm">
-                                              {pub.benefice || "-"}
-                                            </div>
-                                          ))
-                                          : "-"
-                                        }
-                                      </TableCell>
-                                    );
-                                    break;
-
-                                }
-                              });
-
-                            return cells;
-                          })()}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                              return cells;
+                            })()}
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>}
 
 

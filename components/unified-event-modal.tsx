@@ -359,16 +359,24 @@ export function UnifiedEventModal({
       return new Date(`${date}T${time}:00`).toISOString();
     };
 
+    // Créer la date de fin en combinant la date de début et l'heure de fin
+    const createEndDateTime = (startDate: string, endTime: string) => {
+      return new Date(`${startDate}T${endTime}:00`).toISOString();
+    };
+
     if (eventType === 'tournage') {
       // Créer l'événement de tournage
       const tournageEvent = {
         title: `Tournage - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "tournage",
         date: createDateTime(formData.startDate, formData.startTime),
+        dateFinRdv: createEndDateTime(formData.startDate, formData.endTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
-        description: `Tournage avec ${formData.photographers ? "photographe" : ""}${formData.photographers && formData.videographers ? " et " : ""}${formData.videographers ? "vidéaste" : ""}${formData.description ? ` - ${formData.description}` : ""}`,
+        description: formData.photographers || formData.videographers 
+          ? `Tournage avec ${formData.photographers ? "photographe" : ""}${formData.photographers && formData.videographers ? " et " : ""}${formData.videographers ? "vidéaste" : ""}${formData.description ? ` - ${formData.description}` : ""}`
+          : `Aucune prestation${formData.description ? ` - ${formData.description}` : ""}`,
         category: "siege",
         collaborator: userProfile?.id,
         etablissement: formData.selectedClient?.id || null,
@@ -381,6 +389,7 @@ export function UnifiedEventModal({
         title: `Publication - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "publication",
         date: createDateTime(formData.startDate, formData.startTime),
+        dateFinRdv: createEndDateTime(formData.startDate, formData.endTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
@@ -396,6 +405,7 @@ export function UnifiedEventModal({
         title: `RDV - ${formData.selectedClient?.nomEtablissement || 'Client'}`,
         type: "rendez-vous",
         date: createDateTime(formData.startDate, formData.startTime),
+        dateFinRdv: createEndDateTime(formData.startDate, formData.endTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.selectedClient?.nomEtablissement || formData.location,
@@ -411,6 +421,7 @@ export function UnifiedEventModal({
         title: formData.summary,
         type: "evenement",
         date: createDateTime(formData.startDate, formData.startTime),
+        dateFinRdv: createEndDateTime(formData.startDate, formData.endTime),
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.location || undefined,

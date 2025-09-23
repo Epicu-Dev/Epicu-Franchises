@@ -9,6 +9,7 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { SelectItem } from "@heroui/select";
+import { Switch } from "@heroui/switch";
 import { StyledSelect } from "@/components/styled-select";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 
@@ -58,12 +59,7 @@ export function DateFilterModal({
   };
 
   const handleSinceCreationClick = () => {
-    const todayDate = today(getLocalTimeZone());
-    const creationDate = new CalendarDate(2024, 1, 1);
     onTempSinceCreationChange(true);
-    onTempMonthChange(creationDate.month);
-    onTempYearChange(creationDate.year);
-    onTempDateChange(creationDate);
   };
 
   return (
@@ -83,6 +79,8 @@ export function DateFilterModal({
                   placeholder="Choisir un mois"
                   selectedKeys={tempSelectedMonth ? [String(tempSelectedMonth)] : []}
                   onSelectionChange={handleMonthChange}
+                  isDisabled={tempIsSinceCreationSelected}
+                  className={tempIsSinceCreationSelected ? "opacity-50" : ""}
                 >
                   <SelectItem key="1">Janvier</SelectItem>
                   <SelectItem key="2">Février</SelectItem>
@@ -103,6 +101,8 @@ export function DateFilterModal({
                   placeholder="Choisir une année"
                   selectedKeys={tempSelectedYear ? [String(tempSelectedYear)] : []}
                   onSelectionChange={handleYearChange}
+                  isDisabled={tempIsSinceCreationSelected}
+                  className={tempIsSinceCreationSelected ? "opacity-50" : ""}
                 >
                   {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => {
                     const year = 2023 + i;
@@ -114,31 +114,37 @@ export function DateFilterModal({
               </div>
             </div>
 
-            {/* Bouton "Depuis la création" */}
+            {/* Switch "Depuis la création" */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-gray-700">Période spéciale</h3>
-              <Button
-                className={
-                  tempIsSinceCreationSelected
-                    ? "w-full justify-start h-auto p-4 bg-custom-blue-select/14 text-custom-blue-select font-light"
-                    : "w-full justify-start h-auto p-4 bg-page-bg"
-                }
-                onPress={handleSinceCreationClick}
-              >
+              <div className="flex items-center justify-between p-4 bg-page-bg rounded-lg">
                 <div className="flex flex-col items-start">
                   <span className="font-medium text-left">Depuis la création</span>
                   <span className="text-xs text-gray-500 text-left">
                     Toutes les données depuis le début
                   </span>
                 </div>
-              </Button>
+                <Switch
+                  isSelected={tempIsSinceCreationSelected}
+                  onValueChange={(selected) => {
+                    if (selected) {
+                      handleSinceCreationClick();
+                    } else {
+                      onTempSinceCreationChange(false);
+                    }
+                  }}
+                  color="primary"
+                />
+              </div>
             </div>
 
             {/* Boutons d'action */}
             <div className="flex gap-3 pt-4">
               <Button
                 variant="bordered"
-                className="flex-1"
+                color="primary"
+                
+                className="flex-1 border-1"
                 onPress={() => onOpenChange(false)}
               >
                 Annuler

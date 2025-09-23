@@ -748,6 +748,8 @@ export default function HomePage() {
               selectedPeriodType={selectedPeriodType}
               isCustomDateSelected={isCustomDateSelected}
               isSinceCreationSelected={isSinceCreationSelected}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
               onDateModalOpen={onDateModalOpen}
               onCurrentMonthSelect={selectCurrentMonth}
               onCurrentYearSelect={selectCurrentYear}

@@ -270,7 +270,7 @@ export default function SignupPage() {
                 size="lg"
                 type="submit"
               >
-                {isLoading ? "Initialisation..." : "Initialiser le mot de passe"}
+                {isLoading ? "Validation..." : "Valider le mot de passe"}
               </Button>
             </form>
 

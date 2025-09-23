@@ -429,12 +429,12 @@ export default function EquipePage() {
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.emailEpicu || "Non défini"}
+                                {member.emailEpicu || ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : "Non défini"}
+                                {member.dateNaissance ? new Date(member.dateNaissance).toLocaleDateString('fr-FR') : ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
@@ -442,7 +442,7 @@ export default function EquipePage() {
                                 className="font-light underline"
                                 href={`mailto:${member.emailPerso || ""}`}
                               >
-                                {member.emailPerso || "Non défini"}
+                                {member.emailPerso || ""}
                               </a>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
@@ -450,37 +450,37 @@ export default function EquipePage() {
                                 className="font-light underline"
                                 href={`mailto:${member.emailEpicu || ""}`}
                               >
-                                {member.emailEpicu || "Non défini"}
+                                {member.emailEpicu || ""}
                               </a>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.telephone || "Non défini"}
+                                {member.telephone || ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.adresse || "Non défini"}
+                                {member.adresse || ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.siret || "Non défini"}
+                                {member.siret || ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.dateDIP ? new Date(member.dateDIP).toLocaleDateString('fr-FR') : "Non défini"}
+                                {member.dateDIP ? new Date(member.dateDIP).toLocaleDateString('fr-FR') : ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.dateSignatureContrat ? new Date(member.dateSignatureContrat).toLocaleDateString('fr-FR') : "Non défini"}
+                                {member.dateSignatureContrat ? new Date(member.dateSignatureContrat).toLocaleDateString('fr-FR') : ""}
                               </span>
                             </TableCell>
                             <TableCell className="text-xs sm:text-sm">
                               <span className="font-light">
-                                {member.dateSignatureAttestation ? new Date(member.dateSignatureAttestation).toLocaleDateString('fr-FR') : "Non défini"}
+                                {member.dateSignatureAttestation ? new Date(member.dateSignatureAttestation).toLocaleDateString('fr-FR') : ""}
                               </span>
                             </TableCell>
                           </TableRow>
