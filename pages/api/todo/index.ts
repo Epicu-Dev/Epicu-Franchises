@@ -147,18 +147,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return true;
       });
 
-      // Tri personnalisé : d'abord par deadline, puis "Terminé" en dernier
+      // Tri personnalisé : respecter orderBy/order du frontend, mais "Terminé" toujours en dernier
       const sorted = filtered.sort((a: any, b: any) => {
         // Si l'un est "Terminé" et l'autre non, "Terminé" va en dernier
         if (a.status === "Terminé" && b.status !== "Terminé") return 1;
         if (b.status === "Terminé" && a.status !== "Terminé") return -1;
 
-        // Si les deux ont le même statut (ou aucun n'est "Terminé"), trier par deadline
-        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+        // Si les deux ont le même statut (ou aucun n'est "Terminé"), appliquer le tri demandé
+        let comparison = 0;
 
-        // Tri par deadline (les dates les plus proches en premier)
-        return dateA - dateB;
+        switch (orderBy) {
+          case "Date d'échéance":
+            const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            comparison = dateA - dateB;
+            break;
+          case "Nom de la tâche":
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case "Date de création":
+            const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            comparison = createdA - createdB;
+            break;
+          case "Statut":
+            comparison = a.status.localeCompare(b.status);
+            break;
+          case "Type de tâche":
+            comparison = (a.type || '').localeCompare(b.type || '');
+            break;
+          default:
+            // Par défaut, trier par deadline
+            const defaultDateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            const defaultDateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            comparison = defaultDateA - defaultDateB;
+        }
+
+        // Appliquer la direction du tri
+        return order === 'desc' ? -comparison : comparison;
       });
 
       const page = sorted.slice(offset, offset + limit);
@@ -176,9 +202,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           prevOffset: Math.max(0, offset - limit),
         },
         sorting: {
-          defaultSort: 'Deadline (ASC) - Terminé en dernier',
+          defaultSort: `${orderBy} (${order.toUpperCase()}) - Terminé en dernier`,
           additionalSort: null,
-          appliedSorts: ['Deadline (ASC)', 'Statut (Terminé en dernier)']
+          appliedSorts: [`${orderBy} (${order.toUpperCase()})`, 'Statut (Terminé en dernier)']
         }
       });
 

@@ -13,14 +13,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!userId) return; // requireValidAccessToken a déjà répondu
 
-    // Récupérer le record collaborateur
+    // Récupérer le record collaborateur avec les champs explicites
     const record = await base('COLLABORATEURS').find(userId);
 
     if (!record) {
       return res.status(404).json({ message: 'Collaborateur introuvable' });
     }
 
-    const fields = record.fields || {};
+    // Récupérer explicitement les champs nécessaires
+    const fields = {
+      'Nom': record.get('Nom') || '',
+      'Prénom': record.get('Prénom') || '',
+      'Email perso': record.get('Email perso') || '',
+      'Email EPICU': record.get('Email EPICU') || '',
+      'Rôle': record.get('Rôle') || '',
+      'Téléphone': record.get('Téléphone') || '',
+      'Identifiant': record.get('Identifiant') || '',
+      'Trombi': record.get('Trombi') || null,
+      'Ville EPICU': record.get('Ville EPICU') || []
+    };
+
 
     // Récupérer les villes liées à l'utilisateur
     let villesEpicu: { id: string; ville: string }[] = [];
@@ -57,6 +69,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       id: record.id,
       ...fields,
+      telephone: fields['Téléphone'] || '', // S'assurer que le téléphone est explicitement récupéré
+      'Téléphone': fields['Téléphone'] || '', // Garder aussi la clé avec accent pour compatibilité
+      'Email EPICU': fields['Email EPICU'] || '', // S'assurer que l'email EPICU est explicitement récupéré
       villes: villesEpicu, // Ajouter les villes résolues
     });
   } catch (error) {

@@ -78,7 +78,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       // Toujours faire un appel API pour s'assurer d'avoir les données les plus récentes
       // Ajouter un timestamp pour éviter le cache
-      const response = await fetch(`/api/auth/me?t=${Date.now()}`, {
+      const response = await fetch(`/api/auth/me?t=${Date.now()}&v=2`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
@@ -99,6 +99,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
 
       const userData = await response.json();
+
 
       // Transformer les données Airtable en format UserProfile
       const transformedProfile: UserProfile = {
@@ -167,17 +168,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Vérifier si on a déjà un profil en cache récent
-      const cachedProfile = localStorage.getItem('userProfile');
-      const cacheTime = localStorage.getItem('userProfileCacheTime');
-      
-      // Si on a un profil en cache récent (moins de 5 minutes), on ne fait pas d'appel API
-      if (cachedProfile && cacheTime && (Date.now() - parseInt(cacheTime) < 300000)) {
-        setIsLoading(false);
-
-        return;
-      }
-      
+      // Toujours faire un appel API pour s'assurer d'avoir les données les plus récentes
       fetchUserProfile();
     }
   }, [isLoaded]);
