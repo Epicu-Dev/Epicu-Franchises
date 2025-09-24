@@ -11,6 +11,13 @@ function generateToken(length = 64): string {
   return crypto.randomBytes(length).toString('hex');
 }
 
+function normalizeEmail(email: string): string {
+  return email
+    .toLowerCase()
+    .normalize('NFD') // Décompose les caractères accentués
+    .replace(/[\u0300-\u036f]/g, ''); // Supprime les diacritiques (accents)
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Méthode non autorisée' });
@@ -22,19 +29,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ message: 'Email et mot de passe requis' });
   }
 
+  // Normaliser l'email d'entrée
+  const normalizedEmail = normalizeEmail(email);
+
   try {
+    // Récupérer tous les utilisateurs pour faire la comparaison côté serveur
+    // car Airtable ne supporte pas bien la normalisation Unicode dans les formules
     const records = await base('COLLABORATEURS')
       .select({
-        filterByFormula: `{Email perso} = '${email}'`,
-        maxRecords: 1,
+        fields: ['Email perso', 'password', 'Prénom', 'Nom', 'Rôle', 'Ville EPICU'],
+        maxRecords: 1000, // Limite raisonnable pour éviter de charger trop de données
       })
-      .firstPage();
+      .all();
 
-    if (records.length === 0) {
+    // Trouver l'utilisateur avec un email correspondant (comparaison normalisée)
+    const user = records.find(record => {
+      const storedEmail = record.get('Email perso') as string;
+      if (!storedEmail) return false;
+      const normalizedStoredEmail = normalizeEmail(storedEmail);
+      return normalizedStoredEmail === normalizedEmail;
+    });
+
+    if (!user) {
       return res.status(401).json({ message: 'Compte introuvable' });
     }
-
-    const user = records[0];
     const hashedPassword = user.get('password') as string;
 
     const isPasswordValid = await bcrypt.compare(password, hashedPassword);
