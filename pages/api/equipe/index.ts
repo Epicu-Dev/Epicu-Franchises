@@ -121,6 +121,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return baseObj;
       });
 
+      // Tri par Ville EPICU pour les admins uniquement
+      if (isAdmin) {
+        results.sort((a, b) => {
+          const villeA = a.villeEpicu && a.villeEpicu.length > 0 ? a.villeEpicu[0] : '';
+          const villeB = b.villeEpicu && b.villeEpicu.length > 0 ? b.villeEpicu[0] : '';
+          return villeA.localeCompare(villeB, 'fr', { sensitivity: 'base' });
+        });
+      }
+
       const hasMore = upToPageRecords.length > offset + limit;
 
       return res.status(200).json({ results, pagination: { limit, offset, orderBy, order, hasMore, nextOffset: hasMore ? offset + limit : null, prevOffset: Math.max(0, offset - limit) } });
