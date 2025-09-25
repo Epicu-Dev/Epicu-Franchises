@@ -59,7 +59,7 @@ export default function ConvertProspectModal({
             setError(null);
 
             const interactionData = {
-                etablissement: prospect.nomEtablissement,
+                etablissement: prospect.id,
                 dateInteraction: new Date().toISOString().split('T')[0], // Date du jour
                 statut: convertStatusForAPI(status),
                 commentaire: comment,

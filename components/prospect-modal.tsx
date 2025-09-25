@@ -579,7 +579,7 @@ export function ProspectModal({
               }}
             />
 
-            <FormLabel htmlFor="email" isRequired={true}>
+            <FormLabel htmlFor="email" isRequired={false}>
               Mail
             </FormLabel>
             <Input
