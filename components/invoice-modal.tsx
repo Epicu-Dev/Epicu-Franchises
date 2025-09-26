@@ -188,12 +188,28 @@ export default function InvoiceModal({
 
           // En mode édition, pré-sélectionner la publication si disponible
           if (selectedInvoice && matchingClient.publications && matchingClient.publications.length > 0) {
-            // En mode édition, on prend la première publication disponible
-            // Dans un cas réel, il faudrait avoir l'ID de la publication liée à la facture
-            const firstPublication = matchingClient.publications[0];
-            setSelectedPublication(firstPublication.id);
-            const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
-            setSelectedPublicationDisplay(`${formattedNom}`);
+            // En mode édition, utiliser la publication de la facture si disponible
+            if (selectedInvoice.publicationId) {
+              // Chercher la publication correspondante dans les publications du client
+              const matchingPublication = matchingClient.publications.find((pub: any) => pub.id === selectedInvoice.publicationId);
+              if (matchingPublication) {
+                setSelectedPublication(matchingPublication.id);
+                const formattedNom = formatPublicationName(matchingPublication.nom || `Publication ${matchingPublication.id}`);
+                setSelectedPublicationDisplay(`${formattedNom}`);
+              } else {
+                // Si la publication n'est pas trouvée, prendre la première disponible
+                const firstPublication = matchingClient.publications[0];
+                setSelectedPublication(firstPublication.id);
+                const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+                setSelectedPublicationDisplay(`${formattedNom}`);
+              }
+            } else {
+              // Si pas d'ID de publication dans la facture, prendre la première disponible
+              const firstPublication = matchingClient.publications[0];
+              setSelectedPublication(firstPublication.id);
+              const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+              setSelectedPublicationDisplay(`${formattedNom}`);
+            }
           }
         }
       }
@@ -290,11 +306,28 @@ export default function InvoiceModal({
   // En mode édition, s'assurer que la publication est sélectionnée après le chargement
   useEffect(() => {
     if (selectedInvoice && selectedClient && publications.length > 0 && !selectedPublication) {
-      // Sélectionner automatiquement la première publication disponible
-      const firstPublication = publications[0];
-      setSelectedPublication(firstPublication.id);
-      const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
-      setSelectedPublicationDisplay(`${formattedNom}`);
+      // En mode édition, utiliser la publication de la facture si disponible
+      if (selectedInvoice.publicationId) {
+        // Chercher la publication correspondante dans les publications du client
+        const matchingPublication = publications.find((pub: any) => pub.id === selectedInvoice.publicationId);
+        if (matchingPublication) {
+          setSelectedPublication(matchingPublication.id);
+          const formattedNom = formatPublicationName(matchingPublication.nom || `Publication ${matchingPublication.id}`);
+          setSelectedPublicationDisplay(`${formattedNom}`);
+        } else {
+          // Si la publication n'est pas trouvée, prendre la première disponible
+          const firstPublication = publications[0];
+          setSelectedPublication(firstPublication.id);
+          const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+          setSelectedPublicationDisplay(`${formattedNom}`);
+        }
+      } else {
+        // Si pas d'ID de publication dans la facture, prendre la première disponible
+        const firstPublication = publications[0];
+        setSelectedPublication(firstPublication.id);
+        const formattedNom = formatPublicationName(firstPublication.nom || `Publication ${firstPublication.id}`);
+        setSelectedPublicationDisplay(`${formattedNom}`);
+      }
     }
   }, [selectedInvoice, selectedClient, publications, selectedPublication]);
 
@@ -332,6 +365,7 @@ export default function InvoiceModal({
         'Statut facture': tournageFactureStatus,
         'Montant total brut': parseFloat(newInvoice.amount),
         'Commentaire': newInvoice.comment,
+        'publicationId': selectedPublication,
       };
 
       if (selectedInvoice) {

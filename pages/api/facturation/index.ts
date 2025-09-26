@@ -174,6 +174,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         typePrestation: rec.get('Prestation') || null,
         commentaire: rec.get('Commentaire') || null,
         statut: rec.get('Statut facture') || null,
+        publicationId: (rec.get('HISTORIQUE DE PUBLICATIONS') as string[])?.[0] || null,
       };
 
       return res.status(201).json({ invoice });
@@ -250,6 +251,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         typePrestation: rec.get('Prestation') || null,
         commentaire: rec.get('Commentaire') || null,
         statut: rec.get('Statut facture') || null,
+        publicationId: (rec.get('HISTORIQUE DE PUBLICATIONS') as string[])?.[0] || null,
       };
 
       return res.status(200).json({ invoice });

@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Prestation',
         'Commentaire',
         'Statut facture',         // single select: ex "🟡 En attente"
+        'HISTORIQUE DE PUBLICATIONS', // ← Ajout du champ pour les publications
       ],
     };
 
@@ -99,7 +100,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 5) Mapping des résultats (statut en string, catégories résolues)
+
+    // 6) Mapping des résultats (statut en string, catégories résolues)
     const results = records.map((r: any) => {
       const clientRef: string[] = r.get('Client') || [];
       const clientId = Array.isArray(clientRef) && clientRef.length > 0 ? clientRef[0] : null;
@@ -114,6 +116,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         categorieText = catsNames.length ? catsNames.join(' / ') : 'Non catégorisé';
       }
 
+      const pubsRef = r.get('HISTORIQUE DE PUBLICATIONS');
+      let publicationId = null;
+      
+      if (pubsRef && Array.isArray(pubsRef) && pubsRef.length > 0) {
+        publicationId = pubsRef[0]; // Prendre la première publication
+      }
+
       return {
         id: r.id,
         categorie: categorieText,
@@ -123,6 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         typePrestation: r.get('Prestation') ?? null,
         commentaire: r.get('Commentaire') ?? null,
         statut: toText(rawStatut), // toujours une string
+        publicationId: publicationId, // ← ID de la publication
       };
     });
 

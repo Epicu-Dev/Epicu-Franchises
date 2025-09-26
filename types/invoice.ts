@@ -8,4 +8,5 @@ export interface Invoice {
     typePrestation: string;
     statut: string;
     commentaire?: string;
+    publicationId?: string;
 }
