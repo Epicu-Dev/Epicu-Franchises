@@ -21,7 +21,8 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 
 import { TodoBadge } from "../../components/badges";

@@ -13,7 +13,8 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/table";
-import { MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 import { Switch } from "@heroui/switch";
 

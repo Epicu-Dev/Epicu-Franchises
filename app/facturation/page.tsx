@@ -15,9 +15,11 @@ import {
 import { Pagination } from "@heroui/pagination";
 import { Tabs, Tab } from "@heroui/tabs";
 import {
-  PencilIcon,
   PlusIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge, SortableColumnHeader, InvoiceModal } from "@/components";
@@ -47,7 +49,7 @@ export default function FacturationPage() {
   const [nextOffset, setNextOffset] = useState<number | null>(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("payee");
-  const [searchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory] = useState("");
   const [sortField, setSortField] = useState<string>("establishmentName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -251,7 +253,7 @@ export default function FacturationPage() {
     <div className="w-full text-primary">
       <Card className="w-full" shadow="none">
         <CardBody className="p-2 sm:p-4">
-          {/* En-tête avec onglets et bouton d'ajout */}
+          {/* En-tête avec onglets et barre de recherche */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-1 sm:p-2 gap-4">
             <Tabs
               className="w-full pt-3"
@@ -268,20 +270,39 @@ export default function FacturationPage() {
               <Tab key="retard" title="Retard" />
             </Tabs>
 
-            <div className="w-full sm:w-auto">
-              <Button
-                color='primary'
-                endContent={<PlusIcon className="h-4 w-4" />}
-                className="w-full sm:w-auto"
-                onPress={() => {
-                  setError(null);
-                  setSelectedInvoice(null);
-                  setIsAddModalOpen(true);
+            <div className="relative w-full sm:w-64">
+            <Input
+                className="w-full pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
+                startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
+                classNames={{
+                  input:
+                    "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
+                  inputWrapper:
+                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
                 }}
-              >
-                Ajouter une facture
-              </Button>
+                endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
+                placeholder="Rechercher..."
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+          </div>
+
+          {/* Bouton d'ajout */}
+          <div className="flex justify-end p-1 sm:p-2 pb-4">
+            <Button
+              color='primary'
+              endContent={<PlusIcon className="h-4 w-4" />}
+              className="w-full sm:w-auto"
+              onPress={() => {
+                setError(null);
+                setSelectedInvoice(null);
+                setIsAddModalOpen(true);
+              }}
+            >
+              Ajouter une facture
+            </Button>
           </div>
 
           {loading ? <div className="flex justify-center items-center h-64">

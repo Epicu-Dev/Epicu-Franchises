@@ -19,12 +19,12 @@ import { Tooltip } from "@heroui/tooltip";
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
-  PencilIcon,
   Squares2X2Icon,
   XMarkIcon,
   PlusIcon,
   KeyIcon,
 } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 
 import { useAuthFetch } from "../../hooks/use-auth-fetch";

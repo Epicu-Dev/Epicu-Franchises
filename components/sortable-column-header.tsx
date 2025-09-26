@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowsUpDownIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import { ArrowsUpDownIcon, ArrowUpIcon, ArrowDownIcon } from "./icons";
 
 export interface SortableColumnHeaderProps {
   field: any;

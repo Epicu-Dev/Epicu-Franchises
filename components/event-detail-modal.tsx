@@ -10,7 +10,8 @@ import {
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { TrashIcon, CalendarIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { CalendarIcon, ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { TrashIcon } from "./icons";
 
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getEventColorFromEstablishmentCategories } from "@/components/badges";

@@ -12,7 +12,8 @@ import {
 } from "@heroui/table";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Button } from "@heroui/button";
-import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 import toast from "react-hot-toast";
 

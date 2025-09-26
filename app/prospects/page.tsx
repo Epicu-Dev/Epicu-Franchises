@@ -17,10 +17,10 @@ import { Tabs, Tab } from "@heroui/tabs";
 import {
   ArrowRightIcon,
   MagnifyingGlassIcon,
-  PencilIcon,
   PlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 import { Spinner } from "@heroui/spinner";
 
 import { CategoryBadge } from "@/components/badges";

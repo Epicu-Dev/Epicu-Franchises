@@ -185,3 +185,58 @@ export const SearchIcon = (props: IconSvgProps) => (
     />
   </svg>
 );
+
+export const PencilIcon = ({ className = "h-4 w-4", ...props }: { className?: string } & React.ImgHTMLAttributes<HTMLImageElement>) => {
+  return (
+    <img 
+      src="/images/icones/Pencil.svg" 
+      alt="Pencil icon"
+      className={className}
+      {...props}
+    />
+  );
+};
+
+export const TrashIcon = ({ className = "h-4 w-4", ...props }: { className?: string } & React.ImgHTMLAttributes<HTMLImageElement>) => {
+  return (
+    <img 
+      src="/images/icones/Corbeille.svg" 
+      alt="Trash icon"
+      className={className}
+      {...props}
+    />
+  );
+};
+
+export const ArrowsUpDownIcon = ({ className = "h-4 w-4", ...props }: { className?: string } & React.ImgHTMLAttributes<HTMLImageElement>) => {
+  return (
+    <img 
+      src="/images/icones/Tri.svg" 
+      alt="Arrows up down icon"
+      className={className}
+      {...props}
+    />
+  );
+};
+
+export const ArrowUpIcon = ({ className = "h-4 w-4", ...props }: { className?: string } & React.ImgHTMLAttributes<HTMLImageElement>) => {
+  return (
+    <img 
+      src="/images/icones/arrow-up.svg" 
+      alt="Arrow up icon"
+      className={className}
+      {...props}
+    />
+  );
+};
+
+export const ArrowDownIcon = ({ className = "h-4 w-4", ...props }: { className?: string } & React.ImgHTMLAttributes<HTMLImageElement>) => {
+  return (
+    <img 
+      src="/images/icones/arrow-down.svg" 
+      alt="Arrow down icon"
+      className={className}
+      {...props}
+    />
+  );
+};
