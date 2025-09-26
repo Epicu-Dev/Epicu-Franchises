@@ -390,7 +390,7 @@ export default function FacturationPage() {
                       </TableCell>
                       <TableCell className="font-light text-xs sm:text-sm">
                         <span className="text-xs sm:text-sm text-gray-500">
-                          {invoice.commentaire || "commentaires"}
+                          {invoice.commentaire || ""}
                         </span>
                       </TableCell>
                     </TableRow>
