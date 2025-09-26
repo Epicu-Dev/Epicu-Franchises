@@ -15,6 +15,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { CalendarDate, today, getLocalTimeZone } from "@internationalized/date";
 import { Card, CardBody } from "@heroui/card";
 import { Spinner } from "@heroui/spinner";
+import { useRouter } from "next/navigation";
 
 import { DashboardLayout } from "../dashboard-layout";
 
@@ -59,7 +60,8 @@ export default function HomePage() {
   const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const { authFetch } = useAuthFetch();
-  
+  const router = useRouter();
+
   // Utilisation du hook de filtres de dates
   const {
     selectedDate,
@@ -123,13 +125,13 @@ export default function HomePage() {
     vues: number;
   } | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
-  
+
   // État pour la connexion Google Calendar
   const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
-  
+
   // État de loading global pour la navigation par mois
   const [isNavigating, setIsNavigating] = useState(false);
-  
+
   // Ref pour annuler les requêtes en cours
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -157,7 +159,7 @@ export default function HomePage() {
         ...userCities,
         { key: "national", label: "National" }
       ];
-      
+
       setCities(newCities);
 
       // Si l'utilisateur n'a qu'une seule ville, la sélectionner par défaut
@@ -284,6 +286,9 @@ export default function HomePage() {
 
       params.set("limit", "100");
       params.set("status", "payee");
+      params.set("offset", "0");
+      params.set("sortField", "datePaiement");
+      params.set("sortDirection", "desc");
 
       const response = await authFetch(`/api/facturation?${params.toString()}`);
 
@@ -291,6 +296,7 @@ export default function HomePage() {
         const data = await response.json();
         const list: Invoice[] = data.invoices || [];
 
+        // Filtrer les factures par date de paiement pour le mois sélectionné
         const filtered = list.filter((inv) => {
           if (!inv.datePaiement) return false;
 
@@ -353,7 +359,7 @@ export default function HomePage() {
 
           if (selectedCityData) {
             // Chercher l'ID de la ville dans le profil utilisateur
-            const userVille = userProfile?.villes?.find(v => 
+            const userVille = userProfile?.villes?.find(v =>
               v.ville.toLowerCase() === selectedCityData.label.toLowerCase()
             );
 
@@ -381,24 +387,24 @@ export default function HomePage() {
 
           allParams.set('date', monthYear);
           allParams.set('ville', 'all');
-          
+
           const allResponse = await authFetch(`/api/data/data?${allParams.toString()}`);
 
           if (allResponse.ok) {
             const allData = await allResponse.json();
-            
+
             // Récupérer les données des villes locales de l'utilisateur
             const userVilles = userProfile?.villes || [];
 
             let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
-            
+
             for (const ville of userVilles) {
               if (ville.id) {
                 const localParams = new URLSearchParams();
 
                 localParams.set('date', monthYear);
                 localParams.set('ville', ville.id);
-                
+
                 const localResponse = await authFetch(`/api/data/data?${localParams.toString()}`);
 
                 if (localResponse.ok) {
@@ -411,7 +417,7 @@ export default function HomePage() {
                 }
               }
             }
-            
+
             // Calculer les données nationales (toutes - locales)
             const nationalData = {
               totalAbonnes: (allData.totalAbonnes || 0) - localTotals.totalAbonnes,
@@ -419,7 +425,7 @@ export default function HomePage() {
               totalProspectsSignes: (allData.totalProspectsSignes || 0) - localTotals.totalProspectsSignes,
               tauxConversion: allData.tauxConversion || 0
             };
-            
+
             setStatistics({
               prospectsSignes: nationalData.totalProspectsSignes,
               tauxConversion: nationalData.tauxConversion,
@@ -466,16 +472,16 @@ export default function HomePage() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Créer un nouveau contrôleur pour cette requête
     const abortController = new AbortController();
-    
+
     abortControllerRef.current = abortController;
-    
+
     if (isNavigation) {
       setIsNavigating(true);
     }
-    
+
     try {
       // Récupération des événements d'agenda, todos, statistiques et vérification Google Calendar
       await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics(), checkGoogleCalendarStatus()]);
@@ -598,6 +604,7 @@ export default function HomePage() {
       client: inv.nomEtablissement || "Nom client",
       date: inv.dateEmission,
       montant: inv.montant || 0,
+      datePaiement: inv.datePaiement,
     }));
   }, [invoices]);
 
@@ -863,19 +870,33 @@ export default function HomePage() {
                       <div className="text-sm text-gray-500">Pas de résultat</div>
                     </div>
                   ) : (
-                    displayInvoices.map((inv) => (
-                      <div key={inv.id} className="flex items-center justify-between py-4 border-b border-gray-100">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-light text-primary">{inv.client}</p>
-                          <p className="text-xs text-primary-light">
-                            {new Date(inv.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
-                          </p>
+                    <>
+                      {displayInvoices.map((inv) => (
+                        <div key={inv.id} className="flex items-center justify-between py-4 border-b border-gray-100">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-light text-primary">{inv.client}</p>
+                            <p className="text-xs text-primary-light">
+                              {inv.datePaiement == null ? 'Pas de date de paiement' : new Date(inv.datePaiement ? inv.datePaiement : inv.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')}
+                            </p>
+                          </div>
+                          <span className="text-xs px-3 py-1 rounded-md bg-green-100 text-green-600">
+                            {formatAmount(inv.montant)}
+                          </span>
                         </div>
-                        <span className="text-xs px-3 py-1 rounded-md bg-green-100 text-green-600">
-                          {formatAmount(inv.montant)}
-                        </span>
-                      </div>
-                    ))
+                      ))}
+                      {invoices.length > 3 && (
+                        <div className="flex justify-center pt-2">
+                          <Button
+                            size="sm"
+                            variant="light"
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                            onPress={() => router.push('/facturation')}
+                          >
+                            Voir plus
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

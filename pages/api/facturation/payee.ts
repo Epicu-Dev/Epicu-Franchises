@@ -37,6 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Catégorie',            // ← IDs vers CATÉGORIES
         'Client',
         "Date d'émission",
+        'Date de paiement',     // ← Ajout du champ Date de paiement
         'Montant total net',
         'Prestation',
         'Commentaire',
@@ -121,6 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         categorie: categorieText, // ← nom(s) depuis CATÉGORIES
         nomEtablissement: clientId ? (clientNames[clientId] ?? null) : null,
         dateEmission: r.get("Date d'émission") ?? null,
+        datePaiement: r.get('Date de paiement') ?? null, // ← Ajout du champ datePaiement
         montant: r.get('Montant total net') ?? null,
         typePrestation: r.get('Prestation') ?? null,
         commentaire: r.get('Commentaire') ?? null,
@@ -158,6 +160,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           aValue = a.dateEmission ? new Date(a.dateEmission).getTime() : 0;
           bValue = b.dateEmission ? new Date(b.dateEmission).getTime() : 0;
           break;
+        case 'datePaiement':
+          aValue = a.datePaiement ? new Date(a.datePaiement).getTime() : 0;
+          bValue = b.datePaiement ? new Date(b.datePaiement).getTime() : 0;
+          break;
         case 'amount':
           aValue = a.montant || 0;
           bValue = b.montant || 0;
@@ -167,7 +173,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           bValue = b.nomEtablissement || '';
       }
 
-      if (sortField === 'dateEmission' || sortField === 'amount') {
+      if (sortField === 'dateEmission' || sortField === 'datePaiement' || sortField === 'amount') {
         // Tri numérique
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       } else {
