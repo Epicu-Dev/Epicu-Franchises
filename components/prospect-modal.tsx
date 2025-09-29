@@ -187,13 +187,7 @@ export function ProspectModal({
           delete errors.ville;
         }
         break;
-      case 'telephone':
-        if (!value || !value.trim()) {
-          errors.telephone = 'Le téléphone est requis';
-        } else {
-          delete errors.telephone;
-        }
-        break;
+      
       case 'datePriseContact':
         if (!value || !value.trim()) {
           errors.datePriseContact = 'La date de prise de contact est requise';
@@ -220,7 +214,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'telephone', 'datePriseContact', 'villeEpicu'];
+    const fields = ['nomEtablissement', 'ville', 'datePriseContact', 'villeEpicu'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -555,7 +549,7 @@ export function ProspectModal({
                 </StyledSelect>
               </>
             )}
-            <FormLabel htmlFor="telephone" isRequired={true}>
+            <FormLabel htmlFor="telephone" isRequired={false}>
               Téléphone
             </FormLabel>
             <Input
@@ -563,9 +557,7 @@ export function ProspectModal({
               classNames={{
                 inputWrapper: "bg-page-bg",
               }}
-              errorMessage={fieldErrors.telephone}
               id="telephone"
-              isInvalid={!!fieldErrors.telephone}
               placeholder="01 23 45 67 89"
               value={newProspect.telephone}
               onChange={(e) => {
@@ -715,7 +707,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.telephone || !newProspect.datePriseContact || !newProspect.villeEpicu}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.datePriseContact || !newProspect.villeEpicu}
               isLoading={isLoading}
               onPress={handleSubmit}
             >
