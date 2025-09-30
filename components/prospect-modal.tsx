@@ -187,14 +187,6 @@ export function ProspectModal({
           delete errors.ville;
         }
         break;
-
-      case 'datePriseContact':
-        if (!value || !value.trim()) {
-          errors.datePriseContact = 'La date de prise de contact est requise';
-        } else {
-          delete errors.datePriseContact;
-        }
-        break;
       case 'dateRelance':
         // La date de relance est optionnelle, pas de validation requise
         delete errors.dateRelance;
@@ -214,7 +206,7 @@ export function ProspectModal({
   };
 
   const validateAllFields = (prospect: any) => {
-    const fields = ['nomEtablissement', 'ville', 'datePriseContact', 'villeEpicu'];
+    const fields = ['nomEtablissement', 'ville', 'villeEpicu'];
     let isValid = true;
 
     fields.forEach(field => {
@@ -591,7 +583,7 @@ export function ProspectModal({
             />
 
 
-            <FormLabel htmlFor="datePriseContact" isRequired={true}>
+            <FormLabel htmlFor="datePriseContact" isRequired={false}>
               Date de prise de contact
             </FormLabel>
             <Input
@@ -602,9 +594,7 @@ export function ProspectModal({
                 input: newProspect.datePriseContact ? "text-black" : "text-gray-300"
               }}
               color={newProspect.datePriseContact ? "default" : "danger"}
-              errorMessage={fieldErrors.datePriseContact}
               id="datePriseContact"
-              isInvalid={!!fieldErrors.datePriseContact}
               type="date"
               value={newProspect.datePriseContact || undefined}
               onChange={(e) => {
