@@ -85,13 +85,13 @@ export function ProspectModal({
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       // Définir la première ville Epicu par défaut si l'utilisateur a des villes
-      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
-        ? userProfile.villes[0].id 
+      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0
+        ? userProfile.villes[0].id
         : "";
-      
+
       // Définir l'utilisateur actuel comme suivi par défaut
       const defaultSuiviPar = userProfile?.id || "";
-        
+
       setNewProspect({
         id: "",
         nomEtablissement: "",
@@ -116,9 +116,9 @@ export function ProspectModal({
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        
+
         const response = await authFetch('/api/equipe?limit=200&offset=0');
-        
+
         if (response.ok) {
           const data = await response.json();
           let allMembers = data.results || [];
@@ -156,11 +156,11 @@ export function ProspectModal({
 
           setCollaborateurs(mappedMembers);
         }
-        
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error('Erreur lors de la récupération des membres d\'équipe:', err);
-        }
+
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Erreur lors de la récupération des membres d\'équipe:', err);
+      }
     };
 
     if (isOpen) {
@@ -187,7 +187,7 @@ export function ProspectModal({
           delete errors.ville;
         }
         break;
-      
+
       case 'datePriseContact':
         if (!value || !value.trim()) {
           errors.datePriseContact = 'La date de prise de contact est requise';
@@ -294,24 +294,24 @@ export function ProspectModal({
       if (!response.ok) {
         const errorData = await response.json();
         const errorMessage = errorData.error || `Erreur lors de ${isEditing ? 'la modification' : 'l\'ajout'} du prospect`;
-        
+
         showError(errorMessage);
         throw new Error(errorMessage);
       }
 
       // Afficher le toast de succès
-      
+
       showSuccess(isEditing ? 'Prospect modifié avec succès' : 'Prospect ajouté avec succès');
 
       // Réinitialiser le formulaire et fermer le modal
       // Définir la première ville Epicu par défaut si l'utilisateur a des villes
-      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
-        ? userProfile.villes[0].id 
+      const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0
+        ? userProfile.villes[0].id
         : "";
-      
+
       // Définir l'utilisateur actuel comme suivi par défaut
       const defaultSuiviPar = userProfile?.id || "";
-        
+
       setNewProspect({
         id: "",
         nomEtablissement: "",
@@ -342,13 +342,13 @@ export function ProspectModal({
     setError(null);
     setFieldErrors({});
     // Définir la première ville Epicu par défaut si l'utilisateur a des villes
-    const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0 
-      ? userProfile.villes[0].ville 
+    const defaultVilleEpicu = userProfile?.villes && userProfile.villes.length > 0
+      ? userProfile.villes[0].ville
       : "";
-    
+
     // Définir l'utilisateur actuel comme suivi par défaut
     const defaultSuiviPar = userProfile?.id || "";
-      
+
     setNewProspect({
       id: "",
       nomEtablissement: "",
@@ -394,7 +394,7 @@ export function ProspectModal({
                     ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"].includes(key as string)
                 );
                 // Always keep categorie as a tuple of length 1 (for categorie1)
-                
+
                 setNewProspect((prev) => ({
                   ...prev,
                   categorie: [selected[0] ?? prev.categorie[0]],
@@ -417,14 +417,14 @@ export function ProspectModal({
                   selectedKeys={[newProspect.categorie[1] || ""]}
                   onSelectionChange={(keys) => {
                     const selectedKey = Array.from(keys)[0] as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY" | 'none';
-                    
+
                     if (selectedKey === "none") {
-                      
+
                       setNewProspect((prev) => ({ ...prev, categorie: [prev.categorie[0]] }));
                     } else {
-                      setNewProspect((prev) => ({ 
-                        ...prev, 
-                        categorie: [prev.categorie[0], selectedKey as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY"] 
+                      setNewProspect((prev) => ({
+                        ...prev,
+                        categorie: [prev.categorie[0], selectedKey as "FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY"]
                       }));
                     }
                   }}
@@ -438,11 +438,11 @@ export function ProspectModal({
                 </StyledSelect>
               </div>
             ) : (
-              <Button 
-                className="border-1" 
-                color='primary' 
-                endContent={<PlusIcon className="h-4 w-4" />} 
-                variant="bordered" 
+              <Button
+                className="border-1"
+                color='primary'
+                endContent={<PlusIcon className="h-4 w-4" />}
+                variant="bordered"
                 onPress={() => setNewProspect((prev) => ({ ...prev, categorie: [...prev.categorie, "FUN"] }))}
               >
                 Ajouter une catégorie (Optionnel)
@@ -482,7 +482,7 @@ export function ProspectModal({
               selectedKeys={newProspect.suiviPar ? [newProspect.suiviPar] : []}
               onSelectionChange={(keys) => {
                 const selectedSuiviPar = Array.from(keys)[0] as string;
-                
+
                 setNewProspect((prev) => ({ ...prev, suiviPar: selectedSuiviPar }));
               }}
             >
@@ -596,9 +596,9 @@ export function ProspectModal({
             </FormLabel>
             <Input
               isRequired
-              
+
               classNames={{
-                inputWrapper:  "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg" ,
+                inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
                 input: newProspect.datePriseContact ? "text-black" : "text-gray-300"
               }}
               color={newProspect.datePriseContact ? "default" : "danger"}
@@ -622,7 +622,7 @@ export function ProspectModal({
             </FormLabel>
             <Input
               classNames={{
-                inputWrapper:  "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg" ,
+                inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
                 input: newProspect.dateRelance ? "text-black" : "text-gray-300"
               }}
               color={newProspect.dateRelance ? "default" : "danger"}

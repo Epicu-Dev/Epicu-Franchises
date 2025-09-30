@@ -126,18 +126,15 @@ export function redirectToLogin(): void {
 }
   
 export function isUserLoggedIn(): boolean {
-  const accessToken = localStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken');
-  const expiresAtAccess = localStorage.getItem('expiresAtAccess');
   const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
   
-  if (!accessToken || !refreshToken || !expiresAtAccess || !expiresAtRefresh) return false;
+  if (!refreshToken || !expiresAtRefresh) return false;
   
   const now = new Date();
-  const accessExpirationDate = new Date(expiresAtAccess);
   const refreshExpirationDate = new Date(expiresAtRefresh);
   
-  // L'utilisateur est considéré comme connecté s'il a au moins un refresh token valide
+  // L'utilisateur est considéré comme connecté s'il a un refresh token valide
   // (même si l'access token est expiré, on peut le rafraîchir)
   return refreshExpirationDate > now;
 }

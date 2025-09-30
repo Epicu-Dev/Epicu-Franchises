@@ -70,9 +70,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!accessToken) {
         setError('Token d\'accès non trouvé');
         setIsLoading(false);
-        clearAuthData();
-        redirectToLogin();
-
+        // Ne pas rediriger immédiatement, laisser AuthGuard gérer cela
         return;
       }
 
@@ -90,8 +88,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         if (response.status === 401) {
+          // Ne pas rediriger immédiatement, laisser AuthGuard gérer cela
+          setError('Session expirée');
           clearAuthData();
-          redirectToLogin();
           return;
         }
 
@@ -159,12 +158,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoaded) {
       // Vérifier d'abord si l'utilisateur est authentifié
-      const accessToken = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
+      const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
       
-      if (!accessToken || !refreshToken) {
+      if (!refreshToken || !expiresAtRefresh) {
         setIsLoading(false);
-
+        return;
+      }
+      
+      // Vérifier si le refresh token est encore valide
+      const now = new Date();
+      const refreshExpirationDate = new Date(expiresAtRefresh);
+      
+      if (refreshExpirationDate <= now) {
+        setIsLoading(false);
         return;
       }
       

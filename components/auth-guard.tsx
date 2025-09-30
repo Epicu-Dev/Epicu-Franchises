@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect } from 'react';
-import { isRefreshTokenValid, isUserLoggedIn, getValidAccessToken, clearAuthData, redirectToLogin } from '@/utils/auth';
+import { useEffect, useState } from 'react';
+import { isRefreshTokenValid, getValidAccessToken, clearAuthData, redirectToLogin } from '@/utils/auth';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
+  const [isChecking, setIsChecking] = useState(true);
+
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
         // Vérifier si on est côté client
         if (typeof window === 'undefined') {
+          setIsChecking(false);
           return;
         }
 
-        const accessToken = localStorage.getItem('accessToken');
         const refreshToken = localStorage.getItem('refreshToken');
+        const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
 
-        // Si pas de tokens, déconnecté
-        if (!accessToken || !refreshToken) {
+        // Si pas de refresh token, déconnecté
+        if (!refreshToken || !expiresAtRefresh) {
           clearAuthData();
           redirectToLogin();
           return;
@@ -33,22 +36,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Vérifier la validité de l'access token
-        if (!isUserLoggedIn()) {
-          // Essayer de rafraîchir le token
-          const refreshedToken = await getValidAccessToken();
-          
-          if (!refreshedToken) {
-            clearAuthData();
-            redirectToLogin();
-            return;
-          }
+        // Vérifier la validité de l'access token et le rafraîchir si nécessaire
+        const validToken = await getValidAccessToken();
+        
+        if (!validToken) {
+          clearAuthData();
+          redirectToLogin();
+          return;
         }
 
         // Si on arrive ici, l'utilisateur est authentifié
-        // Pas besoin de faire quoi que ce soit, le contenu s'affiche normalement
+        setIsChecking(false);
       } catch (error) {
-        // console.error('Erreur lors de la vérification d\'authentification:', error);
+        console.error('Erreur lors de la vérification d\'authentification:', error);
         clearAuthData();
         redirectToLogin();
       }
@@ -57,6 +57,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
     checkAuthentication();
   }, []);
 
-  // Toujours afficher le contenu, la vérification se fait en arrière-plan
+  // Afficher un indicateur de chargement pendant la vérification
+  if (isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 }
