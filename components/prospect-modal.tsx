@@ -697,7 +697,7 @@ export function ProspectModal({
             <Button
               className="flex-1"
               color='primary'
-              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.datePriseContact || !newProspect.villeEpicu}
+              isDisabled={isLoading || Object.keys(fieldErrors).length > 0 || !newProspect.nomEtablissement || !newProspect.ville || !newProspect.villeEpicu}
               isLoading={isLoading}
               onPress={handleSubmit}
             >
