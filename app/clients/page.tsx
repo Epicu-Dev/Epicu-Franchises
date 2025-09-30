@@ -450,9 +450,16 @@ export default function ClientsPage() {
                         (isRdvMode ? rdvColumnConfig : columnConfig)
                           .filter((column) => visibleColumns.size === 0 || visibleColumns.has(column.key))
                           .map((column) => {
+                            if (column.key === 'commentaireCadeauGerant') {
+                              return (
+                                <TableColumn key={column.key} className="font-light text-sm min-w-[200px]">
+                                  {column.label}
+                                </TableColumn>
+                              );
+                            }
                             if (column.sortable) {
                               return (
-                                <TableColumn key={column.key} className="font-light text-sm min-w-[120px]">
+                                <TableColumn key={column.key} className={"font-light text-sm  min-w-[120px]"}>
                                   <SortableColumnHeader
                                     field={column.field!}
                                     label={column.label}
@@ -684,10 +691,10 @@ export default function ClientsPage() {
                                       break;
                                     case 'montantCadeau':
                                       cells.push(
-                                        <TableCell key={column.key} className="font-light">
+                                        <TableCell key={column.key} className="font-light min-w-[200px]">
                                           {client.publications && client.publications.length > 0
                                             ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
+                                              <div key={idx} className="text-sm min-w-[200px]">
                                                 {pub.montantCadeau || "-"}
                                               </div>
                                             ))
