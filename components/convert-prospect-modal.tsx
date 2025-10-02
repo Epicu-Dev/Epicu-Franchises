@@ -43,7 +43,7 @@ export default function ConvertProspectModal({
     // Fonction pour convertir le statut front vers API
     const convertStatusForAPI = (frontStatus: ProspectStatus): string => {
         if (frontStatus === "Glacial") {
-            return "Pas intéressé";
+            return "Glacial";
         }
         return frontStatus;
     };

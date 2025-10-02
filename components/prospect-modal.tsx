@@ -234,7 +234,7 @@ export function ProspectModal({
         if (frontStatus === "en_discussion") return "En discussion";
         if (frontStatus === "interesse") return "Intéressé";
         if (frontStatus === "pas_interesse") return "Pas intéressé";
-        if (frontStatus === "glacial") return "Pas intéressé";
+        if (frontStatus === "glacial") return "Glacial";
         if (frontStatus === "client") return "Client";
         return frontStatus;
       };

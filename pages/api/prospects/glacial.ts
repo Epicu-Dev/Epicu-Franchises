@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { base } from '../constants';
 import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 
-const VIEW_NAME = '🔴 Perdu';
+const VIEW_NAME = '🟡 Glacial';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
