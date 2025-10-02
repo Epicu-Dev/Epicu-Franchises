@@ -43,8 +43,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     ]);
     const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
 
-    const escapeForAirtableRegex = (s: string) =>
-      s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '\\"').toLowerCase();
+    const escapeForAirtable = (s: string) => s.replace(/'/g, "\\'").replace(/"/g, '\\"');
 
     // Options de sélection (tri/filtre côté Airtable)
     const selectOptions: any = {
@@ -129,16 +128,16 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     let filterFormulas: string[] = [];
 
     if (q && q.trim().length > 0) {
-      const pattern = escapeForAirtableRegex(q.trim());
+      const searchTerm = escapeForAirtable(q.trim().toLowerCase());
 
       filterFormulas.push(
         `OR(` +
-        `REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Raison sociale}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Email}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Ville}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Code postal}), "${pattern}"),` +
-        `REGEX_MATCH(LOWER({Commentaires}), "${pattern}")` +
+        `FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0,` +
+        `FIND("${searchTerm}", LOWER({Raison sociale})) > 0,` +
+        `FIND("${searchTerm}", LOWER({Email})) > 0,` +
+        `FIND("${searchTerm}", LOWER({Ville})) > 0,` +
+        `FIND("${searchTerm}", LOWER({Code postal})) > 0,` +
+        `FIND("${searchTerm}", LOWER({Commentaires})) > 0` +
         `)`
       );
     }

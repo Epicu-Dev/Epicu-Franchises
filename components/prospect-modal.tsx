@@ -26,7 +26,7 @@ import { Prospect } from "@/types/prospect";
 interface ProspectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProspectAdded: () => void;
+  onProspectAdded: (prospect?: Prospect) => void;
   editingProspect?: Prospect | null;
   isEditing?: boolean;
 }
@@ -45,6 +45,7 @@ export function ProspectModal({
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [collaborateurs, setCollaborateurs] = useState<{ id: string; nomComplet: string; villes?: string[] }[]>([]);
+  const [originalComment, setOriginalComment] = useState<string>("");
   const [newProspect, setNewProspect] = useState<Prospect>({
     id: "",
     nomEtablissement: "",
@@ -82,6 +83,7 @@ export function ProspectModal({
 
 
       setNewProspect(prospectToSet);
+      setOriginalComment(typeof editingProspect.commentaires === 'string' ? editingProspect.commentaires : "");
     } else {
       // Réinitialiser le formulaire pour un nouvel ajout
       // Définir la première ville Epicu par défaut si l'utilisateur a des villes
@@ -107,6 +109,7 @@ export function ProspectModal({
         email: "",
         adresse: "",
       });
+      setOriginalComment("");
     }
     setError(null);
     setFieldErrors({});
@@ -187,6 +190,10 @@ export function ProspectModal({
           delete errors.ville;
         }
         break;
+      case 'datePriseContact':
+        // La date de prise de contact est optionnelle, pas de validation requise
+        delete errors.datePriseContact;
+        break;
       case 'dateRelance':
         // La date de relance est optionnelle, pas de validation requise
         delete errors.dateRelance;
@@ -218,7 +225,49 @@ export function ProspectModal({
     return isValid;
   };
 
+  const createInteractionForComment = async (prospectId: string, comment: string) => {
+    try {
+      // Convertir le statut du prospect pour l'API
+      const convertStatusForAPI = (frontStatus: string): string => {
+        if (frontStatus === "a_contacter") return "À contacter";
+        if (frontStatus === "contacte") return "Contacté";
+        if (frontStatus === "en_discussion") return "En discussion";
+        if (frontStatus === "interesse") return "Intéressé";
+        if (frontStatus === "pas_interesse") return "Pas intéressé";
+        if (frontStatus === "glacial") return "Pas intéressé";
+        if (frontStatus === "client") return "Client";
+        return frontStatus;
+      };
+
+      const interactionData = {
+        etablissement: prospectId,
+        dateInteraction: new Date().toISOString().split('T')[0],
+        statut: convertStatusForAPI(newProspect.statut),
+        commentaire: comment,
+        prochainRdv: null
+      };
+
+      const response = await authFetch('/api/interaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(interactionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Erreur lors de la création de l\'interaction:', errorData);
+        // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+      }
+    } catch (err) {
+      console.error('Erreur lors de la création de l\'interaction:', err);
+      // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+    }
+  };
+
   const handleSubmit = async () => {
+    console.log('handleSubmit appelé', { isEditing, commentaires: newProspect.commentaires });
     try {
       setIsLoading(true);
       setError(null);
@@ -231,7 +280,7 @@ export function ProspectModal({
         return;
       }
 
-      // Adapter les données pour l'API Airtable
+      // Adapter les données pour l'API Airtable (sans commentaires car c'est un champ calculé)
       const prospectData: Record<string, any> = {
         "Nom de l'établissement": newProspect.nomEtablissement,
         'Ville': newProspect.ville,
@@ -240,7 +289,6 @@ export function ProspectModal({
         'Statut': newProspect.statut,
         'Date de prise de contact': newProspect.datePriseContact,
         'Date de relance': newProspect.dateRelance,
-        'Commentaires': newProspect.commentaires,
         'Email': newProspect.email,
         'Adresse': newProspect.adresse,
       };
@@ -291,9 +339,59 @@ export function ProspectModal({
         throw new Error(errorMessage);
       }
 
-      // Afficher le toast de succès
+      // Parser la réponse pour récupérer l'ID de l'établissement
+      const responseData = await response.json();
+      const etablissementId = isEditing ? newProspect.id : responseData.prospect?.id;
+      
+      console.log('Debug interaction:', {
+        isEditing,
+        etablissementId,
+        commentaires: newProspect.commentaires,
+        originalComment,
+        commentairesChanged: isEditing ? newProspect.commentaires !== originalComment : true
+      });
+      
+      // Créer une interaction si il y a un commentaire
+      if (etablissementId && newProspect.commentaires && typeof newProspect.commentaires === 'string' && newProspect.commentaires.trim()) {
+        console.log('Tentative de création d\'interaction...');
+        // Pour la modification, vérifier que le commentaire a changé
+        if (isEditing && newProspect.commentaires !== originalComment) {
+          console.log('Création interaction pour modification');
+          await createInteractionForComment(etablissementId, newProspect.commentaires);
+        }
+        // Pour l'ajout, créer l'interaction avec l'ID de l'établissement créé
+        else if (!isEditing) {
+          console.log('Création interaction pour ajout');
+          await createInteractionForComment(etablissementId, newProspect.commentaires);
+        }
+      } else {
+        console.log('Conditions non remplies pour créer interaction:', {
+          etablissementId: !!etablissementId,
+          commentaires: !!newProspect.commentaires,
+          commentairesType: typeof newProspect.commentaires,
+          commentairesTrimmed: newProspect.commentaires ? newProspect.commentaires.trim() : 'N/A'
+        });
+      }
 
+      // Afficher le toast de succès
       showSuccess(isEditing ? 'Prospect modifié avec succès' : 'Prospect ajouté avec succès');
+
+      // Préparer les données du prospect à retourner
+      const updatedProspect: Prospect = {
+        id: etablissementId,
+        nomEtablissement: newProspect.nomEtablissement,
+        ville: newProspect.ville,
+        villeEpicu: newProspect.villeEpicu,
+        telephone: newProspect.telephone,
+        categorie: newProspect.categorie,
+        statut: newProspect.statut,
+        datePriseContact: newProspect.datePriseContact,
+        dateRelance: newProspect.dateRelance,
+        commentaires: newProspect.commentaires,
+        suiviPar: newProspect.suiviPar,
+        email: newProspect.email,
+        adresse: newProspect.adresse,
+      };
 
       // Réinitialiser le formulaire et fermer le modal
       // Définir la première ville Epicu par défaut si l'utilisateur a des villes
@@ -323,7 +421,7 @@ export function ProspectModal({
       setFieldErrors({});
       setIsLoading(false);
       onClose();
-      onProspectAdded();
+      onProspectAdded(updatedProspect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
       setIsLoading(false);
@@ -356,6 +454,7 @@ export function ProspectModal({
       email: "",
       adresse: "",
     });
+    setOriginalComment("");
     onClose();
   };
 
@@ -587,8 +686,6 @@ export function ProspectModal({
               Date de prise de contact
             </FormLabel>
             <Input
-              isRequired
-
               classNames={{
                 inputWrapper: "bg-page-bg hover:!bg-page-bg focus-within:!bg-page-bg data-[focus=true]:!bg-page-bg data-[hover=true]:!bg-page-bg",
                 input: newProspect.datePriseContact ? "text-black" : "text-gray-300"
@@ -604,7 +701,6 @@ export function ProspectModal({
                   ...prev,
                   datePriseContact: value,
                 }));
-                validateField('datePriseContact', value);
               }}
             />
             <FormLabel htmlFor="dateRelance" isRequired={false}>
@@ -628,7 +724,6 @@ export function ProspectModal({
                   ...prev,
                   dateRelance: value,
                 }));
-                validateField('dateRelance', value);
               }}
             />
 
@@ -644,10 +739,11 @@ export function ProspectModal({
                 }}
                 id="statut"
                 value={
-                  newProspect.statut === "a_contacter" ? "Contacté" :
-                    newProspect.statut === "en_discussion" ? "En discussion" :
-                      newProspect.statut === "glacial" ? "Glacial" :
-                        newProspect.statut
+                  newProspect.statut === "a_contacter" ? "À contacter" :
+                    newProspect.statut === "contacte" ? "Contacté" :
+                      newProspect.statut === "en_discussion" ? "En discussion" :
+                        newProspect.statut === "glacial" ? "Glacial" :
+                          newProspect.statut
                 }
               />
               <p className="text-xs mt-2">

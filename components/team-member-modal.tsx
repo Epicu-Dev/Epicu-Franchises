@@ -27,7 +27,7 @@ interface City {
 interface TeamMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onMemberAdded: () => void;
+  onMemberAdded: (member?: Collaborator) => void;
   editingMember?: Collaborator | null;
   isEditing?: boolean;
 }
@@ -271,6 +271,26 @@ export function TeamMemberModal({
         throw new Error(errorData.error || 'Erreur lors de la sauvegarde');
       }
 
+      const data = await response.json();
+      const savedMember: Collaborator = data.member || {
+        id: data.id || Date.now().toString(),
+        nom: memberWithCity.nom || "",
+        prenom: memberWithCity.prenom || "",
+        role: memberWithCity.role || "Franchisé",
+        villeEpicu: memberWithCity.villeEpicu || [],
+        emailEpicu: memberWithCity.emailEpicu || "",
+        emailPerso: memberWithCity.emailPerso || "",
+        etablissements: memberWithCity.etablissements || [],
+        trombi: memberWithCity.trombi || null,
+        dateNaissance: memberWithCity.dateNaissance || null,
+        telephone: memberWithCity.telephone || null,
+        adresse: memberWithCity.adresse || null,
+        siret: memberWithCity.siret || null,
+        dateDIP: memberWithCity.dateDIP || null,
+        dateSignatureContrat: memberWithCity.dateSignatureContrat || null,
+        dateSignatureAttestation: memberWithCity.dateSignatureAttestation || null,
+      };
+
       // Réinitialiser le formulaire et fermer le modal
       setNewMember({
         nom: "",
@@ -294,7 +314,7 @@ export function TeamMemberModal({
       setFieldErrors({});
       setIsLoading(false);
       onClose();
-      onMemberAdded();
+      onMemberAdded(savedMember);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
       setIsLoading(false);

@@ -148,7 +148,7 @@ export default function FacturationPage() {
 
 
 
-  const handleAddInvoice = async (invoiceData: any) => {
+  const handleAddInvoice = async (invoiceData: any): Promise<Invoice | void> => {
     try {
       const response = await authFetch("/api/facturation", {
         method: "POST",
@@ -163,26 +163,34 @@ export default function FacturationPage() {
         throw new Error(errorData.error || "Erreur lors de l'ajout de la facture");
       }
 
-      fetchInvoices();
+      const data = await response.json();
+      const newInvoice: Invoice = data.invoice || {
+        id: data.id || Date.now().toString(),
+        categorie: invoiceData.category || "shop",
+        nomEtablissement: invoiceData.establishmentName || "",
+        datePaiement: invoiceData.date || undefined,
+        dateEmission: invoiceData.emissionDate || new Date().toISOString().split('T')[0],
+        montant: parseFloat(invoiceData.amount) || 0,
+        typePrestation: invoiceData.serviceType || "",
+        statut: selectedStatus,
+        commentaire: invoiceData.comment || "",
+        publicationId: invoiceData.publicationId || undefined,
+      };
+
+      // Mise à jour optimiste - ajouter la nouvelle facture au début de la liste
+      setInvoices(prev => [newInvoice, ...prev]);
+      
+      return newInvoice;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      throw err;
     }
   };
 
-  const handleEditInvoice = async (invoiceData: any) => {
+  const handleEditInvoice = async (invoiceData: any): Promise<Invoice | void> => {
     if (!selectedInvoice) return;
 
     try {
-      const updatedInvoice = {
-        ...selectedInvoice,
-        category: invoiceData.category,
-        establishmentName: invoiceData.establishmentName,
-        datePaiement: invoiceData.date,
-        amount: invoiceData.amount,
-        serviceType: invoiceData.serviceType,
-        comment: invoiceData.comment,
-      };
-
       const response = await authFetch(`/api/facturation?id=${selectedInvoice.id}`, {
         method: "PATCH",
         headers: {
@@ -196,9 +204,27 @@ export default function FacturationPage() {
         throw new Error(errorData.error || "Erreur lors de la modification de la facture");
       }
 
-      fetchInvoices();
+      const data = await response.json();
+      const updatedInvoice: Invoice = data.invoice || {
+        ...selectedInvoice,
+        categorie: invoiceData.category || selectedInvoice.categorie,
+        nomEtablissement: invoiceData.establishmentName || selectedInvoice.nomEtablissement,
+        datePaiement: invoiceData.date || selectedInvoice.datePaiement,
+        dateEmission: invoiceData.emissionDate || selectedInvoice.dateEmission,
+        montant: parseFloat(invoiceData.amount) || selectedInvoice.montant,
+        typePrestation: invoiceData.serviceType || selectedInvoice.typePrestation,
+        statut: selectedStatus,
+        commentaire: invoiceData.comment || selectedInvoice.commentaire,
+        publicationId: invoiceData.publicationId || selectedInvoice.publicationId,
+      };
+
+      // Mise à jour optimiste - remplacer la facture existante
+      setInvoices(prev => prev.map(inv => inv.id === selectedInvoice.id ? updatedInvoice : inv));
+      
+      return updatedInvoice;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      throw err;
     }
   };
 

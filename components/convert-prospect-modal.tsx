@@ -18,13 +18,13 @@ import { Prospect } from "@/types/prospect";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToastContext } from "@/contexts/toast-context";
 
-type ProspectStatus = "Contacté" | "En discussion" | "Glacial" | "Client";
+type ProspectStatus = "À contacter" | "Contacté" | "En discussion" | "Glacial" | "Client";
 
 interface ConvertProspectModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     prospect: Prospect | null;
-    onInteractionCreated?: () => void;
+    onInteractionCreated?: (conversionData?: { prospectId: string; newStatus: string }) => void;
 }
 
 export default function ConvertProspectModal({
@@ -84,14 +84,20 @@ export default function ConvertProspectModal({
             // Afficher le toast de succès
             showSuccess('Prospect converti avec succès');
 
+            // Préparer les données de conversion à retourner
+            const conversionData = {
+                prospectId: prospect.id,
+                newStatus: convertStatusForAPI(status)
+            };
+
             // Réinitialiser le formulaire
             setStatus(null);
             setComment("");
             onOpenChange(false);
             
-            // Notifier le parent que l'interaction a été créée
+            // Notifier le parent que l'interaction a été créée avec les données de conversion
             if (onInteractionCreated) {
-                onInteractionCreated();
+                onInteractionCreated(conversionData);
             }
 
         } catch (err) {
@@ -138,6 +144,7 @@ export default function ConvertProspectModal({
                                         setStatus(selectedStatus);
                                     }}
                                 >
+                                    <SelectItem key="À contacter">À contacter</SelectItem>
                                     <SelectItem key="Contacté">Contacté</SelectItem>
                                     <SelectItem key="En discussion">En discussion</SelectItem>
                                     <SelectItem key="Glacial">Glacial</SelectItem>

@@ -5,8 +5,8 @@ export interface Prospect {
     villeEpicu?: string;
     telephone: string;
     categorie: ("FOOD" | "SHOP" | "TRAVEL" | "FUN" | "BEAUTY")[];
-    statut: "a_contacter" | "en_discussion" | "glacial";
-    datePriseContact: string;
+    statut: "a_contacter" | "contacte" | "en_discussion" | "glacial";
+    datePriseContact?: string;
     dateRelance: string;
     commentaires: string;
     suiviPar: string;

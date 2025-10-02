@@ -73,8 +73,19 @@ async function performTokenRefresh(refreshToken: string, accessToken: string): P
 
     if (!res.ok) {
       // Seulement vider le localStorage pour les erreurs d'authentification (401, 403)
+      // MAIS seulement après avoir vérifié que le refresh token est vraiment expiré
       if (res.status === 401 || res.status === 403) {
-        clearAuthData();
+        // Vérifier si le refresh token est vraiment expiré avant de déconnecter
+        const refreshToken = localStorage.getItem('refreshToken');
+        const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
+        
+        if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
+          // Le refresh token est vraiment expiré, on peut déconnecter
+          clearAuthData();
+        } else {
+          // Le refresh token est encore valide, c'est probablement un problème temporaire
+          console.warn('Erreur 401/403 lors du refresh, mais refresh token encore valide. Problème temporaire probable.');
+        }
       }
       // Pour les autres erreurs (500, 502, etc.), ne pas vider le localStorage
       // car cela peut être un problème temporaire de serveur
@@ -241,6 +252,15 @@ export function debugTokenState(): void {
   console.log('Access Token valide:', accessExpiry ? accessExpiry > now : false);
   console.log('Refresh Token valide:', refreshExpiry ? refreshExpiry > now : false);
   console.log('Temps restant access:', accessExpiry ? Math.round((accessExpiry.getTime() - now.getTime()) / 1000 / 60) + ' minutes' : 'N/A');
+  console.log('Temps restant refresh:', refreshExpiry ? Math.round((refreshExpiry.getTime() - now.getTime()) / 1000 / 60 / 60 / 24) + ' jours' : 'N/A');
   console.log('======================');
+}
+
+/**
+ * Fonction pour forcer le debug des tokens (utile pour diagnostiquer)
+ * À appeler dans la console du navigateur : window.debugAuth()
+ */
+if (typeof window !== 'undefined') {
+  (window as any).debugAuth = debugTokenState;
 }
   

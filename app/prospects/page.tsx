@@ -134,7 +134,111 @@ export default function ProspectsPage() {
       const params = new URLSearchParams();
 
       // Adapter les paramètres selon l'onglet sélectionné
-      if (selectedTab === 'en_discussion') {
+      if (selectedTab === 'a_contacter') {
+        // Utiliser l'API des prospects à contacter
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/a_contacter?limit=20&offset=${offset}`;
+
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+
+        // Ajouter le tri si spécifié
+        if (sortField) {
+          let orderByField = sortField;
+
+          // Mapper les champs de tri vers les noms Airtable
+          switch (sortField) {
+            case 'categorie':
+              orderByField = 'Catégorie';
+              break;
+            case 'dateRelance':
+              orderByField = 'Date de relance';
+              break;
+            case 'suiviPar':
+              orderByField = 'Suivi par';
+              break;
+            default:
+              orderByField = "Nom de l'établissement";
+          }
+          params.set('orderBy', orderByField);
+        }
+        if (sortDirection) params.set('order', sortDirection);
+
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+
+        const response = await authFetch(fullUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects à contacter");
+        }
+
+        const data = await response.json();
+
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+
+      } else if (selectedTab === 'contacte') {
+        // Onglet "Contacté" - utiliser l'API des prospects normaux
+        const offset = isLoadMore ? (nextOffset || 0) : 0;
+        const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
+
+        if (searchTerm) params.set('q', searchTerm);
+        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
+        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
+
+        // Ajouter le tri si spécifié
+        if (sortField) {
+          let orderByField = sortField;
+
+          // Mapper les champs de tri vers les noms Airtable
+          switch (sortField) {
+            case 'categorie':
+              orderByField = 'Catégorie';
+              break;
+            case 'dateRelance':
+              orderByField = 'Date de relance';
+              break;
+            case 'suiviPar':
+              orderByField = 'Suivi par';
+              break;
+            default:
+              orderByField = "Nom de l'établissement";
+          }
+          params.set('orderBy', orderByField);
+        }
+        if (sortDirection) params.set('order', sortDirection);
+
+        const queryString = params.toString();
+        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
+
+        const response = await authFetch(fullUrl);
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des prospects contactés");
+        }
+
+        const data = await response.json();
+
+        if (isLoadMore) {
+          setProspects(prev => [...prev, ...(data.prospects || [])]);
+        } else {
+          setProspects(data.prospects || []);
+        }
+
+        // Mettre à jour la pagination pour le LazyLoading
+        setHasMore(data.pagination?.hasMore || false);
+        setNextOffset(data.pagination?.nextOffset || null);
+
+      } else if (selectedTab === 'en_discussion') {
         // Utiliser l'API des discussions
         const offset = isLoadMore ? (nextOffset || 0) : 0;
         const url = `/api/prospects/discussion?limit=20&offset=${offset}`;
@@ -180,58 +284,6 @@ export default function ProspectsPage() {
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des prospects glaciaux");
-        }
-
-        const data = await response.json();
-
-        if (isLoadMore) {
-          setProspects(prev => [...prev, ...(data.prospects || [])]);
-        } else {
-          setProspects(data.prospects || []);
-        }
-
-        // Mettre à jour la pagination pour le LazyLoading
-        setHasMore(data.pagination?.hasMore || false);
-        setNextOffset(data.pagination?.nextOffset || null);
-
-      } else {
-        // Onglet "Contacté" - utiliser l'API des prospects normaux
-        const offset = isLoadMore ? (nextOffset || 0) : 0;
-        const url = `/api/prospects/prospects?limit=20&offset=${offset}`;
-
-        if (searchTerm) params.set('q', searchTerm);
-        if (selectedCategory && selectedCategory !== 'tous') params.set('category', selectedCategory);
-        if (selectedSuiviPar && selectedSuiviPar !== 'tous') params.set('suivi', selectedSuiviPar);
-
-        // Ajouter le tri si spécifié
-        if (sortField) {
-          let orderByField = sortField;
-
-          // Mapper les champs de tri vers les noms Airtable
-          switch (sortField) {
-            case 'categorie':
-              orderByField = 'Catégorie';
-              break;
-            case 'dateRelance':
-              orderByField = 'Date de relance';
-              break;
-            case 'suiviPar':
-              orderByField = 'Suivi par';
-              break;
-            default:
-              orderByField = "Nom de l'établissement";
-          }
-          params.set('orderBy', orderByField);
-        }
-        if (sortDirection) params.set('order', sortDirection);
-
-        const queryString = params.toString();
-        const fullUrl = `${url}${queryString ? `&${queryString}` : ''}`;
-
-        const response = await authFetch(fullUrl);
-
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des prospects");
         }
 
         const data = await response.json();
@@ -308,6 +360,21 @@ export default function ProspectsPage() {
     setIsProspectModalOpen(true);
   };
 
+  const handleProspectAdded = (prospect?: Prospect) => {
+    if (prospect) {
+      if (editingProspect) {
+        // Mise à jour optimiste - remplacer le prospect existant
+        setProspects(prev => prev.map(p => p.id === prospect.id ? prospect : p));
+      } else {
+        // Ajout optimiste - ajouter le nouveau prospect au début de la liste
+        setProspects(prev => [prospect, ...prev]);
+      }
+    } else {
+      // Fallback : recharger les données si pas de prospect retourné
+      fetchProspects();
+    }
+  };
+
   const openConvertModal = (prospect: Prospect) => {
     // Convertir ApiProspect en Prospect pour la conversion
     const prospectForConvert: Prospect = {
@@ -325,9 +392,18 @@ export default function ProspectsPage() {
       adresse: prospect.adresse,
     };
 
-
     setProspectToConvert(prospectForConvert);
     setIsConvertModalOpen(true);
+  };
+
+  const handleConversionCreated = (conversionData?: { prospectId: string; newStatus: string }) => {
+    if (conversionData) {
+      // Mise à jour optimiste - retirer le prospect de la liste actuelle
+      setProspects(prev => prev.filter(p => p.id !== conversionData.prospectId));
+    } else {
+      // Fallback : recharger les données si pas de données de conversion
+      fetchProspects();
+    }
   };
 
 
@@ -347,7 +423,8 @@ export default function ProspectsPage() {
               variant="underlined"
               onSelectionChange={(key) => setSelectedTab(key as string)}
             >
-              <Tab key="a_contacter" title="Contacté" />
+              <Tab key="a_contacter" title="À contacter" />
+              <Tab key="contacte" title="Contacté" />
               <Tab key="en_discussion" title="En discussion" />
               <Tab key="glacial" title="Glacial" />
             </Tabs>
@@ -609,7 +686,13 @@ export default function ProspectsPage() {
                             : "-"
                           }
                         </TableCell>
-                        <TableCell className="font-light">{prospect.suiviPar}</TableCell>
+                        <TableCell className="font-light">
+                          {(() => {
+                            // Trouver le nom du collaborateur correspondant à l'ID
+                            const collaborateur = collaborateurs.find(c => c.id === prospect.suiviPar);
+                            return collaborateur ? collaborateur.nomComplet : prospect.suiviPar;
+                          })()}
+                        </TableCell>
 
                         <TableCell className="font-light">{prospect.ville}</TableCell>
                         <TableCell className="font-light min-w-32 text-xs sm:text-sm">{prospect.telephone}</TableCell>
@@ -642,7 +725,7 @@ export default function ProspectsPage() {
             setProspectToConvert(null);
           }
         }}
-        onInteractionCreated={fetchProspects}
+        onInteractionCreated={handleConversionCreated}
       />
 
       {/* Modal d'ajout et de modification de prospect réutilisable */}
@@ -654,7 +737,7 @@ export default function ProspectsPage() {
           setIsProspectModalOpen(false);
           setEditingProspect(null);
         }}
-        onProspectAdded={fetchProspects}
+        onProspectAdded={handleProspectAdded}
       />
     </div>
   );

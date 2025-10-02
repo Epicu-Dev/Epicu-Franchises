@@ -26,12 +26,22 @@ export const useAuthFetch = () => {
       const merged: RequestInit = { ...init, headers };
       const response = await fetch(input, merged);
 
-      // Si la réponse est 401, cela signifie que le token n'est plus valide côté serveur
-      // Dans ce cas, on nettoie tout et on redirige vers login
+      // Si la réponse est 401, vérifier si c'est vraiment un problème d'authentification
       if (response.status === 401) {
-        clearAuthData();
-        redirectToLogin();
-        throw new Error('Authentication failed - token invalid on server');
+        // Vérifier si le refresh token est encore valide avant de déconnecter
+        const refreshToken = localStorage.getItem('refreshToken');
+        const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
+        
+        if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
+          // Le refresh token est vraiment expiré, on peut déconnecter
+          clearAuthData();
+          redirectToLogin();
+          throw new Error('Authentication failed - refresh token expired');
+        } else {
+          // Le refresh token est encore valide, c'est probablement un problème temporaire
+          console.warn('Erreur 401 de l\'API, mais refresh token encore valide. Problème temporaire probable.');
+          throw new Error('Authentication failed - token invalid on server (temporary)');
+        }
       }
 
       return response;
@@ -40,7 +50,8 @@ export const useAuthFetch = () => {
       if (error instanceof Error && (
         error.message === 'Refresh token expired, please login again' ||
         error.message === 'No access token available' ||
-        error.message === 'Authentication failed - token invalid on server'
+        error.message === 'Authentication failed - token invalid on server' ||
+        error.message === 'Authentication failed - refresh token expired'
       )) {
         throw error;
       }

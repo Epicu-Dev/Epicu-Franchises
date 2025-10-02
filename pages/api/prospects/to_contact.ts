@@ -98,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const allowedOrderBy = new Set(fields);
       const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
 
-      const escapeForAirtable = (s: string) => s.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      const escapeForAirtableRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '\\"').toLowerCase();
 
       const selectOptions: any = {
         view: VIEW_NAME,
@@ -183,8 +183,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const formulaParts: string[] = [];
       if (q && q.trim().length > 0) {
-        const searchTerm = escapeForAirtable(q.trim().toLowerCase());
-        const qFormula = `OR(FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0, FIND("${searchTerm}", LOWER({Ville})) > 0, FIND("${searchTerm}", LOWER({Commentaires})) > 0)`;
+        const pattern = escapeForAirtableRegex(q.trim());
+        const qFormula = `OR(REGEX_MATCH(LOWER({Nom de l'établissement}), "${pattern}"),REGEX_MATCH(LOWER({Ville}), "${pattern}"),REGEX_MATCH(LOWER({Commentaires}), "${pattern}"))`;
         formulaParts.push(qFormula);
       }
 

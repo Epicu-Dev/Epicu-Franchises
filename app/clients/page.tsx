@@ -213,7 +213,7 @@ export default function ClientsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateClient = async () => {
+  const handleUpdateClient = async (client?: Client) => {
     if (!editingClient) return;
 
     try {
@@ -264,11 +264,18 @@ export default function ClientsPage() {
         throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
-      // Fermer le modal et recharger les clients
+      // Mise à jour optimiste de la table
+      if (client) {
+        setClients(prev => prev.map(c => c.id === client.id ? client : c));
+      } else {
+        // Fallback : recharger les données si pas de client retourné
+        fetchClients();
+      }
+
+      // Fermer le modal
       setIsEditModalOpen(false);
       setEditingClient(null);
       setError(null);
-      fetchClients();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {

@@ -26,7 +26,7 @@ interface ClientModalProps {
     editingClient: Client | null;
     setEditingClient: React.Dispatch<React.SetStateAction<Client | null>>;
     categories: Array<{ id: string, name: string }>;
-    onUpdateClient: () => Promise<void>;
+    onUpdateClient: (client?: Client) => Promise<void>;
     isLoading: boolean;
     error: string | null;
 }
@@ -334,7 +334,7 @@ export default function ClientModal({
                             color='primary'
                             isDisabled={isLoading || !validateRequiredFields()}
                             isLoading={isLoading}
-                            onPress={onUpdateClient}
+                            onPress={() => onUpdateClient(editingClient)}
                         >
                             {isLoading ? 'Chargement...' : (editingClient?.id ? 'Modifier' : 'Ajouter')}
                         </Button>

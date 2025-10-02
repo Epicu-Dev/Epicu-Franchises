@@ -167,9 +167,19 @@ export default function EquipePage() {
     setIsEditing(false);
   };
 
-  const handleMemberAdded = () => {
-    // Rafraîchir la liste des membres
-    fetchMembers();
+  const handleMemberAdded = (member?: Collaborator) => {
+    if (member) {
+      if (editingMember) {
+        // Mise à jour optimiste - remplacer le membre existant
+        setMembers(prev => prev.map(m => m.id === member.id ? member : m));
+      } else {
+        // Ajout optimiste - ajouter le nouveau membre au début de la liste
+        setMembers(prev => [member, ...prev]);
+      }
+    } else {
+      // Fallback : recharger les données si pas de membre retourné
+      fetchMembers();
+    }
   };
 
   const handleMemberClick = (member: Collaborator) => {

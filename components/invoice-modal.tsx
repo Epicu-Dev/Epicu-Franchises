@@ -27,8 +27,8 @@ interface InvoiceModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   selectedInvoice: Invoice | null;
-  onSave: (invoice: any) => Promise<void>;
-  onEdit: (invoice: any) => Promise<void>;
+  onSave: (invoice: any) => Promise<Invoice | void>;
+  onEdit: (invoice: any) => Promise<Invoice | void>;
 }
 
 export default function InvoiceModal({
@@ -368,10 +368,11 @@ export default function InvoiceModal({
         'publicationId': selectedPublication,
       };
 
+      let result;
       if (selectedInvoice) {
-        await onEdit(invoiceData);
+        result = await onEdit(invoiceData);
       } else {
-        await onSave(invoiceData);
+        result = await onSave(invoiceData);
       }
 
       // Réinitialiser le formulaire

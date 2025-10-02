@@ -83,7 +83,7 @@ export default function HomeAdminPage() {
     adresse: "",
     commentaire: "",
     suiviPar: "",
-    statut: "a_contacter" as "a_contacter" | "en_discussion" | "glacial",
+    statut: "a_contacter" as "a_contacter" | "contacte" | "en_discussion" | "glacial",
   });
 
   // États pour les modals d'agenda
@@ -430,13 +430,15 @@ export default function HomeAdminPage() {
                     onSelectionChange={(keys) => {
                       const selectedKey = Array.from(keys)[0] as
                         | "a_contacter"
+                        | "contacte"
                         | "en_discussion"
                         | "glacial";
 
                       setNewProspect({ ...newProspect, statut: selectedKey });
                     }}
                   >
-                    <SelectItem key="a_contacter">Contacté</SelectItem>
+                    <SelectItem key="a_contacter">À contacter</SelectItem>
+                    <SelectItem key="contacte">Contacté</SelectItem>
                     <SelectItem key="en_discussion">En discussion</SelectItem>
                     <SelectItem key="glacial">Glacial</SelectItem>
                   </StyledSelect>
