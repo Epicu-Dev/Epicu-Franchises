@@ -213,7 +213,7 @@ export default function ClientsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateClient = async (client?: Client) => {
+  const handleUpdateClient = async () => {
     if (!editingClient) return;
 
     try {
@@ -264,18 +264,11 @@ export default function ClientsPage() {
         throw new Error(errorData.error || "Erreur lors de la modification du client");
       }
 
-      // Mise à jour optimiste de la table
-      if (client) {
-        setClients(prev => prev.map(c => c.id === client.id ? client : c));
-      } else {
-        // Fallback : recharger les données si pas de client retourné
-        fetchClients();
-      }
-
-      // Fermer le modal
+      // Fermer le modal et recharger les clients
       setIsEditModalOpen(false);
       setEditingClient(null);
       setError(null);
+      fetchClients();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
@@ -727,7 +720,14 @@ export default function ClientsPage() {
                                     case 'commentaire':
                                       cells.push(
                                         <TableCell key={column.key} className="font-light">
-                                          {client.commentaires || "-"}
+                                          {client.publications && client.publications.length > 0
+                                            ? client.publications.map((pub, idx) => (
+                                              <div key={idx} className="text-sm  min-w-50">
+                                                {pub.commentaire || "-"}
+                                              </div>
+                                            ))
+                                            : "-"
+                                          }
                                         </TableCell>
                                       );
                                       break;

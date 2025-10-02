@@ -154,19 +154,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // ignore
       }
 
-      // resolve client name
+      // resolve client name and category
       let nomEtablissement = null;
+      let categorie = null;
       const clientIds = rec.get('Client') || [];
       if (Array.isArray(clientIds) && clientIds.length > 0) {
         try {
-          const crecs = await base('ÉTABLISSEMENTS').select({ filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, fields: ["Nom de l'établissement", 'Raison sociale'], maxRecords: 1 }).all();
-          if (crecs && crecs.length > 0) nomEtablissement = crecs[0].get("Nom de l'établissement") || crecs[0].get('Raison sociale') || null;
+          const crecs = await base('ÉTABLISSEMENTS').select({ 
+            filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, 
+            fields: ["Nom de l'établissement", 'Raison sociale', 'Catégorie'], 
+            maxRecords: 1 
+          }).all();
+          if (crecs && crecs.length > 0) {
+            const clientRecord = crecs[0];
+            nomEtablissement = clientRecord.get("Nom de l'établissement") || clientRecord.get('Raison sociale') || null;
+            
+            // Récupérer la catégorie de l'établissement
+            const categoryIds = clientRecord.get('Catégorie') || [];
+            if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+              try {
+                const catRecords = await base('Catégories')
+                  .select({
+                    filterByFormula: `RECORD_ID() = '${categoryIds[0]}'`,
+                    fields: ['Name'],
+                    maxRecords: 1,
+                  })
+                  .all();
+                if (catRecords && catRecords.length > 0) {
+                  categorie = catRecords[0].get('Name') || null;
+                }
+              } catch (e) {
+                // Ignorer les erreurs de récupération de catégorie
+              }
+            }
+          }
         } catch (e) { }
       }
 
       const invoice = {
         id: rec.id,
-        categorie: null,
+        categorie,
         nomEtablissement,
         datePaiement: rec.get('Date de paiement') || null,
         dateEmission: rec.get("Date d'émission") || null,
@@ -231,19 +258,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // ignore
       }
 
-      // resolve client name
+      // resolve client name and category
       let nomEtablissement = null;
+      let categorie = null;
       const clientIds = rec.get('Client') || [];
       if (Array.isArray(clientIds) && clientIds.length > 0) {
         try {
-          const crecs = await base('ÉTABLISSEMENTS').select({ filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, fields: ["Nom de l'établissement", 'Raison sociale'], maxRecords: 1 }).all();
-          if (crecs && crecs.length > 0) nomEtablissement = crecs[0].get("Nom de l'établissement") || crecs[0].get('Raison sociale') || null;
+          const crecs = await base('ÉTABLISSEMENTS').select({ 
+            filterByFormula: `RECORD_ID() = '${clientIds[0]}'`, 
+            fields: ["Nom de l'établissement", 'Raison sociale', 'Catégorie'], 
+            maxRecords: 1 
+          }).all();
+          if (crecs && crecs.length > 0) {
+            const clientRecord = crecs[0];
+            nomEtablissement = clientRecord.get("Nom de l'établissement") || clientRecord.get('Raison sociale') || null;
+            
+            // Récupérer la catégorie de l'établissement
+            const categoryIds = clientRecord.get('Catégorie') || [];
+            if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+              try {
+                const catRecords = await base('Catégories')
+                  .select({
+                    filterByFormula: `RECORD_ID() = '${categoryIds[0]}'`,
+                    fields: ['Name'],
+                    maxRecords: 1,
+                  })
+                  .all();
+                if (catRecords && catRecords.length > 0) {
+                  categorie = catRecords[0].get('Name') || null;
+                }
+              } catch (e) {
+                // Ignorer les erreurs de récupération de catégorie
+              }
+            }
+          }
         } catch (e) { }
       }
 
       const invoice = {
         id: rec.id,
-        categorie: null,
+        categorie,
         nomEtablissement,
         datePaiement: rec.get('Date de paiement') || null,
         dateEmission: rec.get("Date d'émission") || null,

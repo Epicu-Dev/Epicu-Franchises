@@ -102,7 +102,20 @@ export default function InvoiceModal({
         // Formater la date pour l'input de type date (format YYYY-MM-DD)
         const formatDateForInput = (dateString: string) => {
           if (!dateString) return "";
+          
+          // Si la date est déjà au format YYYY-MM-DD, la retourner directement
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+          }
+          
           const date = new Date(dateString);
+          
+          // Vérifier si la date est valide
+          if (isNaN(date.getTime())) {
+            console.warn('Date invalide:', dateString);
+            return "";
+          }
+          
           return date.toISOString().split('T')[0];
         };
 

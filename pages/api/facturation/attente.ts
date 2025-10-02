@@ -36,6 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Catégorie',              // IDs vers CATÉGORIES
         'Client',                 // IDs vers ÉTABLISSEMENTS
         "Date d'émission",
+        'Date de paiement',       // ← Ajout du champ Date de paiement
         'Montant total net',
         'Prestation',
         'Commentaire',
@@ -128,6 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         categorie: categorieText,
         nomEtablissement: clientId ? (clientNames[clientId] ?? null) : null,
         dateEmission: r.get("Date d'émission") ?? null,
+        datePaiement: r.get('Date de paiement') ?? null, // ← Ajout du champ datePaiement
         montant: r.get('Montant total net') ?? null,
         typePrestation: r.get('Prestation') ?? null,
         commentaire: r.get('Commentaire') ?? null,

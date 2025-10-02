@@ -22,7 +22,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 interface PublicationModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onPublicationAdded: () => void;
+    onPublicationAdded: (newPublication?: Publication) => void;
     editingPublication?: Publication | null;
     etablissementId?: string;
 }
@@ -194,6 +194,30 @@ export default function PublicationModal({
                 throw new Error(errorData.error || `Erreur lors de ${editingPublication ? 'la modification' : 'l\'ajout'} de la publication`);
             }
 
+            const responseData = await response.json();
+            
+            // Créer l'objet Publication à partir de la réponse
+            const publication: Publication = {
+                id: responseData.id,
+                datePublication: formData.datePublication,
+                dateEnvoiFactureCreation: formData.dateEnvoiFactureCreation,
+                montantFactureTournage: formData.montantFactureTournage,
+                factureTournage: formData.factureTournage,
+                dateEnvoiFacturePublication: formData.dateEnvoiFacturePublication,
+                montantFacturePublication: formData.montantFacturePublication,
+                facturePublication: formData.facturePublication,
+                montantSponsorisation: formData.montantSponsorisation,
+                montantAddition: formData.montantAddition,
+                benefice: formData.benefice,
+                cadeauGerant: formData.cadeauGerant,
+                montantCadeau: formData.montantCadeau,
+                tirageEffectue: formData.tirageEffectue,
+                nombreVues: formData.nombreVues,
+                nombreAbonnes: formData.nombreAbonnes,
+                commentaire: formData.commentaire,
+                nom: `${formData.datePublication} Publication`
+            };
+
             // Réinitialiser le formulaire et fermer le modal
             setFormData({
                 datePublication: "",
@@ -216,7 +240,7 @@ export default function PublicationModal({
             setError(null);
             setIsLoading(false);
             onOpenChange(false);
-            onPublicationAdded();
+            onPublicationAdded(publication);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Une erreur est survenue");
             setIsLoading(false);

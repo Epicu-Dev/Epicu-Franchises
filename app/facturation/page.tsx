@@ -166,15 +166,15 @@ export default function FacturationPage() {
       const data = await response.json();
       const newInvoice: Invoice = data.invoice || {
         id: data.id || Date.now().toString(),
-        categorie: invoiceData.category || "shop",
-        nomEtablissement: invoiceData.establishmentName || "",
-        datePaiement: invoiceData.date || undefined,
-        dateEmission: invoiceData.emissionDate || new Date().toISOString().split('T')[0],
-        montant: parseFloat(invoiceData.amount) || 0,
-        typePrestation: invoiceData.serviceType || "",
-        statut: selectedStatus,
-        commentaire: invoiceData.comment || "",
-        publicationId: invoiceData.publicationId || undefined,
+        categorie: data.invoice?.categorie || "shop",
+        nomEtablissement: data.invoice?.nomEtablissement || invoiceData.establishmentName || "",
+        datePaiement: data.invoice?.datePaiement || invoiceData.date || undefined,
+        dateEmission: data.invoice?.dateEmission || invoiceData.emissionDate || new Date().toISOString().split('T')[0],
+        montant: data.invoice?.montant || parseFloat(invoiceData.amount) || 0,
+        typePrestation: data.invoice?.typePrestation || invoiceData.serviceType || "",
+        statut: data.invoice?.statut || selectedStatus,
+        commentaire: data.invoice?.commentaire || invoiceData.comment || "",
+        publicationId: data.invoice?.publicationId || invoiceData.publicationId || undefined,
       };
 
       // Mise à jour optimiste - ajouter la nouvelle facture au début de la liste
@@ -207,19 +207,40 @@ export default function FacturationPage() {
       const data = await response.json();
       const updatedInvoice: Invoice = data.invoice || {
         ...selectedInvoice,
-        categorie: invoiceData.category || selectedInvoice.categorie,
-        nomEtablissement: invoiceData.establishmentName || selectedInvoice.nomEtablissement,
-        datePaiement: invoiceData.date || selectedInvoice.datePaiement,
-        dateEmission: invoiceData.emissionDate || selectedInvoice.dateEmission,
-        montant: parseFloat(invoiceData.amount) || selectedInvoice.montant,
-        typePrestation: invoiceData.serviceType || selectedInvoice.typePrestation,
-        statut: selectedStatus,
-        commentaire: invoiceData.comment || selectedInvoice.commentaire,
-        publicationId: invoiceData.publicationId || selectedInvoice.publicationId,
+        categorie: data.invoice?.categorie || selectedInvoice.categorie,
+        nomEtablissement: data.invoice?.nomEtablissement || selectedInvoice.nomEtablissement,
+        datePaiement: data.invoice?.datePaiement || selectedInvoice.datePaiement,
+        dateEmission: data.invoice?.dateEmission || selectedInvoice.dateEmission,
+        montant: data.invoice?.montant || selectedInvoice.montant,
+        typePrestation: data.invoice?.typePrestation || selectedInvoice.typePrestation,
+        statut: data.invoice?.statut || selectedStatus,
+        commentaire: data.invoice?.commentaire || selectedInvoice.commentaire,
+        publicationId: data.invoice?.publicationId || selectedInvoice.publicationId,
       };
 
-      // Mise à jour optimiste - remplacer la facture existante
-      setInvoices(prev => prev.map(inv => inv.id === selectedInvoice.id ? updatedInvoice : inv));
+      // Vérifier si le statut a changé
+      const newStatus = updatedInvoice.statut?.toLowerCase() || '';
+      const currentStatus = selectedStatus.toLowerCase();
+      
+      // Normaliser les statuts pour la comparaison
+      const normalizeStatus = (status: string) => {
+        const normalized = status.toLowerCase().trim();
+        if (normalized.includes('payée') || normalized.includes('payee')) return 'payee';
+        if (normalized.includes('attente')) return 'en_attente';
+        if (normalized.includes('retard')) return 'retard';
+        return normalized;
+      };
+      
+      const normalizedNewStatus = normalizeStatus(newStatus);
+      const normalizedCurrentStatus = normalizeStatus(currentStatus);
+      
+      // Si le statut a changé, retirer la facture du tableau actuel
+      if (normalizedNewStatus !== normalizedCurrentStatus) {
+        setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id));
+      } else {
+        // Sinon, mettre à jour la facture dans le tableau actuel
+        setInvoices(prev => prev.map(inv => inv.id === selectedInvoice.id ? updatedInvoice : inv));
+      }
       
       return updatedInvoice;
     } catch (err) {

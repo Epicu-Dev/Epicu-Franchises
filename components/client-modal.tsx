@@ -281,7 +281,7 @@ export default function ClientModal({
                                                 </span>
                                             </div>
                                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                                                <div>Date de publication: {new Date(publication.datePublication).toLocaleDateString('fr-FR')}</div>
+                                                <div>Date de publication: {publication.datePublication ? new Date(publication.datePublication).toLocaleDateString('fr-FR') : 'Non définie'}</div>
                                                 
                                             </div>
                                         </div>
@@ -334,7 +334,7 @@ export default function ClientModal({
                             color='primary'
                             isDisabled={isLoading || !validateRequiredFields()}
                             isLoading={isLoading}
-                            onPress={() => onUpdateClient(editingClient)}
+                            onPress={() => onUpdateClient(editingClient || undefined)}
                         >
                             {isLoading ? 'Chargement...' : (editingClient?.id ? 'Modifier' : 'Ajouter')}
                         </Button>
@@ -347,10 +347,39 @@ export default function ClientModal({
                 editingPublication={editingPublication}
                 etablissementId={editingClient?.id}
                 isOpen={isPublicationModalOpen}
-                onOpenChange={setIsPublicationModalOpen}
-                onPublicationAdded={() => {
-                    // Rafraîchir les données du client après ajout de publication
-                    onUpdateClient();
+                onOpenChange={(open) => {
+                    setIsPublicationModalOpen(open);
+                    if (!open) {
+                        setEditingPublication(null);
+                    }
+                }}
+                onPublicationAdded={(publication) => {
+                    // Mettre à jour la liste des publications localement sans fermer le modal
+                    if (publication) {
+                        if (editingPublication) {
+                            // Modification d'une publication existante
+                            setPublications(prev => 
+                                prev.map(pub => pub.id === publication.id ? publication : pub)
+                            );
+                            if (editingClient) {
+                                setEditingClient({
+                                    ...editingClient,
+                                    publications: (editingClient.publications || []).map(pub => 
+                                        pub.id === publication.id ? publication : pub
+                                    )
+                                });
+                            }
+                        } else {
+                            // Ajout d'une nouvelle publication
+                            setPublications(prev => [...prev, publication]);
+                            if (editingClient) {
+                                setEditingClient({
+                                    ...editingClient,
+                                    publications: [...(editingClient.publications || []), publication]
+                                });
+                            }
+                        }
+                    }
                 }}
             />
 
