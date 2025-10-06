@@ -486,7 +486,6 @@ export function UnifiedEventModal({
           if (googleResponse.ok) {
             const createdGoogleEvent = await googleResponse.json();
             onEventCreated?.(createdGoogleEvent);
-            console.log("✅ Événement créé avec succès dans Google Calendar");
 
             // Mettre à jour l'événement Airtable avec l'ID Google Calendar
             if (createdEventId && createdGoogleEvent.id) {
@@ -507,7 +506,6 @@ export function UnifiedEventModal({
                 },
                 body: JSON.stringify(updateData),
               });
-              console.log("✅ ID Google Calendar et créneau stockés dans l'événement Airtable");
             }
 
             // Mettre à jour le statut pour indiquer le succès
@@ -517,7 +515,6 @@ export function UnifiedEventModal({
             }));
           } else {
             const errorData = await googleResponse.json();
-            console.warn("⚠️ Impossible de créer l'événement dans Google Calendar:", errorData.error);
             // Mettre à jour le statut pour indiquer l'erreur
             setGoogleSyncStatus(prev => ({
               ...prev,
@@ -525,7 +522,6 @@ export function UnifiedEventModal({
             }));
           }
         } catch (googleError) {
-          console.warn("⚠️ Erreur lors de la création dans Google Calendar:", googleError);
           // Mettre à jour le statut pour indiquer l'erreur
           setGoogleSyncStatus(prev => ({
             ...prev,
@@ -534,7 +530,6 @@ export function UnifiedEventModal({
           // On continue même si Google Calendar échoue
         }
       } else {
-        console.log("ℹ️ Google Calendar non connecté - événement créé localement uniquement");
         // Mettre à jour le statut pour indiquer que l'événement a été créé localement
         setGoogleSyncStatus(prev => ({
           ...prev,
@@ -557,7 +552,6 @@ export function UnifiedEventModal({
         });
 
         if (slotResponse.ok) {
-          console.log(`✅ Créneau ${formData.selectedSlotId} marqué comme indisponible`);
 
           // Mettre à jour l'événement créé avec l'ID du créneau seulement si Google Calendar n'était pas connecté
           // (sinon c'est déjà fait dans la section Google Calendar ci-dessus)
@@ -571,23 +565,15 @@ export function UnifiedEventModal({
                 'Creneau': [formData.selectedSlotId] // Champ de liaison (array)
               }),
             });
-            console.log(`✅ ID du créneau ${formData.selectedSlotId} lié à l'événement publication`);
           } else if (isGoogleConnected) {
-            console.log(`ℹ️ ID du créneau déjà lié lors de la synchronisation Google Calendar`);
           }
         } else {
           const errorData = await slotResponse.json();
-          console.warn(`⚠️ Erreur lors de la mise à jour du créneau:`, errorData);
         }
       } catch (slotError) {
-        console.warn('⚠️ Erreur lors de la mise à jour du créneau:', slotError);
         // On continue même si la mise à jour du créneau échoue
       }
-    } else if (!eventCreatedSuccessfully) {
-      console.log('ℹ️ Événement non créé, pas de mise à jour du créneau');
-    } else {
-      console.log('ℹ️ Aucun créneau sélectionné, pas de mise à jour nécessaire');
-    }
+    } 
 
     onEventAdded?.();
     handleClose();

@@ -225,42 +225,5 @@ export function isRecoverableError(error: any): boolean {
   return false;
 }
 
-/**
- * Fonction de debug pour vérifier l'état des tokens
- * Utile pour diagnostiquer les problèmes de déconnexion
- */
-export function debugTokenState(): void {
-  if (typeof window === 'undefined') {
-    console.log('Debug token state: côté serveur');
-    return;
-  }
 
-  const accessToken = localStorage.getItem('accessToken');
-  const refreshToken = localStorage.getItem('refreshToken');
-  const expiresAtAccess = localStorage.getItem('expiresAtAccess');
-  const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
-
-  const now = new Date();
-  const accessExpiry = expiresAtAccess ? new Date(expiresAtAccess) : null;
-  const refreshExpiry = expiresAtRefresh ? new Date(expiresAtRefresh) : null;
-
-  console.log('=== État des tokens ===');
-  console.log('Access Token:', accessToken ? `${accessToken.substring(0, 10)}...` : 'Aucun');
-  console.log('Refresh Token:', refreshToken ? `${refreshToken.substring(0, 10)}...` : 'Aucun');
-  console.log('Access Token expire:', accessExpiry ? accessExpiry.toISOString() : 'Inconnu');
-  console.log('Refresh Token expire:', refreshExpiry ? refreshExpiry.toISOString() : 'Inconnu');
-  console.log('Access Token valide:', accessExpiry ? accessExpiry > now : false);
-  console.log('Refresh Token valide:', refreshExpiry ? refreshExpiry > now : false);
-  console.log('Temps restant access:', accessExpiry ? Math.round((accessExpiry.getTime() - now.getTime()) / 1000 / 60) + ' minutes' : 'N/A');
-  console.log('Temps restant refresh:', refreshExpiry ? Math.round((refreshExpiry.getTime() - now.getTime()) / 1000 / 60 / 60 / 24) + ' jours' : 'N/A');
-  console.log('======================');
-}
-
-/**
- * Fonction pour forcer le debug des tokens (utile pour diagnostiquer)
- * À appeler dans la console du navigateur : window.debugAuth()
- */
-if (typeof window !== 'undefined') {
-  (window as any).debugAuth = debugTokenState;
-}
   
