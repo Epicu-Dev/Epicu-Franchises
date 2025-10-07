@@ -70,8 +70,8 @@ export default function ClientsPage() {
   const columnConfig = [
     { key: 'modifier', label: 'Modifier', sortable: false },
     { key: 'categorie', label: 'Catégorie', sortable: false, field: 'categorie' },
-    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: 'nomEtablissement' },
-    { key: 'raisonSociale', label: 'Raison sociale', sortable: true, field: 'raisonSociale' },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: "Nom de l'établissement" },
+    { key: 'raisonSociale', label: 'Raison sociale', sortable: true, field: 'Raison sociale' },
     { key: 'siret', label: 'Numéro SIRET', sortable: false, field: 'siret' },
     { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
     { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
@@ -98,8 +98,8 @@ export default function ClientsPage() {
   // Configuration pour le mode RDV
   const rdvColumnConfig = [
     { key: 'modifier', label: 'Modifier', sortable: false },
-    { key: 'categorie', label: 'Catégorie', sortable: true, field: 'categorie' },
-    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: 'nomEtablissement' },
+    { key: 'categorie', label: 'Catégorie', sortable: true, field: 'Catégorie' },
+    { key: 'nomEtablissement', label: 'Nom établissement', sortable: true, field: "Nom de l'établissement" },
     { key: 'ville', label: 'Ville', sortable: false },
     { key: 'commentaireCadeauGerant', label: 'Cadeau du gérant', sortable: false },
     { key: 'nombreVues', label: 'Nombre de vues', sortable: false },

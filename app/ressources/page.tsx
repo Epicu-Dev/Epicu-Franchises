@@ -15,6 +15,7 @@ import {
   PlusIcon,
   PaintBrushIcon
 } from "@heroicons/react/24/outline";
+import { PencilIcon } from "../../components/icons";
 
 import ResourceModal from "../../components/resource-modal";
 import { Resource, ResourceCategory } from "../../types/resource";
@@ -45,12 +46,13 @@ export default function RessourcesPage() {
   const [selectedTab, setSelectedTab] = useState<ResourceCategory>("liens-importants");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<ResourceItem | null>(null);
   const [searchTerm] = useState("");
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authFetch } = useAuthFetch();
-  const { userType } = useUser();
+  const { userProfile, userType } = useUser();
 
   // Fonction pour formater les dates
   const formatDate = (dateString: string | null | undefined): string => {
@@ -61,7 +63,7 @@ export default function RessourcesPage() {
     try {
       // Essayer de parser la date directement
       const date = new Date(dateString);
-      
+
       // Vérifier si la date est valide
       if (isNaN(date.getTime())) {
         // Si la date n'est pas valide, essayer d'autres formats
@@ -79,11 +81,11 @@ export default function RessourcesPage() {
             }
           }
         }
-        
+
         // Si aucun format ne fonctionne, retourner la date actuelle
         return new Date().toLocaleDateString('fr-FR');
       }
-      
+
       return date.toLocaleDateString('fr-FR');
     } catch {
       // En cas d'erreur, retourner la date actuelle
@@ -95,7 +97,7 @@ export default function RessourcesPage() {
   const fetchResources = async (category: ResourceCategory) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Déterminer l'endpoint selon la catégorie
       let endpoint = '';
@@ -124,7 +126,7 @@ export default function RessourcesPage() {
       }
 
       const data = await response.json();
-      
+
       // Transformer les données de l'API en format ResourceItem
       const transformedResources: ResourceItem[] = data.results.map((item: ApiResource) => ({
         id: item.id,
@@ -170,7 +172,7 @@ export default function RessourcesPage() {
         // Si la date contient des points, les remplacer par des slashes
         const normalizedDate = dateStr.replace(/\./g, '/');
         const parts = normalizedDate.split('/');
-        
+
         if (parts.length === 3) {
           // Format DD/MM/YYYY -> YYYY-MM-DD pour le constructeur Date
           const day = parts[0].padStart(2, '0');
@@ -178,7 +180,7 @@ export default function RessourcesPage() {
           const year = parts[2];
           return new Date(`${year}-${month}-${day}`);
         }
-        
+
         return new Date(normalizedDate);
       } catch {
         return new Date();
@@ -230,7 +232,7 @@ export default function RessourcesPage() {
 
       // Recharger les données de la catégorie sélectionnée
       await fetchResources(category);
-      
+
       // Si la catégorie ajoutée est différente de l'onglet actuel, changer d'onglet
       if (category !== selectedTab) {
         setSelectedTab(category);
@@ -242,9 +244,81 @@ export default function RessourcesPage() {
     }
   };
 
+  const handleUpdateResource = async (resourceData: Omit<Resource, "id" | "dateAdded">) => {
+    if (!editingResource) return;
+
+    try {
+      // Utiliser la catégorie sélectionnée dans le modal si elle a changé
+      const category = (resourceData.category || editingResource.category);
+
+      // Déterminer l'endpoint selon la catégorie
+      let endpoint = '';
+      switch (category) {
+        case 'liens-importants':
+          endpoint = '/api/ressources/link-importants';
+          break;
+        case 'ressources-canva':
+          endpoint = '/api/ressources/canva';
+          break;
+        case 'materiel':
+          endpoint = '/api/ressources/materiel';
+          break;
+        default:
+          endpoint = '/api/ressources/link-importants';
+      }
+
+      const response = await authFetch(`${endpoint}?id=${encodeURIComponent(editingResource.id)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingResource.id,
+          Objet: resourceData.title,
+          Commentaires: resourceData.description,
+          Lien: resourceData.link,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      // Recharger les données de la catégorie concernée
+      await fetchResources(category);
+
+      // Si l'onglet courant est différent de la nouvelle catégorie, s'aligner dessus
+      if (category !== selectedTab) {
+        setSelectedTab(category);
+      }
+
+      // Fermer le modal et réinitialiser l'état
+      setIsModalOpen(false);
+      setEditingResource(null);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Erreur lors de la modification de la ressource:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors de la modification');
+    }
+  };
+  // Fonction pour déterminer si l'utilisateur est admin
+  const isAdmin = () => {
+    // Vérifier d'abord le userType (admin/franchise)
+    if (userType === "admin") return true;
+
+    // Vérifier aussi le rôle dans le profil utilisateur
+    if (userProfile?.role) {
+      const role = userProfile.role.toLowerCase();
+
+      return role.includes('admin') || role.includes('administrateur') || role.includes('gestionnaire');
+    }
+
+    return false;
+  };
+
   const getIconComponent = (title: string): React.ComponentType<any> => {
     const titleLower = title.toLowerCase();
-    
+
     if (titleLower.includes('drive') || titleLower.includes('stockage')) {
       return FolderIcon;
     } else if (titleLower.includes('dashboard') || titleLower.includes('performance')) {
@@ -280,29 +354,32 @@ export default function RessourcesPage() {
                 variant="underlined"
                 onSelectionChange={(key) => setSelectedTab(key as ResourceCategory)}
               >
-              <Tab
-                key="liens-importants"
-                title="Liens importants"
-              />
-              
-              <Tab
-                key="ressources-canva"
-                title="Ressources Canva"
-              />
-              <Tab
-                key="materiel"
-                title="Matériel"
-              />
+                <Tab
+                  key="liens-importants"
+                  title="Liens importants"
+                />
+
+                <Tab
+                  key="ressources-canva"
+                  title="Ressources Canva"
+                />
+                <Tab
+                  key="materiel"
+                  title="Matériel"
+                />
               </Tabs>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              {userType === "admin" && (
+              {isAdmin() && (
                 <Button
                   color="primary"
                   endContent={<PlusIcon className="h-4 w-4" />}
                   className="w-full sm:w-auto"
-                  onPress={() => setIsModalOpen(true)}
+                  onPress={() => {
+                    setEditingResource(null);
+                    setIsModalOpen(true);
+                  }}
                 >
                   Ajouter un document
                 </Button>
@@ -317,13 +394,13 @@ export default function RessourcesPage() {
               <div className="text-gray-500">Chargement des ressources...</div>
             </div>
           )}
-          
+
           {error && (
             <div className="flex justify-center items-center py-8">
               <div className="text-red-500">Erreur: {error}</div>
             </div>
           )}
-          
+
           {!loading && !error && (
             <div className="overflow-x-auto">
               <Table aria-label="Table des ressources" shadow="none" classNames={{
@@ -331,78 +408,100 @@ export default function RessourcesPage() {
                 table: "min-w-[600px]"
               }}>
                 <TableHeader>
-                  <TableColumn className="font-light text-sm min-w-[200px]">Objet</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[200px]">Commentaires</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[150px]">Lien</TableColumn>
-                  <TableColumn className="min-w-[120px]">
-                    <button
-                      className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
-                      type="button"
-                      onClick={handleSort}
-                      onKeyDown={(e) => e.key === "Enter" && handleSort()}
-                    >
-                      Date d&apos;ajout
-                      <span className="ml-1">
-                        {sortOrder === "asc" ? "↑" : "↓"}
-                      </span>
-                    </button>
-                  </TableColumn>
+                  {[
+                    ...(isAdmin() ? [<TableColumn key="modifier" className="font-light text-sm min-w-[80px]">Modifier</TableColumn>] : []),
+                    <TableColumn key="objet" className="font-light text-sm min-w-[200px]">Objet</TableColumn>,
+                    <TableColumn key="commentaires" className="font-light text-sm min-w-[200px]">Commentaires</TableColumn>,
+                    <TableColumn key="lien" className="font-light text-sm min-w-[150px]">Lien</TableColumn>,
+                    <TableColumn key="date" className="min-w-[120px]">
+                      <button
+                        className="flex items-center gap-2 cursor-pointer font-light text-sm w-full text-left"
+                        type="button"
+                        onClick={handleSort}
+                        onKeyDown={(e) => e.key === "Enter" && handleSort()}
+                      >
+                        Date d&apos;ajout
+                        <span className="ml-1">
+                          {sortOrder === "asc" ? "↑" : "↓"}
+                        </span>
+                      </button>
+                    </TableColumn>
+                  ]}
                 </TableHeader>
-              <TableBody>
-                {sortedResources.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                      Aucune ressource trouvée pour cet onglet.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sortedResources.map((resource) => (
-                    <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
-                      <TableCell className="py-5 text-xs sm:text-sm">
-                        <span className="font-light">
-                          {resource.title}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <span className="font-light">
-                          {resource.description}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <Button
-                          as="a"
-                          className="rounded-full font-light text-xs sm:text-sm border-1"
-                          color='primary'
-                          href={resource.link}
-                          rel="noopener noreferrer"
-                          size="sm"
-                          target="_blank"
-                          variant="bordered"
-                        >
-                          {resource.title.includes("DRIVE") ? "Le drive →" :
-                            resource.title.includes("DASHBOARD") ? "Le dashboard →" :
-                              resource.title.includes("MAIL") ? "Boîte mail →" :
-                                resource.title.includes("WORDPRESS") ? "Wordpress →" :
-                                  resource.title.includes("BOARDS") ? "Boards →" :
-                                    resource.title.includes("FORMS") ? "Google forms →" :
-                                      resource.title.includes("Page de Garde") ? "Page de garde →" :
-                                        resource.title.includes("photo de profil") ? "Photo de profil →" :
-                                          resource.title.includes("Stories Instagram") ? "Stories →" :
-                                            resource.title.includes("Fichiers Ressources") ? "Fichiers ressources →" :
-                                              resource.title.includes("Miniature Instagram") ? "Miniature →" :
-                                                resource.title.includes("Story Sponsorisée") ? "Story sponsorisée →" :
-                                                  resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm">
-                        <span className="font-light">
-                          {resource.dateAdded}
-                        </span>
+                <TableBody>
+                  {sortedResources.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin() ? 5 : 4} className="text-center py-8 text-gray-500">
+                        Aucune ressource trouvée pour cet onglet.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
+                  ) : (
+                    sortedResources.map((resource) => (
+                      <TableRow key={resource.id} className="border-t border-gray-100  dark:border-gray-700">
+                        {[
+                          ...(isAdmin() ? [
+                            <TableCell key="modifier">
+                              <Button
+                                isIconOnly
+                                aria-label={`Modifier la ressource ${resource.title}`}
+                                className="text-gray-600 hover:text-gray-800"
+                                size="sm"
+                                variant="light"
+                                onPress={() => {
+                                  setEditingResource(resource);
+                                  setIsModalOpen(true);
+                                }}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          ] : []),
+                          <TableCell key="objet" className="py-5 text-xs sm:text-sm">
+                            <span className="font-light">
+                              {resource.title}
+                            </span>
+                          </TableCell>,
+                          <TableCell key="commentaires" className="text-xs sm:text-sm">
+                            <span className="font-light">
+                              {resource.description}
+                            </span>
+                          </TableCell>,
+                          <TableCell key="lien" className="text-xs sm:text-sm">
+                            <Button
+                              as="a"
+                              className="rounded-full font-light text-xs sm:text-sm border-1"
+                              color='primary'
+                              href={resource.link}
+                              rel="noopener noreferrer"
+                              size="sm"
+                              target="_blank"
+                              variant="bordered"
+                            >
+                              {resource.title.includes("DRIVE") ? "Le drive →" :
+                                resource.title.includes("DASHBOARD") ? "Le dashboard →" :
+                                  resource.title.includes("MAIL") ? "Boîte mail →" :
+                                    resource.title.includes("WORDPRESS") ? "Wordpress →" :
+                                      resource.title.includes("BOARDS") ? "Boards →" :
+                                        resource.title.includes("FORMS") ? "Google forms →" :
+                                          resource.title.includes("Page de Garde") ? "Page de garde →" :
+                                            resource.title.includes("photo de profil") ? "Photo de profil →" :
+                                              resource.title.includes("Stories Instagram") ? "Stories →" :
+                                                resource.title.includes("Fichiers Ressources") ? "Fichiers ressources →" :
+                                                  resource.title.includes("Miniature Instagram") ? "Miniature →" :
+                                                    resource.title.includes("Story Sponsorisée") ? "Story sponsorisée →" :
+                                                      resource.title.includes("Signature Mail") ? "Signature mail →" : "Voir →"}
+                            </Button>
+                          </TableCell>,
+                          <TableCell key="date" className="text-xs sm:text-sm">
+                            <span className="font-light">
+                              {resource.dateAdded}
+                            </span>
+                          </TableCell>
+                        ]}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
               </Table>
             </div>
           )}
@@ -411,10 +510,22 @@ export default function RessourcesPage() {
 
       <ResourceModal
         isOpen={isModalOpen}
-        mode="create"
+        mode={editingResource ? "edit" : "create"}
+        resource={editingResource ? {
+          id: editingResource.id,
+          title: editingResource.title,
+          description: editingResource.description,
+          link: editingResource.link,
+          category: editingResource.category,
+          dateAdded: editingResource.dateAdded,
+          icon: ""
+        } : undefined}
         currentCategory={selectedTab}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddResource}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingResource(null);
+        }}
+        onSave={editingResource ? handleUpdateResource : handleAddResource}
       />
     </div>
   );

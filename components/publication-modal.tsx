@@ -308,8 +308,6 @@ export default function PublicationModal({
                                 />
                             </div>
 
-
-
                             {/* Montant de la sponsorisation */}
                             <div className="space-y-4">
                                 <FormLabel htmlFor="montantSponsorisation" isRequired={false}>

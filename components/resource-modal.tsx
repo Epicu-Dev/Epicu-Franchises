@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -36,6 +36,19 @@ export default function ResourceModal({
     category: resource?.category || currentCategory || "liens-importants" as ResourceCategory,
     icon: resource?.icon || "",
   });
+
+  // Synchroniser les champs quand on ouvre en mode édition ou quand les props changent
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setFormData({
+      title: resource?.title || "",
+      description: resource?.description || "",
+      link: resource?.link || "",
+      category: (resource?.category || currentCategory || "liens-importants") as ResourceCategory,
+      icon: resource?.icon || "",
+    });
+  }, [isOpen, resource, currentCategory, mode]);
 
   // Options pour le dropdown des catégories
   const categoryOptions = [
