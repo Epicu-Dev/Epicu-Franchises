@@ -156,6 +156,7 @@ export default function PublicationModal({
                 datePublication: formData.datePublication,
                 montantSponsorisation: cleanAmount(formData.montantSponsorisation),
                 montantAddition: cleanAmount(formData.montantAddition),
+                nombreAbonnes: cleanAmount(formData.nombreAbonnes),
                 cadeauGerant: formData.cadeauGerant,
                 montantCadeau: cleanAmount(formData.montantCadeau),
                 tirageEffectue: formData.tirageEffectue,

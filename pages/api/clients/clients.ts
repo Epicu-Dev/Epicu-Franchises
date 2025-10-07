@@ -289,6 +289,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
                 'Montant de la sponsorisation',
                 "Montant de l'addition",
                 'Bénéfice',
+                'Nbre d\'abonnés fait gagner au client',
                 'Cadeau du gérant pour le jeu concours',
                 'Montant du cadeau',
                 'Tirage effectué',
@@ -303,7 +304,21 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
             })
             .all();
 
-          publications.forEach((pub: any) => {
+          // Trier les publications par date de publication DESC
+          const sortedPublications = Array.from(publications).sort((a: any, b: any) => {
+            const dateA = a.get('Date de publication');
+            const dateB = b.get('Date de publication');
+            
+            // Si aucune date, mettre à la fin
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+            
+            // Trier par date décroissante (plus récent en premier)
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          });
+
+          sortedPublications.forEach((pub: any) => {
             publicationsData[pub.id] = {
               id: pub.id,
               nom: pub.get('Nom publication'),
@@ -312,6 +327,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
               montantAddition: pub.get("Montant de l'addition"),
               cadeauGerant: pub.get('Cadeau du gérant pour le jeu concours'),
               montantCadeau: pub.get('Montant du cadeau'),
+              nombreAbonnes: pub.get('Nbre d\'abonnés fait gagner au client'),
               tirageEffectue: pub.get('Tirage effectué'),
               benefice: pub.get('Bénéfice'),
               commentaire: pub.get('Commentaire'),

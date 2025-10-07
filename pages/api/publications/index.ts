@@ -80,6 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (body.montantAddition !== undefined) fields['Montant de l\'addition'] = body.montantAddition;
                 if (body['Montant de l\'addition'] !== undefined) fields['Montant de l\'addition'] = body['Montant de l\'addition'];
 
+                if (body.nombreAbonnes !== undefined) fields['Nbre d\'abonnés fait gagner au client'] = body.nombreAbonnes;
+                if (body['Nbre d\'abonnés fait gagner au client'] !== undefined) fields['Nbre d\'abonnés fait gagner au client'] = body['Nbre d\'abonnés fait gagner au client'];
+
                 if (body.cadeauGerant !== undefined) fields['Cadeau du gérant pour le jeu concours'] = body.cadeauGerant;
                 if (body['Cadeau du gérant pour le jeu concours'] !== undefined) fields['Cadeau du gérant pour le jeu concours'] = body['Cadeau du gérant pour le jeu concours'];
 
@@ -171,6 +174,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (body.montantAddition !== undefined) fields['Montant de l\'addition'] = body.montantAddition;
                 if (body['Montant de l\'addition'] !== undefined) fields['Montant de l\'addition'] = body['Montant de l\'addition'];
 
+                if (body.nombreAbonnes !== undefined) fields['Nbre d\'abonnés fait gagner au client'] = body.nombreAbonnes;
+                if (body['Nbre d\'abonnés fait gagner au client'] !== undefined) fields['Nbre d\'abonnés fait gagner au client'] = body['Nbre d\'abonnés fait gagner au client'];
+
                 if (body.cadeauGerant !== undefined) fields['Cadeau du gérant pour le jeu concours'] = body.cadeauGerant;
                 if (body['Cadeau du gérant pour le jeu concours'] !== undefined) fields['Cadeau du gérant pour le jeu concours'] = body['Cadeau du gérant pour le jeu concours'];
 
@@ -227,8 +233,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const formula = `FIND("${etabId}", ARRAYJOIN({ÉTABLISSEMENTS}))`;
                 const pubs = await base(TABLE_NAME).select({ view: VIEW_NAME, filterByFormula: formula, pageSize: 100 }).all();
 
+                // Trier les publications par date de publication DESC
+                const sortedPubs = Array.from(pubs).sort((a: any, b: any) => {
+                    const dateA = a.get('Date de publication');
+                    const dateB = b.get('Date de publication');
+                    
+                    // Si aucune date, mettre à la fin
+                    if (!dateA && !dateB) return 0;
+                    if (!dateA) return 1;
+                    if (!dateB) return -1;
+                    
+                    // Trier par date décroissante (plus récent en premier)
+                    return new Date(dateB).getTime() - new Date(dateA).getTime();
+                });
+
                 // For each publication, fetch related factures where PUBLICATIONS contains the pub id
-                const results = await Promise.all(pubs.map(async (p: any) => {
+                const results = await Promise.all(sortedPubs.map(async (p: any) => {
                     const pubId = p.id;
                     const pubFields: any = {
                         id: pubId,
@@ -236,6 +256,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         montantSponsorisation: p.get('Montant de la sponsorisation'),
                         datePublication: p.get('Date de publication'),
                         montantAddition: p.get("Montant de l'addition"),
+                        nombreAbonnes: p.get('Nbre d\'abonnés fait gagner au client'),
                         cadeauGerant: p.get('Cadeau du gérant pour le jeu concours'),
                         montantCadeau: p.get('Montant du cadeau'),
                         tirageEffectue: p.get('Tirage effectué'),
