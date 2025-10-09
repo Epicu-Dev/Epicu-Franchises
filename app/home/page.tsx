@@ -328,26 +328,26 @@ export default function HomePage() {
     }
   };
 
-  // Fonction pour récupérer les statistiques
+  // Fonction pour récupérer les statistiques avec le nouveau système de mapping
   const fetchStatistics = async () => {
     try {
       setStatisticsLoading(true);
 
-      // Calculer la plage de dates pour le mois sélectionné
+      // Calculer la plage de dates pour la période sélectionnée
       const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const monthYear = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
-
-      // Construire les paramètres de requête pour l'API /api/data/data
-      const params = new URLSearchParams();
-
-      params.set('date', monthYear);
+      let dateParam = '';
+      
+      if (selectedPeriodType === "year") {
+        dateParam = `${selectedDateObj.getFullYear()}`;
+      } else {
+        dateParam = `${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${selectedDateObj.getFullYear()}`;
+      }
 
       // Déterminer le paramètre ville
       let villeParam = 'all';
 
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
-          // Pour "National", on utilise 'all' et on filtrera côté client
           villeParam = 'all';
         } else {
           // Pour une ville spécifique, on utilise l'ID de la ville
@@ -368,88 +368,26 @@ export default function HomePage() {
           }
         }
       }
-      params.set('ville', villeParam);
 
-      const response = await authFetch(`/api/data/data?${params.toString()}`);
+      // Récupérer les statistiques pour chaque métrique
+      const statisticsPromises = [
+        fetchStatistic('abonnes-en-plus', dateParam, villeParam),
+        fetchStatistic('vues', dateParam, villeParam),
+        fetchStatistic('clients-signes', dateParam, villeParam),
+        fetchStatistic('taux-conversion', dateParam, villeParam)
+      ];
 
-      if (response.ok) {
-        const data = await response.json();
+      const [abonnesData, vuesData, clientsData, tauxData] = await Promise.all(statisticsPromises);
 
-        // L'API /api/data/data retourne déjà les données agrégées
-        if (selectedCity === "national") {
-          // Pour "National", on doit exclure les villes locales de l'utilisateur
-          // On récupère d'abord toutes les données puis on filtre
-          const allParams = new URLSearchParams();
+      setStatistics({
+        prospectsSignes: clientsData?.value || 0,
+        tauxConversion: tauxData?.value || 0,
+        abonnes: abonnesData?.value || 0,
+        vues: vuesData?.value || 0
+      });
 
-          allParams.set('date', monthYear);
-          allParams.set('ville', 'all');
-
-          const allResponse = await authFetch(`/api/data/data?${allParams.toString()}`);
-
-          if (allResponse.ok) {
-            const allData = await allResponse.json();
-
-            // Récupérer les données des villes locales de l'utilisateur
-            const userVilles = userProfile?.villes || [];
-
-            let localTotals = { totalAbonnes: 0, totalVues: 0, totalProspectsSignes: 0, tauxConversion: 0 };
-
-            for (const ville of userVilles) {
-              if (ville.id) {
-                const localParams = new URLSearchParams();
-
-                localParams.set('date', monthYear);
-                localParams.set('ville', ville.id);
-
-                const localResponse = await authFetch(`/api/data/data?${localParams.toString()}`);
-
-                if (localResponse.ok) {
-                  const localData = await localResponse.json();
-
-                  localTotals.totalAbonnes += localData.totalAbonnes || 0;
-                  localTotals.totalVues += localData.totalVues || 0;
-                  localTotals.totalProspectsSignes += localData.prospectsSignesDsLeMois || 0;
-                  localTotals.tauxConversion += localData.tauxDeConversion || 0;
-                }
-              }
-            }
-
-            // Calculer les données nationales (toutes - locales)
-            const nationalData = {
-              totalAbonnes: (allData.totalAbonnes || 0) - localTotals.totalAbonnes,
-              totalVues: (allData.totalVues || 0) - localTotals.totalVues,
-              totalProspectsSignes: (allData.totalProspectsSignes || 0) - localTotals.totalProspectsSignes,
-              tauxConversion: allData.tauxConversion || 0
-            };
-
-            setStatistics({
-              prospectsSignes: nationalData.totalProspectsSignes,
-              tauxConversion: nationalData.tauxConversion,
-              abonnes: nationalData.totalAbonnes,
-              vues: nationalData.totalVues
-            });
-          }
-        } else {
-          // Pour "tout" ou une ville spécifique, utiliser directement les données
-          const stats = {
-            prospectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
-            tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
-            abonnes: data.totalAbonnes || 0,
-            vues: data.totalVues || 0
-          };
-
-          setStatistics(stats);
-        }
-      } else {
-        // Si la réponse n'est pas ok, mettre les statistiques à 0
-        setStatistics({
-          prospectsSignes: 0,
-          tauxConversion: 0,
-          abonnes: 0,
-          vues: 0
-        });
-      }
-    } catch {
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques:', error);
       // En cas d'erreur, mettre les statistiques à 0
       setStatistics({
         prospectsSignes: 0,
@@ -459,6 +397,31 @@ export default function HomePage() {
       });
     } finally {
       setStatisticsLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer une statistique spécifique
+  const fetchStatistic = async (statisticType: string, date: string, ville: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set('date', date);
+      params.set('ville', ville);
+      params.set('statisticType', statisticType);
+      params.set('periodType', selectedPeriodType);
+      params.set('isSinceCreation', isSinceCreationSelected.toString());
+      params.set('isCustomDate', isCustomDateSelected.toString());
+
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        console.warn(`Erreur pour la statistique ${statisticType}:`, response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la récupération de ${statisticType}:`, error);
+      return null;
     }
   };
 

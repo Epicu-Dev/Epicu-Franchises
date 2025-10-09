@@ -222,56 +222,79 @@ export default function HomeAdminPage() {
         }
       }
 
-      // Construire les paramètres de requête pour l'API /api/data/data
-      const params = new URLSearchParams();
+      // Récupérer les statistiques pour chaque métrique avec le nouveau système
+      const statisticsPromises = [
+        fetchStatistic('abonnes-en-plus', monthYear, 'all'),
+        fetchStatistic('vues', monthYear, 'all'),
+        fetchStatistic('clients-signes', monthYear, 'all'),
+        fetchStatistic('taux-conversion', monthYear, 'all'),
+        fetchStatistic('chiffre-affaires-global', monthYear, 'all'),
+        fetchStatistic('franchises', monthYear, 'all')
+      ];
 
-      params.set('date', monthYear);
-      params.set('ville', 'all'); // Pour l'admin, on récupère toutes les données
+      const [abonnesData, vuesData, clientsData, tauxData, caData, franchisesData] = await Promise.all(statisticsPromises);
 
-      const response = await authFetch(`/api/data/data?${params.toString()}`);
+      // Récupérer les données des clients et prospects pour les métriques supplémentaires
+      const [clientsResponse, prospectsResponse] = await Promise.all([
+        authFetch('/api/clients'),
+        authFetch('/api/prospects')
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
+      let totalClients = 0;
+      let totalProspects = 0;
 
-        // Récupérer les données des clients et prospects pour les métriques supplémentaires
-        const [clientsResponse, prospectsResponse] = await Promise.all([
-          authFetch('/api/clients'),
-          authFetch('/api/prospects')
-        ]);
-
-        let totalClients = 0;
-        let totalProspects = 0;
-
-        if (clientsResponse.ok) {
-          const clientsData = await clientsResponse.json();
-
-          totalClients = clientsData.clients?.length || 0;
-        }
-
-        if (prospectsResponse.ok) {
-          const prospectsData = await prospectsResponse.json();
-
-          totalProspects = prospectsData.prospects?.length || 0;
-        }
-
-        setStatistics({
-          totalAbonnes: data.totalAbonnes || 0,
-          totalChiffreAffaires: data.totalChiffreAffaires || 0,
-          totalVues: data.totalVues || 0,
-          totalProspectsSignes: data.totalProspectsSignes || data.prospectsSignesDsLeMois || 0,
-          tauxConversion: data.tauxConversion || data.tauxDeConversion || 0,
-          totalStudio: data.totalStudio || 0,
-          totalClients,
-          totalProspects,
-          totalFranchises: 0, // À implémenter si nécessaire
-          totalPosts: 0, // À implémenter si nécessaire
-          totalPrestations: 0, // À implémenter si nécessaire
-        });
+      if (clientsResponse.ok) {
+        const clientsData = await clientsResponse.json();
+        totalClients = clientsData.clients?.length || 0;
       }
+
+      if (prospectsResponse.ok) {
+        const prospectsData = await prospectsResponse.json();
+        totalProspects = prospectsData.prospects?.length || 0;
+      }
+
+      setStatistics({
+        totalAbonnes: abonnesData?.value || 0,
+        totalChiffreAffaires: caData?.value || 0,
+        totalVues: vuesData?.value || 0,
+        totalProspectsSignes: clientsData?.value || 0,
+        tauxConversion: tauxData?.value || 0,
+        totalStudio: 0, // À implémenter si nécessaire
+        totalClients,
+        totalProspects,
+        totalFranchises: franchisesData?.value || 0,
+        totalPosts: 0, // À implémenter si nécessaire
+        totalPrestations: 0, // À implémenter si nécessaire
+      });
     } catch {
       setStatistics(null);
     } finally {
       setStatisticsLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer une statistique spécifique
+  const fetchStatistic = async (statisticType: string, date: string, ville: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set('date', date);
+      params.set('ville', ville);
+      params.set('statisticType', statisticType);
+      params.set('periodType', selectedPeriodType);
+      params.set('isSinceCreation', isSinceCreationSelected.toString());
+      params.set('isCustomDate', isCustomDateSelected.toString());
+
+      const response = await authFetch(`/api/data/data?${params.toString()}`);
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        console.warn(`Erreur pour la statistique ${statisticType}:`, response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la récupération de ${statisticType}:`, error);
+      return null;
     }
   };
 
