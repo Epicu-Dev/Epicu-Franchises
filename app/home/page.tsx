@@ -944,7 +944,7 @@ export default function HomePage() {
       <ProspectModal
         isOpen={isProspectModalOpen}
         onClose={() => setIsProspectModalOpen(false)}
-        onProspectAdded={fetchData}
+        onProspectAdded={() => fetchData()}
       />
 
       {/* Modal d'ajout de facture */}

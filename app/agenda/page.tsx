@@ -74,7 +74,7 @@ export default function AgendaPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCheckingGoogleConnection, setIsCheckingGoogleConnection] = useState(true);
+  const [isCheckingGoogleConnection, setIsCheckingGoogleConnection] = useState(false);
 
   // États pour la modal unifiée
   const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
@@ -185,10 +185,9 @@ export default function AgendaPage() {
     }
   };
 
-  // Vérifier le statut de Google Calendar
+  // Vérifier le statut de Google Calendar en arrière-plan
   const checkGoogleCalendarStatus = async () => {
     try {
-      setIsCheckingGoogleConnection(true);
       const response = await authFetch('/api/google-calendar/status');
 
       if (response.ok) {
@@ -214,17 +213,16 @@ export default function AgendaPage() {
           setGoogleUserEmail('');
         }
       } else {
+        // Si pas connecté, déconnecter automatiquement
         setIsGoogleConnected(false);
         setHasEpicuCalendar(false);
         setGoogleUserEmail('');
       }
     } catch {
-      // Erreur lors de la vérification du statut
+      // Erreur lors de la vérification du statut - déconnecter automatiquement
       setIsGoogleConnected(false);
       setHasEpicuCalendar(false);
       setGoogleUserEmail('');
-    } finally {
-      setIsCheckingGoogleConnection(false);
     }
   };
 
@@ -234,8 +232,8 @@ export default function AgendaPage() {
       setLoading(true);
       setError(null);
 
-      // Vérifier d'abord le statut Google Calendar
-      await checkGoogleCalendarStatus();
+      // Vérifier le statut Google Calendar en arrière-plan (non bloquant)
+      checkGoogleCalendarStatus();
 
       // Calculer les dates de début et fin selon la vue
       let dateStart: string;
@@ -785,7 +783,7 @@ export default function AgendaPage() {
 
       const startTime = new Date(`${event.date}T${event.startTime}`);
       const endTime = new Date(`${event.date}T${event.endTime}`);
-      
+
       const startHour = startTime.getHours();
       const startMinute = startTime.getMinutes();
       const endHour = endTime.getHours();
@@ -826,7 +824,7 @@ export default function AgendaPage() {
 
         const startTime = new Date(`${event.date}T${event.startTime}`);
         const endTime = new Date(`${event.date}T${event.endTime}`);
-        
+
         const startHour = startTime.getHours();
         const startMinute = startTime.getMinutes();
         const endHour = endTime.getHours();
@@ -841,17 +839,17 @@ export default function AgendaPage() {
         while (columnIndex < columns.length) {
           const column = columns[columnIndex];
           const lastEvent = column[column.length - 1];
-          
+
           if (!lastEvent.startTime || !lastEvent.endTime) {
             break;
           }
 
           const lastStartTime = new Date(`${lastEvent.date}T${lastEvent.startTime}`);
           const lastEndTime = new Date(`${lastEvent.date}T${lastEvent.endTime}`);
-          
+
           const lastStartPosition = ((lastStartTime.getHours() - 6) * 60 + lastStartTime.getMinutes()) * (slotHeight / 60);
           const lastEndPosition = ((lastEndTime.getHours() - 6) * 60 + lastEndTime.getMinutes()) * (slotHeight / 60);
-          
+
           // Vérifier s'il y a chevauchement
           if (startPosition >= lastEndPosition || endPosition <= lastStartPosition) {
             break;
@@ -900,7 +898,7 @@ export default function AgendaPage() {
             {timeSlots.map((hour) => (
               <div key={hour} className="contents">
                 {/* Heure */}
-                <div 
+                <div
                   className="p-1 sm:p-2 text-xs sm:text-sm text-gray-500 text-right pr-2 sm:pr-4 border-r border-gray-100 flex items-center justify-end"
                   style={{ height: `${slotHeight}px` }}
                 >
@@ -954,7 +952,7 @@ export default function AgendaPage() {
                               }}
                               onClick={() => openEventDetailModal(event)}
                             >
-                              <div className="font-medium truncate text-xs">
+                              <div className=" truncate text-xs">
                                 {event.title}
                               </div>
                               <div className="text-xs opacity-75 mt-0.5 truncate">
@@ -1015,8 +1013,8 @@ export default function AgendaPage() {
 
     // Fonction pour calculer la hauteur dynamique d'une ligne
     const calculateRowHeight = (eventCount: number) => {
-      const baseHeight = 64; // Hauteur de base (4rem = 64px)
-      const eventHeight = 50; // Hauteur par événement (2.5rem = 40px)
+      const baseHeight = 50; // Hauteur de base (4rem = 64px)
+      const eventHeight = 40; // Hauteur par événement (2.5rem = 40px)
       const padding = 16; // Padding vertical (1rem = 16px)
 
       if (eventCount === 0) {
@@ -1028,7 +1026,7 @@ export default function AgendaPage() {
 
 
     // Si pas d'événements, afficher un message
-    if (sortedDates.length === 0) {
+    if (sortedDates.length === 0) { 
       return (
         <div className="w-full text-center py-12">
           <div className="text-gray-500 text-lg mb-2">Aucun événement à afficher</div>
@@ -1072,14 +1070,14 @@ export default function AgendaPage() {
                   className="border-b border-gray-100 flex flex-col justify-center p-1"
                   style={{ height: `${rowHeight}px` }}
                 >
-                  <div className="space-y-1">
+                  <div className="">
                     {eventsByDate[dateString].map((event) => (
                       <div
                         key={event.id}
                         className={`${getEventColor(event)} px-2 py-1 rounded text-xs sm:text-sm cursor-pointer hover:opacity-80 border border-1 ${getEventBorderColor(event)}`}
                         onClick={() => openEventDetailModal(event)}
                       >
-                        <div className="font-medium truncate">{event.title}</div>
+                        <div className=" truncate">{event.title}</div>
                         <div className="text-xs opacity-90 truncate">
                           {event.startTime} - {event.endTime}
                         </div>
@@ -1095,24 +1093,6 @@ export default function AgendaPage() {
     );
   };
 
-  // Afficher le loading général pendant la vérification de connexion Google
-  if (isCheckingGoogleConnection) {
-    return (
-      <div className="w-full">
-        <Card className="w-full" shadow="none">
-          <CardBody className="p-6">
-            <div className="flex justify-center items-center h-64">
-              <div className="text-center">
-                <Spinner className="text-black dark:text-white mb-4" size="lg" />
-                <div className="text-lg mb-2">Vérification de la connexion Google Calendar...</div>
-                <div className="text-sm text-gray-600">Veuillez patienter pendant que nous vérifions votre connexion</div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   // Afficher le message d'invitation si Google Calendar n'est pas connecté
   if (isGoogleConnected === false) {
@@ -1212,7 +1192,31 @@ export default function AgendaPage() {
           {/* En-tête avec navigation et bouton plus - style cohérent avec la page d'accueil */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             {/* Navigation mois/semaine - toujours visible */}
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
+            {/* Synchronisation Google Calendar - seulement si connecté */}
+            {isGoogleConnected && (
+              <div className="w-full sm:w-auto">
+                <GoogleCalendarSync
+                  onEventsFetched={setGoogleEvents}
+                  onEventCreated={handleGoogleEventCreated}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
+              <AgendaDropdown
+                onPublicationSelect={() => openModal("publication")}
+                onRendezVousSelect={() => openModal("rendez-vous")}
+                onTournageSelect={() => openModal("tournage")}
+                onEvenementSelect={() => openModal("evenement")}
+                isGoogleConnected={isGoogleConnected || false}
+                canAddEvents={canAddEvents()}
+              />
+            </div>
+          </div>
+
+          {/* Sélecteur de vue - toujours visible */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
               <Button
                 isIconOnly
                 variant="light"
@@ -1236,22 +1240,6 @@ export default function AgendaPage() {
                 <ChevronRightIcon className="h-4 w-4" />
               </Button>
             </div>
-
-            <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
-              <AgendaDropdown
-                onPublicationSelect={() => openModal("publication")}
-                onRendezVousSelect={() => openModal("rendez-vous")}
-                onTournageSelect={() => openModal("tournage")}
-                onEvenementSelect={() => openModal("evenement")}
-                isGoogleConnected={isGoogleConnected || false}
-                canAddEvents={canAddEvents()}
-              />
-            </div>
-          </div>
-
-          {/* Sélecteur de vue - toujours visible */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-
             {/* Sélecteur de vue */}
             <div className="flex rounded-md overflow-hidden w-full sm:w-auto">
               {[
@@ -1277,16 +1265,8 @@ export default function AgendaPage() {
                 );
               })}
             </div>
+            
 
-            {/* Synchronisation Google Calendar - seulement si connecté */}
-            {isGoogleConnected && (
-              <div className="w-full sm:w-auto">
-                <GoogleCalendarSync
-                  onEventsFetched={setGoogleEvents}
-                  onEventCreated={handleGoogleEventCreated}
-                />
-              </div>
-            )}
           </div>
 
 
