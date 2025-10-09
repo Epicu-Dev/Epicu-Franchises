@@ -19,10 +19,10 @@ export function MetricCard({ value, label, icon, iconBgColor, iconColor }: Metri
             <h2 className="mb-1 font-semibold text-2xl">{value}</h2>
             <p className="text-sm text-primary-light font-light">{label}</p>
           </div>
-          <div className={`z-1 absolute top-[-60px] right-[-50px] h-40 w-40 rounded-full ${iconBgColor}`} />
+          <div className={`z-1 absolute top-[-60px] right-[-40px] h-40 w-40 rounded-full ${iconBgColor}`} />
          
           <div
-            className={`z-10 w-12 h-12 rounded-full flex items-center justify-center  dark:bg-opacity-20`}
+            className={`z-10 rounded-full pt-3 flex items-center justify-center  dark:bg-opacity-20`}
           >
             <div className={`${iconColor} dark:opacity-90`}>
               {icon}

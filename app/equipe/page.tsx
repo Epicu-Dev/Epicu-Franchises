@@ -369,10 +369,14 @@ export default function EquipePage() {
                 :
                 <>
                   <div className="overflow-x-auto">
-                    <Table aria-label="Tableau des membres de l'équipe" classNames={{
-                      wrapper: "min-w-full",
-                      table: "min-w-[1200px]"
-                    }}>
+                    <Table
+                      shadow="none"
+
+                      aria-label="Tableau des membres de l'équipe" classNames={{
+                        wrapper: "min-w-full",
+                        table: "min-w-[1200px]"
+
+                      }}>
                       <TableHeader>
                         <TableColumn className="font-light text-sm min-w-[100px]">Modifier</TableColumn>
                         <TableColumn className="font-light text-sm min-w-[120px]">Ville</TableColumn>
@@ -549,8 +553,8 @@ export default function EquipePage() {
       />
 
       {/* Modal pour afficher le lien d'inscription généré */}
-      <Modal 
-        isOpen={isTokenModalOpen} 
+      <Modal
+        isOpen={isTokenModalOpen}
         placement="center"
         size="md"
         classNames={{

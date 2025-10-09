@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Modal,
   ModalContent,
@@ -13,67 +13,42 @@ import { Textarea } from "@heroui/input";
 
 import { FormLabel } from "./form-label";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useUser } from "@/contexts/user-context";
 
 interface HelpModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface UserProfile {
-  id: string;
-  identifier: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: string;
-  avatar?: string;
-}
 
 export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
   const { authFetch } = useAuthFetch();
+  const { userProfile } = useUser();
   const [formData, setFormData] = useState({
     objet: "",
     commentaires: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-
-  // Récupérer le profil utilisateur au chargement
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await authFetch("/api/profil?section=profile");
-
-        if (response.ok) {
-          const profile = await response.json();
-
-          setUserProfile(profile);
-        }
-      } catch (error) {
-        
-      }
-    };
-
-    if (isOpen) {
-      fetchProfile();
-    }
-  }, [isOpen]);
 
   const handleSubmit = async () => {
-    if (!formData.objet.trim() || !userProfile) {
+    if (!formData.objet.trim() || !formData.commentaires.trim()) {
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const emailData = {
-        objet: formData.objet,
-        commentaires: formData.commentaires,
-        expediteur: userProfile.email,
-        destinataire: "webmaster@epicu.fr",
+      // Récupérer l'ID de la première ville de l'utilisateur
+      const premiereVilleId = userProfile?.villes && userProfile.villes.length > 0 
+        ? userProfile.villes[0].id 
+        : '';
+
+      const ticketData = {
+        'Description du problème': formData.objet + ' - ' + formData.commentaires,
+        'Ville EPICU': premiereVilleId ? [premiereVilleId] : [],
+        'Statut': 'Nouveau',
+        'Date de création': new Date().toISOString(),
       };
 
       const response = await authFetch("/api/help", {
@@ -81,12 +56,16 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(emailData),
+        body: JSON.stringify(ticketData),
       });
 
       if (response.ok) {
         setIsSubmitted(true);
+      } else {
+        console.error('Erreur lors de l\'envoi du ticket');
       }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du ticket:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -188,7 +167,7 @@ export function HelpModal({ isOpen, onOpenChange }: HelpModalProps) {
             <Button
               className="flex-1"
               color='primary'
-              disabled={!formData.objet.trim() || isSubmitting || !userProfile}
+              disabled={!formData.objet.trim() || !formData.commentaires.trim() || isSubmitting}
               isLoading={isSubmitting}
               onPress={handleSubmit}
             >

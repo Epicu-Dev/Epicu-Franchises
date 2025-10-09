@@ -19,18 +19,38 @@ import { useLoading } from "../contexts/loading-context";
 import { useSidebarImageCache } from "../hooks/use-sidebar-image-cache";
 
 // Composant d'icône personnalisé avec mise en cache
-const CustomIcon = memo(({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => (
-  <Image
-    alt={alt}
-    className={`${className} ${isActive ? 'brightness-0 invert' : ''}`}
-    height={20}
-    src={src}
-    width={20}
-    priority={false}
-    loading="lazy"
-    quality={90}
-  />
-));
+const CustomIcon = memo(({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  // Préchargement immédiat
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => setIsLoaded(true);
+    img.onerror = () => setHasError(true);
+    img.src = src;
+  }, [src]);
+
+  if (hasError) {
+    return <div className={`${className} ${isActive ? 'brightness-0 invert' : ''} w-5 h-5 bg-gray-300 rounded`} />;
+  }
+
+  return (
+    <Image
+      alt={alt}
+      className={`${className} ${isActive ? 'brightness-0 invert' : ''} ${!isLoaded ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+      height={22}
+      width={0}
+      src={src}
+      priority={true}
+      loading="eager"
+      quality={75}
+      style={{ width: 'auto', height: '22px' }}
+      sizes="22px"
+      onLoad={() => setIsLoaded(true)}
+    />
+  );
+});
 
 CustomIcon.displayName = 'CustomIcon';
 

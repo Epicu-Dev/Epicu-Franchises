@@ -25,19 +25,30 @@ export function useSidebarImageCache() {
   ];
 
   useEffect(() => {
-    // Préchargement des images avec gestion du cache
-    imagePaths.forEach((src) => {
-      if (!cacheRef.current.has(src)) {
-        const img = new window.Image();
-        img.onload = () => {
-          cacheRef.current.add(src);
-        };
-        img.onerror = () => {
-          console.warn(`Impossible de charger l'image: ${src}`);
-        };
-        img.src = src;
-      }
-    });
+    // Préchargement immédiat et agressif des images
+    const preloadImages = async () => {
+      const promises = imagePaths.map((src) => {
+        if (!cacheRef.current.has(src)) {
+          return new Promise<void>((resolve) => {
+            const img = new window.Image();
+            img.onload = () => {
+              cacheRef.current.add(src);
+              resolve();
+            };
+            img.onerror = () => {
+              console.warn(`Impossible de charger l'image: ${src}`);
+              resolve(); // Résoudre même en cas d'erreur pour ne pas bloquer
+            };
+            img.src = src;
+          });
+        }
+        return Promise.resolve();
+      });
+      
+      await Promise.all(promises);
+    };
+
+    preloadImages();
   }, []);
 
   return {
