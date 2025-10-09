@@ -34,6 +34,7 @@ import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { formatNumberWithK } from "@/utils/format-numbers";
+import { useRouter } from "next/navigation";
 
 // Types pour les données d'agenda
 type AgendaEvent = {
@@ -49,6 +50,7 @@ export default function HomeAdminPage() {
   const { userProfile } = useUser();
   const { setUserProfileLoaded } = useLoading();
   const { authFetch } = useAuthFetch();
+  const router = useRouter();
 
   // Utilisation du hook de filtres de dates
   const {
@@ -155,7 +157,6 @@ export default function HomeAdminPage() {
       // Récupérer les événements d'agenda
       const params = new URLSearchParams();
 
-      params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
       params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
       params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
 
@@ -456,6 +457,8 @@ export default function HomeAdminPage() {
                   onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
                   onTournageSelect={() => openUnifiedModal("tournage")}
                   isGoogleConnected={isGoogleConnected || false}
+                  onSeeMore={() => router.push('/agenda')}
+                  showSeeMoreButton={events.length > 3}
                 />
               </div>
             </div>

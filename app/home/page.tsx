@@ -196,7 +196,6 @@ export default function HomePage() {
       // Récupérer les événements d'agenda
       const params = new URLSearchParams();
 
-      params.set('limit', '10'); // Limiter à 10 événements pour l'affichage
       params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
       params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
 
@@ -233,8 +232,6 @@ export default function HomePage() {
 
       // Récupérer les todos
       const params = new URLSearchParams();
-
-      params.set('limit', '10'); // Limiter à 10 todos pour l'affichage
 
       const todosResponse = await authFetch(`/api/todo?${params.toString()}`);
 
@@ -284,7 +281,6 @@ export default function HomePage() {
 
       const params = new URLSearchParams();
 
-      params.set("limit", "100");
       params.set("status", "payee");
       params.set("offset", "0");
       params.set("sortField", "datePaiement");
@@ -791,6 +787,8 @@ export default function HomePage() {
                 onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
                 onTournageSelect={() => openUnifiedModal("tournage")}
                 isGoogleConnected={isGoogleConnected || false}
+                onSeeMore={() => router.push('/agenda')}
+                showSeeMoreButton={events.length > 3}
               />
 
               {/* To do Section */}
@@ -818,26 +816,40 @@ export default function HomePage() {
                       <div className="text-sm text-gray-500">Pas de résultat</div>
                     </div>
                   ) : (
-                    displayTodoItems.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-4 border-b border-gray-100"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-light text-primary">
-                            {item.titre}
-                          </p>
-                          <p className="text-xs text-primary-light">
-                            {new Date(item.dateEcheance).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            }).replace(/\//g, '.')}
-                          </p>
+                    <>
+                      {displayTodoItems.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between py-4 border-b border-gray-100"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-light text-primary">
+                              {item.titre}
+                            </p>
+                            <p className="text-xs text-primary-light">
+                              {new Date(item.dateEcheance).toLocaleDateString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }).replace(/\//g, '.')}
+                            </p>
+                          </div>
+                          <TodoBadge status={item.statut} />
                         </div>
-                        <TodoBadge status={item.statut} />
-                      </div>
-                    ))
+                      ))}
+                      {todoItems.length > 3 && (
+                        <div className="flex justify-center pt-2">
+                          <Button
+                            size="sm"
+                            variant="light"
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                            onPress={() => router.push('/todo')}
+                          >
+                            Voir plus
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
