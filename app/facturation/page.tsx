@@ -179,7 +179,7 @@ export default function FacturationPage() {
 
       // Mise à jour optimiste - ajouter la nouvelle facture au début de la liste
       setInvoices(prev => [newInvoice, ...prev]);
-      
+
       return newInvoice;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -221,7 +221,7 @@ export default function FacturationPage() {
       // Vérifier si le statut a changé
       const newStatus = updatedInvoice.statut?.toLowerCase() || '';
       const currentStatus = selectedStatus.toLowerCase();
-      
+
       // Normaliser les statuts pour la comparaison
       const normalizeStatus = (status: string) => {
         const normalized = status.toLowerCase().trim();
@@ -230,10 +230,10 @@ export default function FacturationPage() {
         if (normalized.includes('retard')) return 'retard';
         return normalized;
       };
-      
+
       const normalizedNewStatus = normalizeStatus(newStatus);
       const normalizedCurrentStatus = normalizeStatus(currentStatus);
-      
+
       // Si le statut a changé, retirer la facture du tableau actuel
       if (normalizedNewStatus !== normalizedCurrentStatus) {
         setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id));
@@ -241,7 +241,7 @@ export default function FacturationPage() {
         // Sinon, mettre à jour la facture dans le tableau actuel
         setInvoices(prev => prev.map(inv => inv.id === selectedInvoice.id ? updatedInvoice : inv));
       }
-      
+
       return updatedInvoice;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
@@ -258,9 +258,9 @@ export default function FacturationPage() {
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
-    
+
     const date = new Date(dateString);
-    
+
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) return "-";
 
@@ -316,41 +316,43 @@ export default function FacturationPage() {
               <Tab key="en_attente" title="En attente" />
               <Tab key="retard" title="Retard" />
             </Tabs>
-
-            <div className="relative w-full sm:w-64">
-            <Input
-                className="w-full pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
+            <div className=" flex col-2">
+              <Input
+                className="w-full sm:w-50 pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
                 startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                 classNames={{
                   input:
                     "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                   inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
+                    "bg-white shadow-none",
                 }}
                 endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+
               />
+              <div className="sm:w-50">
+
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  className="w-full  "
+                  onPress={() => {
+                    setError(null);
+                    setSelectedInvoice(null);
+                    setIsAddModalOpen(true);
+                  }}
+                >
+                  Ajouter une facture
+                </Button>
+              </div>
             </div>
+
+            
           </div>
 
-          {/* Bouton d'ajout */}
-          <div className="flex justify-end p-1 sm:p-2 pb-4">
-            <Button
-              color='primary'
-              endContent={<PlusIcon className="h-4 w-4" />}
-              className="w-full sm:w-auto"
-              onPress={() => {
-                setError(null);
-                setSelectedInvoice(null);
-                setIsAddModalOpen(true);
-              }}
-            >
-              Ajouter une facture
-            </Button>
-          </div>
 
           {loading ? <div className="flex justify-center items-center h-64">
             <Spinner className="text-black dark:text-white" size="lg" />
@@ -411,38 +413,38 @@ export default function FacturationPage() {
                     <TableColumn className="font-light text-sm min-w-[80px]">Modifier</TableColumn>
                     <TableColumn className="font-light text-sm min-w-[150px]">Commentaire</TableColumn>
                   </TableHeader>
-                <TableBody>
-                  {invoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
-                      <TableCell>
-                        <CategoryBadge category={invoice.categorie} />
-                      </TableCell>
-                      <TableCell className="font-light py-5 text-xs sm:text-sm">
-                        {invoice.nomEtablissement}
-                      </TableCell>
-                      <TableCell className="font-light text-xs sm:text-sm">{formatDate(invoice.dateEmission)}</TableCell>
-                      <TableCell className="font-light text-xs sm:text-sm">
-                        {formatAmount(invoice.montant)}
-                      </TableCell>
-                      <TableCell className="font-light text-xs sm:text-sm">{getServiceTypeLabel(invoice.typePrestation)}</TableCell>
-                      <TableCell className="font-light">
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => openEditModal(invoice)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-light text-xs sm:text-sm">
-                        <span className="text-xs sm:text-sm text-gray-500">
-                          {invoice.commentaire || ""}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                  <TableBody>
+                    {invoices.map((invoice) => (
+                      <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
+                        <TableCell>
+                          <CategoryBadge category={invoice.categorie} />
+                        </TableCell>
+                        <TableCell className="font-light py-5 text-xs sm:text-sm">
+                          {invoice.nomEtablissement}
+                        </TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">{formatDate(invoice.dateEmission)}</TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">
+                          {formatAmount(invoice.montant)}
+                        </TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">{getServiceTypeLabel(invoice.typePrestation)}</TableCell>
+                        <TableCell className="font-light">
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => openEditModal(invoice)}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-light text-xs sm:text-sm">
+                          <span className="text-xs sm:text-sm text-gray-500">
+                            {invoice.commentaire || ""}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
               </div>
 

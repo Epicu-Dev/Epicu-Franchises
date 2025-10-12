@@ -38,9 +38,23 @@ export async function getValidAccessToken(): Promise<string | null> {
     return null;
   }
 
-  // Si on n'a pas d'access token mais qu'on a un refresh token valide
+  // Si on n'a pas d'access token mais qu'on a un refresh token valide, essayer de faire un refresh
   if (!accessToken) {
-    return null;
+    // Si un refresh est déjà en cours, attendre le résultat
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+
+    // Créer une nouvelle promesse de refresh
+    refreshPromise = performTokenRefresh(refreshToken, '');
+    
+    try {
+      const result = await refreshPromise;
+      return result;
+    } finally {
+      // Nettoyer la promesse une fois terminée
+      refreshPromise = null;
+    }
   }
 
   // Si un refresh est déjà en cours, attendre le résultat
@@ -67,7 +81,7 @@ async function performTokenRefresh(refreshToken: string, accessToken: string): P
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         refreshToken,
-        accessToken,
+        accessToken: accessToken || '', // Permettre un access token vide
       }),
     });
 
@@ -76,10 +90,10 @@ async function performTokenRefresh(refreshToken: string, accessToken: string): P
       // MAIS seulement après avoir vérifié que le refresh token est vraiment expiré
       if (res.status === 401 || res.status === 403) {
         // Vérifier si le refresh token est vraiment expiré avant de déconnecter
-        const refreshToken = localStorage.getItem('refreshToken');
+        const currentRefreshToken = localStorage.getItem('refreshToken');
         const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
         
-        if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
+        if (!currentRefreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
           // Le refresh token est vraiment expiré, on peut déconnecter
           clearAuthData();
         } else {

@@ -16,16 +16,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { refreshToken, accessToken } = req.body;
 
-  if (!refreshToken || !accessToken) {
-    return res.status(400).json({ message: 'Les tokens sont requis' });
+  if (!refreshToken) {
+    return res.status(400).json({ message: 'Le refresh token est requis' });
   }
 
-  // Vérification de sécurité : s'assurer que les tokens ont le bon format
+  // Vérification de sécurité : s'assurer que le refresh token a le bon format
   if (typeof refreshToken !== 'string' || refreshToken.length < 32) {
     return res.status(400).json({ message: 'Format de refresh token invalide' });
   }
 
-  if (typeof accessToken !== 'string' || accessToken.length < 32) {
+  // L'access token peut être vide (cas où on n'en a pas mais qu'on a un refresh token valide)
+  if (accessToken && (typeof accessToken !== 'string' || accessToken.length < 32)) {
     return res.status(400).json({ message: 'Format d\'access token invalide' });
   }
 

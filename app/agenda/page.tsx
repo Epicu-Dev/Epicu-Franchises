@@ -387,11 +387,42 @@ export default function AgendaPage() {
       if (view === "semaine") {
         newDate.setDate(prev.getDate() + 7);
       } else {
+        // Vérifier si on ne dépasse pas M+5 (mois actuel + 5 mois)
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const maxMonth = currentMonth + 12;
+        const maxYear = currentYear + Math.floor(maxMonth / 12);
+        const maxMonthInYear = maxMonth % 12;
+
+        const newMonth = prev.getMonth() + 1;
+        const newYear = prev.getFullYear() + Math.floor(newMonth / 12);
+        const newMonthInYear = newMonth % 12;
+
+        // Si on dépasse la limite M+5, ne pas avancer
+        if (newYear > maxYear || (newYear === maxYear && newMonthInYear > maxMonthInYear)) {
+          return prev;
+        }
+
         newDate.setMonth(prev.getMonth() + 1);
       }
 
       return newDate;
     });
+  };
+
+  // Fonction pour vérifier si on peut avancer au mois suivant
+  const canGoToNextMonth = (currentDate: Date) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const maxMonth = currentMonth + 12;
+    const maxYear = currentYear + Math.floor(maxMonth / 12);
+    const maxMonthInYear = maxMonth % 12;
+
+    const newMonth = currentDate.getMonth() + 1;
+    const newYear = currentDate.getFullYear() + Math.floor(newMonth / 12);
+    const newMonthInYear = newMonth % 12;
+
+    return !(newYear > maxYear || (newYear === maxYear && newMonthInYear > maxMonthInYear));
   };
 
   const formatMonthYear = (date: Date) => {
@@ -700,11 +731,11 @@ export default function AgendaPage() {
     return (
       <div className="w-full">
         {/* En-têtes des jours */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-2 bg-page-bg rounded-md">
           {weekDays.map((day) => (
             <div
               key={day}
-              className="p-1 sm:p-2 text-center font-medium text-gray-600 text-xs sm:text-sm"
+              className="p-1 sm:p-2 text-start font-medium  text-xs sm:text-sm"
             >
               <span className="hidden sm:inline">{day}</span>
               <span className="sm:hidden">{day.substring(0, 3)}</span>
@@ -717,7 +748,7 @@ export default function AgendaPage() {
           {days.map((day, index) => (
             <div
               key={index}
-              className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border border-gray-100 ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
+              className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border border-1 border-[#FAFAFA] ${day.isCurrentMonth ? "bg-white" : "bg-gray-50"
                 } `}
             >
               <div
@@ -757,11 +788,7 @@ export default function AgendaPage() {
                         {event.title}
 
                       </div>
-                      {event.startTime && event.endTime && (
-                        <div className="text-xs opacity-75">
-                          {event.startTime} - {event.endTime}
-                        </div>
-                      )}
+
                     </div>
                   ))}
               </div>
@@ -873,7 +900,7 @@ export default function AgendaPage() {
       <div className="w-full overflow-x-auto">
         <div className="min-w-[800px] sm:min-w-[1000px]">
           {/* En-têtes des jours */}
-          <div className="grid grid-cols-8 mb-2">
+          <div className="grid grid-cols-8 mb-2 bg-page-bg rounded-md">
             <div className="p-1 sm:p-2 text-center font-medium text-gray-600 text-xs sm:text-sm" />
             {weekDays.map((day) => (
               <div
@@ -913,7 +940,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={`${day.date.toISOString()}-${hour}`}
-                      className={`border border-gray-100 relative ${day.isToday ? "bg-red-50" : "bg-white"}`}
+                      className={`border border-1 border-[#FAFAFA] relative ${day.isToday ? "bg-red-50" : "bg-white"}`}
                       style={{ height: `${slotHeight}px` }}
                     >
                       {/* Afficher seulement les événements qui COMMENCENT à cette heure */}
@@ -1026,7 +1053,7 @@ export default function AgendaPage() {
 
 
     // Si pas d'événements, afficher un message
-    if (sortedDates.length === 0) { 
+    if (sortedDates.length === 0) {
       return (
         <div className="w-full text-center py-12">
           <div className="text-gray-500 text-lg mb-2">Aucun événement à afficher</div>
@@ -1048,7 +1075,7 @@ export default function AgendaPage() {
                 <div
                   key={dateString}
                   data-date={new Date(dateString).toDateString()}
-                  className="flex items-center text-xs sm:text-sm text-gray-600 border-b border-gray-100 px-2"
+                  className="flex items-center text-xs sm:text-sm text-[#9C9C9C] border-b border-gray-100 px-2"
                   style={{ height: `${rowHeight}px` }}
                 >
                   {formatDate(dateString)}
@@ -1216,7 +1243,7 @@ export default function AgendaPage() {
 
           {/* Sélecteur de vue - toujours visible */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
               <Button
                 isIconOnly
                 variant="light"
@@ -1230,7 +1257,7 @@ export default function AgendaPage() {
                   ? formatWeekRange(currentDate)
                   : formatMonthYear(currentDate)}
               </span>
-              <Button
+              {canGoToNextMonth(currentDate) && <Button
                 isIconOnly
                 aria-label="Mois suivant"
                 variant="light"
@@ -1238,14 +1265,14 @@ export default function AgendaPage() {
                 className="flex-shrink-0"
               >
                 <ChevronRightIcon className="h-4 w-4" />
-              </Button>
+              </Button>}
             </div>
             {/* Sélecteur de vue */}
             <div className="flex rounded-md overflow-hidden w-full sm:w-auto">
               {[
                 { key: "mois", label: "Mois" },
                 { key: "semaine", label: "Semaine" },
-                { key: "planning", label: "Planning" }
+                { key: "planning", label: "Vue liste" }
               ].map((viewOption) => {
                 const isSelected = view === viewOption.key;
                 return (
@@ -1265,7 +1292,7 @@ export default function AgendaPage() {
                 );
               })}
             </div>
-            
+
 
           </div>
 

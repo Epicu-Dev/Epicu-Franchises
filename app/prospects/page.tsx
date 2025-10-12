@@ -428,15 +428,15 @@ export default function ProspectsPage() {
               <Tab key="en_discussion" title="En discussion" />
               <Tab key="glacial" title="Glacial" />
             </Tabs>
-            <div className="relative w-full sm:w-64">
+            <div className=" flex col-2">
               <Input
-                className="w-full pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
+                className="w-full sm:w-50 pr-2 pl-2 sm:pr-4 sm:pl-10 pb-4 sm:pb-0"
                 startContent={<MagnifyingGlassIcon className="h-4 w-4" />}
                 classNames={{
                   input:
                     "text-gray-500 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500",
                   inputWrapper:
-                    "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 bg-page-bg",
+                    "bg-white shadow-none",
                 }}
                 endContent={searchTerm && <XMarkIcon className="h-5 w-5 cursor-pointer" onClick={() => setSearchTerm('')} />}
                 placeholder="Rechercher..."
@@ -444,6 +444,20 @@ export default function ProspectsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              <div className="sm:w-50">
+
+                <Button
+                  color='primary'
+                  endContent={<PlusIcon className="h-4 w-4" />}
+                  className="w-full  "
+                  onPress={() => {
+                    setEditingProspect(null);
+                    setIsProspectModalOpen(true);
+                  }}
+                >
+                  Ajouter un prospect
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -496,17 +510,6 @@ export default function ProspectsPage() {
               </StyledSelect>
             </div>
 
-            <Button
-              color='primary'
-              endContent={<PlusIcon className="h-4 w-4" />}
-              className="w-full sm:w-auto"
-              onPress={() => {
-                setEditingProspect(null);
-                setIsProspectModalOpen(true);
-              }}
-            >
-              Ajouter un prospect
-            </Button>
           </div>
 
           {/* Table avec LazyLoading */}
@@ -545,168 +548,168 @@ export default function ProspectsPage() {
                     table: "min-w-[1000px]"
                   }}
                 >
-                <TableHeader className="mb-4">
-                  <TableColumn className="font-light text-sm min-w-[120px]">Basculer</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[80px]">Modifier</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[120px]">
-                    <SortableColumnHeader
-                      field="categorie"
-                      label="Catégorie"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[150px]">Nom établissement</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[120px]">Date premier contact</TableColumn>
+                  <TableHeader className="mb-4">
+                    <TableColumn className="font-light text-sm min-w-[120px]">Basculer</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[80px]">Modifier</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      <SortableColumnHeader
+                        field="categorie"
+                        label="Catégorie"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[150px]">Nom établissement</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">Date premier contact</TableColumn>
 
-                  <TableColumn className="font-light text-sm min-w-[120px]">
-                    <SortableColumnHeader
-                      field="dateRelance"
-                      label="Date de relance"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm">
-                    <SortableColumnHeader
-                      field="suiviPar"
-                      label="Suivi par"
-                      sortDirection={sortDirection}
-                      sortField={sortField}
-                      onSort={handleSort}
-                    />
-                  </TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[120px]">Ville</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">
+                      <SortableColumnHeader
+                        field="dateRelance"
+                        label="Date de relance"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm">
+                      <SortableColumnHeader
+                        field="suiviPar"
+                        label="Suivi par"
+                        sortDirection={sortDirection}
+                        sortField={sortField}
+                        onSort={handleSort}
+                      />
+                    </TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">Ville</TableColumn>
 
-                  <TableColumn className="font-light text-sm min-w-[120px]">Téléphone</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[120px]">Téléphone</TableColumn>
 
-                  <TableColumn className="font-light text-sm min-w-[150px]">Mail</TableColumn>
-                  <TableColumn className="font-light text-sm min-w-[200px]">Commentaire</TableColumn>
-                </TableHeader>
-                <TableBody className="mt-4">
-                  {prospects.length === 0 ? (
-                    <TableRow>
-                      <TableCell className="text-center" colSpan={11}>
-                        <div className="py-20 text-gray-500">
-                          {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
-                            <div>
-                              <div className="text-lg mb-2">Aucun prospect trouvé</div>
-                              <div className="text-sm">Essayez de modifier vos filtres ou de créer un nouveau prospect</div>
-                              <Button
-                                className="mt-4"
-                                color="primary"
-                                onPress={() => {
-                                  setSearchTerm('');
-                                  setSelectedCategory('');
-                                  setSelectedSuiviPar('');
-                                }}
-                              >
-                                Réinitialiser les filtres
-                              </Button>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="text-lg mb-2">Aucun prospect disponible</div>
-                              <div className="text-sm">Commencez par ajouter votre premier prospect</div>
-                              <Button
-                                className="mt-4"
-                                color="primary"
-                                onPress={() => {
-                                  setEditingProspect(null);
-                                  setIsProspectModalOpen(true);
-                                }}
-                              >
-                                Ajouter un prospect
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    prospects.map((prospect) => (
-
-                      <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
-                        <TableCell className="font-light">
-                          <Button
-                            className="px-6 border-1"
-                            color="primary"
-                            variant="bordered"
-                            size="sm"
-                            endContent={<ArrowRightIcon className="h-4 w-4" />}
-                            onPress={() => openConvertModal(prospect)}
-                          >
-                            Convertir
-                          </Button>
+                    <TableColumn className="font-light text-sm min-w-[150px]">Mail</TableColumn>
+                    <TableColumn className="font-light text-sm min-w-[200px]">Commentaire</TableColumn>
+                  </TableHeader>
+                  <TableBody className="mt-4">
+                    {prospects.length === 0 ? (
+                      <TableRow>
+                        <TableCell className="text-center" colSpan={11}>
+                          <div className="py-20 text-gray-500">
+                            {searchTerm || selectedCategory !== '' || selectedSuiviPar !== '' ? (
+                              <div>
+                                <div className="text-lg mb-2">Aucun prospect trouvé</div>
+                                <div className="text-sm">Essayez de modifier vos filtres ou de créer un nouveau prospect</div>
+                                <Button
+                                  className="mt-4"
+                                  color="primary"
+                                  onPress={() => {
+                                    setSearchTerm('');
+                                    setSelectedCategory('');
+                                    setSelectedSuiviPar('');
+                                  }}
+                                >
+                                  Réinitialiser les filtres
+                                </Button>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="text-lg mb-2">Aucun prospect disponible</div>
+                                <div className="text-sm">Commencez par ajouter votre premier prospect</div>
+                                <Button
+                                  className="mt-4"
+                                  color="primary"
+                                  onPress={() => {
+                                    setEditingProspect(null);
+                                    setIsProspectModalOpen(true);
+                                  }}
+                                >
+                                  Ajouter un prospect
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            isIconOnly
-                            aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
-                            className="text-gray-600 hover:text-gray-800"
-                            size="sm"
-                            variant="light"
-                            onPress={() => handleEditProspect(prospect)}
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-light">
-                          <CategoryBadge category={prospect.categorie[0]} />
-                          {
-                            prospect.categorie.length > 1 && (prospect.categorie as any[])[1] && (
-                              <CategoryBadge className="ml-2" category={(prospect.categorie as any[])[1]} />
-                            )
-                          }
-
-                        </TableCell>
-
-                        <TableCell className="font-light py-5">
-                          {prospect.nomEtablissement}
-                        </TableCell>
-                        <TableCell className="font-light">
-                          {prospect.datePriseContact
-                            ? new Date(prospect.datePriseContact).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            }).replace(/\//g, '.')
-                            : "-"
-                          }
-                        </TableCell>
-                        <TableCell className="font-light">
-                          {prospect.dateRelance
-                            ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            }).replace(/\//g, '.')
-                            : "-"
-                          }
-                        </TableCell>
-                        <TableCell className="font-light">
-                          {(() => {
-                            // Trouver le nom du collaborateur correspondant à l'ID
-                            const collaborateur = collaborateurs.find(c => c.id === prospect.suiviPar);
-                            return collaborateur ? collaborateur.nomComplet : prospect.suiviPar;
-                          })()}
-                        </TableCell>
-
-                        <TableCell className="font-light">{prospect.ville}</TableCell>
-                        <TableCell className="font-light min-w-32 text-xs sm:text-sm">{prospect.telephone}</TableCell>
-
-
-                        <TableCell className="font-light text-xs sm:text-sm">{prospect.email}</TableCell>
-                        <TableCell className="font-light text-xs sm:text-sm">{prospect.commentaires}</TableCell>
-
-
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      prospects.map((prospect) => (
+
+                        <TableRow key={prospect.id} className="border-t border-gray-100 dark:border-gray-700">
+                          <TableCell className="font-light">
+                            <Button
+                              className="px-6 border-1"
+                              color="primary"
+                              variant="bordered"
+                              size="sm"
+                              endContent={<ArrowRightIcon className="h-4 w-4" />}
+                              onPress={() => openConvertModal(prospect)}
+                            >
+                              Convertir
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              isIconOnly
+                              aria-label={`Modifier le prospect ${prospect.nomEtablissement}`}
+                              className="text-gray-600 hover:text-gray-800"
+                              size="sm"
+                              variant="light"
+                              onPress={() => handleEditProspect(prospect)}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                          <TableCell className="font-light">
+                            <CategoryBadge category={prospect.categorie[0]} />
+                            {
+                              prospect.categorie.length > 1 && (prospect.categorie as any[])[1] && (
+                                <CategoryBadge className="ml-2" category={(prospect.categorie as any[])[1]} />
+                              )
+                            }
+
+                          </TableCell>
+
+                          <TableCell className="font-light py-5">
+                            {prospect.nomEtablissement}
+                          </TableCell>
+                          <TableCell className="font-light">
+                            {prospect.datePriseContact
+                              ? new Date(prospect.datePriseContact).toLocaleDateString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }).replace(/\//g, '.')
+                              : "-"
+                            }
+                          </TableCell>
+                          <TableCell className="font-light">
+                            {prospect.dateRelance
+                              ? new Date(prospect.dateRelance).toLocaleDateString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }).replace(/\//g, '.')
+                              : "-"
+                            }
+                          </TableCell>
+                          <TableCell className="font-light">
+                            {(() => {
+                              // Trouver le nom du collaborateur correspondant à l'ID
+                              const collaborateur = collaborateurs.find(c => c.id === prospect.suiviPar);
+                              return collaborateur ? collaborateur.nomComplet : prospect.suiviPar;
+                            })()}
+                          </TableCell>
+
+                          <TableCell className="font-light">{prospect.ville}</TableCell>
+                          <TableCell className="font-light min-w-32 text-xs sm:text-sm">{prospect.telephone}</TableCell>
+
+
+                          <TableCell className="font-light text-xs sm:text-sm">{prospect.email}</TableCell>
+                          <TableCell className="font-light text-xs sm:text-sm">{prospect.commentaires}</TableCell>
+
+
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>}
         </CardBody>
       </Card>

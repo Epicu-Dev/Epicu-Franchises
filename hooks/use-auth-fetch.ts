@@ -15,9 +15,20 @@ export const useAuthFetch = () => {
 
       if (!token) {
         // Si on arrive ici, c'est que le refresh a échoué
-        clearAuthData();
-        redirectToLogin();
-        throw new Error('No access token available');
+        // Vérifier si le refresh token est encore valide avant de déconnecter
+        const refreshToken = localStorage.getItem('refreshToken');
+        const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
+        
+        if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
+          // Le refresh token est vraiment expiré, on peut déconnecter
+          clearAuthData();
+          redirectToLogin();
+          throw new Error('No access token available - refresh token expired');
+        } else {
+          // Le refresh token est encore valide, c'est probablement un problème temporaire
+          console.warn('Impossible d\'obtenir un token valide, mais refresh token encore valide. Problème temporaire probable.');
+          throw new Error('No access token available - temporary issue');
+        }
       }
 
       const headers = new Headers((init?.headers as HeadersInit) || {});
