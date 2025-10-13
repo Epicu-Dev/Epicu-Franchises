@@ -55,6 +55,80 @@ function toNumber(v: any) {
 }
 
 /**
+ * Obtient le champ de date et la formule de recherche selon la table
+ */
+function getDateFieldAndFormula(table: string, date: string, ville: string, villeName: string | null): { dateField: string, filterFormula: string } {
+	const canonical = canonicalFirstOfMonth(date);
+	if (!canonical) {
+		throw new Error(`Paramètre date invalide: "${date}". Format attendu: mm-yyyy`);
+	}
+
+	let dateField: string;
+	let dateFormula: string;
+
+	switch (table) {
+		case 'STATISTIQUES MENSUELLES VILLE':
+			dateField = 'Date - ville EPICU';
+			// Format: MM/YYYY - Ville EPICU
+			const monthYear = `${String(new Date(canonical).getMonth() + 1).padStart(2, '0')}/${new Date(canonical).getFullYear()}`;
+			if (villeName) {
+				dateFormula = `{Date - ville EPICU} = "${escAirtable(monthYear + ' - ' + villeName)}"`;
+			} else {
+				dateFormula = `FIND("${escAirtable(monthYear)}", {Date - ville EPICU})`;
+			}
+			break;
+
+		case 'STATISTIQUES ANNUELLES VILLE':
+			dateField = 'Année-Ville';
+			// Format: YYYY - Ville EPICU
+			const year = new Date(canonical).getFullYear().toString();
+			if (villeName) {
+				dateFormula = `{Année-Ville} = "${escAirtable(year + ' - ' + villeName)}"`;
+			} else {
+				dateFormula = `FIND("${escAirtable(year)}", {Année-Ville})`;
+			}
+			break;
+
+		case 'STATISTIQUES CREATION VILLE':
+			dateField = 'Name';
+			// Format: Nom de la ville EPICU
+			if (villeName) {
+				dateFormula = `{Name} = "${escAirtable(villeName)}"`;
+			} else {
+				dateFormula = `FIND("${escAirtable(ville)}", {Name})`;
+			}
+			break;
+
+		case 'STATISTIQUES MENSUELLES FRANCE':
+			dateField = 'Période';
+			// Format: MM/YYYY
+			const monthYear2 = `${String(new Date(canonical).getMonth() + 1).padStart(2, '0')}/${new Date(canonical).getFullYear()}`;
+			dateFormula = `{Période} = "${escAirtable(monthYear2)}"`;
+			break;
+
+		case 'STATISTIQUES ANNUELLES FRANCE':
+			dateField = 'Année';
+			// Format: YYYY
+			const year2 = new Date(canonical).getFullYear().toString();
+			dateFormula = `{Année} = "${escAirtable(year2)}"`;
+			break;
+
+		case 'STATISTIQUES CREATION FRANCE':
+			dateField = 'Pays';
+			// Format: France
+			dateFormula = `{Pays} = "France"`;
+			break;
+
+		default:
+			// Fallback pour les anciennes tables
+			dateField = 'Mois-Année';
+			dateFormula = `{Mois-Année} = DATETIME_PARSE("${escAirtable(canonical)}", "YYYY-MM-DD")`;
+	}
+
+	return { dateField, filterFormula: dateFormula };
+}
+
+/**
  * Récupère les statistiques en utilisant le mapping dynamique
  */
 async function fetchStatisticsWithMapping(
@@ -70,32 +144,33 @@ async function fetchStatisticsWithMapping(
 		return null;
 	}
 
-	const canonical = canonicalFirstOfMonth(date);
-	if (!canonical) {
-		throw new Error('Paramètre date invalide. Format attendu: mm-yyyy');
-	}
-
-	// Déterminer les champs à récupérer selon le type de statistique
-	const fields = getFieldsForStatistic(statisticType);
+	// Déterminer les champs à récupérer selon le type de statistique et la table
+	const fields = getFieldsForStatistic(statisticType, mapping.table);
 
 	let villeName: string | null = null;
-	if (ville !== 'all' && /^rec/i.test(ville)) {
-		try {
-			const cityRec = await base('VILLES EPICU').find(ville);
-			const vn = cityRec.get('Ville EPICU');
-			villeName = vn != null ? String(vn) : null;
-		} catch (e) {
-			console.warn('Impossible de récupérer le nom de la ville pour id', ville, e);
+	if (ville !== 'all') {
+		if (/^rec/i.test(ville)) {
+			// Si c'est un ID Airtable, récupérer le nom de la ville
+			try {
+				const cityRec = await base('VILLES EPICU').find(ville);
+				const vn = cityRec.get('Ville EPICU');
+				villeName = vn != null ? String(vn) : null;
+			} catch (e) {
+				console.warn('Impossible de récupérer le nom de la ville pour id', ville, e);
+			}
+		} else {
+			// Si c'est déjà un nom de ville, l'utiliser directement
+			villeName = ville;
 		}
 	}
 
-	const dateFormula = `{Mois-Année} = DATETIME_PARSE("${escAirtable(canonical)}", "YYYY-MM-DD")`;
-	const filterFormula =
-		ville === 'all'
-			? dateFormula
-			: villeName
-				? `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(villeName)}")`
-				: `AND(${dateFormula}, FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
+	// Obtenir le bon champ de date et la formule selon la table
+	const { dateField, filterFormula } = getDateFieldAndFormula(mapping.table, date, ville, villeName);
+	
+	// Debug: log la formule de filtre
+	console.log(`[DEBUG] fetchStatisticsWithMapping: ${statisticType} pour ${ville}`);
+	console.log(`[DEBUG] Table: ${mapping.table}, Vue: ${mapping.view}`);
+	console.log(`[DEBUG] Formule: ${filterFormula}`);
 
 	const records = await base(mapping.table).select({ 
 		view: mapping.view, 
@@ -108,33 +183,62 @@ async function fetchStatisticsWithMapping(
 }
 
 /**
- * Détermine les champs à récupérer selon le type de statistique
+ * Détermine les champs à récupérer selon le type de statistique et la table
  */
-function getFieldsForStatistic(statisticType: StatisticType): string[] {
-	const baseFields = [
-		'Mois-Année', 
-		'Ville EPICU'
-	];
+function getFieldsForStatistic(statisticType: StatisticType, table?: string): string[] {
+	// Champs de base selon la table
+	let baseFields: string[] = [];
+	
+	if (table) {
+		switch (table) {
+			case 'STATISTIQUES MENSUELLES VILLE':
+				baseFields = ['Date - ville EPICU'];
+				break;
+			case 'STATISTIQUES ANNUELLES VILLE':
+				baseFields = ['Année-Ville'];
+				break;
+			case 'STATISTIQUES CREATION VILLE':
+				baseFields = ['Name'];
+				break;
+			case 'STATISTIQUES MENSUELLES FRANCE':
+				baseFields = ['Période'];
+				break;
+			case 'STATISTIQUES ANNUELLES FRANCE':
+				baseFields = ['Année'];
+				break;
+			case 'STATISTIQUES CREATION FRANCE':
+				baseFields = ['Pays'];
+				break;
+			default:
+				baseFields = ['Mois-Année'];
+		}
+	} else {
+		// Fallback si pas de table spécifiée
+		baseFields = ['Mois-Année'];
+	}
 
+	// Ajouter le champ spécifique à la statistique
 	switch (statisticType) {
 		case 'chiffre-affaires-global':
-			return [...baseFields, 'CA TOTAL', 'CA depuis la création', 'CA France', 'CA FRANCE'];
+			return [...baseFields, 'CA total'];
 		case 'clients-signes':
-			return [...baseFields, '📊 Prospects signés ds le mois', 'Prospects signés depuis la création'];
+			return [...baseFields, 'Clients signés'];
 		case 'franchises':
-			return [...baseFields, 'Franchises existantes', 'Franchises créées'];
+			return [...baseFields, 'Franchises existantes'];
 		case 'abonnes-en-plus':
-			return [...baseFields, '📊 Total abonnés', 'Total abonnés gagnés /M-1', 'Total abonnés gagnés /A-1'];
+			return [...baseFields, 'Progression abonnés'];
 		case 'vues':
-			return [...baseFields, '📊 Total vues', '📊 Total vues depuis la création', '📊 Total vues annuel'];
+			return [...baseFields, 'Total vues'];
 		case 'taux-conversion':
-			return [...baseFields, '📊 Tx de conversion', '📊 Tx de conversion depuis la création'];
+			return [...baseFields, 'Tx de conversion'];
 		case 'prospects':
-			return [...baseFields, '📊 Prospects vus ds le mois', 'Prospects vus depuis la création'];
+			return [...baseFields, 'Prospects vus'];
 		case 'posts-publies':
-			return [...baseFields, 'Posts publiés', 'Nbre publications ds le mois'];
+			return [...baseFields, 'Posts publiés'];
 		case 'prestations-studio':
 			return [...baseFields, 'Prestations studio'];
+		case 'ca-studio':
+			return [...baseFields, 'CA studio'];
 		default:
 			return baseFields;
 	}
@@ -143,7 +247,7 @@ function getFieldsForStatistic(statisticType: StatisticType): string[] {
 /**
  * Traite les données récupérées selon le type de statistique
  */
-function processStatisticsData(records: any[], statisticType: StatisticType, timeFilter: TimeFilter, locationFilter: LocationFilter): any {
+async function processStatisticsData(records: any[], statisticType: StatisticType, timeFilter: TimeFilter, locationFilter: LocationFilter, date: string, cityName?: string): Promise<any> {
 	if (!records || records.length === 0) {
 		return null;
 	}
@@ -155,8 +259,22 @@ function processStatisticsData(records: any[], statisticType: StatisticType, tim
 		return null;
 	}
 
-	// Extraire la valeur selon le chemin spécifié
-	const value = extractValueByPath(record, mapping.path);
+	let value: number;
+
+	// Traitement spécial pour le taux de conversion
+	if (statisticType === 'taux-conversion' && cityName) {
+		// Calculer le taux de conversion manuellement pour une ville spécifique
+		value = await calculateConversionRateForCity(cityName, timeFilter, locationFilter, date);
+	} else {
+		// Extraire la valeur selon le chemin spécifié pour les autres statistiques
+		value = extractValueByPath(record, mapping.path);
+		
+		// Traitement spécial pour le taux de conversion en mode national
+		// Si la valeur est en décimal (entre 0 et 1), la multiplier par 100
+		if (statisticType === 'taux-conversion' && value > 0 && value <= 1) {
+			value = value * 100;
+		}
+	}
 	
 	return {
 		statisticType,
@@ -168,6 +286,63 @@ function processStatisticsData(records: any[], statisticType: StatisticType, tim
 		view: mapping.view,
 		record: record.fields
 	};
+}
+
+/**
+ * Calcule le taux de conversion pour une ville spécifique
+ */
+async function calculateConversionRateForCity(
+	cityName: string,
+	timeFilter: TimeFilter,
+	locationFilter: LocationFilter,
+	date: string
+): Promise<number> {
+	try {
+		// Récupérer les clients signés
+		const clientsRecords = await fetchStatisticsWithMapping(
+			'clients-signes',
+			timeFilter,
+			locationFilter,
+			date,
+			cityName
+		);
+		
+		// Récupérer les prospects
+		const prospectsRecords = await fetchStatisticsWithMapping(
+			'prospects',
+			timeFilter,
+			locationFilter,
+			date,
+			cityName
+		);
+		
+		let totalClients = 0;
+		let totalProspects = 0;
+		
+		if (clientsRecords && clientsRecords.length > 0) {
+			clientsRecords.forEach((record: any) => {
+				const mapping = getStatisticsMapping('clients-signes', timeFilter, locationFilter);
+				if (mapping) {
+					totalClients += extractValueByPath(record, mapping.path);
+				}
+			});
+		}
+		
+		if (prospectsRecords && prospectsRecords.length > 0) {
+			prospectsRecords.forEach((record: any) => {
+				const mapping = getStatisticsMapping('prospects', timeFilter, locationFilter);
+				if (mapping) {
+					totalProspects += extractValueByPath(record, mapping.path);
+				}
+			});
+		}
+		
+		// Calculer le taux de conversion
+		return totalProspects > 0 ? (totalClients / totalProspects) * 100 : 0;
+	} catch (error) {
+		console.error(`Erreur lors du calcul du taux de conversion pour ${cityName}:`, error);
+		return 0;
+	}
 }
 
 /**
@@ -232,30 +407,98 @@ async function aggregateUserStatistics(
 	const cityNames: string[] = linkedIds.map((id) => cityNameById.get(id)).filter((v): v is string => Boolean(v));
 
 	// Agrégation des données pour chaque ville
-	if (cityNames.length > 0) {
-		await Promise.all(
-			cityNames.map(async (name) => {
-				const records = await fetchStatisticsWithMapping(
-					statisticType,
-					timeFilter,
-					locationFilter,
-					date,
-					name
-				);
-				
-				if (records && records.length > 0) {
-					totalRecords += records.length;
-					records.forEach((record: any) => {
-						const mapping = getStatisticsMapping(statisticType, timeFilter, locationFilter);
-						if (mapping) {
-							totalValue += extractValueByPath(record, mapping.path);
-						}
-					});
-				}
-			})
-		);
+	// IMPORTANT: Forcer l'utilisation du filtre 'ville' pour chaque ville individuelle
+	const cityLocationFilter: LocationFilter = 'ville';
+	
+	// Debug: log les informations d'agrégation
+	console.log(`[DEBUG] aggregateUserStatistics: ${statisticType} pour ${cityNames.length} villes: ${cityNames.join(', ')}`);
+	
+	// Traitement spécial pour le taux de conversion
+	if (statisticType === 'taux-conversion') {
+		// Pour le taux de conversion, on doit calculer le taux global
+		// en récupérant les clients signés et les prospects de chaque ville
+		let totalClients = 0;
+		let totalProspects = 0;
+		
+		if (cityNames.length > 0) {
+			await Promise.all(
+				cityNames.map(async (name) => {
+					// Récupérer les clients signés
+					const clientsRecords = await fetchStatisticsWithMapping(
+						'clients-signes',
+						timeFilter,
+						cityLocationFilter,
+						date,
+						name
+					);
+					
+					// Récupérer les prospects (si disponible)
+					const prospectsRecords = await fetchStatisticsWithMapping(
+						'prospects',
+						timeFilter,
+						cityLocationFilter,
+						date,
+						name
+					);
+					
+					if (clientsRecords && clientsRecords.length > 0) {
+						clientsRecords.forEach((record: any) => {
+							const mapping = getStatisticsMapping('clients-signes', timeFilter, cityLocationFilter);
+							if (mapping) {
+								totalClients += extractValueByPath(record, mapping.path);
+							}
+						});
+					}
+					
+					if (prospectsRecords && prospectsRecords.length > 0) {
+						prospectsRecords.forEach((record: any) => {
+							const mapping = getStatisticsMapping('prospects', timeFilter, cityLocationFilter);
+							if (mapping) {
+								totalProspects += extractValueByPath(record, mapping.path);
+							}
+						});
+					}
+				})
+			);
+		}
+		
+		// Calculer le taux de conversion global
+		totalValue = totalProspects > 0 ? (totalClients / totalProspects) * 100 : 0;
+		totalRecords = cityNames.length;
+	} else {
+		// Pour les autres statistiques, faire la somme normale
+		if (cityNames.length > 0) {
+			await Promise.all(
+				cityNames.map(async (name) => {
+					console.log(`[DEBUG] Récupération ${statisticType} pour ${name}...`);
+					const records = await fetchStatisticsWithMapping(
+						statisticType,
+						timeFilter,
+						cityLocationFilter, // Utiliser 'ville' au lieu de 'pays'
+						date,
+						name
+					);
+					
+					console.log(`[DEBUG] ${name}: ${records?.length || 0} enregistrements trouvés`);
+					
+					if (records && records.length > 0) {
+						totalRecords += records.length;
+						records.forEach((record: any) => {
+							const mapping = getStatisticsMapping(statisticType, timeFilter, cityLocationFilter);
+							if (mapping) {
+								const value = extractValueByPath(record, mapping.path);
+								console.log(`[DEBUG] ${name}: ${mapping.path} = ${value}`);
+								totalValue += value;
+							}
+						});
+					}
+				})
+			);
+		}
 	}
 
+	console.log(`[DEBUG] Résultat final ${statisticType}: ${totalValue} (${totalRecords} enregistrements)`);
+	
 	return {
 		date,
 		ville: 'all',
@@ -324,9 +567,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			}
 
 			const dateFormula = `{Mois-Année} = DATETIME_PARSE("${escAirtable(canonical)}", "YYYY-MM-DD")`;
-			const filterFormula = villeName
-				? `AND(${dateFormula}, {Ville EPICU} = "${escAirtable(villeName)}")`
-				: `AND(${dateFormula}, FIND("${escAirtable(ville)}", ARRAYJOIN({Ville EPICU})))`;
+			const filterFormula = dateFormula;
 
 			const found = await base(DEFAULT_TABLE_NAME).select({ view: DEFAULT_VIEW_NAME, filterByFormula: filterFormula, pageSize: 1 }).all();
 			if (!found || found.length === 0) return res.status(404).json({ error: 'Aucune statistique trouvée pour ce mois/ville' });
@@ -374,7 +615,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		}
 
 		// Traitement des données selon le type de statistique
-		const result = processStatisticsData(records, statisticType, timeFilter, locationFilter);
+		const result = await processStatisticsData(records, statisticType, timeFilter, locationFilter, date, ville);
 		
 		if (ville === 'all') {
 			const userId = await requireValidAccessToken(req, res);
@@ -392,7 +633,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			return res.status(200).json(aggregatedResult);
 		}
 
-		// Retourner le résultat traité
+		// Pour 'national', on utilise directement les données des tables FRANCE
+		// Le résultat est déjà traité par processStatisticsData
 		return res.status(200).json(result);
 	} catch (error: any) {
 		console.error('Airtable error (data):', error?.message || error);

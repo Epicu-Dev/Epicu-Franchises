@@ -33,7 +33,7 @@ import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
-import { formatNumberWithK } from "@/utils/format-numbers";
+import { formatNumberWithK, formatPercentage } from "@/utils/format-numbers";
 import { useRouter } from "next/navigation";
 
 // Types pour les données d'agenda
@@ -109,6 +109,14 @@ export default function HomeAdminPage() {
   const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
   const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
+
+  // État pour le filtre de ville - par défaut "national" pour home-admin
+  const [selectedCity, setSelectedCity] = useState<string>("national");
+
+  // Données des villes disponibles - pour home-admin, on utilise seulement "national"
+  const [cities, setCities] = useState([
+    { key: "national", label: "National" },
+  ]);
 
   // États pour les données dynamiques
   const [statistics, setStatistics] = useState<{
@@ -223,16 +231,18 @@ export default function HomeAdminPage() {
       }
 
       // Récupérer les statistiques pour chaque métrique avec le nouveau système
+      // Pour home-admin, on utilise toujours 'national' car c'est la vue globale
       const statisticsPromises = [
-        fetchStatistic('abonnes-en-plus', monthYear, 'all'),
-        fetchStatistic('vues', monthYear, 'all'),
-        fetchStatistic('clients-signes', monthYear, 'all'),
-        fetchStatistic('taux-conversion', monthYear, 'all'),
-        fetchStatistic('chiffre-affaires-global', monthYear, 'all'),
-        fetchStatistic('franchises', monthYear, 'all')
+        fetchStatistic('chiffre-affaires-global', monthYear, 'national'),
+        fetchStatistic('clients-signes', monthYear, 'national'),
+        fetchStatistic('prospects', monthYear, 'national'),
+        fetchStatistic('franchises', monthYear, 'national'),
+        fetchStatistic('posts-publies', monthYear, 'national'),
+        fetchStatistic('abonnes-en-plus', monthYear, 'national'),
+        fetchStatistic('vues', monthYear, 'national')
       ];
 
-      const [abonnesData, vuesData, clientsData, tauxData, caData, franchisesData] = await Promise.all(statisticsPromises);
+      const [caData, clientsData, prospectsData, franchisesData, postsData, abonnesData, vuesData] = await Promise.all(statisticsPromises);
 
       // Récupérer les données des clients et prospects pour les métriques supplémentaires
       const [clientsResponse, prospectsResponse] = await Promise.all([
@@ -258,13 +268,13 @@ export default function HomeAdminPage() {
         totalChiffreAffaires: caData?.value || 0,
         totalVues: vuesData?.value || 0,
         totalProspectsSignes: clientsData?.value || 0,
-        tauxConversion: tauxData?.value || 0,
-        totalStudio: 0, // À implémenter si nécessaire
-        totalClients,
-        totalProspects,
+        tauxConversion: 0, // Pas utilisé dans home-admin
+        totalStudio: 0, // Pas utilisé dans home-admin
+        totalClients: clientsData?.value || 0,
+        totalProspects: prospectsData?.value || 0,
         totalFranchises: franchisesData?.value || 0,
-        totalPosts: 0, // À implémenter si nécessaire
-        totalPrestations: 0, // À implémenter si nécessaire
+        totalPosts: postsData?.value || 0,
+        totalPrestations: 0, // Pas utilisé dans home-admin
       });
     } catch {
       setStatistics(null);
@@ -321,6 +331,21 @@ export default function HomeAdminPage() {
     }
   }, [isDateModalOpen]);
 
+  // Effet pour recharger les statistiques quand la ville change
+  useEffect(() => {
+    fetchStatistics();
+  }, [selectedCity]);
+
+  // Effet pour recharger les statistiques quand "Depuis la création" change
+  useEffect(() => {
+    fetchStatistics();
+  }, [isSinceCreationSelected]);
+
+  // Effet pour recharger les statistiques quand la date personnalisée change
+  useEffect(() => {
+    fetchStatistics();
+  }, [isCustomDateSelected]);
+
 
   // Transformation des événements pour l'affichage
   const agendaEvents = useMemo(() => {
@@ -344,7 +369,7 @@ export default function HomeAdminPage() {
     return [
       {
         value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalChiffreAffaires) : "0",
-        label: "Chiffres d'affaires global",
+        label: "CA total",
         icon: <ChiffreAffairesIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-green-stats/40",
         iconColor: "text-custom-green-stats",
@@ -362,7 +387,7 @@ export default function HomeAdminPage() {
       },
       {
         value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalProspects) : "0",
-        label: "Prospects",
+        label: "Prospects vus",
         icon: <ProspectsIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-yellow-prospects/40",
         iconColor: "text-custom-yellow-prospects",
@@ -388,17 +413,8 @@ export default function HomeAdminPage() {
         categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
       },
       {
-        value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalProspects) : "0",
-        label: "Prestations Studio",
-        icon: <StudioIcon className="h-6 w-6" />,
-        iconBgColor: "bg-custom-purple-shop/40",
-        iconColor: "text-custom-purple-shop",
-        city: "overview",
-        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
-      },
-      {
-        value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalFranchises) : "0",
-        label: "Abonnées",
+        value: statisticsLoading ? "..." : statistics ? `${(statistics.totalAbonnes * 100).toFixed(1)}%` : "0%",
+        label: "Progression d'abonnés",
         icon: <AbonnesIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-orange-abonnes/40",
         iconColor: "text-custom-orange-abonnes",
@@ -407,7 +423,7 @@ export default function HomeAdminPage() {
       },
       {
         value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalVues) : "0",
-        label: "Vues",
+        label: "Total vues",
         icon: <VuesIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-green-views/40",
         iconColor: "text-custom-green-views",

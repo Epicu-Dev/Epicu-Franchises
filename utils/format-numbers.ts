@@ -29,3 +29,13 @@ export function formatNumberWithPlusAndK(value: number): string {
   }
   return `+${value}`;
 }
+
+/**
+ * Formate un nombre en pourcentage avec arrondi à la première décimale
+ * @param value - Le nombre à formater
+ * @returns Le nombre formaté en pourcentage avec une décimale
+ */
+export function formatPercentage(value: number): string {
+  const roundedValue = Math.ceil(value * 10) / 10;
+  return `${roundedValue}%`;
+}

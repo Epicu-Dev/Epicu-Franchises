@@ -33,7 +33,7 @@ import { useDateFilters } from "@/hooks/use-date-filters";
 import { DateFilterModal } from "@/components/date-filter-modal";
 import { PeriodSelectorButtons } from "@/components/period-selector-buttons";
 import { Invoice } from "@/types/invoice";
-import { formatNumberWithK, formatNumberWithPlusAndK } from "@/utils/format-numbers";
+import { formatNumberWithK, formatNumberWithPlusAndK, formatPercentage } from "@/utils/format-numbers";
 
 // Types pour les données réelles
 type AgendaEvent = {
@@ -348,7 +348,7 @@ export default function HomePage() {
 
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
-          villeParam = 'all';
+          villeParam = 'national';
         } else {
           // Pour une ville spécifique, on utilise l'ID de la ville
           const selectedCityData = cities.find(c => c.key === selectedCity);
@@ -480,6 +480,16 @@ export default function HomePage() {
     fetchStatistics();
   }, [selectedCity]);
 
+  // Effet pour recharger les statistiques quand "Depuis la création" change
+  useEffect(() => {
+    fetchStatistics();
+  }, [isSinceCreationSelected]);
+
+  // Effet pour recharger les statistiques quand la date personnalisée change
+  useEffect(() => {
+    fetchStatistics();
+  }, [isCustomDateSelected]);
+
   // Cleanup pour annuler les requêtes en cours
   useEffect(() => {
     return () => {
@@ -501,8 +511,8 @@ export default function HomePage() {
 
   const metrics = [
     {
-      value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithPlusAndK(statistics.abonnes) : "0",
-      label: "Nombre d'abonnés",
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? (isSinceCreationSelected ? "100%" : `${(statistics.abonnes * 100).toFixed(1)}%`) : "0%",
+      label: "Progression d'abonnés",
       icon: <FranchiseAbonnesIcon className="h-8 w-8" />,
       iconBgColor: "bg-custom-green-stats/40",
       iconColor: "text-custom-green-stats",
