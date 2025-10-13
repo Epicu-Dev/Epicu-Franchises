@@ -538,11 +538,11 @@ export function ProspectModal({
                 }));
               }}
             >
-              <SelectItem key="FOOD">FOOD</SelectItem>
-              <SelectItem key="SHOP">SHOP</SelectItem>
-              <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-              <SelectItem key="FUN">FUN</SelectItem>
-              <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+              <SelectItem key="FOOD" translate="no">FOOD</SelectItem>
+              <SelectItem key="SHOP" translate="no">SHOP</SelectItem>
+              <SelectItem key="TRAVEL" translate="no">TRAVEL</SelectItem>
+              <SelectItem key="FUN" translate="no">FUN</SelectItem>
+              <SelectItem key="BEAUTY" translate="no">BEAUTY</SelectItem>
             </StyledSelect>
             {newProspect.categorie.length > 1 ? (
               <div>
@@ -567,11 +567,11 @@ export function ProspectModal({
                   }}
                 >
                   <SelectItem key="none">Aucune</SelectItem>
-                  <SelectItem key="FOOD">FOOD</SelectItem>
-                  <SelectItem key="SHOP">SHOP</SelectItem>
-                  <SelectItem key="TRAVEL">TRAVEL</SelectItem>
-                  <SelectItem key="FUN">FUN</SelectItem>
-                  <SelectItem key="BEAUTY">BEAUTY</SelectItem>
+                  <SelectItem key="FOOD" translate="no">FOOD</SelectItem>
+                  <SelectItem key="SHOP" translate="no">SHOP</SelectItem>
+                  <SelectItem key="TRAVEL" translate="no">TRAVEL</SelectItem>
+                  <SelectItem key="FUN" translate="no">FUN</SelectItem>
+                  <SelectItem key="BEAUTY" translate="no">BEAUTY</SelectItem>
                 </StyledSelect>
               </div>
             ) : (
