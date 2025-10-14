@@ -6,6 +6,27 @@ import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 const VIEW_NAME = '🌍 Tous établissements';
 
+// Helper pour récupérer le Record_ID d'interaction
+const getInteractionRecordId = (record: any) => {
+  const fieldName = 'Record_ID (from INTERACTIONS)';
+  const value = record.get(fieldName);
+  
+  // Gérer le cas où c'est un tableau (relation Airtable)
+  if (Array.isArray(value) && value.length > 0) {
+    const recordId = value[0];
+    if (recordId && typeof recordId === 'string' && recordId.trim()) {
+      return recordId;
+    }
+  }
+  
+  // Gérer le cas où c'est une chaîne simple
+  if (value && typeof value === 'string' && value.trim()) {
+    return value;
+  }
+  
+  return null;
+};
+
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
     
@@ -31,9 +52,10 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'SIRET',
       'Description',
       'Ville EPICU',
-      'Commentaires',
+      'Commentaires interactions',
       'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
       'HISTORIQUE DE PUBLICATIONS',
+      'Record_ID (from INTERACTIONS)',
     ];
 
     const allowedOrderBy = new Set([
@@ -137,7 +159,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         `FIND("${searchTerm}", LOWER({Email})) > 0,` +
         `FIND("${searchTerm}", LOWER({Ville})) > 0,` +
         `FIND("${searchTerm}", LOWER({Code postal})) > 0,` +
-        `FIND("${searchTerm}", LOWER({Commentaires})) > 0` +
+        `FIND("${searchTerm}", LOWER({Commentaires interactions})) > 0` +
         `)`
       );
     }
@@ -288,9 +310,10 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           siret: record.get('SIRET'),
           description: record.get('Description'),
           villeEpicu: record.get('Ville EPICU'),
-          commentaires: record.get('Commentaires'),
+          commentaires: record.get('Commentaires interactions'),
           dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)'),
-          publications: publications
+          publications: publications,
+          recordIdFromInteractions: getInteractionRecordId(record),
         };
       });
 

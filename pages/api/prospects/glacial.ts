@@ -6,6 +6,27 @@ import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 const VIEW_NAME = '🟡 Glacial';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 
+// Helper pour récupérer le Record_ID d'interaction
+const getInteractionRecordId = (record: any) => {
+  const fieldName = 'Record_ID (from INTERACTIONS)';
+  const value = record.get(fieldName);
+  
+  // Gérer le cas où c'est un tableau (relation Airtable)
+  if (Array.isArray(value) && value.length > 0) {
+    const recordId = value[0];
+    if (recordId && typeof recordId === 'string' && recordId.trim()) {
+      return recordId;
+    }
+  }
+  
+  // Gérer le cas où c'est une chaîne simple
+  if (value && typeof value === 'string' && value.trim()) {
+    return value;
+  }
+  
+  return null;
+};
+
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
     // Vérification de l'authentification
@@ -26,11 +47,12 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Catégorie',
       'Ville',
       'Suivi par',
-      'Commentaires',
+      'Commentaires interactions',
       'Date de relance',
       'Téléphone',
       'Email',
       'Adresse',
+      'Record_ID (from INTERACTIONS)',
     ];
     const allowedOrderBy = new Set([...fields]);
     const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : "Nom de l'établissement";
@@ -123,7 +145,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
     if (q && q.trim().length > 0) {
       const searchTerm = escapeForAirtable(q.trim().toLowerCase());
-      const qFormula = `OR(FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0, FIND("${searchTerm}", LOWER({Ville})) > 0, FIND("${searchTerm}", LOWER({Commentaires})) > 0)`;
+      const qFormula = `OR(FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0, FIND("${searchTerm}", LOWER({Ville})) > 0, FIND("${searchTerm}", LOWER({Commentaires interactions})) > 0)`;
       formulaParts.push(qFormula);
     }
 
@@ -196,12 +218,13 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         categorie: catName,
         ville: record.get('Ville'),
         suiviPar,
-        commentaires: record.get('Commentaires'),
+        commentaires: record.get('Commentaires interactions'),
         datePriseContact: record.get('Date de prise de contact'),
         dateRelance: record.get('Date de relance'),
         telephone: record.get('Téléphone'),
         email: record.get('Email'),
         adresse: record.get('Adresse'),
+        recordIdFromInteractions: getInteractionRecordId(record),
       };
     });
 

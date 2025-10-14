@@ -66,6 +66,27 @@ const resolveCollaboratorIds = async (raw: any) => {
   return out;
 };
 
+// Helper pour récupérer le Record_ID d'interaction
+const getInteractionRecordId = (record: any) => {
+  const fieldName = 'Record_ID (from INTERACTIONS)';
+  const value = record.get(fieldName);
+  
+  // Gérer le cas où c'est un tableau (relation Airtable)
+  if (Array.isArray(value) && value.length > 0) {
+    const recordId = value[0];
+    if (recordId && typeof recordId === 'string' && recordId.trim()) {
+      return recordId;
+    }
+  }
+  
+  // Gérer le cas où c'est une chaîne simple
+  if (value && typeof value === 'string' && value.trim()) {
+    return value;
+  }
+  
+  return null;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method === 'GET') {
@@ -88,11 +109,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Ville',
         'Suivi par',
         'Date de prise de contact',
-        'Commentaires',
+        'Commentaires interactions',
         'Date de relance',
         'Téléphone',
         'Email',
         'Adresse',
+        'Record_ID (from INTERACTIONS)',
       ];
 
       const allowedOrderBy = new Set(fields);
@@ -184,7 +206,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const formulaParts: string[] = [];
       if (q && q.trim().length > 0) {
         const searchTerm = escapeForAirtable(q.trim().toLowerCase());
-        const qFormula = `OR(FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0, FIND("${searchTerm}", LOWER({Ville})) > 0, FIND("${searchTerm}", LOWER({Commentaires})) > 0)`;
+        const qFormula = `OR(FIND("${searchTerm}", LOWER({Nom de l'établissement})) > 0, FIND("${searchTerm}", LOWER({Ville})) > 0, FIND("${searchTerm}", LOWER({Commentaires interactions})) > 0)`;
         formulaParts.push(qFormula);
       }
 
@@ -233,6 +255,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Debug: vérifier les champs disponibles sur le premier enregistrement
       if (upToPageRecords.length > 0) {
         const firstRecord = upToPageRecords[0];
+        console.log('🔍 Champs disponibles sur le premier enregistrement:');
+        console.log('📋 Tous les champs:', Object.keys(firstRecord.fields || {}));
+        console.log('🔗 Record_ID (from INTERACTIONS):', firstRecord.get('Record_ID (from INTERACTIONS)'));
+        console.log('🔍 Type du Record_ID:', typeof firstRecord.get('Record_ID (from INTERACTIONS)'));
+        console.log('💬 Commentaires interactions:', firstRecord.get('Commentaires interactions'));
+        
+        // Vérifier si le champ existe dans les champs récupérés
+        const allFields = Object.keys(firstRecord.fields || {});
+        const hasRecordIdField = allFields.includes('Record_ID (from INTERACTIONS)');
+        console.log('🔍 Le champ Record_ID (from INTERACTIONS) est-il présent dans les champs récupérés?', hasRecordIdField);
+        
+        // Chercher des champs similaires
+        const similarFields = allFields.filter(field => 
+          field.toLowerCase().includes('record') || 
+          field.toLowerCase().includes('interaction')
+        );
+        console.log('🔍 Champs similaires trouvés:', similarFields);
       }
       
       const pageRecords = upToPageRecords.slice(offset, offset + limit);
@@ -259,6 +298,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const spIds = record.get('Suivi par') || [];
         const suiviPar = Array.isArray(spIds) && spIds.length > 0 ? (suiviNames[spIds[0]] || spIds[0]) : '';
 
+        const recordIdFromInteractions = getInteractionRecordId(record);
+
         return {
           id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
@@ -267,10 +308,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           telephone: record.get('Téléphone'),
           suiviPar,
           datePriseContact: record.get('Date de prise de contact'),
-          commentaires: record.get('Commentaires'),
+          commentaires: record.get('Commentaires interactions'),
           dateRelance: record.get('Date de relance'),
           email: record.get('Email'),
           adresse: record.get('Adresse'),
+          recordIdFromInteractions: recordIdFromInteractions,
         };
       });
 
@@ -292,7 +334,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const categorieRaw = body['Catégorie'] || body.categorie || null;
         const datePrise = body['Date de prise de contact'] || body.datePriseContact || null;
         const dateRelance = body['Date de relance'] || body.dateRelance || null;
-        const commentaires = body['Commentaires'] || body.commentaires || null;
+        const commentaires = body['Commentaires interactions'] || body.commentaires || null;
         const email = body['Email'] || body.email || null;
         const suiviRaw = body['Suivi par'] || body['suiviPar'] || body['SuiviPar'] || body.suivi || null;
 
@@ -304,7 +346,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (telephone) fieldsToCreate['Téléphone'] = telephone;
         if (email) fieldsToCreate['Email'] = email;
         if (datePrise && datePrise.trim()) fieldsToCreate['Date de prise de contact'] = datePrise;
-        // Commentaires est un champ calculé, on ne peut pas le modifier directement
+        // Commentaires interactions est un champ calculé, on ne peut pas le modifier directement
         if (dateRelance && dateRelance.trim()) fieldsToCreate['Date de relance'] = dateRelance;
         if (ville) fieldsToCreate['Ville'] = ville;
 
@@ -363,9 +405,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           suiviPar: spName,
           datePriseContact: record.get('Date de prise de contact'),
           dateRelance: record.get('Date de relance'),
-          commentaires: record.get('Commentaires'),
+          commentaires: record.get('Commentaires interactions'),
           email: record.get('Email'),
           adresse: record.get('Adresse'),
+          recordIdFromInteractions: record.get('Record_ID (from INTERACTIONS)'),
         };
 
         return res.status(201).json({ prospect });
@@ -393,7 +436,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const dateValue = body['Date de prise de contact'];
           fieldsToUpdate['Date de prise de contact'] = dateValue && dateValue.trim() ? dateValue : null;
         }
-        // Commentaires est un champ calculé, on ne peut pas le modifier directement
+        // Commentaires interactions est un champ calculé, on ne peut pas le modifier directement
         if (Object.prototype.hasOwnProperty.call(body, 'Email')) fieldsToUpdate['Email'] = body['Email'];
         if (Object.prototype.hasOwnProperty.call(body, 'Date de relance')) {
           const dateValue = body['Date de relance'];

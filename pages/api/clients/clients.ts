@@ -6,6 +6,27 @@ import { requireValidAccessToken } from '../../../utils/verifyAccessToken';
 const TABLE_NAME = 'ÉTABLISSEMENTS';
 const VIEW_NAME = '🟢 Clients';
 
+// Helper pour récupérer le Record_ID d'interaction
+const getInteractionRecordId = (record: any) => {
+  const fieldName = 'Record_ID (from INTERACTIONS)';
+  const value = record.get(fieldName);
+  
+  // Gérer le cas où c'est un tableau (relation Airtable)
+  if (Array.isArray(value) && value.length > 0) {
+    const recordId = value[0];
+    if (recordId && typeof recordId === 'string' && recordId.trim()) {
+      return recordId;
+    }
+  }
+  
+  // Gérer le cas où c'est une chaîne simple
+  if (value && typeof value === 'string' && value.trim()) {
+    return value;
+  }
+  
+  return null;
+};
+
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   try {
     // PATCH handler: update client fields
@@ -61,7 +82,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         if (Object.prototype.hasOwnProperty.call(body, 'Code postal')) fieldsToUpdate['Code postal'] = body['Code postal'];
         if (Object.prototype.hasOwnProperty.call(body, 'SIRET')) fieldsToUpdate['SIRET'] = body['SIRET'];
         if (Object.prototype.hasOwnProperty.call(body, 'Description')) fieldsToUpdate['Description'] = body['Description'];
-        if (Object.prototype.hasOwnProperty.call(body, 'Commentaires')) fieldsToUpdate['Commentaires'] = body['Commentaires'];
+        if (Object.prototype.hasOwnProperty.call(body, 'Commentaires interactions')) fieldsToUpdate['Commentaires interactions'] = body['Commentaires interactions'];
         if (Object.prototype.hasOwnProperty.call(body, 'Ville EPICU')) {
           const villeId = await ensureRelatedRecord('VILLES EPICU', body['Ville EPICU'], ['Ville', 'Name']);
           if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
@@ -103,10 +124,11 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'SIRET',
       'Description',
       'Ville EPICU',
-      'Commentaires',
+      'Commentaires interactions',
       'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
       'HISTORIQUE DE PUBLICATIONS',
       'Date de création',
+      'Record_ID (from INTERACTIONS)',
     ];
 
     const allowedOrderBy = new Set([
@@ -212,7 +234,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         `FIND("${searchTerm}", LOWER({Email})) > 0,` +
         `FIND("${searchTerm}", LOWER({Ville})) > 0,` +
         `FIND("${searchTerm}", LOWER({Code postal})) > 0,` +
-        `FIND("${searchTerm}", LOWER({Commentaires})) > 0` +
+        `FIND("${searchTerm}", LOWER({Commentaires interactions})) > 0` +
         `)`
       );
     }
@@ -367,9 +389,10 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           siret: record.get('SIRET'),
           description: record.get('Description'),
           villeEpicu: record.get('Ville EPICU'),
-          commentaires: record.get('Commentaires'),
+          commentaires: record.get('Commentaires interactions'),
           dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)'),
-          publications: publications
+          publications: publications,
+          recordIdFromInteractions: getInteractionRecordId(record),
         };
       });
 
