@@ -19,7 +19,7 @@ import { getEventColorFromEstablishmentCategories } from "@/components/badges";
 interface Event {
   id: string;
   title: string;
-  type: "rendez-vous" | "tournage" | "publication" | "evenement";
+  type: "rendez-vous" | "tournage" | "publication" | "evenement" | "google-agenda";
   date: string;
   startTime: string;
   endTime: string;
@@ -99,6 +99,8 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
         return "bg-custom-red-publication/14 text-custom-red-publication";
       case "evenement":
         return "bg-custom-orange-event/14 text-custom-orange-event";
+      case "google-agenda":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-custom-text-color text-custom-text-color";
     }
@@ -125,6 +127,8 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
         return "Publication";
       case "evenement":
         return "Événement";
+      case "google-agenda":
+        return "Google Agenda";
       default:
         return type;
     }
@@ -220,20 +224,20 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
 
 
                 {/* Lien Google Calendar */}
-                {event.isGoogleEvent && event.htmlLink && (
+                {event.type === "google-agenda" && event.htmlLink && (
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                       Google Calendar
                     </h3>
-                    <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div>
-                        <p className="font-medium text-blue-900 dark:text-blue-100">Événement Google Calendar</p>
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Événement Google Calendar</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                           Cliquez pour ouvrir dans Google Calendar
                         </p>
                       </div>
                       <Button
-                        color="primary"
+                        color="default"
                         size="sm"
                         variant="flat"
                         onPress={() => window.open(event.htmlLink, '_blank')}
@@ -241,21 +245,29 @@ export function EventDetailModal({ isOpen, onOpenChange, event, onEventDeleted }
                         Ouvrir
                       </Button>
                     </div>
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>Note :</strong> Cet événement ne peut pas être supprimé depuis EPICU. 
+                        Pour le supprimer, ouvrez-le dans Google Calendar.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
             </ModalBody>
 
             <ModalFooter>
-              <Button 
-                color="danger" 
-                isLoading={isDeleting}
-                startContent={<TrashIcon className="h-4 w-4" />}
-                variant="flat" 
-                onPress={handleDelete}
-              >
-                Supprimer l&apos;événement
-              </Button>
+              {event.type !== "google-agenda" && (
+                <Button 
+                  color="danger" 
+                  isLoading={isDeleting}
+                  startContent={<TrashIcon className="h-4 w-4" />}
+                  variant="flat" 
+                  onPress={handleDelete}
+                >
+                  Supprimer l&apos;événement
+                </Button>
+              )}
               <Button 
                 color="primary" 
                 variant="light" 

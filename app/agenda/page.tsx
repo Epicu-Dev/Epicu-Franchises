@@ -21,7 +21,7 @@ import { GoogleCalendarSync } from "@/components/google-calendar-sync";
 interface Event {
   id: string;
   title: string;
-  type: "rendez-vous" | "tournage" | "publication" | "evenement";
+  type: "rendez-vous" | "tournage" | "publication" | "evenement" | "google-agenda";
   date: string;
   startTime: string;
   endTime: string;
@@ -308,6 +308,8 @@ export default function AgendaPage() {
           mappedType = "tournage";
         } else if (apiEvent.type.toLowerCase().includes("publication")) {
           mappedType = "publication";
+        } else if (apiEvent.type.toLowerCase().includes("google-agenda")) {
+          mappedType = "google-agenda";
         }
 
         // Déterminer la catégorie (par défaut siège)
@@ -566,7 +568,7 @@ export default function AgendaPage() {
         const transformedGoogleEvent: Event = {
           id: `google-${googleEvent.id || Date.now()}`,
           title: googleEvent.summary,
-          type: "evenement" as Event['type'],
+          type: "google-agenda" as Event['type'],
           date: startDate.toISOString().split('T')[0],
           startTime,
           endTime,
@@ -591,9 +593,9 @@ export default function AgendaPage() {
 
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventColor = (event: Event) => {
-
-    if (event.isGoogleEvent) {
-      return "bg-green-100 text-green-800";
+    // Couleur spécifique pour les événements Google Agenda
+    if (event.type === "google-agenda") {
+      return "bg-gray-100 text-gray-800";
     }
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
@@ -612,8 +614,9 @@ export default function AgendaPage() {
   };
   // Fonction helper pour obtenir la couleur d'un événement
   const getEventBorderColor = (event: Event) => {
-    if (event.isGoogleEvent) {
-      return "border-green-800";
+    // Couleur spécifique pour les événements Google Agenda
+    if (event.type === "google-agenda") {
+      return "border-gray-800";
     }
 
     // Sinon, utiliser les couleurs par type d'événement (comportement actuel)
