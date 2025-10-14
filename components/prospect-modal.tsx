@@ -232,38 +232,16 @@ export function ProspectModal({
 
       if (response.ok) {
         const data = await response.json();
+        // Retourner la dernière interaction (la plus récente), peu importe le statut/commentaire
+        const interactions = Array.isArray(data.interactions) ? data.interactions : [];
+        if (interactions.length === 0) return null;
 
-        // Convertir le statut du prospect pour la comparaison
-        const convertStatusForAPI = (frontStatus: string): string => {
-          if (frontStatus === "a_contacter") return "À contacter";
-          if (frontStatus === "contacte") return "Contacté";
-          if (frontStatus === "en_discussion") return "En discussion";
-          if (frontStatus === "interesse") return "Intéressé";
-          if (frontStatus === "pas_interesse") return "Pas intéressé";
-          if (frontStatus === "glacial") return "Glacial";
-          if (frontStatus === "client") return "Client";
-          return frontStatus;
-        };
-
-        const currentStatus = convertStatusForAPI(newProspect.statut);
-
-        // Chercher la plus récente interaction qui a un commentaire ET correspond au statut actuel
-        const interactionWithComment = data.interactions?.find((interaction: any) =>
-          interaction.commentaire &&
-          interaction.commentaire.trim() !== '' &&
-          interaction.statut === currentStatus
-        );
-
-
-        // Si aucune interaction avec le statut correspondant, prendre la plus récente avec commentaire
-        if (!interactionWithComment) {
-          const fallbackInteraction = data.interactions?.find((interaction: any) =>
-            interaction.commentaire && interaction.commentaire.trim() !== ''
-          );
-          return fallbackInteraction;
-        }
-
-        return interactionWithComment;
+        const sorted = interactions.slice().sort((a: any, b: any) => {
+          const da = new Date(a.dateInteraction || 0).getTime();
+          const db = new Date(b.dateInteraction || 0).getTime();
+          return db - da; // desc
+        });
+        return sorted[0] || null;
       } else {
         console.error('Erreur réponse API:', response.status, response.statusText);
       }
@@ -273,61 +251,63 @@ export function ProspectModal({
     return null;
   };
 
-  const createOrUpdateInteractionForComment = async (prospectId: string, comment: string) => {
+  const updateLastInteractionComment = async (prospectId: string, comment: string) => {
     try {
-      // Convertir le statut du prospect pour l'API
-      const convertStatusForAPI = (frontStatus: string): string => {
-        if (frontStatus === "a_contacter") return "À contacter";
-        if (frontStatus === "contacte") return "Contacté";
-        if (frontStatus === "en_discussion") return "En discussion";
-        if (frontStatus === "interesse") return "Intéressé";
-        if (frontStatus === "pas_interesse") return "Pas intéressé";
-        if (frontStatus === "glacial") return "Glacial";
-        if (frontStatus === "client") return "Client";
-        return frontStatus;
-      };
-
-      // Vérifier s'il existe déjà une interaction avec un commentaire
+      // Récupérer la dernière interaction existante pour cet établissement
       const existingInteraction = await getExistingInteractionWithComment(prospectId);
 
-      const interactionData = {
-        etablissement: prospectId,
-        dateInteraction: new Date().toISOString().split('T')[0],
-        statut: convertStatusForAPI(newProspect.statut),
-        commentaire: comment,
-        prochainRdv: null
-      };
-
-      let response;
-
       if (existingInteraction) {
-        // Mettre à jour l'interaction existante
-        response = await authFetch(`/api/interaction?id=${existingInteraction.id}`, {
+        // Mettre à jour uniquement le commentaire de la dernière interaction
+        const response = await authFetch(`/api/interaction?id=${existingInteraction.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(interactionData),
+          body: JSON.stringify({ commentaire: comment }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Erreur lors de la mise à jour du commentaire:', errorData);
+          // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+        }
       } else {
-        // Créer une nouvelle interaction
-        response = await authFetch('/api/interaction', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(interactionData),
-        });
+        // Aucune interaction existante : ne rien faire (pas de création d'interaction dans ce modal)
+        console.log('Aucune interaction existante à mettre à jour');
       }
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour du commentaire:', err);
+      // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+    }
+  };
+
+  const createInitialInteraction = async (prospectId: string, comment: string) => {
+    try {
+      const interactionData = {
+        etablissement: prospectId,
+        dateInteraction: new Date().toISOString().split('T')[0], // Date du jour
+        statut: "À contacter", // Statut par défaut pour un nouveau prospect
+        commentaire: comment || "Prospect créé"
+      };
+
+      const response = await authFetch('/api/interaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(interactionData),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Erreur lors de la gestion de l\'interaction:', errorData);
-        // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+        console.error('Erreur lors de la création de l\'interaction:', errorData);
+        // Ne pas faire échouer la création du prospect pour une erreur d'interaction
+      } else {
+        console.log('Interaction créée avec succès pour le nouveau prospect');
       }
     } catch (err) {
-      console.error('Erreur lors de la gestion de l\'interaction:', err);
-      // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+      console.error('Erreur lors de la création de l\'interaction:', err);
+      // Ne pas faire échouer la création du prospect pour une erreur d'interaction
     }
   };
 
@@ -407,15 +387,19 @@ export function ProspectModal({
       const responseData = await response.json();
       const etablissementId = isEditing ? newProspect.id : responseData.prospect?.id;
 
-      // Créer ou mettre à jour une interaction si il y a un commentaire
-      if (etablissementId && newProspect.commentaires && typeof newProspect.commentaires === 'string' && newProspect.commentaires.trim()) {
-        // Pour la modification, vérifier que le commentaire a changé
-        if (isEditing && newProspect.commentaires !== originalComment) {
-          await createOrUpdateInteractionForComment(etablissementId, newProspect.commentaires);
-        }
-        // Pour l'ajout, créer ou mettre à jour l'interaction avec l'ID de l'établissement créé
-        else if (!isEditing) {
-          await createOrUpdateInteractionForComment(etablissementId, newProspect.commentaires);
+      // Gérer les interactions selon le contexte
+      if (etablissementId) {
+        if (isEditing) {
+          // Mise à jour : mettre à jour le commentaire de la dernière interaction si il y a un commentaire
+          if (newProspect.commentaires && typeof newProspect.commentaires === 'string' && newProspect.commentaires.trim()) {
+            await updateLastInteractionComment(etablissementId, newProspect.commentaires);
+          }
+        } else {
+          // Création : créer une nouvelle interaction avec les informations du prospect
+          const comment = newProspect.commentaires && typeof newProspect.commentaires === 'string' && newProspect.commentaires.trim() 
+            ? newProspect.commentaires 
+            : "Prospect créé";
+          await createInitialInteraction(etablissementId, comment);
         }
       }
 

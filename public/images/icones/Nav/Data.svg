@@ -1,30 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="Calque_1" data-name="Calque 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">
-  <defs>
-    <style>
-      .cls-1, .cls-2 {
-        stroke: #2b2b2b;
-      }
-
-      .cls-1, .cls-2, .cls-3 {
-        fill: none;
-        stroke-miterlimit: 10;
-        stroke-width: 29px;
-      }
-
-      .cls-2, .cls-3 {
-        stroke-linecap: round;
-      }
-
-      .cls-3 {
-        stroke: #1d1d1b;
-      }
-    </style>
-  </defs>
-  <rect class="cls-1" x="161.97" y="698.02" width="176.7" height="240.88" rx="25.04" ry="25.04"/>
-  <rect class="cls-1" x="451.65" y="546.04" width="176.7" height="392.85" rx="25.04" ry="25.04"/>
-  <rect class="cls-1" x="741.34" y="366.57" width="176.7" height="572.33" rx="25.04" ry="25.04"/>
-  <line class="cls-2" x1="161.97" y1="614.38" x2="897.25" y2="159.47"/>
-  <line class="cls-3" x1="807.79" y1="140.86" x2="905.86" y2="154.36"/>
-  <line class="cls-2" x1="905.86" y1="154.36" x2="875.65" y2="243.42"/>
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M313.63 698.02H187.01C173.181 698.02 161.97 709.23 161.97 723.06V913.859C161.97 927.689 173.181 938.9 187.01 938.9H313.63C327.459 938.9 338.67 927.689 338.67 913.859V723.06C338.67 709.23 327.459 698.02 313.63 698.02Z" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10"/>
+<path d="M603.31 546.04H476.69C462.861 546.04 451.65 557.251 451.65 571.08V913.85C451.65 927.679 462.861 938.89 476.69 938.89H603.31C617.139 938.89 628.35 927.679 628.35 913.85V571.08C628.35 557.251 617.139 546.04 603.31 546.04Z" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10"/>
+<path d="M893 366.57H766.38C752.551 366.57 741.34 377.781 741.34 391.61V913.86C741.34 927.69 752.551 938.9 766.38 938.9H893C906.829 938.9 918.04 927.69 918.04 913.86V391.61C918.04 377.781 906.829 366.57 893 366.57Z" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10"/>
+<path d="M161.97 614.38L897.25 159.47" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M807.79 140.86L905.86 154.36" stroke="#1D1D1B" stroke-width="29" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M905.86 154.36L875.65 243.42" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10" stroke-linecap="round"/>
 </svg>

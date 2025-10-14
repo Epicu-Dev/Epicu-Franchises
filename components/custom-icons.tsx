@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, memo } from 'react';
+import { useSidebarImageCache } from '@/hooks/use-sidebar-image-cache';
 
 interface CustomIconProps {
   name: 'abonnes' | 'chiffre-affaires' | 'clients' | 'franchises' | 'posts' | 'prospects' | 'studio' | 'vues';
@@ -10,14 +11,56 @@ interface FranchiseIconProps {
   className?: string;
 }
 
-export const CustomIcon: React.FC<CustomIconProps> = ({ name, className = "h-6 w-6" }) => {
-  const iconPath = `/images/icones/Home-admin/${name}.svg`;
-  
+// Composant d'icône optimisé avec cache
+const OptimizedIcon = memo(({ src, alt, className, isCached }: { 
+  src: string; 
+  alt: string; 
+  className: string; 
+  isCached: boolean; 
+}) => {
+  const [isLoaded, setIsLoaded] = useState<boolean>(Boolean(isCached));
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (isCached) {
+      setIsLoaded(true);
+      return;
+    }
+
+    const img = new window.Image();
+    img.onload = () => setIsLoaded(true);
+    img.onerror = () => setHasError(true);
+    img.src = src;
+  }, [src, isCached]);
+
+  if (hasError) {
+    return <div className={`${className} bg-gray-300 rounded`} />;
+  }
+
+  const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
+
   return (
     <img 
-      src={iconPath} 
+      src={src} 
+      alt={alt}
+      className={`${className} ${visibilityClass} transition-opacity duration-200`}
+      loading="eager"
+    />
+  );
+});
+
+OptimizedIcon.displayName = 'OptimizedIcon';
+
+export const CustomIcon: React.FC<CustomIconProps> = ({ name, className = "h-6 w-6" }) => {
+  const iconPath = `/images/icones/Home-admin/${name}.svg`;
+  const { isImageCached } = useSidebarImageCache();
+  
+  return (
+    <OptimizedIcon 
+      src={iconPath}
       alt={`${name} icon`}
       className={className}
+      isCached={isImageCached(iconPath)}
     />
   );
 };
@@ -58,12 +101,14 @@ export const VuesIcon: React.FC<{ className?: string }> = ({ className }) => (
 // Composants pour les icônes des franchisés
 export const FranchiseIcon: React.FC<FranchiseIconProps> = ({ name, className = "h-6 w-6" }) => {
   const iconPath = `/images/icones/Home-franchisé/${name}.svg`;
+  const { isImageCached } = useSidebarImageCache();
   
   return (
-    <img 
-      src={iconPath} 
+    <OptimizedIcon 
+      src={iconPath}
       alt={`${name} icon`}
       className={className}
+      isCached={isImageCached(iconPath)}
     />
   );
 };

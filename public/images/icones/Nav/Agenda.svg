@@ -1,23 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="Calque_1" data-name="Calque 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">
-  <defs>
-    <style>
-      .cls-1, .cls-2 {
-        fill: none;
-        stroke: #2b2b2b;
-        stroke-miterlimit: 10;
-        stroke-width: 29px;
-      }
-
-      .cls-2 {
-        stroke-linecap: round;
-      }
-    </style>
-  </defs>
-  <rect class="cls-1" x="203.94" y="221.42" width="682.28" height="714.42" rx="144.41" ry="144.41"/>
-  <line class="cls-1" x1="193.78" y1="455.84" x2="876.06" y2="455.84"/>
-  <g>
-    <line class="cls-2" x1="409.36" y1="144.16" x2="409.36" y2="298.69"/>
-    <line class="cls-2" x1="680.8" y1="144.16" x2="680.8" y2="298.69"/>
-  </g>
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M741.81 221.42H348.35C268.595 221.42 203.94 286.074 203.94 365.83V791.43C203.94 871.185 268.595 935.84 348.35 935.84H741.81C821.565 935.84 886.22 871.185 886.22 791.43V365.83C886.22 286.074 821.565 221.42 741.81 221.42Z" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10"/>
+<path d="M193.78 455.84H876.06" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10"/>
+<path d="M409.36 144.16V298.69" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M680.8 144.16V298.69" stroke="#2B2B2B" stroke-width="29" stroke-miterlimit="10" stroke-linecap="round"/>
 </svg>

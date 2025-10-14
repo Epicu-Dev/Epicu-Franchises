@@ -587,6 +587,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const periodType = (req.query.periodType as string) || 'month';
 		const isSinceCreation = (req.query.isSinceCreation as string) === 'true';
 		const isCustomDate = (req.query.isCustomDate as string) === 'true';
+
+		// Caching côté serveur: le contenu est spécifique à la combinaison des query params,
+		// peu volatile; on autorise un cache court + revalidation sur le client/CDN
+		// S-MaxAge pour CDN, stale-while-revalidate pour latence
+		res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=300');
 		
 		const canonical = canonicalFirstOfMonth(date);
 		if (!canonical) {

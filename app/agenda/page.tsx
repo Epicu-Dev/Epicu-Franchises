@@ -272,7 +272,6 @@ export default function AgendaPage() {
       const params = new URLSearchParams({
         dateStart,
         dateEnd,
-        limit: '100', // Récupérer plus d'événements pour couvrir la période
       });
 
       const response = await authFetch(`/api/agenda?${params}`);
@@ -1041,7 +1040,7 @@ export default function AgendaPage() {
     // Fonction pour calculer la hauteur dynamique d'une ligne
     const calculateRowHeight = (eventCount: number) => {
       const baseHeight = 50; // Hauteur de base (4rem = 64px)
-      const eventHeight = 40; // Hauteur par événement (2.5rem = 40px)
+      const eventHeight = 45; // Hauteur par événement (2.5rem = 40px)
       const padding = 16; // Padding vertical (1rem = 16px)
 
       if (eventCount === 0) {

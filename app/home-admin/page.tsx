@@ -33,6 +33,8 @@ import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
+import { useHomeDataCache } from "@/hooks/use-home-data-cache";
+import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
 import { formatNumberWithK, formatPercentage } from "@/utils/format-numbers";
 import { useRouter } from "next/navigation";
 
@@ -103,9 +105,12 @@ export default function HomeAdminPage() {
   // États pour les modals d'agenda
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
-  // États pour l'agenda
-  const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [agendaLoading, setAgendaLoading] = useState(false);
+  // Utilisation du hook de cache pour les données agenda
+  const {
+    agenda: events,
+    agendaLoading,
+    refreshData: refreshCachedData
+  } = useHomeDataCache();
   const [isUnifiedModalOpen, setIsUnifiedModalOpen] = useState(false);
   const [currentEventType, setCurrentEventType] = useState<"tournage" | "publication" | "rendez-vous" | "evenement" | "google-calendar">("tournage");
   const [isGoogleConnected, setIsGoogleConnected] = useState<boolean | null>(null);
@@ -141,50 +146,6 @@ export default function HomeAdminPage() {
     }
   }, [userProfile, setUserProfileLoaded]);
 
-  // Fonction pour récupérer les données agenda
-  const fetchAgenda = async () => {
-    try {
-      console.log('Récupération des données agenda...');
-      setAgendaLoading(true);
-
-      // Récupérer l'ID du collaborateur
-      const meRes = await authFetch('/api/auth/me');
-
-      if (!meRes.ok) {
-        console.log('Erreur lors de la récupération du profil utilisateur');
-        return;
-      }
-
-      // Calculer la plage de dates pour le mois sélectionné
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
-      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
-
-      console.log('Période sélectionnée:', startOfMonth.toISOString().split('T')[0], 'à', endOfMonth.toISOString().split('T')[0]);
-
-      // Récupérer les événements d'agenda
-      const params = new URLSearchParams();
-
-      params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
-      params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
-
-      const eventsResponse = await authFetch(`/api/agenda?${params.toString()}`);
-
-      if (eventsResponse.ok) {
-        const eventsData = await eventsResponse.json();
-        console.log('Événements récupérés:', eventsData.events?.length || 0);
-        setEvents(eventsData.events || []);
-      } else {
-        console.log('Erreur lors de la récupération des événements');
-        setEvents([]);
-      }
-    } catch (error) {
-      console.error('Erreur dans fetchAgenda:', error);
-      setEvents([]);
-    } finally {
-      setAgendaLoading(false);
-    }
-  };
 
   // Fonction pour vérifier le statut Google Calendar
   const checkGoogleCalendarStatus = async () => {
@@ -308,11 +269,12 @@ export default function HomeAdminPage() {
     }
   };
 
-  // Fonction pour récupérer toutes les données
+  // Fonction pour récupérer toutes les données (maintenant seulement statistiques et Google Calendar)
   const fetchData = async () => {
     try {
       console.log('Chargement des données...');
-      await Promise.all([fetchStatistics(), fetchAgenda(), checkGoogleCalendarStatus()]);
+      // Les données agenda sont maintenant gérées par le cache
+      await Promise.all([fetchStatistics(), checkGoogleCalendarStatus()]);
       console.log('Données chargées avec succès');
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
@@ -387,7 +349,7 @@ export default function HomeAdminPage() {
       },
       {
         value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalProspects) : "0",
-        label: "Prospects vus",
+        label: "Prospects",
         icon: <ProspectsIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-yellow-prospects/40",
         iconColor: "text-custom-yellow-prospects",
@@ -409,6 +371,15 @@ export default function HomeAdminPage() {
         icon: <PostsIcon className="h-6 w-6" />,
         iconBgColor: "bg-custom-blue-posts/40",
         iconColor: "text-custom-blue-posts",
+        city: "overview",
+        categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
+      },
+      {
+        value: statisticsLoading ? "..." : statistics ? formatNumberWithK(statistics.totalStudio) : "0",
+        label: "Studio",
+        icon: <StudioIcon className="h-6 w-6" />,
+        iconBgColor: "bg-custom-purple-studio/40",
+        iconColor: "text-custom-purple-studio",
         city: "overview",
         categories: ["FOOD", "SHOP", "TRAVEL", "FUN", "BEAUTY"],
       },
@@ -669,7 +640,7 @@ export default function HomeAdminPage() {
       <UnifiedEventModal
         eventType={currentEventType}
         isOpen={isUnifiedModalOpen}
-        onEventAdded={fetchData}
+        onEventAdded={refreshCachedData}
         onOpenChange={setIsUnifiedModalOpen}
       />
 

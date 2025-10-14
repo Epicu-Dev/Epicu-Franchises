@@ -27,6 +27,7 @@ interface SubscribersEditModalProps {
   month: string;
   date: string; // Format MM-YYYY
   saving?: boolean;
+  pageActiveTab?: string; // Onglet actif de la page (pour déterminer la ville par défaut)
 }
 
 export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
@@ -37,6 +38,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
   month,
   date,
   saving = false,
+  pageActiveTab = "overview",
 }) => {
   const { userProfile } = useUser();
   const { authFetch } = useAuthFetch();
@@ -54,8 +56,8 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
     setIsLoadingData(true);
 
     try {
-      const villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
-      const response = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
+      const villeParam = city.id || city.ville;
+      const response = await authFetch(`/api/data/data-ville?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
 
       if (response.ok) {
         const apiData = await response.json();
@@ -108,19 +110,41 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
 
       setCityData(initialCityData);
       
-      // Définir le premier tab comme actif et charger ses données
-      if (userProfile.villes.length > 0) {
-        const firstCity = userProfile.villes[0];
-        const firstCityKey = firstCity.ville.toLowerCase().replace(/\s+/g, '-');
-
-        setActiveTab(firstCityKey);
+      // Déterminer quelle ville utiliser comme onglet par défaut
+      let defaultCity = null;
+      let defaultCityKey = "";
+      
+      if (pageActiveTab === "overview") {
+        // Si on est en vue d'ensemble, utiliser la première ville
+        if (userProfile.villes.length > 0) {
+          defaultCity = userProfile.villes[0];
+          defaultCityKey = defaultCity.ville.toLowerCase().replace(/\s+/g, '-');
+        }
+      } else {
+        // Si on est sur un onglet de ville spécifique, utiliser cette ville
+        defaultCity = userProfile.villes.find(city => 
+          city.ville.toLowerCase().replace(/\s+/g, '-') === pageActiveTab
+        );
+        if (defaultCity) {
+          defaultCityKey = defaultCity.ville.toLowerCase().replace(/\s+/g, '-');
+        }
+      }
+      
+      // Si aucune ville trouvée, utiliser la première par défaut
+      if (!defaultCity && userProfile.villes.length > 0) {
+        defaultCity = userProfile.villes[0];
+        defaultCityKey = defaultCity.ville.toLowerCase().replace(/\s+/g, '-');
+      }
+      
+      if (defaultCity) {
+        setActiveTab(defaultCityKey);
         setFormData(initialData);
         
-        // Charger les données de la première ville
-        loadCityData(firstCityKey, firstCity);
+        // Charger les données de la ville par défaut
+        loadCityData(defaultCityKey, defaultCity);
       }
     }
-  }, [initialData, isOpen, hasMultipleCities, userProfile?.villes, date]);
+  }, [initialData, isOpen, hasMultipleCities, userProfile?.villes, date, pageActiveTab]);
 
   // Mettre à jour formData quand les données de la ville active changent
   useEffect(() => {
@@ -177,7 +201,7 @@ export const SubscribersEditModal: React.FC<SubscribersEditModalProps> = ({
         c.ville.toLowerCase().replace(/\s+/g, '-') === activeTab
       );
 
-      onSave(cityData[activeTab] || formData, selectedCity?.ville);
+      onSave(cityData[activeTab] || formData, selectedCity?.id || selectedCity?.ville);
     } else {
       onSave(formData);
     }
