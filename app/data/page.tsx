@@ -64,35 +64,22 @@ export default function DataPage() {
   };
 
 
-  // Fonction pour transformer les données API en données d'affichage
-  const transformApiDataToDisplayData = (apiData: any, _month: string, _city: any): Data => {
-    return {
-      id: apiData.id,
-      date: apiData.date || '',
-      ville: apiData.ville || '',
-      totalAbonnes: apiData.totalAbonnes || 0,
-      totalVues: apiData.totalVues || 0,
-      totalProspectsSignes: apiData.totalProspectsSignes || 0,
-      totalProspectsVus: apiData.totalProspectsVus || 0,
-      tauxConversion: apiData.tauxConversion || 0,
-      rawCount: apiData.rawCount || 0,
-      moisAnnee: apiData.moisAnnee,
-      villeEpicu: apiData.villeEpicu,
-      prospectsSignesDsLeMois: apiData.prospectsSignesDsLeMois,
-      tauxDeConversion: apiData.tauxDeConversion,
-      viewsFood: apiData.viewsFood,
-      abonnesFood: apiData.abonnesFood,
-      abonnesShop: apiData.abonnesShop,
-      vuesShop: apiData.vuesShop,
-      abonnesTravel: apiData.abonnesTravel,
-      vuesTravel: apiData.vuesTravel,
-      abonnesFun: apiData.abonnesFun,
-      vuesFun: apiData.vuesFun,
-      abonnesBeauty: apiData.abonnesBeauty,
-      vuesBeauty: apiData.vuesBeauty,
-      postsPublies: apiData.postsPublies,
-      cumulMontantCadeau: apiData.cumulMontantCadeau,
-    };
+  // Helper pour appeler la nouvelle API dédiée STATISTIQUES MENSUELLES VILLE
+  const fetchCityMonthStats = async (date: string, ville: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set('date', date);
+      params.set('ville', ville);
+
+      const response = await authFetch(`/api/data/data-ville?${params.toString()}`);
+      if (response.ok) {
+        const json = await response.json();
+        return json;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
   };
 
   // Fonction pour récupérer les données depuis l'API
@@ -139,52 +126,76 @@ export default function DataPage() {
       const dataPromises = months.map(async (month, _index) => {
         const monthNumber = allMonths.indexOf(month) + 1;
         const date = `${monthNumber.toString().padStart(2, '0')}-${currentYear}`;
-        
-        // Utiliser la ville sélectionnée ou "all" pour la vue d'ensemble
-        let city, villeParam;
 
-        if (selectedCity) {
-          // Ville spécifique : utiliser toujours la même ville
-          city = selectedCity;
-          villeParam = city.id || city.ville.toLowerCase().replace(/\s+/g, '-');
-        } else {
-          // Vue d'ensemble : utiliser "all" comme paramètre de ville
-          city = null;
+        // Utiliser la ville sélectionnée ou "all" pour la vue d'ensemble
+        let villeParam: string;
+        if (activeTab === "overview") {
           villeParam = "all";
+        } else {
+          const selectedCityData = userProfile.villes.find(city => 
+            city.ville.toLowerCase().replace(/\s+/g, '-') === activeTab
+          );
+          villeParam = selectedCityData?.id || selectedCityData?.ville || 'all';
         }
 
         try {
-          const response = await authFetch(`/api/data/data?ville=${encodeURIComponent(villeParam)}&date=${encodeURIComponent(date)}`);
+          const monthStats = await fetchCityMonthStats(date, villeParam);
 
-          if (!response.ok) {
-            // Retourner des données par défaut en cas d'erreur
-            return transformApiDataToDisplayData({
-              date,
-              ville: villeParam,
-              totalAbonnes: 0,
-              totalVues: 0,
-              totalProspectsSignes: 0,
-              totalProspectsVus: 0,
-              tauxConversion: null,
-              rawCount: 0,
-            }, month, city);
-          }
-
-          const apiData = await response.json();
-
-          return transformApiDataToDisplayData(apiData, month, city);
+          return {
+            id: undefined,
+            date,
+            ville: villeParam,
+            totalAbonnes: monthStats?.totalAbonnes || 0,
+            totalVues: monthStats?.totalVues || 0,
+            totalProspectsSignes: monthStats?.totalProspectsSignes || 0,
+            totalProspectsVus: monthStats?.totalProspectsVus || 0,
+            tauxConversion: monthStats?.tauxConversion || 0,
+            rawCount: 0,
+            moisAnnee: monthStats?.moisAnnee,
+            villeEpicu: monthStats?.villeEpicu,
+            prospectsSignesDsLeMois: monthStats?.totalProspectsSignes,
+            tauxDeConversion: monthStats?.tauxConversion,
+            viewsFood: monthStats?.vuesFood,
+            abonnesFood: monthStats?.abonnesFood || 0,
+            abonnesShop: monthStats?.abonnesShop || 0,
+            vuesShop: monthStats?.vuesShop,
+            abonnesTravel: monthStats?.abonnesTravel || 0,
+            vuesTravel: monthStats?.vuesTravel,
+            abonnesFun: monthStats?.abonnesFun || 0,
+            vuesFun: monthStats?.vuesFun,
+            abonnesBeauty: monthStats?.abonnesBeauty || 0,
+            vuesBeauty: monthStats?.vuesBeauty,
+            postsPublies: monthStats?.postsPublies || 0,
+            cumulMontantCadeau: 0,
+          } as Data;
         } catch {
-          // Retourner des données par défaut en cas d'erreur
-          return transformApiDataToDisplayData({
+          return {
+            id: undefined,
             date,
             ville: villeParam,
             totalAbonnes: 0,
             totalVues: 0,
             totalProspectsSignes: 0,
             totalProspectsVus: 0,
-            tauxConversion: null,
+            tauxConversion: 0,
             rawCount: 0,
-          }, month, city);
+            moisAnnee: undefined,
+            villeEpicu: undefined,
+            prospectsSignesDsLeMois: undefined,
+            tauxDeConversion: undefined,
+            viewsFood: undefined,
+            abonnesFood: 0,
+            abonnesShop: 0,
+            vuesShop: undefined,
+            abonnesTravel: 0,
+            vuesTravel: undefined,
+            abonnesFun: 0,
+            vuesFun: undefined,
+            abonnesBeauty: 0,
+            vuesBeauty: undefined,
+            postsPublies: 0,
+            cumulMontantCadeau: 0,
+          } as Data;
         }
       });
 
@@ -218,6 +229,37 @@ export default function DataPage() {
 
   // Utiliser le hook de tri réutilisable directement sur les données de l'API
   const { sortedData } = useSortableTable(tableData);
+
+  // Fonction pour déterminer si la ligne du tableau doit être mise à jour
+  const shouldUpdateTableRow = (currentRow: Data, villeToUse: string, activeTab: string): boolean => {
+    // Si on est dans la vue d'ensemble (activeTab === "overview")
+    if (activeTab === "overview") {
+      // Pour la vue d'ensemble, on met à jour seulement si la ligne correspond à "all"
+      return currentRow.ville === "all";
+    }
+    
+    // Si on est dans un onglet de ville spécifique
+    const selectedCity = userProfile?.villes?.find(city => 
+      city.ville.toLowerCase().replace(/\s+/g, '-') === activeTab
+    );
+    
+    if (!selectedCity) {
+      return false;
+    }
+    
+    // Vérifier si la ville modifiée correspond exactement à la ville de l'onglet actif
+    const selectedCityId = selectedCity.id || selectedCity.ville;
+    const selectedCityName = selectedCity.ville;
+    
+    // La ville modifiée doit correspondre à la ville de l'onglet actif
+    const villeModifieeCorrespond = villeToUse === selectedCityId || villeToUse === selectedCityName;
+    
+    // La ligne du tableau doit aussi correspondre à la ville de l'onglet actif
+    const ligneTableauCorrespond = currentRow.ville === selectedCityId || currentRow.ville === selectedCityName;
+    
+    // On met à jour seulement si les deux conditions sont remplies
+    return villeModifieeCorrespond && ligneTableauCorrespond;
+  };
 
   // Fonction pour ouvrir le modal d'édition
   const handleEditSubscribers = (rowIndex: number) => {
@@ -259,7 +301,7 @@ export default function DataPage() {
         };
 
         // Appeler l'API PATCH pour sauvegarder
-        const response = await authFetch('/api/data/data', {
+        const response = await authFetch('/api/data/data-ville', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -268,23 +310,36 @@ export default function DataPage() {
         });
 
         if (response.ok) {
-          // Mettre à jour l'état local seulement si l'API a réussi
-          const updatedData = [...tableData];
+          // Vérifier si la ville modifiée correspond à la ville de la ligne dans le tableau
+          const shouldUpdateTable = shouldUpdateTableRow(currentRow, villeToUse, activeTab);
+          
+          // Debug logs (à supprimer plus tard)
+          console.log('Debug mise à jour tableau:', {
+            activeTab,
+            villeToUse,
+            currentRowVille: currentRow.ville,
+            shouldUpdateTable
+          });
+          
+          if (shouldUpdateTable) {
+            // Mettre à jour l'état local seulement si l'API a réussi et si c'est la bonne ville
+            const updatedData = [...tableData];
 
-          // Calculer le nouveau total des abonnés
-          const newTotalAbonnes = (newData.abonnesFood || 0) + 
-                                 (newData.abonnesShop || 0) + 
-                                 (newData.abonnesTravel || 0) + 
-                                 (newData.abonnesFun || 0) + 
-                                 (newData.abonnesBeauty || 0);
+            // Calculer le nouveau total des abonnés
+            const newTotalAbonnes = (newData.abonnesFood || 0) + 
+                                   (newData.abonnesShop || 0) + 
+                                   (newData.abonnesTravel || 0) + 
+                                   (newData.abonnesFun || 0) + 
+                                   (newData.abonnesBeauty || 0);
 
-          updatedData[editingRowIndex] = {
-            ...updatedData[editingRowIndex],
-            ...newData,
-            totalAbonnes: newTotalAbonnes,
-            ville: villeToUse
-          };
-          setTableData(updatedData);
+            updatedData[editingRowIndex] = {
+              ...updatedData[editingRowIndex],
+              ...newData,
+              totalAbonnes: newTotalAbonnes,
+              ville: villeToUse
+            };
+            setTableData(updatedData);
+          }
           
           // Afficher un toast de succès
           toast.success("Données sauvegardées avec succès !");
@@ -335,7 +390,12 @@ export default function DataPage() {
   // Réinitialiser l'onglet actif quand les villes changent
   useEffect(() => {
     if (userProfile?.villes && userProfile.villes.length > 0) {
-      setActiveTab("overview");
+      if (userProfile.villes.length === 1) {
+        const onlyCitySlug = userProfile.villes[0].ville.toLowerCase().replace(/\s+/g, '-');
+        setActiveTab(onlyCitySlug);
+      } else {
+        setActiveTab("overview");
+      }
     }
   }, [userProfile?.villes]);
 
@@ -432,7 +492,9 @@ export default function DataPage() {
               variant="underlined"
               onSelectionChange={(key) => setActiveTab(key as string)}
             >
-              <Tab key="overview" title="Vue d'ensemble" />
+              {userProfile.villes.length > 1 && (
+                <Tab key="overview" title="Vue d'ensemble" />
+              )}
               {userProfile.villes.map((city) => (
                 <Tab
                   key={city.ville.toLowerCase().replace(/\s+/g, '-')}

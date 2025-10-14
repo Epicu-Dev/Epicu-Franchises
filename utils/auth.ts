@@ -86,24 +86,29 @@ async function performTokenRefresh(refreshToken: string, accessToken: string): P
     });
 
     if (!res.ok) {
-      // Seulement vider le localStorage pour les erreurs d'authentification (401, 403)
-      // MAIS seulement après avoir vérifié que le refresh token est vraiment expiré
+      // Tenter de lire le message d'erreur pour décider s'il faut vider les tokens
+      let errorMessage = '';
+      try {
+        const data = await res.json();
+        errorMessage = data?.message || '';
+      } catch {
+        // ignore parsing errors
+      }
+
       if (res.status === 401 || res.status === 403) {
-        // Vérifier si le refresh token est vraiment expiré avant de déconnecter
-        const currentRefreshToken = localStorage.getItem('refreshToken');
-        const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
-        
-        if (!currentRefreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
-          // Le refresh token est vraiment expiré, on peut déconnecter
+        // Si le serveur indique explicitement que le refresh token est invalide/expiré,
+        // nettoyer immédiatement pour éviter les boucles de refresh.
+        if (errorMessage.toLowerCase().includes('refresh token invalide') ||
+            errorMessage.toLowerCase().includes('refresh token expir')) {
           clearAuthData();
         } else {
-          // Le refresh token est encore valide, c'est probablement un problème temporaire
-          console.warn('Erreur 401/403 lors du refresh, mais refresh token encore valide. Problème temporaire probable.');
+          // Comportement conservateur: en cas de 401/403 sans message clair,
+          // on nettoie aussi pour éviter des boucles dues à une rotation déjà effectuée côté serveur.
+          clearAuthData();
         }
       }
-      // Pour les autres erreurs (500, 502, etc.), ne pas vider le localStorage
-      // car cela peut être un problème temporaire de serveur
 
+      // Pour les autres erreurs (5xx), ne pas vider le localStorage car temporaire
       return null;
     }
 

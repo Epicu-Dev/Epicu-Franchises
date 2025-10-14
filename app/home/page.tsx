@@ -30,10 +30,12 @@ import { useUser } from "@/contexts/user-context";
 import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
+import { useHomeDataCache } from "@/hooks/use-home-data-cache";
+import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
 import { DateFilterModal } from "@/components/date-filter-modal";
 import { PeriodSelectorButtons } from "@/components/period-selector-buttons";
 import { Invoice } from "@/types/invoice";
-import { formatNumberWithK, formatNumberWithPlusAndK } from "@/utils/format-numbers";
+import { formatNumberWithK, formatNumberWithPlusAndK, formatPercentage } from "@/utils/format-numbers";
 
 // Types pour les données réelles
 type AgendaEvent = {
@@ -111,13 +113,20 @@ export default function HomePage() {
     { key: "national", label: "National" },
   ]);
 
-  // États pour les données dynamiques
-  const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
-  const [agendaLoading, setAgendaLoading] = useState(false);
-  const [todoLoading, setTodoLoading] = useState(false);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  // Utilisation du hook de cache pour les données
+  const {
+    agenda: events,
+    todos: todoItems,
+    invoices,
+    agendaLoading,
+    todoLoading,
+    invoicesLoading,
+    isLoading: dataLoading,
+    refreshData: refreshCachedData
+  } = useHomeDataCache();
+
+  // Utilisation du hook de cache pour les images
+  const { isImageCached } = useSidebarImageCache();
   const [statistics, setStatistics] = useState<{
     prospectsSignes: number;
     tauxConversion: number;
@@ -178,139 +187,6 @@ export default function HomePage() {
     }
   }, [userProfile, setUserProfileLoaded, selectedCity]);
 
-  // Fonction pour récupérer les données agenda
-  const fetchAgenda = async () => {
-    try {
-      setAgendaLoading(true);
-
-      // Récupérer l'ID du collaborateur
-      const meRes = await authFetch('/api/auth/me');
-
-      if (!meRes.ok) return;
-
-      // Calculer la plage de dates pour le mois sélectionné
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
-      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
-
-      // Récupérer les événements d'agenda
-      const params = new URLSearchParams();
-
-      params.set('dateStart', startOfMonth.toISOString().split('T')[0]);
-      params.set('dateEnd', endOfMonth.toISOString().split('T')[0]);
-
-      const eventsResponse = await authFetch(`/api/agenda?${params.toString()}`);
-
-      if (eventsResponse.ok) {
-        const eventsData = await eventsResponse.json();
-
-        setEvents(eventsData.events || []);
-      } else {
-        setEvents([]);
-      }
-    } catch {
-      setEvents([]);
-    } finally {
-      setAgendaLoading(false);
-    }
-  };
-
-  // Fonction pour récupérer les données todo
-  const fetchTodos = async () => {
-    try {
-      setTodoLoading(true);
-
-      // Récupérer l'ID du collaborateur
-      const meRes = await authFetch('/api/auth/me');
-
-      if (!meRes.ok) return;
-
-      // Calculer la plage de dates pour le mois sélectionné
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const startOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), 1);
-      const endOfMonth = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth() + 1, 0, 23, 59, 59);
-
-      // Récupérer les todos
-      const params = new URLSearchParams();
-
-      const todosResponse = await authFetch(`/api/todo?${params.toString()}`);
-
-      if (todosResponse.ok) {
-        const todosData = await todosResponse.json();
-
-        // Filtrer les todos côté client pour la plage de dates
-        const filteredTodos = todosData.todos?.filter((todo: TodoItem) => {
-          if (!todo.dueDate) return true; // Inclure les todos sans date d'échéance
-
-          const todoDate = new Date(todo.dueDate);
-
-          return todoDate >= startOfMonth && todoDate <= endOfMonth;
-        }) || [];
-
-        setTodoItems(filteredTodos);
-      } else {
-        setTodoItems([]);
-      }
-    } catch {
-      setTodoItems([]);
-    } finally {
-      setTodoLoading(false);
-    }
-  };
-
-  // Fonction pour récupérer les factures (paiements) du mois sélectionné
-  const fetchInvoices = async () => {
-    try {
-      setInvoicesLoading(true);
-
-      // Calculer la plage de dates pour le mois sélectionné
-      const selectedDateObj = selectedDate.toDate(getLocalTimeZone());
-      const startOfMonth = new Date(
-        selectedDateObj.getFullYear(),
-        selectedDateObj.getMonth(),
-        1
-      );
-      const endOfMonth = new Date(
-        selectedDateObj.getFullYear(),
-        selectedDateObj.getMonth() + 1,
-        0,
-        23,
-        59,
-        59
-      );
-
-      const params = new URLSearchParams();
-
-      params.set("status", "payee");
-      params.set("offset", "0");
-      params.set("sortField", "datePaiement");
-      params.set("sortDirection", "desc");
-
-      const response = await authFetch(`/api/facturation?${params.toString()}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        const list: Invoice[] = data.invoices || [];
-
-        // Filtrer les factures par date de paiement pour le mois sélectionné
-        const filtered = list.filter((inv) => {
-          if (!inv.datePaiement) return false;
-
-          const d = new Date(inv.datePaiement);
-
-          return d >= startOfMonth && d <= endOfMonth;
-        });
-
-        setInvoices(filtered);
-      } else {
-        setInvoices([]);
-      }
-    } catch {
-      setInvoices([]);
-    } finally {
-      setInvoicesLoading(false);
-    }
-  };
 
   // Fonction pour vérifier le statut Google Calendar
   const checkGoogleCalendarStatus = async () => {
@@ -348,7 +224,7 @@ export default function HomePage() {
 
       if (selectedCity !== "tout") {
         if (selectedCity === "national") {
-          villeParam = 'all';
+          villeParam = 'national';
         } else {
           // Pour une ville spécifique, on utilise l'ID de la ville
           const selectedCityData = cities.find(c => c.key === selectedCity);
@@ -425,7 +301,7 @@ export default function HomePage() {
     }
   };
 
-  // Fonction pour récupérer les données
+  // Fonction pour récupérer les données (maintenant seulement statistiques et Google Calendar)
   const fetchData = async (isNavigation = false) => {
     // Annuler la requête précédente si elle existe
     if (abortControllerRef.current) {
@@ -442,8 +318,9 @@ export default function HomePage() {
     }
 
     try {
-      // Récupération des événements d'agenda, todos, statistiques et vérification Google Calendar
-      await Promise.all([fetchAgenda(), fetchTodos(), fetchInvoices(), fetchStatistics(), checkGoogleCalendarStatus()]);
+      // Récupération des statistiques et vérification Google Calendar
+      // Les données agenda, todos et invoices sont maintenant gérées par le cache et ne se rechargent plus
+      await Promise.all([fetchStatistics(), checkGoogleCalendarStatus()]);
     } catch (error) {
       // Ignorer les erreurs d'annulation
       if (error instanceof Error && error.name === 'AbortError') {
@@ -470,15 +347,12 @@ export default function HomePage() {
     }
   }, [isDateModalOpen]);
 
-  // Effet pour recharger agenda, todos et statistiques quand la date change
-  useEffect(() => {
-    fetchData(true);
-  }, [selectedDate]);
-
-  // Effet pour recharger les statistiques quand la ville change
+  // Effet unique: recharger les statistiques lorsque un des filtres varie
+  // Réduit les appels en doublon dus à plusieurs effets séparés
   useEffect(() => {
     fetchStatistics();
-  }, [selectedCity]);
+    checkGoogleCalendarStatus();
+  }, [selectedDate, selectedCity, isSinceCreationSelected, isCustomDateSelected]);
 
   // Cleanup pour annuler les requêtes en cours
   useEffect(() => {
@@ -499,32 +373,65 @@ export default function HomePage() {
   //   return `${Math.round((convertedClients / totalProspects) * 100)}%`;
   // }, [filteredProspects, filteredClients]);
 
+  // Composant d'icône optimisé pour les métriques
+  const OptimizedMetricIcon = ({ iconPath, className }: { iconPath: string; className: string }) => {
+    const [isLoaded, setIsLoaded] = useState<boolean>(Boolean(isImageCached(iconPath)));
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+      if (isImageCached(iconPath)) {
+        setIsLoaded(true);
+        return;
+      }
+
+      const img = new window.Image();
+      img.onload = () => setIsLoaded(true);
+      img.onerror = () => setHasError(true);
+      img.src = iconPath;
+    }, [iconPath]);
+
+    if (hasError) {
+      return <div className={`${className} bg-gray-300 rounded`} />;
+    }
+
+    const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
+
+    return (
+      <img 
+        src={iconPath}
+        alt="Metric icon"
+        className={`${className} ${visibilityClass} transition-opacity duration-200`}
+        loading="eager"
+      />
+    );
+  };
+
   const metrics = [
     {
-      value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithPlusAndK(statistics.abonnes) : "0",
-      label: "Nombre d'abonnés",
-      icon: <FranchiseAbonnesIcon className="h-8 w-8" />,
+      value: (statisticsLoading || isNavigating) ? "..." : statistics ? (isSinceCreationSelected ? "100%" : `${(statistics.abonnes * 100).toFixed(1)}%`) : "0%",
+      label: "Progression d'abonnés",
+      icon: <OptimizedMetricIcon iconPath="/images/icones/Home-franchisé/abonnes.svg" className="h-8 w-8" />,
       iconBgColor: "bg-custom-green-stats/40",
       iconColor: "text-custom-green-stats",
     },
     {
       value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithPlusAndK(statistics.vues) : "0",
       label: "Nombre de vues",
-      icon: <FranchiseVuesIcon className="h-8 w-8" />,
+      icon: <OptimizedMetricIcon iconPath="/images/icones/Home-franchisé/vues.svg" className="h-8 w-8" />,
       iconBgColor: "bg-custom-rose-views/40",
       iconColor: "text-custom-rose-views",
     },
     {
       value: (statisticsLoading || isNavigating) ? "..." : statistics ? formatNumberWithK(statistics.prospectsSignes) : "0",
       label: "Prospects signés",
-      icon: <FranchiseProspectsIcon className="h-8 w-8" />,
+      icon: <OptimizedMetricIcon iconPath="/images/icones/Home-franchisé/prospects.svg" className="h-8 w-8" />,
       iconBgColor: "bg-custom-yellow-prospects/40",
       iconColor: "text-custom-yellow-prospects",
     },
     {
       value: (statisticsLoading || isNavigating) ? "..." : statistics ? `${statistics.tauxConversion.toFixed(1)}%` : "0%",
       label: "Taux de conversion",
-      icon: <ConversionIcon className="h-8 w-8" />,
+      icon: <OptimizedMetricIcon iconPath="/images/icones/Home-franchisé/conversion.svg" className="h-8 w-8" />,
       iconBgColor: "bg-custom-orange-conversion/40",
       iconColor: "text-custom-orange-conversion",
     },
@@ -582,7 +489,8 @@ export default function HomePage() {
 
       if (response.ok) {
         setIsInvoiceModalOpen(false);
-        await fetchInvoices();
+        // Rafraîchir les données du cache
+        await refreshCachedData();
       }
     } catch {
       // ignore
@@ -601,7 +509,8 @@ export default function HomePage() {
 
       if (response.ok) {
         setIsInvoiceModalOpen(false);
-        await fetchInvoices();
+        // Rafraîchir les données du cache
+        await refreshCachedData();
       }
     } catch {
       // ignore
@@ -609,8 +518,8 @@ export default function HomePage() {
   };
 
   const handleTodoAdded = async () => {
-    // Recharger les todos
-    await fetchTodos();
+    // Rafraîchir les données du cache
+    await refreshCachedData();
   };
 
   // Fonctions pour ouvrir le modal unifié avec le bon type
@@ -911,7 +820,7 @@ export default function HomePage() {
       <UnifiedEventModal
         eventType={currentEventType}
         isOpen={isUnifiedModalOpen}
-        onEventAdded={fetchData}
+        onEventAdded={refreshCachedData}
         onOpenChange={setIsUnifiedModalOpen}
       />
 

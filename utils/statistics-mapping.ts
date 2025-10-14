@@ -8,7 +8,8 @@ export type StatisticType =
   | 'taux-conversion'
   | 'prospects'
   | 'posts-publies'
-  | 'prestations-studio';
+  | 'prestations-studio'
+  | 'ca-studio';
 
 export type TimeFilter = 
   | 'depuis-creation'
@@ -27,62 +28,62 @@ export interface StatisticsMapping {
   available: boolean;
 }
 
-// Configuration de mapping basée sur les tableaux fournis
+// Configuration de mapping basée sur les nouveaux tableaux fournis
 const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<LocationFilter, StatisticsMapping>>> = {
   'chiffre-affaires-global': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'CA depuis la création',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'CA total',
         available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Année en cours',
-        path: 'CA total depuis création',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'CA total',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
-        path: 'CA TOTAL',
+        path: 'CA total',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Vue globale',
-        path: 'CA France',
+        path: 'CA total',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
-        path: 'CA TOTAL',
+        path: 'CA total',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
-        path: 'CA France',
+        path: 'CA total',
         available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'SYNTHESES ANNUELLES',
+        table: 'STATISTIQUES ANNUELLES VILLE',
         view: 'Vue globale',
-        path: 'CA TOTAL',
+        path: 'CA total',
         available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Vue globale',
-        path: 'CA FRANCE',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
+        path: 'CA total',
         available: true
       }
     }
@@ -90,57 +91,57 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'clients-signes': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Prospects signés depuis la création',
-        available: false
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'Clients signés',
+        available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Année en cours',
-        path: 'Prospects signés depuis la création',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'Clients signés',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
-        path: 'Prospects signés ds le mois',
+        path: 'Clients signés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Vue globale',
-        path: 'Prospects signés ds le mois',
+        path: 'Clients signés',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
-        path: 'Prospects signés ds le mois',
+        path: 'Clients signés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
-        view: 'Vue globale',
-        path: 'Prospects signés ds le mois',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Mois en cours',
+        path: 'Clients signés',
         available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
-        path: 'Prospects signés ds le mois',
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
+        path: 'Clients signés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Vue globale',
-        path: 'Prospects signés ds le mois',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
+        path: 'Clients signés',
         available: true
       }
     }
@@ -148,27 +149,27 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'franchises': {
     'depuis-creation': {
       'ville': {
-        table: 'SYNTHESE NATIONALE',
-        view: 'Mois en cours',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
         path: 'Franchises existantes',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
-        view: 'Mois en cours',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
         path: 'Franchises existantes',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Franchises existantes',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
         path: 'Franchises existantes',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Vue globale',
         path: 'Franchises existantes',
         available: true
@@ -176,13 +177,13 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
         path: 'Franchises existantes',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
         path: 'Franchises existantes',
         available: true
@@ -190,14 +191,14 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
     },
     'annee': {
       'ville': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Vue globale',
-        path: 'Franchises créées',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
+        path: 'Franchises existantes',
         available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Vue globale',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
         path: 'Franchises existantes',
         available: true
       }
@@ -206,57 +207,57 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'abonnes-en-plus': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Total abonnés',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'Progression abonnés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES CREATION FRANCE',
         view: 'Vue globale',
-        path: 'Abonnés à Afficher',
+        path: 'Progression abonnés',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
-        path: 'Total abonnés',
+        path: 'Progression abonnés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Vue globale',
-        path: 'Total abonnés',
+        path: 'Progression abonnés',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
-        path: 'Total abonnés gagnés /M-1',
+        path: 'Progression abonnés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
-        view: 'Vue globale',
-        path: 'Total abonnés gagnés /M-1',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Mois en cours',
+        path: 'Progression abonnés',
         available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES ANNUELLES VILLE',
         view: 'Vue globale',
-        path: 'Total abonnés gagnés /A-1',
+        path: 'Progression abonnés',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
-        view: 'Vue globale',
-        path: 'Total abonnés gagnés /A-1',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
+        path: 'Progression abonnés',
         available: true
       }
     }
@@ -264,41 +265,41 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'vues': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Total vues depuis la création',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'Total vues',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Total vues depuis la création',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'Total vues',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
         path: 'Total vues',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
         path: 'Total vues',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
         path: 'Total vues',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
         path: 'Total vues',
         available: true
@@ -306,15 +307,15 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
-        path: 'Total vues annuel',
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
+        path: 'Total vues',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
         view: 'Année en cours',
-        path: 'Total vues annuel',
+        path: 'Total vues',
         available: true
       }
     }
@@ -322,41 +323,41 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'taux-conversion': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Tx de conversion depuis la création',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'Tx de conversion',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Tx de conversion depuis la création',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'Tx de conversion',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
         path: 'Tx de conversion',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
         path: 'Tx de conversion',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
         path: 'Tx de conversion',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
         path: 'Tx de conversion',
         available: true
@@ -364,13 +365,13 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
         path: 'Tx de conversion',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
         view: 'Année en cours',
         path: 'Tx de conversion',
         available: true
@@ -380,174 +381,232 @@ const STATISTICS_MAPPING: Record<StatisticType, Record<TimeFilter, Record<Locati
   'prospects': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Prospects vus depuis la création',
-        available: false
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'Prospects vus',
+        available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Année en cours',
-        path: 'Prospects vus depuis la création',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'Prospects vus',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
-        path: 'Prospects vus ds le mois',
+        path: 'Prospects vus',
         available: true
       },
       'pays': {
-        table: 'SYNTHESE NATIONALE',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Vue globale',
-        path: 'Prospects vus ds le mois',
+        path: 'Prospects vus',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Prospects vus ds le mois',
+        table: 'STATISTIQUES MENSUELLES VILLE',
+        view: 'Mois en cours',
+        path: 'Prospects vus',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
-        path: 'Prospects vus ds le mois',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Mois en cours',
+        path: 'Prospects vus',
         available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
-        path: 'Prospects vus ds le mois',
-        available: false
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
+        path: 'Prospects vus',
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
         view: 'Année en cours',
-        path: 'Prospects vus ds le mois',
-        available: false
+        path: 'Prospects vus',
+        available: true
       }
     }
   },
   'posts-publies': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
         path: 'Posts publiés',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'SYNTHESES ANNUELLES',
-        view: 'Année en cours',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
         path: 'Posts publiés',
         available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
         path: 'Posts publiés',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
         path: 'Posts publiés',
         available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
-        path: 'Nbre publications ds le mois',
+        path: 'Posts publiés',
         available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
-        path: 'Nbre publications ds le mois',
+        path: 'Posts publiés',
         available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
         path: 'Posts publiés',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
         view: 'Année en cours',
         path: 'Posts publiés',
-        available: false
+        available: true
       }
     }
   },
   'prestations-studio': {
     'depuis-creation': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
         path: 'Prestations studio',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète dernier mois',
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
         path: 'Prestations studio',
-        available: false
+        available: true
       }
     },
     'n-importe-quel-mois': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Vue complète',
         path: 'Prestations studio',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Vue complète',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
         path: 'Prestations studio',
-        available: false
+        available: true
       }
     },
     'ce-mois-ci': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES VILLE',
         view: 'Mois en cours',
         path: 'Prestations studio',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES MENSUELLES FRANCE',
         view: 'Mois en cours',
         path: 'Prestations studio',
-        available: false
+        available: true
       }
     },
     'annee': {
       'ville': {
-        table: 'STATISTIQUES MENSUELLES',
-        view: 'Année en cours',
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
         path: 'Prestations studio',
-        available: false
+        available: true
       },
       'pays': {
-        table: 'STATISTIQUES MENSUELLES',
+        table: 'STATISTIQUES ANNUELLES FRANCE',
         view: 'Année en cours',
         path: 'Prestations studio',
-        available: false
+        available: true
+      }
+    }
+  },
+  'ca-studio': {
+    'depuis-creation': {
+      'ville': {
+        table: 'STATISTIQUES CREATION VILLE',
+        view: 'Vue globale',
+        path: 'CA studio',
+        available: true
+      },
+      'pays': {
+        table: 'STATISTIQUES CREATION FRANCE',
+        view: 'Vue globale',
+        path: 'CA studio',
+        available: true
+      }
+    },
+    'n-importe-quel-mois': {
+      'ville': {
+        table: 'STATISTIQUES MENSUELLES VILLE',
+        view: 'Vue complète',
+        path: 'CA studio',
+        available: true
+      },
+      'pays': {
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Vue globale',
+        path: 'CA studio',
+        available: true
+      }
+    },
+    'ce-mois-ci': {
+      'ville': {
+        table: 'STATISTIQUES MENSUELLES VILLE',
+        view: 'Mois en cours',
+        path: 'CA studio',
+        available: true
+      },
+      'pays': {
+        table: 'STATISTIQUES MENSUELLES FRANCE',
+        view: 'Mois en cours',
+        path: 'CA studio',
+        available: true
+      }
+    },
+    'annee': {
+      'ville': {
+        table: 'STATISTIQUES ANNUELLES VILLE',
+        view: 'Vue globale',
+        path: 'CA studio',
+        available: true
+      },
+      'pays': {
+        table: 'STATISTIQUES ANNUELLES FRANCE',
+        view: 'Année en cours',
+        path: 'CA studio',
+        available: true
       }
     }
   }
@@ -586,7 +645,7 @@ export function convertFrontendFilters(
     timeFilter = 'ce-mois-ci';
   }
 
-  const locationFilter: LocationFilter = selectedCity === 'national' ? 'pays' : 'ville';
+  const locationFilter: LocationFilter = (selectedCity === 'national' || selectedCity === 'all') ? 'pays' : 'ville';
 
   return { timeFilter, locationFilter };
 }

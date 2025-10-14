@@ -38,6 +38,7 @@ Les pages `app/home/page.tsx` et `app/home-admin/page.tsx` ont été mises à jo
 - `prospects` : Prospects
 - `posts-publies` : Posts publiés
 - `prestations-studio` : Prestations studio
+- `ca-studio` : Chiffre d'affaires studio
 
 ## Filtres temporels
 
@@ -85,28 +86,88 @@ const response = await fetch(`/api/data/data?${params.toString()}`);
 
 ### Tables disponibles
 
-1. **STATISTIQUES MENSUELLES**
+1. **STATISTIQUES CREATION VILLE**
+   - Vue globale
+   - Champ de date : `Name` (Nom de la ville EPICU)
+
+2. **STATISTIQUES CREATION FRANCE**
+   - Vue globale
+   - Champ de date : `Pays` (Texte, pour le moment seulement France)
+
+3. **STATISTIQUES MENSUELLES VILLE**
    - Vue complète
-   - Vue complète dernier mois
    - Mois en cours
-   - Année en cours
-   - Franchises existantes
+   - Champ de date : `Date - ville EPICU` (Formule : DATETIME_FORMAT({Mois-Année},'MM/YYYY')&" - "&{Ville EPICU})
 
-2. **SYNTHESES ANNUELLES**
-   - Vue globale
-   - Année en cours
-
-3. **SYNTHESE NATIONALE**
+4. **STATISTIQUES MENSUELLES FRANCE**
    - Vue globale
    - Mois en cours
+   - Champ de date : `Période` (DATETIME_FORMAT({Mois-Année},'MM/YYYY'))
+
+5. **STATISTIQUES ANNUELLES VILLE**
+   - Vue globale
+   - Champ de date : `Année-Ville` (Formule : DATETIME_FORMAT(Date,'YYYY')&" - "&{Ville EPICU})
+
+6. **STATISTIQUES ANNUELLES FRANCE**
+   - Année en cours
+   - Champ de date : `Année` (DATETIME_FORMAT(Date, 'YYYY'))
 
 ### Exemples de mapping
 
 | Statistique | Filtre temporel | Filtre géo | Table | Vue | Champ |
 |-------------|----------------|------------|-------|-----|-------|
-| Chiffre d'affaires | Depuis création | Ville | STATISTIQUES MENSUELLES | Vue complète dernier mois | CA depuis la création |
-| Abonnés | Ce mois-ci | Ville | STATISTIQUES MENSUELLES | Mois en cours | Total abonnés gagnés /M-1 |
-| Franchises | Année | Pays | SYNTHESES ANNUELLES | Vue globale | Franchises existantes |
+| Chiffre d'affaires | Depuis création | Ville | STATISTIQUES CREATION VILLE | Vue globale | CA total |
+| Chiffre d'affaires | Ce mois-ci | Ville | STATISTIQUES MENSUELLES VILLE | Mois en cours | CA total |
+| Chiffre d'affaires | Année | Pays | STATISTIQUES ANNUELLES FRANCE | Année en cours | CA total |
+| Abonnés | Depuis création | Ville | STATISTIQUES CREATION VILLE | Vue globale | Nombre d'abonnés |
+| Abonnés | Ce mois-ci | Ville | STATISTIQUES MENSUELLES VILLE | Mois en cours | Progression abonnés |
+| Franchises | Année | Pays | STATISTIQUES ANNUELLES FRANCE | Année en cours | Franchises existantes |
+| CA Studio | Depuis création | Ville | STATISTIQUES CREATION VILLE | Vue globale | CA studio |
+| Clients signés | Ce mois-ci | Ville | STATISTIQUES MENSUELLES VILLE | Mois en cours | Clients signés |
+
+## Champs de date spécifiques par table
+
+**Important** : Chaque table utilise un champ de date différent pour la recherche. Le système adapte automatiquement la formule de recherche selon la table utilisée.
+
+### Mapping des champs de date
+
+| Table | Champ de date | Format | Exemple |
+|-------|---------------|--------|---------|
+| STATISTIQUES MENSUELLES VILLE | `Date - ville EPICU` | MM/YYYY - Ville EPICU | "12/2024 - Paris" |
+| STATISTIQUES ANNUELLES VILLE | `Année-Ville` | YYYY - Ville EPICU | "2024 - Paris" |
+| STATISTIQUES CREATION VILLE | `Name` | Nom de la ville EPICU | "Paris" |
+| STATISTIQUES MENSUELLES FRANCE | `Période` | MM/YYYY | "12/2024" |
+| STATISTIQUES ANNUELLES FRANCE | `Année` | YYYY | "2024" |
+| STATISTIQUES CREATION FRANCE | `Pays` | Texte | "France" |
+
+## Cohérence des champs
+
+**Principe important** : Pour chaque type de statistique, les champs (A Chemin) sont cohérents. Seules les tables et vues changent selon les filtres temporels et géographiques.
+
+### Exceptions avec variations de champs
+
+Certains types de statistiques ont des variations de champs selon le contexte :
+
+- **Abonnés** : 
+  - `Nombre d'abonnés` (pour "depuis création + ville")
+  - `Progression abonnés` (pour tous les autres cas)
+
+- **Taux de conversion** :
+  - `Tx de conversion` (pour les vues ville)
+  - `Tx de conversion` (pour les vues pays)
+
+### Champs cohérents
+
+Tous les autres types de statistiques utilisent le même champ pour tous les filtres :
+
+- **Chiffre d'affaires global** : `CA total`
+- **Clients signés** : `Clients signés`
+- **Franchises** : `Franchises existantes`
+- **Vues** : `Total vues`
+- **Prospects** : `Prospects vus`
+- **Posts publiés** : `Posts publiés`
+- **Prestations studio** : `Prestations studio`
+- **CA studio** : `CA studio`
 
 ## Gestion des erreurs
 

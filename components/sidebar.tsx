@@ -18,27 +18,35 @@ import { useUser } from "../contexts/user-context";
 import { useLoading } from "../contexts/loading-context";
 import { useSidebarImageCache } from "../hooks/use-sidebar-image-cache";
 
-// Composant d'icône personnalisé avec mise en cache
-const CustomIcon = memo(({ alt, className, isActive, src }: { alt: string; className?: string; isActive?: boolean; src: string }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+// Composant d'icône personnalisé avec respect du cache pour éviter le clignotement
+const CustomIcon = memo(({ alt, className, isActive, src, isCached }: { alt: string; className?: string; isActive?: boolean; src: string; isCached?: boolean }) => {
+  const [isLoaded, setIsLoaded] = useState<boolean>(Boolean(isCached));
   const [hasError, setHasError] = useState(false);
 
-  // Préchargement immédiat
   useEffect(() => {
+    if (isCached) {
+      // Déjà en cache, marquer comme chargé sans transition
+      setIsLoaded(true);
+      return;
+    }
+
     const img = new window.Image();
     img.onload = () => setIsLoaded(true);
     img.onerror = () => setHasError(true);
     img.src = src;
-  }, [src]);
+  }, [src, isCached]);
 
   if (hasError) {
-    return <div className={`${className} ${isActive ? 'brightness-0 invert' : ''} w-5 h-5 bg-gray-300 rounded`} />;
+    return <div className={`${className} ${isActive ? 'brightness-0 invert' : ''} h-5 bg-gray-300 rounded`} />;
   }
+
+  const baseClass = `${className ?? ''} ${isActive ? 'brightness-0 invert' : ''}`;
+  const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
 
   return (
     <Image
       alt={alt}
-      className={`${className} ${isActive ? 'brightness-0 invert' : ''} ${!isLoaded ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+      className={`${baseClass} ${visibilityClass} transition-opacity duration-200`}
       height={22}
       width={0}
       src={src}
@@ -55,10 +63,11 @@ const CustomIcon = memo(({ alt, className, isActive, src }: { alt: string; class
 CustomIcon.displayName = 'CustomIcon';
 
 // Composant d'élément de menu mémorisé
-const MenuItem = memo(({ item, isActive, onClick }: { 
-  item: any; 
-  isActive: boolean; 
-  onClick: () => void; 
+const MenuItem = memo(({ item, isActive, onClick, isImageCached }: {
+  item: any;
+  isActive: boolean;
+  onClick: () => void;
+  isImageCached: (src: string) => boolean;
 }) => (
   <button
     className={`group text-sm text-primary-light rounded-lg gap-4 flex font-light cursor-pointer px-3 py-2 pointer transition-colors w-full text-left ${isActive
@@ -67,7 +76,7 @@ const MenuItem = memo(({ item, isActive, onClick }: {
       }`}
     onClick={onClick}
   >
-    <item.icon isActive={isActive} />
+    <CustomIcon alt={item.label} className="h-5" isActive={isActive} src={item.iconSrc} isCached={isImageCached(item.iconSrc)} />
     <div className="flex-1">
       {item.label}
     </div>
@@ -115,82 +124,82 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMobileOpen]);
 
-  // Menu items mémorisés pour éviter les re-créations
+  // Menu items mémorisés pour éviter les re-créations (icônes stables via iconSrc)
   const menuItems = useMemo(() => [
     {
       key: "home-admin",
       label: "Accueil Admin",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil Admin" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Accueil.svg" />,
+      iconSrc: "/images/icones/Nav/Accueil.svg",
       href: "/home-admin",
       showFor: ["admin"]
     },
     { 
       key: "home", 
       label: "Accueil", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Accueil" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Accueil.svg" />, 
+      iconSrc: "/images/icones/Nav/Accueil.svg", 
       href: "/home", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "data", 
       label: "Data", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Data" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Data.svg" />, 
+      iconSrc: "/images/icones/Nav/Data.svg", 
       href: "/data", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "clients", 
       label: "Clients", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Clients" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Clients.svg" />, 
+      iconSrc: "/images/icones/Nav/Clients.svg", 
       href: "/clients", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "prospects",
       label: "Prospects",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Prospects" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Prospects.svg" />,
+      iconSrc: "/images/icones/Nav/Prospects.svg",
       href: "/prospects",
       showFor: ["franchise", "admin"]
     },
     { 
       key: "agenda", 
       label: "Agenda", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Agenda" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Agenda.svg" />, 
+      iconSrc: "/images/icones/Nav/Agenda.svg", 
       href: "/agenda", 
       showFor: ["franchise", "admin"] 
     },
     { 
       key: "todo", 
       label: "To do", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="To do" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/To-do.svg" />, 
+      iconSrc: "/images/icones/Nav/To-do.svg", 
       href: "/todo", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "facturation",
       label: "Facturation",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Facturation" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Facturation.svg" />,
+      iconSrc: "/images/icones/Nav/Facturation.svg",
       href: "/facturation",
       showFor: ["admin", "franchise"]
     },
     { 
       key: "equipe", 
       label: "Equipe", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Equipe" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Equipe.svg" />, 
+      iconSrc: "/images/icones/Nav/Equipe.svg", 
       href: "/equipe", 
       showFor: ["franchise", "admin"] 
     },
     {
       key: "studio",
       label: "Le studio",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Le studio" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Studio.svg" />,
+      iconSrc: "/images/icones/Nav/Studio.svg",
       href: "/studio",
       showFor: ["admin", "franchise"]
     },
     {
       key: "ressources",
       label: "Ressources",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Ressources" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Ressources.svg" />,
+      iconSrc: "/images/icones/Nav/Ressources.svg",
       href: "/ressources",
       showFor: ["admin", "franchise"]
     },
@@ -202,19 +211,19 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
     { 
       key: "compte", 
       label: "Compte", 
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Compte" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Compte.svg" />, 
+      iconSrc: "/images/icones/Nav/Compte.svg", 
       href: "/profil" 
     },
     {
       key: "aide",
       label: "Aide",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Aide" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Aide.svg" />,
+      iconSrc: "/images/icones/Nav/Aide.svg",
       action: onHelpClick,
     },
     {
       key: "logout",
       label: "Se déconnecter",
-      icon: ({ isActive }: { isActive?: boolean }) => <CustomIcon alt="Déconnexion" className="h-5 w-5" isActive={isActive} src="/images/icones/Nav/Deconnexion.svg" />,
+      iconSrc: "/images/icones/Nav/Deconnexion.svg",
       action: onLogout,
     },
   ], [onHelpClick, onLogout]);
@@ -365,6 +374,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                   item={item}
                   isActive={isActive}
                   onClick={() => handleItemClick(item)}
+                  isImageCached={isImageCached}
                 />
               )
             })}
@@ -388,6 +398,7 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
                     item={item}
                     isActive={isActive}
                     onClick={() => handleItemClick(item)}
+                    isImageCached={isImageCached}
                   />
                 )
               })

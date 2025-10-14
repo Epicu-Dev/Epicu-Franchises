@@ -11,6 +11,8 @@ import { ToastProvider } from "@/contexts/toast-context";
 import { UserProvider } from "@/contexts/user-context";
 import { LoadingProvider } from "@/contexts/loading-context";
 import { getValidAccessToken } from "@/utils/auth";
+import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
+import { SvgPreloader } from "@/components/svg-preloader";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -27,6 +29,7 @@ declare module "@react-types/shared" {
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
+  const { cachedImagesCount } = useSidebarImageCache();
 
   React.useEffect(() => {
     if (typeof window === "undefined" || typeof window.fetch !== "function") return;
@@ -75,6 +78,12 @@ export function Providers({ children, themeProps }: ProvidersProps) {
         <UserProvider>
           <LoadingProvider>
             <ToastProvider>
+              {/* Préchargement prioritaire de tous les SVG */}
+              <SvgPreloader />
+              {/* Force l'initialisation du cache d'icônes au démarrage */}
+              <div style={{ display: "none" }} aria-hidden>
+                {cachedImagesCount}
+              </div>
               {children}
             </ToastProvider>
           </LoadingProvider>

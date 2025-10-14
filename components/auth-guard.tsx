@@ -40,24 +40,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
         const validToken = await getValidAccessToken();
         
         if (!validToken) {
-          // Vérifier si le refresh token est encore valide avant de déconnecter
-          const refreshToken = localStorage.getItem('refreshToken');
-          const expiresAtRefresh = localStorage.getItem('expiresAtRefresh');
-          
-          if (!refreshToken || !expiresAtRefresh || new Date(expiresAtRefresh) <= new Date()) {
-            // Le refresh token est vraiment expiré, on peut déconnecter
-            clearAuthData();
-            redirectToLogin();
-            return;
-          } else {
-            // Le refresh token est encore valide, c'est probablement un problème temporaire
-            console.warn('Impossible d\'obtenir un token valide, mais refresh token encore valide. Problème temporaire probable.');
-            // Ne pas déconnecter, juste attendre et réessayer
-            setTimeout(() => {
-              window.location.reload();
-            }, 5000); // Recharger la page dans 5 secondes
-            return;
-          }
+          // Si on ne parvient pas à obtenir un access token, considérer la session invalide
+          // et rediriger vers la page de connexion pour éviter une boucle de chargement.
+          clearAuthData();
+          redirectToLogin();
+          return;
         }
 
         // Si on arrive ici, l'utilisateur est authentifié
