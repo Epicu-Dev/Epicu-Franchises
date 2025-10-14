@@ -1,111 +1,159 @@
-# Optimisations de Cache pour la Sidebar
+# Cache Global Persistant pour la Sidebar
 
-Ce document décrit les optimisations de mise en cache implémentées pour améliorer les performances de la sidebar.
+Ce document décrit le système de cache global persistant implémenté pour optimiser les performances de la sidebar et éviter le rechargement des icônes lors des changements d'onglet.
 
-## 🚀 Optimisations Implémentées
+## 🚀 Architecture du Cache Global
 
-### 1. Composant d'Icône Mémorisé
-- **Fichier**: `components/sidebar.tsx`
-- **Fonctionnalité**: Utilisation de `React.memo()` pour éviter les re-renders inutiles
-- **Bénéfices**: Réduction des re-calculs lors des changements d'état
+### 1. Cache Global Persistant
+- **Fichier**: `utils/image-cache.ts`
+- **Fonctionnalité**: Classe singleton qui maintient le cache en mémoire de manière persistante
+- **Bénéfices**: Les icônes ne se rechargent plus lors des changements d'onglet
 
 ```tsx
-const CustomIcon = memo(({ alt, className, isActive, src }) => (
-  <Image
-    alt={alt}
-    className={`${className} ${isActive ? 'brightness-0 invert' : ''}`}
-    height={20}
-    src={src}
-    width={20}
-    priority={false}
-    loading="lazy"
-    quality={90}
-  />
-));
+// Instance globale unique
+const globalImageCache = new GlobalImageCache();
+
+// Le cache persiste entre les changements d'onglet
+globalImageCache.isImageCached('/images/icones/Nav/Accueil.svg');
 ```
 
-### 2. Préchargement des Images
-- **Fichier**: `hooks/use-sidebar-image-cache.ts`
-- **Fonctionnalité**: Hook personnalisé pour précharger et mettre en cache les images
-- **Bénéfices**: Chargement instantané des icônes lors de l'affichage
+### 2. Hook de Cache Global
+- **Fichier**: `hooks/use-global-image-cache.ts`
+- **Fonctionnalité**: Interface React pour le cache global
+- **Bénéfices**: Utilisation simple et transparente du cache persistant
 
-### 3. Mémorisation des Éléments de Menu
-- **Fonctionnalité**: Utilisation de `useMemo()` pour les `menuItems` et `settingsItems`
-- **Bénéfices**: Évite la re-création des objets à chaque render
+```tsx
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
 
-### 4. Composant d'Élément de Menu Mémorisé
-- **Fonctionnalité**: Composant `MenuItem` mémorisé avec `React.memo()`
-- **Bénéfices**: Optimisation du rendu des éléments de menu
+function Sidebar() {
+  const { isImageCached, cachedImagesCount, isInitialized } = useGlobalImageCache();
+  
+  // Vérifier si une image est en cache
+  const isCached = isImageCached('/images/icones/Nav/Accueil.svg');
+}
+```
 
-### 5. Configuration Next.js Optimisée
-- **Fichier**: `next.config.js`
-- **Fonctionnalités**:
-  - `minimumCacheTTL: 31536000` (1 an de cache)
-  - Formats optimisés (WebP, AVIF)
-  - Tailles d'images adaptatives
+### 3. Composant d'Icône Optimisé
+- **Fichier**: `components/sidebar.tsx`
+- **Fonctionnalité**: Composant `CustomIcon` mémorisé avec gestion du cache
+- **Bénéfices**: Affichage instantané des icônes déjà en cache
 
-## 📊 Métriques de Performance
+```tsx
+const CustomIcon = memo(({ alt, className, isActive, src, isCached }) => {
+  const [isLoaded, setIsLoaded] = useState<boolean>(Boolean(isCached));
+  
+  // Si l'image est en cache, l'afficher immédiatement
+  useEffect(() => {
+    if (isCached) {
+      setIsLoaded(true);
+      return;
+    }
+    // Sinon, charger l'image
+  }, [src, isCached]);
+  
+  return (
+    <Image
+      alt={alt}
+      className={`${baseClass} ${visibilityClass} transition-opacity duration-200`}
+      src={src}
+      priority={true}
+      loading="eager"
+    />
+  );
+});
+```
 
-### Avant Optimisation
-- ❌ Re-renders inutiles des icônes
-- ❌ Chargement des images à chaque affichage
-- ❌ Re-création des objets de menu
-- ❌ Pas de cache navigateur optimisé
+### 4. Préchargement Intelligent
+- **Fichier**: `components/svg-preloader.tsx`
+- **Fonctionnalité**: Préchargement prioritaire des images critiques
+- **Bénéfices**: Chargement immédiat des icônes de navigation
 
-### Après Optimisation
-- ✅ Cache des composants avec `React.memo()`
-- ✅ Préchargement intelligent des images
-- ✅ Mémorisation des données avec `useMemo()`
-- ✅ Cache navigateur de 1 an pour les images
-- ✅ Chargement paresseux (lazy loading)
-- ✅ Qualité d'image optimisée (90%)
+## 📊 Résolution du Problème
+
+### Problème Initial
+- ❌ Les icônes se rechargeaient à chaque changement d'onglet
+- ❌ Le hook `useSidebarImageCache` était réinitialisé dans `Providers`
+- ❌ Expérience utilisateur dégradée avec clignotements
+
+### Solution Implémentée
+- ✅ Cache global persistant qui ne se remet jamais à zéro
+- ✅ Gestion intelligente des promesses de chargement
+- ✅ Interface identique pour une migration transparente
+- ✅ Expérience utilisateur fluide sans rechargement
 
 ## 🔧 Utilisation
 
-### Hook de Cache des Images
+### Hook de Cache Global
 ```tsx
-import { useSidebarImageCache } from '../hooks/use-sidebar-image-cache';
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
 
-function Sidebar() {
-  const { isImageCached, cachedImagesCount } = useSidebarImageCache();
+function MyComponent() {
+  const { 
+    isImageCached, 
+    cachedImagesCount, 
+    isInitialized,
+    preloadImage 
+  } = useGlobalImageCache();
   
   // Vérifier si une image est en cache
   const isCached = isImageCached('/images/icones/Nav/Accueil.svg');
   
   // Obtenir le nombre d'images mises en cache
   console.log(`${cachedImagesCount} images en cache`);
+  
+  // Précharger une image spécifique
+  preloadImage('/images/icones/Nav/Data.svg');
 }
 ```
 
-### Composant d'Icône Optimisé
+### Cache Global Direct
 ```tsx
-<CustomIcon 
-  alt="Accueil" 
-  className="h-5 w-5" 
-  isActive={isActive} 
-  src="/images/icones/Nav/Accueil.svg" 
-/>
+import globalImageCache from '@/utils/image-cache';
+
+// Vérifier si une image est en cache
+const isCached = globalImageCache.isImageCached('/images/icones/Nav/Accueil.svg');
+
+// Obtenir le nombre d'images en cache
+const count = globalImageCache.getCachedImagesCount();
+
+// Précharger une image spécifique
+await globalImageCache.preloadSpecificImage('/images/icones/Nav/Data.svg');
 ```
 
-## 🎯 Bénéfices Attendus
+## 🎯 Bénéfices
 
-1. **Performance**: Réduction du temps de chargement des icônes
-2. **UX**: Affichage plus fluide de la sidebar
-3. **Réseau**: Réduction des requêtes HTTP répétées
-4. **Mémoire**: Optimisation de l'utilisation de la mémoire
-5. **SEO**: Amélioration des Core Web Vitals
+1. **Performance**: Plus de rechargement des icônes lors des changements d'onglet
+2. **UX**: Navigation fluide sans clignotement
+3. **Mémoire**: Cache persistant optimisé
+4. **Réseau**: Réduction des requêtes HTTP répétées
+5. **Compatibilité**: Interface identique à l'ancien système
 
 ## 🔍 Monitoring
 
-Pour surveiller l'efficacité du cache :
+Pour surveiller l'efficacité du cache global :
 
-1. **DevTools Network**: Vérifier les requêtes d'images
-2. **React DevTools Profiler**: Analyser les re-renders
-3. **Console**: Utiliser `cachedImagesCount` pour le monitoring
+1. **DevTools Network**: Vérifier qu'il n'y a plus de requêtes répétées
+2. **Console**: Utiliser `cachedImagesCount` pour le monitoring
+3. **Navigation**: Tester les changements d'onglet pour vérifier l'absence de rechargement
 
 ## 📝 Notes Techniques
 
-- Les images SVG sont optimisées pour les icônes
-- Le lazy loading est activé pour les images non critiques
-- La qualité d'image est fixée à 90% pour un bon compromis taille/qualité
-- Le cache navigateur est configuré pour 1 an (images statiques)
+- Le cache global est une instance singleton qui persiste pendant toute la session
+- Les images critiques (navigation) sont chargées en priorité
+- Le cache gère intelligemment les promesses de chargement pour éviter les doublons
+- Interface identique à l'ancien hook pour une migration transparente
+- Compatible avec tous les composants existants
+
+## 🚀 Migration
+
+L'ancien système `useSidebarImageCache` a été remplacé par `useGlobalImageCache` :
+
+```tsx
+// Ancien système (supprimé)
+import { useSidebarImageCache } from '@/hooks/use-sidebar-image-cache';
+
+// Nouveau système
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
+```
+
+L'interface reste identique, seule l'import change.

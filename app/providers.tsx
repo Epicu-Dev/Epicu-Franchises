@@ -11,7 +11,7 @@ import { ToastProvider } from "@/contexts/toast-context";
 import { UserProvider } from "@/contexts/user-context";
 import { LoadingProvider } from "@/contexts/loading-context";
 import { getValidAccessToken } from "@/utils/auth";
-import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
+import { useGlobalImageCache } from "@/hooks/use-global-image-cache";
 import { SvgPreloader } from "@/components/svg-preloader";
 
 export interface ProvidersProps {
@@ -29,7 +29,7 @@ declare module "@react-types/shared" {
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
-  const { cachedImagesCount } = useSidebarImageCache();
+  const { cachedImagesCount } = useGlobalImageCache();
 
   React.useEffect(() => {
     if (typeof window === "undefined" || typeof window.fetch !== "function") return;

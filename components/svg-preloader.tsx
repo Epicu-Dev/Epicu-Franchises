@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useSidebarImageCache } from '@/hooks/use-sidebar-image-cache';
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
 
 /**
  * Composant invisible qui force le préchargement de tous les SVG
  * Utilisé pour s'assurer que les icônes sont disponibles immédiatement
  */
 export function SvgPreloader() {
-  const { cachedImagesCount, isImageCached } = useSidebarImageCache();
+  const { cachedImagesCount, isImageCached } = useGlobalImageCache();
   const [isPreloading, setIsPreloading] = useState(true);
 
   useEffect(() => {

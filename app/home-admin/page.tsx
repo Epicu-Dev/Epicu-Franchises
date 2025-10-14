@@ -34,7 +34,7 @@ import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { useHomeDataCache } from "@/hooks/use-home-data-cache";
-import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
+import { useGlobalImageCache } from "@/hooks/use-global-image-cache";
 import { formatNumberWithK, formatPercentage } from "@/utils/format-numbers";
 import { useRouter } from "next/navigation";
 
