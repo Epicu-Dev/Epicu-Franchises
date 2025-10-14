@@ -200,24 +200,100 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
       });
 
+      // Récupérer les événements Google Calendar si l'utilisateur est connecté
+      let googleEvents: any[] = [];
+      try {
+        const accessToken = req.headers.cookie?.split(';').find(c => c.trim().startsWith('google_access_token='))?.split('=')[1];
+        if (accessToken) {
+          // Appeler l'API Google Calendar pour récupérer les événements
+          const googleResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/google-calendar/sync?timeMin=${dateStart?.toISOString()}&timeMax=${dateEnd?.toISOString() || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}`, {
+            headers: {
+              'Cookie': req.headers.cookie || '',
+            },
+          });
+          
+          if (googleResponse.ok) {
+            const googleData = await googleResponse.json();
+            googleEvents = googleData.events || [];
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des événements Google Calendar:', error);
+        // Continuer sans les événements Google Calendar en cas d'erreur
+      }
+
+      // Fusionner les événements Airtable et Google Calendar
+      const allEvents = [...enrichedEvents];
+      
+      // Ajouter les événements Google Calendar qui n'ont pas de correspondant Airtable
+      googleEvents.forEach((googleEvent: any) => {
+        // Vérifier si cet événement Google a un correspondant dans Airtable
+        const hasAirtableCorrespondent = enrichedEvents.some((airtableEvent: any) =>
+          airtableEvent.googleEventId === googleEvent.id
+        );
+
+        // Si pas de correspondant Airtable, ajouter l'événement Google
+        if (!hasAirtableCorrespondent) {
+          const startDate = googleEvent.start.dateTime
+            ? new Date(googleEvent.start.dateTime)
+            : googleEvent.start.date
+              ? new Date(googleEvent.start.date)
+              : new Date();
+
+          const endDate = googleEvent.end.dateTime
+            ? new Date(googleEvent.end.dateTime)
+            : googleEvent.end.date
+              ? new Date(googleEvent.end.date)
+              : new Date(startDate.getTime() + 60 * 60 * 1000); // +1h par défaut
+
+          const startTime = startDate.toTimeString().slice(0, 5);
+          const endTime = endDate.toTimeString().slice(0, 5);
+
+          allEvents.push({
+            id: `google-${googleEvent.id || Date.now()}`,
+            task: googleEvent.summary || 'Sans titre',
+            date: startDate.toISOString().split('T')[0],
+            dateFinRdv: endDate.toISOString(),
+            type: 'google-agenda',
+            description: googleEvent.description || '',
+            collaborators: [],
+            etablissements: [],
+            googleEventId: googleEvent.id,
+            creneauId: '',
+            establishmentCategories: [],
+            isGoogleEvent: true,
+            htmlLink: googleEvent.htmlLink,
+            location: googleEvent.location,
+          });
+        }
+      });
+
+      // Trier tous les événements par date et heure
+      allEvents.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.dateFinRdv ? new Date(a.dateFinRdv).toTimeString().slice(0, 5) : '00:00'}`);
+        const dateB = new Date(`${b.date}T${b.dateFinRdv ? new Date(b.dateFinRdv).toTimeString().slice(0, 5) : '00:00'}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+
       // Si debug=1, inclure des informations de diagnostic
       const debugMode = String(req.query.debug || '') === '1';
 
       if (debugMode) {
         return res.status(200).json({
-          events: enrichedEvents,
-          total: filtered.length,
+          events: allEvents,
+          total: allEvents.length,
           debug: {
             callerUserId: collaboratorId,
             fetchedCount: upToPageRecords.length,
             mappedCount: mapped.length,
             filteredCount: filtered.length,
+            googleEventsCount: googleEvents.length,
             sampleCollaborators: mapped.slice(0, 5).map((m: any) => m.collaborators),
           },
         });
       }
 
-      res.status(200).json({ events: enrichedEvents, total: filtered.length });
+      res.status(200).json({ events: allEvents, total: allEvents.length });
 
       return;
     }
