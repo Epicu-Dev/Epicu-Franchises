@@ -16,7 +16,7 @@ import Image from "next/image";
 
 import { useUser } from "../contexts/user-context";
 import { useLoading } from "../contexts/loading-context";
-import { useSidebarImageCache } from "../hooks/use-sidebar-image-cache";
+import { useGlobalImageCache } from "../hooks/use-global-image-cache";
 
 // Composant d'icône personnalisé avec respect du cache pour éviter le clignotement
 const CustomIcon = memo(({ alt, className, isActive, src, isCached }: { alt: string; className?: string; isActive?: boolean; src: string; isCached?: boolean }) => {
@@ -98,8 +98,8 @@ export function Sidebar({ onLogout, onHelpClick }: SidebarProps) {
   const { setUserProfileLoaded } = useLoading();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Utilisation du hook de cache des images
-  const { isImageCached, cachedImagesCount } = useSidebarImageCache();
+  // Utilisation du hook de cache global des images
+  const { isImageCached, cachedImagesCount } = useGlobalImageCache();
 
   // Fermer le sidebar mobile lors du changement de route
   useEffect(() => {

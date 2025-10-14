@@ -1,62 +1,83 @@
-# Optimisation du Chargement Prioritaire des SVG
+# Optimisation du Chargement Prioritaire des SVG avec Cache Global
 
-Ce document décrit les optimisations mises en place pour charger les SVG en priorité et améliorer les performances de l'application.
+Ce document décrit les optimisations mises en place pour charger les SVG en priorité et améliorer les performances de l'application avec un système de cache global persistant.
 
-## 🚀 Optimisations Implémentées
+## 🚀 Architecture du Cache Global
 
-### 1. Extension du Hook de Cache (`use-sidebar-image-cache.ts`)
+### 1. Cache Global Persistant (`utils/image-cache.ts`)
 
-**Fonctionnalités ajoutées :**
-- **Préchargement étendu** : Inclusion de toutes les icônes personnalisées (Home-admin et Home-franchisé)
-- **Chargement prioritaire** : Les icônes de navigation sont chargées en premier
-- **Gestion d'état** : Ajout d'un état `isInitialized` pour suivre le chargement
-- **Chargement en deux phases** : Images critiques d'abord, puis les autres
+**Fonctionnalités :**
+- **Singleton global** : Instance unique qui persiste pendant toute la session
+- **Cache persistant** : Les images ne se rechargent plus lors des changements d'onglet
+- **Gestion intelligente** : Évite les doublons de chargement avec des promesses
+- **Chargement prioritaire** : Images critiques chargées en premier
 
 ```typescript
-// Images critiques chargées en priorité
-const criticalImages = imagePaths.slice(0, 13); // Icônes de navigation
-const otherImages = imagePaths.slice(13); // Autres icônes
+class GlobalImageCache {
+  private cache = new Set<string>();
+  private loadingPromises = new Map<string, Promise<void>>();
+  
+  // Le cache ne se remet jamais à zéro
+  isImageCached(src: string): boolean {
+    return this.cache.has(src);
+  }
+}
 ```
 
-### 2. Composant de Préchargement Global (`svg-preloader.tsx`)
+### 2. Hook de Cache Global (`hooks/use-global-image-cache.ts`)
+
+**Fonctionnalités :**
+- **Interface React** : Hook simple pour utiliser le cache global
+- **Initialisation automatique** : Démarre le cache au premier usage
+- **État synchronisé** : Suit l'état du cache global
+
+```typescript
+export function useGlobalImageCache() {
+  const [isInitialized, setIsInitialized] = useState(globalImageCache.getIsInitialized());
+  
+  return {
+    isImageCached: (src: string) => globalImageCache.isImageCached(src),
+    cachedImagesCount: globalImageCache.getCachedImagesCount(),
+    isInitialized,
+    preloadImage: (src: string) => globalImageCache.preloadSpecificImage(src),
+  };
+}
+```
+
+### 3. Composant de Préchargement Global (`svg-preloader.tsx`)
 
 **Fonctionnalités :**
 - **Préchargement invisible** : Force le chargement de tous les SVG critiques
 - **Détection automatique** : Vérifie que toutes les images sont chargées
 - **Timeout de sécurité** : Arrêt automatique après 5 secondes
-- **Rendu invisible** : N'affecte pas l'interface utilisateur
+- **Cache global** : Utilise le nouveau système de cache persistant
 
-### 3. Optimisation des Composants d'Icônes (`custom-icons.tsx`)
+### 4. Optimisation des Composants d'Icônes (`custom-icons.tsx`)
 
 **Améliorations :**
 - **Composant mémorisé** : `OptimizedIcon` avec `React.memo()`
-- **Gestion du cache** : Utilisation du hook de cache pour éviter les rechargements
+- **Cache global** : Utilisation du nouveau système de cache
 - **Transitions fluides** : Opacité progressive lors du chargement
 - **Gestion d'erreurs** : Fallback en cas d'échec de chargement
 
-### 4. Optimisation de la Page d'Accueil (`home/page.tsx`)
+### 5. Optimisation de la Sidebar (`sidebar.tsx`)
 
 **Fonctionnalités :**
-- **Composant d'icône optimisé** : `OptimizedMetricIcon` pour les métriques
-- **Chargement eager** : `loading="eager"` pour les icônes critiques
-- **Intégration du cache** : Utilisation du système de cache global
-
-### 5. Intégration dans les Providers (`providers.tsx`)
-
-**Ajouts :**
-- **Préchargement global** : `<SvgPreloader />` dans les providers
-- **Initialisation précoce** : Démarrage du cache dès le chargement de l'app
+- **Composant d'icône optimisé** : `CustomIcon` avec gestion du cache global
+- **Chargement instantané** : Affichage immédiat si l'image est en cache
+- **Transitions fluides** : Pas de clignotement lors des changements d'onglet
 
 ## 📊 Architecture du Système
 
 ```
 App Providers
 ├── SvgPreloader (préchargement invisible)
-├── useSidebarImageCache (gestion du cache)
+├── useGlobalImageCache (interface React)
+├── GlobalImageCache (cache persistant)
 └── Components
-    ├── CustomIcon (avec cache)
-    ├── OptimizedMetricIcon (métriques)
-    └── CustomIcon (sidebar)
+    ├── CustomIcon (sidebar avec cache)
+    ├── OptimizedIcon (métriques avec cache)
+    └── CustomIcon (autres composants)
 ```
 
 ## 🎯 Images Préchargées
@@ -94,10 +115,24 @@ App Providers
 
 ## 🔧 Configuration Technique
 
+### Cache Global Persistant
+```typescript
+// Instance globale unique
+const globalImageCache = new GlobalImageCache();
+
+// Le cache persiste entre les changements d'onglet
+const isCached = globalImageCache.isImageCached('/images/icones/Nav/Accueil.svg');
+```
+
 ### Chargement Prioritaire
 ```typescript
 // Chargement eager pour les images critiques
 img.loading = 'eager';
+
+// Gestion des promesses pour éviter les doublons
+if (this.loadingPromises.has(src)) {
+  return this.loadingPromises.get(src)!;
+}
 ```
 
 ### Cache Management
@@ -119,14 +154,14 @@ const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
 
 ### Performance
 - ✅ **Chargement instantané** des icônes de navigation
-- ✅ **Réduction du clignotement** lors des changements de page
+- ✅ **Plus de rechargement** lors des changements d'onglet
 - ✅ **Amélioration du LCP** (Largest Contentful Paint)
-- ✅ **Cache navigateur optimisé**
+- ✅ **Cache persistant** pendant toute la session
 
 ### Expérience Utilisateur
-- ✅ **Interface plus fluide** et réactive
+- ✅ **Interface fluide** sans clignotement
 - ✅ **Transitions visuelles** sans saccades
-- ✅ **Chargement progressif** avec feedback visuel
+- ✅ **Navigation rapide** entre les onglets
 - ✅ **Fallback gracieux** en cas d'erreur
 
 ## 🚨 Points d'Attention
@@ -138,13 +173,14 @@ const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
 
 ### Performance
 - Le préchargement est invisible et n'affecte pas le rendu
-- Les images sont mises en cache pour les visites suivantes
+- Les images sont mises en cache pour toute la session
 - Chargement en deux phases pour optimiser les ressources
+- Cache global persistant qui ne se remet jamais à zéro
 
 ## 🔄 Maintenance
 
 ### Ajout de Nouvelles Icônes
-1. Ajouter le chemin dans `imagePaths` du hook de cache
+1. Ajouter le chemin dans `imagePaths` du cache global
 2. Mettre à jour le `SvgPreloader` si nécessaire
 3. Utiliser le composant `OptimizedIcon` dans les nouveaux composants
 
@@ -153,9 +189,22 @@ const visibilityClass = isLoaded ? 'opacity-100' : 'opacity-0';
 - L'état `isInitialized` permet de suivre le chargement
 - Les erreurs sont loggées dans la console
 
+## 🚀 Migration
+
+L'ancien système `useSidebarImageCache` a été remplacé par `useGlobalImageCache` :
+
+```typescript
+// Ancien système (supprimé)
+import { useSidebarImageCache } from '@/hooks/use-sidebar-image-cache';
+
+// Nouveau système
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
+```
+
 ## 📝 Notes de Développement
 
-- Tous les composants d'icônes utilisent maintenant le système de cache
+- Tous les composants d'icônes utilisent maintenant le cache global persistant
 - Le préchargement est automatique et transparent
 - Les optimisations sont rétrocompatibles
 - Le système est extensible pour de nouvelles icônes
+- **Résolution du problème principal** : Plus de rechargement des icônes lors des changements d'onglet

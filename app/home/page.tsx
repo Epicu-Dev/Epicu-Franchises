@@ -31,7 +31,7 @@ import { useLoading } from "@/contexts/loading-context";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { useHomeDataCache } from "@/hooks/use-home-data-cache";
-import { useSidebarImageCache } from "@/hooks/use-sidebar-image-cache";
+import { useGlobalImageCache } from "@/hooks/use-global-image-cache";
 import { DateFilterModal } from "@/components/date-filter-modal";
 import { PeriodSelectorButtons } from "@/components/period-selector-buttons";
 import { Invoice } from "@/types/invoice";
@@ -125,8 +125,8 @@ export default function HomePage() {
     refreshData: refreshCachedData
   } = useHomeDataCache();
 
-  // Utilisation du hook de cache pour les images
-  const { isImageCached } = useSidebarImageCache();
+  // Utilisation du hook de cache global pour les images
+  const { isImageCached } = useGlobalImageCache();
   const [statistics, setStatistics] = useState<{
     prospectsSignes: number;
     tauxConversion: number;

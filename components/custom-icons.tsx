@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
-import { useSidebarImageCache } from '@/hooks/use-sidebar-image-cache';
+import { useGlobalImageCache } from '@/hooks/use-global-image-cache';
 
 interface CustomIconProps {
   name: 'abonnes' | 'chiffre-affaires' | 'clients' | 'franchises' | 'posts' | 'prospects' | 'studio' | 'vues';
@@ -53,7 +53,7 @@ OptimizedIcon.displayName = 'OptimizedIcon';
 
 export const CustomIcon: React.FC<CustomIconProps> = ({ name, className = "h-6 w-6" }) => {
   const iconPath = `/images/icones/Home-admin/${name}.svg`;
-  const { isImageCached } = useSidebarImageCache();
+  const { isImageCached } = useGlobalImageCache();
   
   return (
     <OptimizedIcon 
@@ -101,7 +101,7 @@ export const VuesIcon: React.FC<{ className?: string }> = ({ className }) => (
 // Composants pour les icônes des franchisés
 export const FranchiseIcon: React.FC<FranchiseIconProps> = ({ name, className = "h-6 w-6" }) => {
   const iconPath = `/images/icones/Home-franchisé/${name}.svg`;
-  const { isImageCached } = useSidebarImageCache();
+  const { isImageCached } = useGlobalImageCache();
   
   return (
     <OptimizedIcon 
