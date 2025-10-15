@@ -48,7 +48,7 @@ export function TeamMemberModal({
   const [newMember, setNewMember] = useState<Partial<Collaborator>>({
     nom: "",
     prenom: "",
-    role: "Franchisé",
+    role: "Franchisé·e",
     villeEpicu: [],
     emailEpicu: "",
     emailPerso: "",
@@ -59,7 +59,6 @@ export function TeamMemberModal({
     adresse: null,
     siret: null,
     dateDIP: null,
-    dateSignatureContrat: null,
     dateSignatureAttestation: null,
   });
 
@@ -94,7 +93,7 @@ export function TeamMemberModal({
       setNewMember({
         nom: "",
         prenom: "",
-        role: "Franchisé",
+        role: "Franchisé·e",
         villeEpicu: [],
         emailEpicu: "",
         emailPerso: "",
@@ -105,7 +104,6 @@ export function TeamMemberModal({
         adresse: null,
         siret: null,
         dateDIP: null,
-        dateSignatureContrat: null,
         dateSignatureAttestation: null,
       });
       setSelectedCityId("");
@@ -249,7 +247,6 @@ export function TeamMemberModal({
         adresse: memberWithCity.adresse,
         siret: memberWithCity.siret,
         dateDIP: memberWithCity.dateDIP,
-        dateSignatureContrat: memberWithCity.dateSignatureContrat,
         dateSignatureAttestation: memberWithCity.dateSignatureAttestation,
       };
 
@@ -276,7 +273,7 @@ export function TeamMemberModal({
         id: data.id || Date.now().toString(),
         nom: memberWithCity.nom || "",
         prenom: memberWithCity.prenom || "",
-        role: memberWithCity.role || "Franchisé",
+        role: memberWithCity.role || "Franchisé·e",
         villeEpicu: memberWithCity.villeEpicu || [],
         emailEpicu: memberWithCity.emailEpicu || "",
         emailPerso: memberWithCity.emailPerso || "",
@@ -287,7 +284,6 @@ export function TeamMemberModal({
         adresse: memberWithCity.adresse || null,
         siret: memberWithCity.siret || null,
         dateDIP: memberWithCity.dateDIP || null,
-        dateSignatureContrat: memberWithCity.dateSignatureContrat || null,
         dateSignatureAttestation: memberWithCity.dateSignatureAttestation || null,
       };
 
@@ -295,7 +291,7 @@ export function TeamMemberModal({
       setNewMember({
         nom: "",
         prenom: "",
-        role: "Franchisé",
+        role: "Franchisé·e",
         villeEpicu: [],
         emailEpicu: "",
         emailPerso: "",
@@ -306,7 +302,6 @@ export function TeamMemberModal({
         adresse: null,
         siret: null,
         dateDIP: null,
-        dateSignatureContrat: null,
         dateSignatureAttestation: null,
       });
       setSelectedCityId("");
@@ -327,7 +322,7 @@ export function TeamMemberModal({
     setNewMember({
       nom: "",
       prenom: "",
-      role: "Franchisé",
+      role: "Franchisé·e",
       villeEpicu: [],
       emailEpicu: "",
       emailPerso: "",
@@ -443,11 +438,14 @@ export function TeamMemberModal({
             >
               <SelectItem key="Admin">Admin</SelectItem>
               <SelectItem key="Siège">Siège</SelectItem>
-              <SelectItem key="Franchisé">Franchisé</SelectItem>
+              <SelectItem key="Franchisé·e">Franchisé·e</SelectItem>
               <SelectItem key="Nouveau franchisé">Nouveau franchisé</SelectItem>
               <SelectItem key="Studio">Studio</SelectItem>
               <SelectItem key="Photographe/Vidéaste">Photographe/Vidéaste</SelectItem>
               <SelectItem key="Community Manager">Community Manager</SelectItem>
+              <SelectItem key="Commercial·e">Commercial·e</SelectItem>
+              <SelectItem key="Commercial·e/community manager">Commercial·e/community manager</SelectItem>
+              <SelectItem key="Poilu·e">Poilu·e</SelectItem>
             </StyledSelect>
 
             <FormLabel htmlFor="telephone" isRequired={true}>
@@ -548,6 +546,7 @@ export function TeamMemberModal({
             <Input
               classNames={{
                 inputWrapper: "bg-page-bg",
+                input: newMember.dateNaissance ? "text-black" : "text-gray-300"
               }}
               id="dateNaissance"
               type="date"
@@ -566,6 +565,7 @@ export function TeamMemberModal({
                 <Input
                   classNames={{
                     inputWrapper: "bg-page-bg",
+                    input: newMember.dateDIP ? "text-black" : "text-gray-300"
                   }}
                   id="dateDIP"
                   type="date"
@@ -575,20 +575,6 @@ export function TeamMemberModal({
                   }}
                 />
 
-                <FormLabel htmlFor="dateSignatureContrat" isRequired={false}>
-                  Date signature contrat
-                </FormLabel>
-                <Input
-                  classNames={{
-                    inputWrapper: "bg-page-bg",
-                  }}
-                  id="dateSignatureContrat"
-                  type="date"
-                  value={newMember.dateSignatureContrat || ""}
-                  onChange={(e) => {
-                    setNewMember((prev) => ({ ...prev, dateSignatureContrat: e.target.value }));
-                  }}
-                />
 
                 <FormLabel htmlFor="dateSignatureAttestation" isRequired={false}>
                   Date signature formation
@@ -596,6 +582,7 @@ export function TeamMemberModal({
                 <Input
                   classNames={{
                     inputWrapper: "bg-page-bg",
+                    input: newMember.dateSignatureAttestation ? "text-black" : "text-gray-300"
                   }}
                   id="dateSignatureAttestation"
                   type="date"

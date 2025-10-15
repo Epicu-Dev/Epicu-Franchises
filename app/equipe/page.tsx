@@ -70,6 +70,10 @@ export default function EquipePage() {
       if (searchTerm) {
         params.set('q', searchTerm);
       }
+      // Pass selected tab to API so filtering is server-side
+      if (selectedCategory && selectedCategory !== 'tout') {
+        params.set('role', selectedCategory);
+      }
 
       const response = await authFetch(`/api/equipe?${params}`);
 
@@ -81,29 +85,9 @@ export default function EquipePage() {
 
       const data = await response.json();
 
-      // Utiliser directement les données de l'API
+      // Utiliser directement les données de l'API (déjà filtrées côté serveur)
       const members: Collaborator[] = data.results || [];
-
-      // Filtrer par catégorie si sélectionnée
-      let filteredMembers = members;
-
-      if (selectedCategory && selectedCategory !== "tout") {
-        filteredMembers = members.filter(member => {
-          const roleLower = (member.role || "").toLowerCase();
-
-          if (selectedCategory === "siege") {
-            return !roleLower.includes("franchise") && !roleLower.includes("franchisé") && !roleLower.includes("prestataire");
-          } else if (selectedCategory === "franchise") {
-            return roleLower.includes("franchise") || roleLower.includes("franchisé");
-          } else if (selectedCategory === "prestataire") {
-            return roleLower.includes("prestataire");
-          }
-
-          return true;
-        });
-      }
-
-      setMembers(filteredMembers);
+      setMembers(members);
 
     } catch (error) {
       // eslint-disable-next-line no-console

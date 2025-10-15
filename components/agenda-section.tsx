@@ -16,8 +16,10 @@ interface AgendaSectionProps {
   onPublicationSelect: () => void;
   onRendezVousSelect: () => void;
   onTournageSelect: () => void;
+  onEvenementSelect?: () => void;
   className?: string;
   isGoogleConnected?: boolean;
+  canAddEvents?: boolean;
   onSeeMore?: () => void;
   showSeeMoreButton?: boolean;
 }
@@ -28,8 +30,10 @@ export const AgendaSection: React.FC<AgendaSectionProps> = ({
   onPublicationSelect,
   onRendezVousSelect,
   onTournageSelect,
+  onEvenementSelect,
   className = "",
   isGoogleConnected = false,
+  canAddEvents = false,
   onSeeMore,
   showSeeMoreButton = false
 }) => {
@@ -43,7 +47,9 @@ export const AgendaSection: React.FC<AgendaSectionProps> = ({
           onPublicationSelect={onPublicationSelect}
           onRendezVousSelect={onRendezVousSelect}
           onTournageSelect={onTournageSelect}
+          onEvenementSelect={onEvenementSelect}
           isGoogleConnected={isGoogleConnected}
+          canAddEvents={canAddEvents}
         />
       </div>
       <div>
