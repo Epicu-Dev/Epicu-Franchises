@@ -147,6 +147,22 @@ export default function HomeAdminPage() {
   }, [userProfile, setUserProfileLoaded]);
 
 
+  // Fonction pour vérifier si l'utilisateur peut ajouter des événements (même logique que la sidebar)
+  const canAddEvents = () => {
+    if (!userProfile?.role) {
+      return false;
+    }
+
+    // Mapper les rôles de l'API vers les permissions
+    const roleMapping: { [key: string]: boolean } = {
+      'Admin': true,
+      'Franchisé': false,
+      'Collaborateur': false,
+    };
+
+    return roleMapping[userProfile.role] || false;
+  };
+
   // Fonction pour vérifier le statut Google Calendar
   const checkGoogleCalendarStatus = async () => {
     try {
@@ -475,7 +491,9 @@ export default function HomeAdminPage() {
                   onPublicationSelect={() => openUnifiedModal("publication")}
                   onRendezVousSelect={() => openUnifiedModal("rendez-vous")}
                   onTournageSelect={() => openUnifiedModal("tournage")}
+                  onEvenementSelect={() => openUnifiedModal("evenement")}
                   isGoogleConnected={isGoogleConnected || false}
+                  canAddEvents={canAddEvents()}
                   onSeeMore={() => router.push('/agenda')}
                   showSeeMoreButton={events.length > 3}
                 />

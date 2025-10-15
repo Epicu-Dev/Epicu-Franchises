@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const orderBy = allowedOrderBy.has(orderByReq) ? orderByReq : 'Nom';
 
       const q = (req.query.q as string) || (req.query.search as string) || '';
+      const roleFilter = (req.query.role as string) || '';
 
       const escapeForAirtableRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '\\"').toLowerCase();
 
@@ -57,6 +58,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const pattern = escapeForAirtableRegex(q.trim());
         // search by nom OR prénom
         selectOptions.filterByFormula = `OR(REGEX_MATCH(LOWER({Nom}), "${pattern}"), REGEX_MATCH(LOWER({Prénom}), "${pattern}"))`;
+      }
+
+      // Map UI tabs to Airtable role values
+      // Siège => "Siège"
+      // Franchisés => "Franchisé·e"
+      // Prestataires => "Photographe/Vidéaste"
+      if (roleFilter) {
+        let formulaForRole: string | null = null;
+        const rf = roleFilter.toLowerCase();
+        if (rf === 'siege') {
+          formulaForRole = `LOWER({Rôle}) = "siège"`;
+        } else if (rf === 'franchise' || rf === 'franchises' || rf === 'franchisé' || rf === 'franchisé·e') {
+          // Match exactly the franchisé label used in Airtable
+          formulaForRole = `LOWER({Rôle}) = "franchisé·e"`;
+        } else if (rf === 'prestataire' || rf === 'prestataires') {
+          formulaForRole = `LOWER({Rôle}) = "photographe/vidéaste"`;
+        }
+
+        if (formulaForRole) {
+          if (selectOptions.filterByFormula) {
+            selectOptions.filterByFormula = `AND(${selectOptions.filterByFormula}, ${formulaForRole})`;
+          } else {
+            selectOptions.filterByFormula = formulaForRole;
+          }
+        }
       }
 
       // require auth to access équipe
@@ -170,6 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (body.telephone !== undefined || body['Téléphone'] !== undefined) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
         if (body.dateNaissance !== undefined || body['Date de naissance'] !== undefined) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
         if (body.dateDIP !== undefined || body['Date DIP'] !== undefined) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
+        if (body.dateSignatureContrat !== undefined) fields['Franchise signée le'] = body.dateSignatureContrat;
         if (body.adresse !== undefined || body['Adresse'] !== undefined) fields['Adresse'] = body.adresse ?? body['Adresse'];
         if (body.attestationFormationInitiale !== undefined) fields['Attestation formation initiale'] = body.attestationFormationInitiale;
         if (body['Attestation formation initiale'] !== undefined) fields['Attestation formation initiale'] = body['Attestation formation initiale'];
@@ -243,6 +270,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (body.telephone !== undefined || body['Téléphone'] !== undefined) fields['Téléphone'] = body.telephone ?? body['Téléphone'];
       if (body.dateNaissance !== undefined || body['Date de naissance'] !== undefined) fields['Date de naissance'] = body.dateNaissance ?? body['Date de naissance'];
       if (body.dateDIP !== undefined || body['Date DIP'] !== undefined) fields['Date DIP'] = body.dateDIP ?? body['Date DIP'];
+      if (body.dateSignatureContrat !== undefined) fields['Franchise signée le'] = body.dateSignatureContrat;
       if (body.adresse !== undefined || body['Adresse'] !== undefined) fields['Adresse'] = body.adresse ?? body['Adresse'];
       // Attestation formation initiale
       if (body.attestationFormationInitiale !== undefined) fields['Attestation formation initiale'] = body.attestationFormationInitiale;
