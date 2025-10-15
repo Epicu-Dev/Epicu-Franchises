@@ -551,7 +551,7 @@ export default function ClientsPage() {
                                       break;
                                     case 'telephone':
                                       cells.push(
-                                        <TableCell key={column.key} className="font-light min-w-32 text-xs sm:text-sm">
+                                        <TableCell key={column.key} className="font-light min-w-40 text-xs sm:text-sm">
                                           {client.telephone}
                                         </TableCell>
                                       );
@@ -690,14 +690,7 @@ export default function ClientsPage() {
                                     case 'commentaire':
                                       cells.push(
                                         <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm  min-w-50">
-                                                {pub.commentaire || "-"}
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
+                                          {client.commentaires || "-"}
                                         </TableCell>
                                       );
                                       break;
