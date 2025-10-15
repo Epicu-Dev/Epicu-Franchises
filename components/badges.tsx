@@ -172,6 +172,8 @@ export const AgendaBadge: React.FC<AgendaBadgeProps> = ({
             case "évenement":
             case "evènement":
                 return "bg-custom-orange-event/14 text-custom-orange-event";
+            case "google-agenda":
+                return "bg-gray-100 text-gray-800";
             default:
                 return "bg-gray-100 text-gray-800";
         }

@@ -417,7 +417,17 @@ export default function FacturationPage() {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id} className="border-t border-gray-100  dark:border-gray-700">
                         <TableCell>
-                          <CategoryBadge category={invoice.categorie} />
+                          {invoice.categorie && invoice.categorie.includes(' / ') ? (
+                            invoice.categorie.split(' / ').map((cat, index) => (
+                              <CategoryBadge 
+                                key={index} 
+                                category={cat.trim()} 
+                                className={index > 0 ? "ml-2" : ""} 
+                              />
+                            ))
+                          ) : (
+                            <CategoryBadge category={invoice.categorie} />
+                          )}
                         </TableCell>
                         <TableCell className="font-light py-5 text-xs sm:text-sm">
                           {invoice.nomEtablissement}

@@ -312,12 +312,21 @@ export default function HomeAdminPage() {
   // Transformation des événements pour l'affichage
   const agendaEvents = useMemo(() => {
     console.log('Transformation des événements agenda:', events.length, 'événements');
-    return events.slice(0, 3).map(event => ({
+    
+    // Trier les événements par date croissante (ASC) avant de prendre les 3 premiers
+    const sortedEvents = [...events].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    return sortedEvents.slice(0, 3).map(event => ({
       clientName: event.task || "Nom client",
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
       type: event.type === "rendez-vous" ? "Rendez-vous" :
         event.type === "tournage" ? "Tournage" :
-          event.type === "publication" ? "Publication" : "Evènement",
+          event.type === "publication" ? "Publication" :
+            event.type === "google-agenda" ? "Google Agenda" : "Evènement",
     }));
   }, [events]);
 

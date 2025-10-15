@@ -444,7 +444,8 @@ export default function HomePage() {
       date: event.date ? new Date(event.date).toLocaleDateString("fr-FR") : "12.07.2025",
       type: event.type === "rendez-vous" ? "Rendez-vous" :
         event.type === "tournage" ? "Tournage" :
-          event.type === "publication" ? "Publication" : "Evènement",
+          event.type === "publication" ? "Publication" :
+            event.type === "google-agenda" ? "Google Agenda" : "Evènement",
     }));
   }, [events]);
 

@@ -84,7 +84,7 @@ function mapRecordToPayload(record: any) {
     dateVilleEpicu: getField(record, 'Date - ville EPICU') || null,
     moisAnnee: getField(record, 'Mois-Année') || null,
     villeEpicu: getField(record, 'Ville EPICU') || null,
-    totalAbonnes: toNumber(getField(record, 'Total abonnés', '📊 Total abonnés')),
+    totalAbonnes: toNumber(getField(record, 'Total abonnés', '📊 Total abonnés', 'Nombre d\'abonnés')),
     totalVues: toNumber(getField(record, 'Total vues', '📊 Total vues')),
     totalProspectsVus: toNumber(getField(record, 'Prospects vus ds le mois', '📊 Prospects vus ds le mois', 'Prospects vus')),
     totalProspectsSignes: toNumber(getField(record, 'Propects signés ds le mois', '📊 Propects signés ds le mois', 'Clients signés')),

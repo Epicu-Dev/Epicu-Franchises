@@ -87,6 +87,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           const villeId = await ensureRelatedRecord('VILLES EPICU', body['Ville EPICU'], ['Ville', 'Name']);
           if (villeId) fieldsToUpdate['Ville EPICU'] = [villeId]; else fieldsToUpdate['Ville EPICU'] = [];
         }
+        if (Object.prototype.hasOwnProperty.call(body, 'Date de signature')) fieldsToUpdate['Date de signature'] = body['Date de signature'];
 
         if (Object.keys(fieldsToUpdate).length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour' });
 
@@ -125,7 +126,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
       'Description',
       'Ville EPICU',
       'Commentaires interactions',
-      'Date de signature (from HISTORIQUE DE PUBLICATIONS)',
+      'Date de signature',
       'HISTORIQUE DE PUBLICATIONS',
       'Date de création',
       'Record_ID (from INTERACTIONS)',
@@ -366,9 +367,9 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
 
       const clients = pageRecords.map((record: any) => {
         const catIds = record.get('Catégorie') || [];
-        const catName = Array.isArray(catIds) && catIds.length > 0
-          ? (categoryNames[catIds[0]] || catIds[0])
-          : '';
+        const catNames = Array.isArray(catIds) && catIds.length > 0
+          ? catIds.map((id: string) => categoryNames[id] || id).filter(Boolean)
+          : [];
 
         // Récupérer les publications associées à ce client
         const clientPublicationIds = record.get('HISTORIQUE DE PUBLICATIONS') || [];
@@ -379,7 +380,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
         return {
           id: record.id,
           nomEtablissement: record.get("Nom de l'établissement"),
-          categorie: catName,
+          categorie: catNames,
           raisonSociale: record.get('Raison sociale'),
           email: record.get('Email'),
           telephone: record.get('Téléphone'),
@@ -390,7 +391,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
           description: record.get('Description'),
           villeEpicu: record.get('Ville EPICU'),
           commentaires: record.get('Commentaires interactions'),
-          dateSignatureContrat: record.get('Date de signature (from HISTORIQUE DE PUBLICATIONS)'),
+          dateSignatureContrat: record.get('Date de signature'),
           publications: publications,
           recordIdFromInteractions: getInteractionRecordId(record),
         };

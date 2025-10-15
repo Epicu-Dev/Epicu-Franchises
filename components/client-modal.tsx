@@ -57,10 +57,15 @@ export default function ClientModal({
             'ville',
             'telephone',
             'email',
+            'dateSignatureContrat',
         ];
 
         return requiredFields.every(field => {
             const value = editingClient[field as keyof Client];
+
+            if (field === 'categorie') {
+                return Array.isArray(value) && value.length > 0 && value[0] !== "";
+            }
 
             return value !== "" && value !== null && value !== undefined;
         });
@@ -92,21 +97,21 @@ export default function ClientModal({
                                 Informations générales
                             </h3>
                             <FormLabel htmlFor="categorie" isRequired={true}>
-                                Catégorie
+                                Catégorie 1
                             </FormLabel>
                             <StyledSelect
                                 isRequired
-                                id="categorie"
+                                id="categorie1"
                                 placeholder="Sélectionner une catégorie"
                                 selectedKeys={
-                                    editingClient.categorie ? [editingClient.categorie] : []
+                                    editingClient.categorie && editingClient.categorie.length > 0 ? [editingClient.categorie[0]] : []
                                 }
                                 onSelectionChange={(keys) =>
                                     setEditingClient(
                                         editingClient
                                             ? {
                                                 ...editingClient,
-                                                categorie: Array.from(keys)[0] as string,
+                                                categorie: [Array.from(keys)[0] as string],
                                             }
                                             : null
                                     )
@@ -122,6 +127,70 @@ export default function ClientModal({
                                     <SelectItem key="loading">Chargement...</SelectItem>
                                 )}
                             </StyledSelect>
+                            {editingClient.categorie && editingClient.categorie.length > 1 ? (
+                                <div>
+                                    <FormLabel htmlFor="categorie2" isRequired={false}>
+                                        Catégorie 2
+                                    </FormLabel>
+                                    <StyledSelect
+                                        id="categorie2"
+                                        placeholder="Sélectionner une deuxième catégorie"
+                                        selectedKeys={
+                                            editingClient.categorie[1] ? [editingClient.categorie[1]] : []
+                                        }
+                                        onSelectionChange={(keys) => {
+                                            const selectedKey = Array.from(keys)[0] as string;
+                                            if (selectedKey === "none") {
+                                                setEditingClient(
+                                                    editingClient
+                                                        ? {
+                                                            ...editingClient,
+                                                            categorie: [editingClient.categorie[0]],
+                                                        }
+                                                        : null
+                                                );
+                                            } else {
+                                                setEditingClient(
+                                                    editingClient
+                                                        ? {
+                                                            ...editingClient,
+                                                            categorie: [editingClient.categorie[0], selectedKey],
+                                                        }
+                                                        : null
+                                                );
+                                            }
+                                        }}
+                                    >
+                                        <SelectItem key="none">Aucune</SelectItem>
+                                        {categories.length > 0 ? (
+                                            categories.map((category) => (
+                                                <SelectItem key={category.name}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <SelectItem key="loading">Chargement...</SelectItem>
+                                        )}
+                                    </StyledSelect>
+                                </div>
+                            ) : (
+                                <Button
+                                    className="border-1"
+                                    color='primary'
+                                    endContent={<PlusIcon className="h-4 w-4" />}
+                                    variant="bordered"
+                                    onPress={() => setEditingClient(
+                                        editingClient
+                                            ? {
+                                                ...editingClient,
+                                                categorie: [...editingClient.categorie, "FOOD"],
+                                            }
+                                            : null
+                                    )}
+                                >
+                                    Ajouter une catégorie (Optionnel)
+                                </Button>
+                            )}
 
                             <FormLabel htmlFor="nomEtablissement" isRequired={true}>
                                 Nom établissement
@@ -228,6 +297,26 @@ export default function ClientModal({
                                 onChange={(e) =>
                                     setEditingClient(
                                         editingClient ? { ...editingClient, email: e.target.value } : null
+                                    )
+                                }
+                            />
+
+                            <FormLabel htmlFor="dateSignatureContrat" isRequired={true}>
+                                Date de signature du contrat
+                            </FormLabel>
+                            <Input
+                                isRequired
+                                classNames={{
+                                    inputWrapper: "bg-page-bg",
+                                    input: editingClient.dateSignatureContrat ? "text-black" : "text-gray-300"
+                                }}
+                                id="dateSignatureContrat"
+                                placeholder="JJ/MM/AAAA"
+                                type="date"
+                                value={editingClient.dateSignatureContrat || ""}
+                                onChange={(e) =>
+                                    setEditingClient(
+                                        editingClient ? { ...editingClient, dateSignatureContrat: e.target.value } : null
                                     )
                                 }
                             />

@@ -23,12 +23,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       const accessToken = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
 
+      // Déconnexion des tokens d'authentification principaux
       if (accessToken && refreshToken) {
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accessToken, refreshToken }),
         });
+      }
+
+      // Déconnexion des tokens Google Calendar
+      try {
+        await fetch('/api/google-calendar/disconnect', {
+          method: 'POST',
+        });
+      } catch (error) {
+        // Erreur silencieuse pour la déconnexion Google (peut ne pas être connecté)
+        console.warn('Erreur lors de la déconnexion Google Calendar:', error);
       }
     } catch {
       // Erreur silencieuse lors de la déconnexion

@@ -37,12 +37,6 @@ export default function PublicationModal({
     const { authFetch } = useAuthFetch();
     const [formData, setFormData] = React.useState({
         datePublication: "",
-        dateEnvoiFactureCreation: "",
-        montantFactureTournage: "",
-        factureTournage: "En attente" as "Payée" | "En attente" | "En retard",
-        dateEnvoiFacturePublication: "",
-        montantFacturePublication: "",
-        facturePublication: "En attente" as "Payée" | "En attente" | "En retard",
         montantSponsorisation: "",
         montantAddition: "",
         benefice: "",
@@ -79,12 +73,6 @@ export default function PublicationModal({
         if (editingPublication) {
             setFormData({
                 datePublication: editingPublication.datePublication || "",
-                dateEnvoiFactureCreation: editingPublication.dateEnvoiFactureCreation || "",
-                montantFactureTournage: editingPublication.montantFactureTournage || "",
-                factureTournage: editingPublication.factureTournage || "En attente",
-                dateEnvoiFacturePublication: editingPublication.dateEnvoiFacturePublication || "",
-                montantFacturePublication: editingPublication.montantFacturePublication || "",
-                facturePublication: editingPublication.facturePublication || "En attente",
                 montantSponsorisation: editingPublication.montantSponsorisation || "",
                 montantAddition: editingPublication.montantAddition || "",
                 benefice: editingPublication.benefice || "",
@@ -99,12 +87,6 @@ export default function PublicationModal({
             // Reset form pour nouvelle publication
             setFormData({
                 datePublication: "",
-                dateEnvoiFactureCreation: "",
-                montantFactureTournage: "",
-                factureTournage: "En attente",
-                dateEnvoiFacturePublication: "",
-                montantFacturePublication: "",
-                facturePublication: "En attente",
                 montantSponsorisation: "",
                 montantAddition: "",
                 benefice: "",
@@ -201,12 +183,6 @@ export default function PublicationModal({
             const publication: Publication = {
                 id: responseData.id,
                 datePublication: formData.datePublication,
-                dateEnvoiFactureCreation: formData.dateEnvoiFactureCreation,
-                montantFactureTournage: formData.montantFactureTournage,
-                factureTournage: formData.factureTournage,
-                dateEnvoiFacturePublication: formData.dateEnvoiFacturePublication,
-                montantFacturePublication: formData.montantFacturePublication,
-                facturePublication: formData.facturePublication,
                 montantSponsorisation: formData.montantSponsorisation,
                 montantAddition: formData.montantAddition,
                 benefice: formData.benefice,
@@ -222,12 +198,6 @@ export default function PublicationModal({
             // Réinitialiser le formulaire et fermer le modal
             setFormData({
                 datePublication: "",
-                dateEnvoiFactureCreation: "",
-                montantFactureTournage: "",
-                factureTournage: "En attente",
-                dateEnvoiFacturePublication: "",
-                montantFacturePublication: "",
-                facturePublication: "En attente",
                 montantSponsorisation: "",
                 montantAddition: "",
                 benefice: "",
@@ -252,12 +222,6 @@ export default function PublicationModal({
         setError(null);
         setFormData({
             datePublication: "",
-            dateEnvoiFactureCreation: "",
-            montantFactureTournage: "",
-            factureTournage: "En attente",
-            dateEnvoiFacturePublication: "",
-            montantFacturePublication: "",
-            facturePublication: "En attente",
             montantSponsorisation: "",
             montantAddition: "",
             benefice: "",
@@ -450,130 +414,7 @@ export default function PublicationModal({
                                 />
                             </div>
 
-                            {/* Champs de facturation - affichés uniquement en mode modification */}
-                            {editingPublication && (
-                                <>
-                                    {/* Date d'envoi facture création de contenu */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="dateEnvoiFactureCreation" isRequired={false}>
-                                            Date d&apos;envoi facture création de contenu
-                                        </FormLabel>
-                                        <Input
-                                            isDisabled
-                                            classNames={{
-                                                inputWrapper: "bg-gray-100",
-                                            }}
-                                            id="dateEnvoiFactureCreation"
-                                            type="date"
-                                            value={formData.dateEnvoiFactureCreation}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, dateEnvoiFactureCreation: e.target.value })
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* Montant de la facture (tournage) */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="montantFactureTournage" isRequired={false}>
-                                            Montant de la facture (tournage)
-                                        </FormLabel>
-                                        <Input
-                                            isDisabled
-                                            classNames={{
-                                                inputWrapper: "bg-gray-100",
-                                            }}
-                                            id="montantFactureTournage"
-                                            placeholder="500€"
-                                            value={formData.montantFactureTournage}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, montantFactureTournage: e.target.value })
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* Facture du tournage */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="factureTournage" isRequired={false}>
-                                            Facture du tournage
-                                        </FormLabel>
-                                        <StyledSelect
-                                            isDisabled
-                                            id="factureTournage"
-                                            selectedKeys={[formData.factureTournage]}
-                                            onSelectionChange={(keys) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    factureTournage: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
-                                                })
-                                            }
-                                        >
-                                            <SelectItem key="Payée">Payée</SelectItem>
-                                            <SelectItem key="En attente">En attente</SelectItem>
-                                            <SelectItem key="En retard">En retard</SelectItem>
-                                        </StyledSelect>
-                                    </div>
-
-                                    {/* Date d'envoi facture de publication */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="dateEnvoiFacturePublication" isRequired={false}>
-                                            Date d&apos;envoi facture de publication
-                                        </FormLabel>
-                                        <Input
-                                            isDisabled
-                                            classNames={{
-                                                inputWrapper: "bg-gray-100",
-                                            }}
-                                            id="dateEnvoiFacturePublication"
-                                            type="date"
-                                            value={formData.dateEnvoiFacturePublication}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, dateEnvoiFacturePublication: e.target.value })
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* Montant de la facture (publication) */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="montantFacturePublication" isRequired={false}>
-                                            Montant de la facture (publication)
-                                        </FormLabel>
-                                        <Input
-                                            isDisabled
-                                            classNames={{
-                                                inputWrapper: "bg-gray-100",
-                                            }}
-                                            id="montantFacturePublication"
-                                            placeholder="750€"
-                                            value={formData.montantFacturePublication}
-                                            onChange={(e) =>
-                                                setFormData({ ...formData, montantFacturePublication: e.target.value })
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* Facture de publication */}
-                                    <div className="space-y-4 opacity-50">
-                                        <FormLabel htmlFor="facturePublication" isRequired={false}>
-                                            Facture de publication
-                                        </FormLabel>
-                                        <StyledSelect
-                                            isDisabled
-                                            id="facturePublication"
-                                            selectedKeys={[formData.facturePublication]}
-                                            onSelectionChange={(keys) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    facturePublication: Array.from(keys)[0] as "Payée" | "En attente" | "En retard"
-                                                })
-                                            }
-                                        >
-                                            <SelectItem key="Payée">Payée</SelectItem>
-                                            <SelectItem key="En attente">En attente</SelectItem>
-                                            <SelectItem key="En retard">En retard</SelectItem>
-                                        </StyledSelect>
-                                    </div>
-                                </>
-                            )}
+                            
                         </div>
                     </ModalBody>
 

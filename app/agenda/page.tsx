@@ -1222,14 +1222,14 @@ export default function AgendaPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             {/* Navigation mois/semaine - toujours visible */}
             {/* Synchronisation Google Calendar - seulement si connecté */}
-            {isGoogleConnected && (
-              <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-auto">
+              {isGoogleConnected && (
                 <GoogleCalendarSync
                   onEventsFetched={setGoogleEvents}
                   onEventCreated={handleGoogleEventCreated}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
               <AgendaDropdown
