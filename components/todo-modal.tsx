@@ -44,7 +44,7 @@ export default function TodoModal({
   const [isEditingTodo, setIsEditingTodo] = useState(false);
   const [newTodo, setNewTodo] = useState({
     name: "",
-    dueDate: "",
+    dueDate: new Date().toISOString(),
     status: "À faire",
   });
 
@@ -62,7 +62,7 @@ export default function TodoModal({
         // Mode ajout
         setNewTodo({
           name: "",
-          dueDate: "",
+          dueDate: new Date().toISOString(),
           status: "À faire",
         });
       }
@@ -165,7 +165,7 @@ export default function TodoModal({
       // Réinitialiser le formulaire et fermer le modal
       setNewTodo({
         name: "",
-        dueDate: "",
+        dueDate: new Date().toISOString(),
         status: "À faire",
       });
       setError(null);
@@ -249,7 +249,7 @@ export default function TodoModal({
   const handleCancel = () => {
     setNewTodo({
       name: "",
-      dueDate: "",
+      dueDate: new Date().toISOString(),
       status: "À faire",
     });
     setFieldErrors({});
@@ -303,6 +303,7 @@ export default function TodoModal({
             <Input
               classNames={{
                 inputWrapper: "bg-page-bg",
+                input: newTodo.dueDate ? "text-black" : "text-gray-300"
               }}
               id="dueDate"
               errorMessage={fieldErrors.dueDate}

@@ -196,7 +196,9 @@ export default function InvoiceModal({
           setNewInvoice(prev => ({
             ...prev,
             establishmentName: matchingClient.nomEtablissement,
-            category: matchingClient.categorie?.toLowerCase() || prev.category,
+            category: Array.isArray(matchingClient.categorie) && matchingClient.categorie.length > 0 
+              ? matchingClient.categorie[0].toLowerCase() 
+              : prev.category,
           }));
 
           // En mode édition, pré-sélectionner la publication si disponible
@@ -267,7 +269,9 @@ export default function InvoiceModal({
     setNewInvoice(prev => ({
       ...prev,
       establishmentName: client.nomEtablissement,
-      category: client.categorie?.toLowerCase() || "shop",
+      category: Array.isArray(client.categorie) && client.categorie.length > 0 
+        ? client.categorie[0].toLowerCase() 
+        : "shop",
     }));
 
 
@@ -294,7 +298,11 @@ export default function InvoiceModal({
 
   // Mettre à jour les publications quand selectedClient change
   useEffect(() => {
-    setPublications(selectedClient?.publications || []);
+    setPublications((selectedClient?.publications || []).map(pub => ({
+      id: pub.id,
+      nom: pub.nom || '',
+      datePublication: pub.datePublication || ''
+    })));
 
     // En mode édition, ne pas réinitialiser la sélection de publication
     if (!selectedInvoice) {

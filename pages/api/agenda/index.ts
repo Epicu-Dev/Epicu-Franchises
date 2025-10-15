@@ -227,6 +227,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Ajouter les événements Google Calendar qui n'ont pas de correspondant Airtable
       googleEvents.forEach((googleEvent: any) => {
+        console.log('Processing Google event:', googleEvent.start.dateTime);
         // Vérifier si cet événement Google a un correspondant dans Airtable
         const hasAirtableCorrespondent = enrichedEvents.some((airtableEvent: any) =>
           airtableEvent.googleEventId === googleEvent.id
@@ -252,7 +253,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           allEvents.push({
             id: `google-${googleEvent.id || Date.now()}`,
             task: googleEvent.summary || 'Sans titre',
-            date: startDate.toISOString().split('T')[0],
+            date: startDate.toISOString(),
             dateFinRdv: endDate.toISOString(),
             type: 'google-agenda',
             description: googleEvent.description || '',
@@ -268,10 +269,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      // Trier tous les événements par date et heure
+      // Trier tous les événements par date et heure de début (ASC)
       allEvents.sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.dateFinRdv ? new Date(a.dateFinRdv).toTimeString().slice(0, 5) : '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.dateFinRdv ? new Date(b.dateFinRdv).toTimeString().slice(0, 5) : '00:00'}`);
+        // Utiliser l'heure de début (champ 'Date') au lieu de l'heure de fin
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
         return dateA.getTime() - dateB.getTime();
       });
 

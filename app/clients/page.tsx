@@ -76,15 +76,9 @@ export default function ClientsPage() {
     { key: 'ville', label: 'Ville', sortable: false, field: 'ville' },
     { key: 'telephone', label: 'Téléphone', sortable: false, field: 'telephone' },
     { key: 'email', label: 'Mail', sortable: false, field: 'email' },
-    { key: 'nombreAbonnesFood', label: 'Nombre abonnés food', sortable: false },
     { key: 'dateSignatureContrat', label: 'Date signature contrat', sortable: true, field: 'dateSignatureContrat' },
     { key: 'datePublicationContenu', label: 'Date de publication', sortable: true, field: 'datePublicationContenu' },
     { key: 'datePublicationFacture', label: 'Envoie facture contenu', sortable: true, field: 'datePublicationFacture' },
-    { key: 'montantFactureTournage', label: 'Montant facture tournage', sortable: true, field: 'montantFactureTournage' },
-    { key: 'factureTournage', label: 'Facture tournage', sortable: false },
-    { key: 'dateEnvoiFacturePublication', label: 'Envoie de facture publication', sortable: false },
-    { key: 'montantFacturePublication', label: 'Montant facture publication', sortable: false },
-    { key: 'facturePublication', label: 'Facture publication', sortable: false },
     { key: 'montantSponsorisation', label: 'Montant de la sponsorisation', sortable: false },
     { key: 'montantEdition', label: 'Montant de l\'addition', sortable: false },
     { key: 'benefice', label: 'Bénéfices', sortable: false },
@@ -248,6 +242,7 @@ export default function ClientsPage() {
         "Ville": editingClient.ville,
         "SIRET": editingClient.siret,
         "Catégorie": editingClient.categorie,
+        "Date de signature": editingClient.dateSignatureContrat,
       };
 
       const response = await authFetch(url, {
@@ -526,7 +521,10 @@ export default function ClientsPage() {
 
                                       cells.push(
                                         <TableCell key={column.key} className="font-light py-5">
-                                          <CategoryBadge category={client.categorie || ""} />
+                                          <CategoryBadge category={client.categorie[0] || ""} />
+                                          {client.categorie.length > 1 && client.categorie[1] && (
+                                            <CategoryBadge className="ml-2" category={client.categorie[1]} />
+                                          )}
                                         </TableCell>
                                       );
                                       break;
@@ -632,34 +630,6 @@ export default function ClientsPage() {
                                       );
                                       break;
 
-                                    case 'montantFactureTournage':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                {pub.montantFactureTournage || "-"}
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'montantFactureContenu':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.invoices && client.invoices.length > 0
-                                            ? client.invoices.map((invoice, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                {invoice.montant || "-"}
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
 
                                     case 'montantSponsorisation':
                                       cells.push(
@@ -766,77 +736,6 @@ export default function ClientsPage() {
                                             ? client.publications.map((pub, idx) => (
                                               <div key={idx} className="text-sm">
                                                 {pub.nombreAbonnes || "-"}
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'nombreAbonnesFood':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          -
-
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'factureTournage':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                <StatusBadge status={pub.factureTournage || "En attente"} />
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'dateEnvoiFacturePublication':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                {pub.dateEnvoiFacturePublication
-                                                  ? new Date(pub.dateEnvoiFacturePublication).toLocaleDateString('fr-FR', {
-                                                    day: '2-digit',
-                                                    month: '2-digit',
-                                                    year: 'numeric'
-                                                  }).replace(/\//g, '.')
-                                                  : "-"
-                                                }
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'montantFacturePublication':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                {pub.montantFacturePublication || "-"}
-                                              </div>
-                                            ))
-                                            : "-"
-                                          }
-                                        </TableCell>
-                                      );
-                                      break;
-                                    case 'facturePublication':
-                                      cells.push(
-                                        <TableCell key={column.key} className="font-light">
-                                          {client.publications && client.publications.length > 0
-                                            ? client.publications.map((pub, idx) => (
-                                              <div key={idx} className="text-sm">
-                                                <StatusBadge status={pub.facturePublication || "En attente"} />
                                               </div>
                                             ))
                                             : "-"

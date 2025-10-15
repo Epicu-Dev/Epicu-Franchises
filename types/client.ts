@@ -8,7 +8,7 @@ export interface Client {
     id: string;
     raisonSociale: string;
     ville: string;
-    categorie: string;
+    categorie: string[];
     telephone: string;
     nomEtablissement: string;
     email: string;

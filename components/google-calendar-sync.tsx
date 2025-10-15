@@ -80,42 +80,6 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
     }
   };
 
-  const connectToGoogle = async () => {
-    setIsConnecting(true);
-    try {
-      // Rediriger vers l'authentification Google
-      const response = await authFetch('/api/google-calendar/auth');
-      if (response.ok) {
-        const { authUrl } = await response.json();
-        window.location.href = authUrl;
-      }
-    } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
-      setSyncStatus(prev => ({ ...prev, error: 'Erreur de connexion' }));
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const disconnectFromGoogle = async () => {
-    setIsLoading(true);
-    try {
-      const response = await authFetch('/api/google-calendar/disconnect', {
-        method: 'POST'
-      });
-      if (response.ok) {
-        setSyncStatus({
-          isConnected: false,
-          calendars: []
-        });
-      }
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const syncEvents = async () => {
     setIsLoading(true);
     try {
@@ -137,27 +101,6 @@ export function GoogleCalendarSync({ onEventsFetched, onEventCreated }: GoogleCa
       }));
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const createEvent = async (eventData: Partial<GoogleCalendarEvent>) => {
-    try {
-      const response = await authFetch('/api/google-calendar/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData),
-      });
-
-      if (response.ok) {
-        const createdEvent = await response.json();
-        onEventCreated?.(createdEvent);
-        return createdEvent;
-      }
-    } catch (error) {
-      console.error('Erreur lors de la création de l\'événement:', error);
-      throw error;
     }
   };
 
