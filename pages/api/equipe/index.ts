@@ -219,7 +219,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         const created = await base(TABLE_NAME).create([{ fields }]);
-        return res.status(201).json({ id: created[0].id, fields: created[0].fields });
+        const newRecordId = created[0].id;
+        
+        // Récupérer les données complètes du collaborateur créé avec les noms de villes résolus
+        const newRecord = await base(TABLE_NAME).find(newRecordId);
+        
+        // Résoudre les noms de villes
+        const villesIds: string[] = (newRecord.get('Ville EPICU') as string[] | undefined) || [];
+        const cityNameById = new Map<string, string>();
+        
+        if (villesIds.length > 0) {
+          const formula = `OR(${villesIds.map((villeId) => `RECORD_ID()=\"${String(villeId).replace(/"/g, '\\\"')}\"`).join(',')})`;
+          const cityRecords = await base('VILLES EPICU').select({ fields: ['Ville EPICU'], filterByFormula: formula }).all();
+          cityRecords.forEach((cr: any) => cityNameById.set(cr.id, cr.get('Ville EPICU')));
+        }
+        
+        const villes = villesIds.map((villeId) => cityNameById.get(villeId)).filter((v): v is string => Boolean(v));
+        const etablIds: string[] = (newRecord.get('ÉTABLISSEMENTS') as string[] | undefined) || [];
+
+        const memberData = {
+          id: newRecord.id,
+          nom: newRecord.get('Nom') || '',
+          prenom: newRecord.get('Prénom') || '',
+          villeEpicu: villes,
+          emailEpicu: newRecord.get('Email EPICU') || null,
+          role: newRecord.get('Rôle') || null,
+          etablissements: etablIds,
+          trombi: newRecord.get('Trombi') || null,
+          emailPerso: newRecord.get('Email perso') || null,
+          dateNaissance: newRecord.get('Date de naissance') || null,
+          telephone: newRecord.get('Téléphone') || null,
+          adresse: newRecord.get('Adresse') || null,
+          siret: newRecord.get('Siret') || null,
+          dateDIP: newRecord.get('Date DIP') || null,
+          dateSignatureContrat: newRecord.get('Franchise signée le') || null,
+          dateSignatureAttestation: newRecord.get("Attestation formation initiale") || null,
+        };
+        
+        return res.status(201).json({ member: memberData });
       } catch (err: any) {
         console.error('equipe POST error', err);
         return res.status(500).json({ error: 'Erreur création collaborateur', details: err?.message || String(err) });
@@ -297,7 +334,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         const updated = await base(TABLE_NAME).update([{ id, fields }]);
-        return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
+        
+        // Récupérer les données complètes du collaborateur mis à jour avec les noms de villes résolus
+        const updatedRecord = await base(TABLE_NAME).find(id);
+        
+        // Résoudre les noms de villes
+        const villesIds: string[] = (updatedRecord.get('Ville EPICU') as string[] | undefined) || [];
+        const cityNameById = new Map<string, string>();
+        
+        if (villesIds.length > 0) {
+          const formula = `OR(${villesIds.map((villeId) => `RECORD_ID()=\"${String(villeId).replace(/"/g, '\\\"')}\"`).join(',')})`;
+          const cityRecords = await base('VILLES EPICU').select({ fields: ['Ville EPICU'], filterByFormula: formula }).all();
+          cityRecords.forEach((cr: any) => cityNameById.set(cr.id, cr.get('Ville EPICU')));
+        }
+        
+        const villes = villesIds.map((villeId) => cityNameById.get(villeId)).filter((v): v is string => Boolean(v));
+        const etablIds: string[] = (updatedRecord.get('ÉTABLISSEMENTS') as string[] | undefined) || [];
+
+        const memberData = {
+          id: updatedRecord.id,
+          nom: updatedRecord.get('Nom') || '',
+          prenom: updatedRecord.get('Prénom') || '',
+          villeEpicu: villes,
+          emailEpicu: updatedRecord.get('Email EPICU') || null,
+          role: updatedRecord.get('Rôle') || null,
+          etablissements: etablIds,
+          trombi: updatedRecord.get('Trombi') || null,
+          emailPerso: updatedRecord.get('Email perso') || null,
+          dateNaissance: updatedRecord.get('Date de naissance') || null,
+          telephone: updatedRecord.get('Téléphone') || null,
+          adresse: updatedRecord.get('Adresse') || null,
+          siret: updatedRecord.get('Siret') || null,
+          dateDIP: updatedRecord.get('Date DIP') || null,
+          dateSignatureContrat: updatedRecord.get('Franchise signée le') || null,
+          dateSignatureAttestation: updatedRecord.get("Attestation formation initiale") || null,
+        };
+        
+        return res.status(200).json({ member: memberData });
       } catch (err: any) {
         console.error('equipe PATCH error', err);
         return res.status(500).json({ error: 'Erreur mise à jour collaborateur', details: err?.message || String(err) });
