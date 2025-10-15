@@ -36,8 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
 
 
-        // D'abord, récupérer toutes les interactions récentes pour debug
-
         const allInteractions = await base(TABLE_NAME)
           .select({
             fields: ['Date de l\'intéraction', 'Statut', 'Commentaire', 'Etablissement'],
@@ -46,13 +44,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           })
           .all();
 
-
-
-        // Maintenant filtrer pour l'établissement spécifique
         const interactions = allInteractions.filter((record: any) => {
           const etablissements = record.get('Etablissement') || [];
           const found = Array.isArray(etablissements) && etablissements.includes(etablissementId);
-
           return found;
         });
 
@@ -67,7 +61,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json({ interactions: results });
       } catch (err: any) {
-        console.error('interaction GET error', err);
         return res.status(500).json({ error: 'Erreur récupération interactions', details: err?.message || String(err) });
       }
     }
@@ -100,7 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const created = await base(TABLE_NAME).create([{ fields }]);
         return res.status(201).json({ id: created[0].id, fields: created[0].fields });
       } catch (err: any) {
-        console.error('interaction POST error', err);
         return res.status(500).json({ error: 'Erreur création interaction', details: err?.message || String(err) });
       }
     }
@@ -138,7 +130,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const updated = await base(TABLE_NAME).update([{ id: interactionId, fields }]);
         return res.status(200).json({ id: updated[0].id, fields: updated[0].fields });
       } catch (err: any) {
-        console.error('interaction PATCH error', err);
         return res.status(500).json({ error: 'Erreur mise à jour interaction', details: err?.message || String(err) });
       }
     }
@@ -146,7 +137,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', ['GET', 'POST', 'PATCH']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error: any) {
-    console.error('Airtable error (interaction):', error?.message || error);
     return res.status(500).json({ error: 'Erreur Airtable', details: error?.message || String(error) });
   }
 }

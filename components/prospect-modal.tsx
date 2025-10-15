@@ -60,11 +60,13 @@ export function ProspectModal({
     suiviPar: "",
     email: "",
     adresse: "",
+    recordIdFromInteractions: "",
   });
 
   // Initialiser le formulaire avec les données du prospect à éditer
   useEffect(() => {
     if (isEditing && editingProspect) {
+      
       // Si le prospect a un suiviPar (nom), trouver l'ID correspondant
       let prospectToSet = { ...editingProspect };
 
@@ -80,7 +82,6 @@ export function ProspectModal({
       if (!prospectToSet.villeEpicu && userProfile?.villes && userProfile.villes.length > 0) {
         prospectToSet.villeEpicu = userProfile.villes[0].id;
       }
-
 
       setNewProspect(prospectToSet);
       setOriginalComment(typeof editingProspect.commentaires === 'string' ? editingProspect.commentaires : "");
@@ -108,6 +109,7 @@ export function ProspectModal({
         suiviPar: defaultSuiviPar,
         email: "",
         adresse: "",
+        recordIdFromInteractions: "",
       });
       setOriginalComment("");
     }
@@ -161,8 +163,7 @@ export function ProspectModal({
         }
 
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Erreur lors de la récupération des membres d\'équipe:', err);
+        // Erreur silencieuse lors de la récupération des membres d'équipe
       }
     };
 
@@ -225,60 +226,59 @@ export function ProspectModal({
     return isValid;
   };
 
-  const getExistingInteractionWithComment = async (prospectId: string) => {
+
+  const updateInteractionComment = async (recordId: string, comment: string) => {
     try {
-      const response = await authFetch(`/api/interaction?etablissement=${prospectId}`);
+      const url = `/api/interaction?id=${recordId}`;
+      
+      const response = await authFetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ commentaire: comment }),
+      });
 
-
-      if (response.ok) {
-        const data = await response.json();
-        // Retourner la dernière interaction (la plus récente), peu importe le statut/commentaire
-        const interactions = Array.isArray(data.interactions) ? data.interactions : [];
-        if (interactions.length === 0) return null;
-
-        const sorted = interactions.slice().sort((a: any, b: any) => {
-          const da = new Date(a.dateInteraction || 0).getTime();
-          const db = new Date(b.dateInteraction || 0).getTime();
-          return db - da; // desc
-        });
-        return sorted[0] || null;
+      if (!response.ok) {
+        const errorData = await response.json();
+        showError(`Erreur lors de la mise à jour du commentaire: ${errorData.error || 'Erreur inconnue'}`);
       } else {
-        console.error('Erreur réponse API:', response.status, response.statusText);
+        showSuccess('Commentaire mis à jour avec succès');
       }
     } catch (err) {
-      console.error('Erreur lors de la récupération des interactions:', err);
+      showError('Erreur lors de la mise à jour du commentaire');
     }
-    return null;
   };
 
-  const updateLastInteractionComment = async (prospectId: string, comment: string) => {
+  // Fonction pour récupérer le Record_ID d'interaction depuis l'API
+  const fetchInteractionRecordId = async (prospectId: string) => {
     try {
-      // Récupérer la dernière interaction existante pour cet établissement
-      const existingInteraction = await getExistingInteractionWithComment(prospectId);
-
-      if (existingInteraction) {
-        // Mettre à jour uniquement le commentaire de la dernière interaction
-        const response = await authFetch(`/api/interaction?id=${existingInteraction.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ commentaire: comment }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Erreur lors de la mise à jour du commentaire:', errorData);
-          // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+      const response = await authFetch(`/api/interaction?etablissement=${prospectId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const interactions = data.interactions || [];
+        
+        if (interactions.length > 0) {
+          return interactions[0].id;
+        } else {
+          return null;
         }
       } else {
-        // Aucune interaction existante : ne rien faire (pas de création d'interaction dans ce modal)
-        console.log('Aucune interaction existante à mettre à jour');
+        return null;
       }
     } catch (err) {
-      console.error('Erreur lors de la mise à jour du commentaire:', err);
-      // Ne pas faire échouer la mise à jour du prospect pour une erreur d'interaction
+      return null;
     }
+  };
+
+  // Fonction pour mettre à jour l'état local du commentaire (sans mise à jour en temps réel)
+  const handleCommentChange = (newComment: string) => {
+    // Mettre à jour l'état local seulement
+    setNewProspect((prev) => ({
+      ...prev,
+      commentaires: newComment,
+    }));
   };
 
   const createInitialInteraction = async (prospectId: string, comment: string) => {
@@ -299,14 +299,9 @@ export function ProspectModal({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Erreur lors de la création de l\'interaction:', errorData);
         // Ne pas faire échouer la création du prospect pour une erreur d'interaction
-      } else {
-        console.log('Interaction créée avec succès pour le nouveau prospect');
       }
     } catch (err) {
-      console.error('Erreur lors de la création de l\'interaction:', err);
       // Ne pas faire échouer la création du prospect pour une erreur d'interaction
     }
   };
@@ -390,9 +385,22 @@ export function ProspectModal({
       // Gérer les interactions selon le contexte
       if (etablissementId) {
         if (isEditing) {
-          // Mise à jour : mettre à jour le commentaire de la dernière interaction si il y a un commentaire
-          if (newProspect.commentaires && typeof newProspect.commentaires === 'string' && newProspect.commentaires.trim()) {
-            await updateLastInteractionComment(etablissementId, newProspect.commentaires);
+          // En mode édition, mettre à jour l'interaction avec le nouveau commentaire
+          // Vérifier si le commentaire a changé
+          if (newProspect.commentaires !== originalComment) {
+            const recordId = editingProspect?.recordIdFromInteractions;
+            
+            if (recordId) {
+              await updateInteractionComment(recordId, newProspect.commentaires);
+            } else {
+              // Si pas de Record_ID, essayer de le récupérer depuis l'API
+              const fetchedRecordId = await fetchInteractionRecordId(editingProspect?.id || '');
+              if (fetchedRecordId) {
+                await updateInteractionComment(fetchedRecordId, newProspect.commentaires);
+              } else {
+                showError('Impossible de mettre à jour le commentaire: interaction non trouvée');
+              }
+            }
           }
         } else {
           // Création : créer une nouvelle interaction avec les informations du prospect
@@ -421,6 +429,7 @@ export function ProspectModal({
         suiviPar: newProspect.suiviPar,
         email: newProspect.email,
         adresse: newProspect.adresse,
+        recordIdFromInteractions: newProspect.recordIdFromInteractions,
       };
 
       // Réinitialiser le formulaire et fermer le modal
@@ -446,6 +455,7 @@ export function ProspectModal({
         suiviPar: defaultSuiviPar,
         email: "",
         adresse: "",
+        recordIdFromInteractions: "",
       });
       setError(null);
       setFieldErrors({});
@@ -791,12 +801,7 @@ export function ProspectModal({
               id="commentaires"
               placeholder="..."
               value={newProspect.commentaires}
-              onChange={(e) =>
-                setNewProspect((prev) => ({
-                  ...prev,
-                  commentaires: e.target.value,
-                }))
-              }
+              onChange={(e) => handleCommentChange(e.target.value)}
             />
 
           </div>

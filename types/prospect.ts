@@ -12,4 +12,5 @@ export interface Prospect {
     suiviPar: string;
     email?: string;
     adresse?: string;
+    recordIdFromInteractions?: string;
 }

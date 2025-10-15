@@ -354,6 +354,8 @@ export default function ProspectsPage() {
       suiviPar: prospect.suiviPar,
       email: prospect.email,
       adresse: prospect.adresse,
+      recordIdFromInteractions: prospect.recordIdFromInteractions,
+      villeEpicu: prospect.villeEpicu,
     };
 
     setEditingProspect(prospectForEdit);
